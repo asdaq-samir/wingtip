@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useId, useState, type KeyboardEvent } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useBeforeUnload } from "react-router";
 import { FormDateField } from "../../../components/FormFields";
@@ -8,7 +8,10 @@ import TogglePill from "../../../components/TogglePill";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { NumberField } from "../../../components/ui/number-field";
-import type { LogbookEntryRequest } from "../../../lib/api/types";
+import type { Aircraft, LogbookEntryRequest } from "../../../lib/api/types";
+import { savedKindOf } from "../../../lib/airplaneKind";
+import AirplaneKindFields from "./AirplaneKindFields";
+import { entrySaysKind, requestOfForm, withSavedKind } from "./entryKind";
 import { TEXT } from "../../../lib/text";
 import { entryProblems } from "./entryChecks";
 import { FieldError } from "../../../components/ui/field";
@@ -26,6 +29,11 @@ import { WORDING } from "../../../lib/wording/generated/wording";
  * under it and takes the focus, the first of them. What was typed is not
  * thrown away unasked: Cancel or Escape on a changed form asks first, and
  * the page's own leaving (a reload, a closed tab) the browser asks about.
+ *
+ * The airplane's category, class and gear (14 CFR 61.57(a)(1)(ii)) are
+ * filled in from the profile of the pilot's own airplane the entry names,
+ * where it says them and the entry doesn't, and the form says so; typing
+ * another of their airplanes fills in its own, until the pilot picks one.
  */
 export default function EntryForm({
   initial,
@@ -34,8 +42,12 @@ export default function EntryForm({
   saving,
   problem,
   onDirtyChange,
+  airplanes,
 }: {
   initial: LogbookEntryRequest;
+  /** The pilot's own airplanes, whose profiles fill in the category,
+   *  class and gear. */
+  airplanes?: Aircraft[];
   onSave: (r: LogbookEntryRequest) => void;
   /** In a row: the row back, nothing saved. */
   onCancel?: () => void;
@@ -47,6 +59,13 @@ export default function EntryForm({
   onDirtyChange?: (dirty: boolean) => void;
 }) {
   const formId = useId();
+  // As it opened: the entry, filled in from its airplane's profile where
+  // it said nothing of its kind, and whose profile that was.
+  const [start] = useState(() => withSavedKind(initial, airplanes));
+  const [kindFrom, setKindFrom] = useState(start.from);
+  // The pilot's own pick of the kind, or the entry's own: kept as it is
+  // when another tail is typed.
+  const [kindOwn, setKindOwn] = useState(() => entrySaysKind(initial));
   // react-hook-form keeps what is typed, whether it differs from what the
   // form opened on (isDirty), what is missing (the resolver, from
   // entryProblems) and, on Save, the focus on the first field that needs
@@ -56,9 +75,10 @@ export default function EntryForm({
     control,
     register,
     handleSubmit,
+    setValue,
     formState: { isDirty: dirty, errors },
   } = useForm<LogbookEntryRequest>({
-    defaultValues: blanksAsEmpty(initial),
+    defaultValues: blanksAsEmpty(start.entry),
     resolver: (values) => {
       const found = entryProblems(values);
       const keys = Object.keys(found) as (keyof LogbookEntryRequest)[];
@@ -102,6 +122,16 @@ export default function EntryForm({
     e.preventDefault();
     cancel();
   };
+  // Another of the pilot's airplanes typed: its kind in, or none where its
+  // profile says none, until the pilot picks the kind themselves.
+  const airplaneTyped = (typed: string) => {
+    if (kindOwn) return;
+    const saved = savedKindOf(airplanes, typed);
+    setValue("category", saved?.kind.category ?? "");
+    setValue("aircraftClass", saved?.kind.aircraftClass ?? "");
+    setValue("tailwheel", (saved?.kind.tailwheel ?? "") as boolean);
+    setKindFrom(saved?.tail ?? null);
+  };
   const field = (key: keyof LogbookEntryRequest, label: string, type: "text" | "number" | "date" = "text") => {
     const said = errors[key]?.message;
     // Each box described by its problem, so a reader says the two together (WCAG 3.3.1).
@@ -120,7 +150,8 @@ export default function EntryForm({
               minValue={0}
               data-testid={`logbook-${key}`}
               value={bound.value == null || bound.value === "" ? null : Number(bound.value)}
-              onChange={(v) => bound.onChange(v ?? 0)}
+              // Cleared, a figure is 0; the full stops, not said (none).
+              onChange={(v) => bound.onChange(v ?? (key === "fullStopLandings" ? "" : 0))}
               onBlur={bound.onBlur}
               onKeyDown={escapeAria}
               {...ariaInvalid(id, said)}
@@ -138,7 +169,13 @@ export default function EntryForm({
           {...ariaInvalid(id, said)}
         />
       ) : (
-        <Input className="h-8" data-testid={`logbook-${key}`} {...register(key)} onKeyDown={escape} {...invalidProps(id, said)} />
+        <Input
+          className="h-8"
+          data-testid={`logbook-${key}`}
+          {...register(key, key === "aircraft" ? { onChange: (e: { target: { value: string } }) => airplaneTyped(e.target.value) } : {})}
+          onKeyDown={escape}
+          {...invalidProps(id, said)}
+        />
       );
     return (
       <div>
@@ -156,16 +193,28 @@ export default function EntryForm({
     );
   };
   return (
-    <form className="space-y-2.5" noValidate onSubmit={(e) => void handleSubmit(onSave)(e)}>
+    <form className="space-y-2.5" noValidate onSubmit={(e) => void handleSubmit((values) => onSave(requestOfForm(values)))(e)}>
       {field("flownOn", "Date", "date")}
       {field("route", "Route")}
       {field("aircraft", "Airplane")}
       {field("aircraftType", "Type")}
+      <AirplaneKindFields
+        control={control}
+        from={kindFrom}
+        onPicked={() => {
+          setKindOwn(true);
+          setKindFrom(null);
+        }}
+      />
       {field("totalHours", "Total Hours", "number")}
       {field("nightHours", "Night Hours", "number")}
       {field("crossCountryHours", "Cross-country", "number")}
       {field("dayLandings", "Day Landings", "number")}
       {field("nightLandings", "Night Landings", "number")}
+      {/* Every landing to a full stop, day and night: only these count
+          toward a tailwheel's passenger currency (14 CFR 61.57(a)(1)(ii)).
+          Empty is not said. */}
+      {field("fullStopLandings", "Full Stops", "number")}
       {/* What a student's 61.109 experience is counted from: the
           Checkride page. */}
       {field("dualHours", "Dual Received", "number")}

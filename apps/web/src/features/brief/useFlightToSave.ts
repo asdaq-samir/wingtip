@@ -5,6 +5,7 @@ import type { AircraftChoice } from "../../lib/api/types";
 import { NO_PLAN, useBriefPlan } from "../../lib/briefPlan";
 import { picksOf } from "../../lib/flightLink";
 import { identOf } from "../../lib/identSchema";
+import { usePreferences } from "../../lib/preferences";
 import { useWindPicks, useTabAsk, briefingLegs, type PlannedRoute, type PlanAnswer, type PlanCourse } from "../plan";
 
 /**
@@ -66,6 +67,9 @@ export function useFlightToSave({
   const saveCourse = routed && settledPlan ? course : null;
   const saveTotals = s.pointToPoint ? null : s.totals;
   const aircraftId = aircraft.aircraftId ?? null;
+  // Its rules with its picks, the app's own setting (lib/address PICK_KEYS),
+  // so the flight reopens VFR or IFR as it was saved.
+  const rules = usePreferences((p) => p.flightRules);
   const flightToSave = useMemo(
     () => ({
       course: saveCourse,
@@ -76,9 +80,9 @@ export function useFlightToSave({
       aircraftId,
       depart,
       altitudes,
-      picks: picksOf(addressParams(address)),
+      picks: picksOf(addressParams({ ...address, rules })),
     }),
-    [saveCourse, saveTotals, s.nav, s.legs, s.logSelected, aircraftId, depart, altitudes, address],
+    [saveCourse, saveTotals, s.nav, s.legs, s.logSelected, aircraftId, depart, altitudes, address, rules],
   );
   // The flight as the Brief reads it (lib/briefPlan), for its Ask, its
   // words and its watch, which draw outside the route's props: the

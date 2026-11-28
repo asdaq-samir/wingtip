@@ -42,6 +42,8 @@ export interface RadioCall {
   note?: string;
   /** A broadcast listened to, not a station called. */
   listen?: boolean;
+  /** Called on the field's CTAF (the engine's radio_script). */
+  ctaf?: boolean;
 }
 
 export interface RadioPhase {

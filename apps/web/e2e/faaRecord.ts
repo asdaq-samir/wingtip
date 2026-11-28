@@ -6,6 +6,9 @@ export const FAA = {
   serial: "11775",
   manufacturer: "Airbus S A S",
   model: "A321-271NX",
+  // Its maker and model short, as the planner answers them (the engine's airplane_short_type).
+  make_short: "Airbus",
+  model_short: "A321",
   year: 2024,
   aircraft_type: "Fixed wing multi engine",
   engines: 2,

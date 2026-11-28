@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { airportSearch, grabberTo, settle, sideDrawer } from "./helpers";
+import { hold } from "./pacing";
 
 /**
  * A list's row swiped to the left, as iOS's lists' rows are (SwipeRow,
@@ -23,7 +24,7 @@ async function swipeLeft(page: Page, row: Locator, dx: number) {
   await touch("touchStart", from);
   for (let i = 1; i <= 12; i++) {
     await touch("touchMove", { x: from.x - (dx * i) / 12, y: from.y });
-    await page.waitForTimeout(16);
+    await hold(page, 16);
   }
   await touch("touchEnd");
   await cdp.detach();

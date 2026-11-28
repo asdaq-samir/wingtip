@@ -38,6 +38,8 @@ export interface RunwayDistance extends Distances {
   unknown: boolean;
   /** Read past the POH's table (its caveats say how): its edge's figures. */
   beyond: boolean;
+  /** Within, but with less than SAFO 19001's 15 per cent to spare. */
+  close: boolean;
 }
 
 interface RunwayCheck {
@@ -57,6 +59,8 @@ interface RunwayCheck {
   /** The temperature and altimeter were reported (a METAR), not a
    *  standard day's. */
   reported: boolean;
+  /** Along the end, negative for a tailwind: a tailwind its gusts' where
+   *  they are more, as the crosswind's (the engine's along_shown_kt). */
   headwindKt: number;
   /** The crosswind on that runway, its gusts' where they are more. */
   crosswindKt: number;
@@ -68,7 +72,13 @@ interface RunwayCheck {
    *  not: the field's elevation not known. */
   unchecked: string | null;
   distances: RunwayDistance[];
+  /** The field's runway finding and its reason, the engine's (runway::fit),
+   *  the very one FPL's runway chips give an end. */
+  finding: EngineCheck["finding"];
+  fit: EngineCheck["fit"];
 }
+
+type EngineCheck = EngineAnswer<"gonogo_runway_checks">[number];
 
 /** Every airport the flight takes off from or lands at, the distances it
  *  needs there: the takeoff from the departure, the landing at the
@@ -116,11 +126,14 @@ export function runwayChecks(
       crosswindOver: c.crosswind_over,
       grass: c.grass,
       unchecked: c.unchecked,
+      finding: c.finding,
+      fit: c.fit,
       distances: c.distances.map((d) => ({
         kind: d.kind,
         ...distances(d),
         unknown: d.unknown,
         beyond: d.beyond,
+        close: d.close,
         runway: on(d.runway),
         end: d.end,
       })),

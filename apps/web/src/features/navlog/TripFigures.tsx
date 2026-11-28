@@ -1,5 +1,5 @@
 import { useAirplaneChosen } from "../../lib/preferences";
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { zoneName } from "../../lib/format";
 import { cn } from "cn";
 import type { ExplainedTerm } from "../../lib/explain";
@@ -54,7 +54,16 @@ const SHORT: Record<string, string> = { Dist: "Dist", Track: "Trk", Course: "Crs
  *  en route, the arrival, the fuel required. */
 const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA" };
 
-const AREA = "relative max-w-full hit-x-2 hit-y-3";
+// A pointer's answer a figure's own: a little dimmer, as a tap's, where
+// the link variant underlined it, which iOS never does to a number. Over
+// the strip's neighbours (z-10), so its area's foot is not under the next
+// box down. 4 past each side, half the strip's least gap (FigureStrip's
+// gap-x-2), so two figures' areas meet and never overlap.
+const AREA = "relative z-10 max-w-full hit-x-1 hover:no-underline hover:opacity-80";
+// Its area 44 points tall whatever the figure's size, as the timeline's
+// chips' (TimelineRows' CHIP_44): a band of 12 over and under a figure of
+// 16 to 25 made 40 to 49, under 44 on the thin strip. The figure itself never grows.
+const AREA_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
 
 /** A figure an airplane makes (the time, the fuel), with none picked: a
  *  dash, said as what it waits for. */
@@ -71,6 +80,7 @@ export default function TripFigures({
   local,
   grow = false,
   thin = false,
+  pill = false,
   legCourseDeg = null,
   flown = null,
   flying = false,
@@ -97,6 +107,10 @@ export default function TripFigures({
   grow?: boolean;
   /** FPL's pinned figures, thin above the pill and full size as it (FigureStrip's `pin`). */
   thin?: boolean;
+  /** FPL's pill, one row of the pill's height: every figure that fits at
+   *  its full size, the GPS altitude (the last) the first to go, then from
+   *  the end; never two by two (FigureStrip's `row`), none cut short. */
+  pill?: boolean;
   /** The magnetic course of the leg the strip shows (the nav log's), the Course while not at flying speed. */
   legCourseDeg?: number | null;
   /** A dry run flying: the same figures from where the airplane is
@@ -124,8 +138,7 @@ export default function TripFigures({
   // without airplane profile, don't assume").
   // The columns kept all the same, the time a dash in
   // the tint that asks for an airplane (lib/pickAirplane), where it
-  // went and the strip said nothing of why (the UI audit's C2,
-  // 2026-11-17): what the airplane would make of the route, none assumed.
+  // went and the strip said nothing of why: what the airplane would make of the route, none assumed.
   const airplane = useAirplaneChosen();
   // The airplane's GPS altitude at the strip's end whenever its position
   // is known (gpsFigure: what the figure is and where it comes from).
@@ -141,7 +154,7 @@ export default function TripFigures({
       .map((f) => (airplane || f.name === "To" || f.name === "Dist" ? f : wantsAirplane(f)))
       // The destination the planner does not know, said on the figure in
       // red with its mark, the pill too, where the pill read "ZZZZ" over
-      // a dash as if nothing were wrong (the UI audit's B8).
+      // a dash as if nothing were wrong.
       .map((f) =>
         f.name === "To" && unknown?.ident && f.value.toUpperCase() === unknown.ident.toUpperCase()
           ? { ...f, alert: true, said: `${f.said ?? f.value} ${unknownWhy(unknown)}` }
@@ -181,6 +194,7 @@ export default function TripFigures({
           data-testid="strip-pick-airplane"
           aria-label={said}
           className={AREA}
+          style={AREA_44}
         >
           {face}
         </Button>
@@ -194,6 +208,7 @@ export default function TripFigures({
           data-testid="to-toggle"
           aria-label={`${toLabel}, ${said}: show the ${toDestination ? "next stop" : "destination"}`}
           className={AREA}
+          style={AREA_44}
         >
           {face}
         </Button>
@@ -210,6 +225,7 @@ export default function TripFigures({
           data-testid="dist-unit"
           aria-label={`${seen(f)}, ${said}: show in ${statute ? "nautical" : "statute"} miles`}
           className={cn(AREA, "items-baseline")}
+          style={AREA_44}
         >
           {face}
         </Button>
@@ -223,6 +239,7 @@ export default function TripFigures({
           data-testid="ete-eta-toggle"
           aria-label={`${seen(f)}, ${said}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
           className={AREA}
+          style={AREA_44}
         >
           {face}
         </Button>
@@ -236,8 +253,20 @@ export default function TripFigures({
   // FPL's pinned strip, its names in their short forms so the five fit one
   // row at a phone's width as the thin line (the owner, 2026-11-22: "Show
   // the labels even for thin strip"); "Leg" and "Dest" are short already.
-  const shown = thin ? ours.map((f) => (SHORT[f.name] ? { ...f, label: SHORT[f.name] } : f)) : ours;
+  const short = thin ? ours.map((f) => (SHORT[f.name] ? { ...f, label: SHORT[f.name] } : f)) : ours;
+  // The pill's one row holds every figure that fits, the GPS altitude too
+  // (the owner, 2026-11-26: "GPS alt doesnt show on the pill size?"),
+  // where it held four at most and left the GPS out first: five then
+  // stacked two by two, three rows tall in a bar one row high, which the strip's `row` now never does, dropping from the
+  // end only what does not fit.
   return (
-    <FigureStrip figures={shown} size={flying ? "flying" : thin ? "pin" : grow ? "grow" : "fixed"} tap={tap} still={flying || !!flown} />
+    <FigureStrip
+      figures={short}
+      size={flying ? "flying" : thin ? "pin" : grow ? "grow" : "fixed"}
+      tap={tap}
+      still={flying || !!flown}
+      row={pill}
+      spread={thin}
+    />
   );
 }

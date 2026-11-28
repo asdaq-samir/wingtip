@@ -27,7 +27,7 @@ import kotlin.time.Instant
 
 private val READING = Json.parseToJsonElement(
     """{"information":"K","time_z":"1452Z","wind":{"from_deg":210,"kt":12,"gust_kt":18,"variable":false},
-       "visibility_sm":10,"sky":[{"cover":"few","base_ft":4500},{"cover":"broken","base_ft":9000}],
+       "visibility_sm":10,"visibility_minus":false,"sky":[{"cover":"few","base_ft":4500},{"cover":"broken","base_ft":9000}],
        "temp_c":21,"dewpoint_c":-3,"altimeter_inhg":29.92,"approach":null,
        "runways":{"landing":["27L","28R"],"departing":["27L","28R"]},"remarks":["Bird activity"],"raw":"x"}""",
 ).jsonObject
@@ -78,7 +78,9 @@ class LiveTest {
         val rows = b.rows.associate { it.label to it.value }
         assertEquals("K · 1452Z", rows["Information"])
         assertEquals("210° at 12 kt, gusts 18", rows["Wind"])
-        assertEquals("10 sm", rows["Visibility"])
+        // The miles are the engine's, held on the device
+        // (MagneticAndVisibilityEngineTest): no row where it cannot say.
+        assertNull(rows["Visibility"])
         assertEquals("Few 4,500 ft · Broken 9,000 ft (ceiling)", rows["Sky"])
         assertEquals("21 °C, dew point −3 °C", rows["Temperature"])
         assertEquals("ORD ATIS INFO K", b.text)

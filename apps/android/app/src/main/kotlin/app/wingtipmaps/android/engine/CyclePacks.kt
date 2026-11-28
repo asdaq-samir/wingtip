@@ -7,6 +7,7 @@ import app.wingtipmaps.android.api.AirspaceAt
 import app.wingtipmaps.android.api.CyclePackIndex
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.PlannerPaths
 import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.ffi.packVerify
 import app.wingtipmaps.android.engine.generated.distanceNm
@@ -151,7 +152,7 @@ class CyclePacks(private val root: File) {
      *  the phone's cache and the edge's, which a pack rebuilt within the
      *  cycle would otherwise be answered from. */
     private suspend fun fetchPack(cycle: String, region: String, crc32: Long): ByteArray? {
-        val request = Planner.get("/api/cycle-pack/$cycle/$region.pack", mapOf("crc32" to crc32.toString()))
+        val request = Planner.get(PlannerPaths.cyclePack(cycle, region), mapOf("crc32" to crc32.toString()))
         return runCatching {
             Gateway.streaming.newCall(request).executeAsync().use { response ->
                 if (response.code != 200) null else response.body.bytes()
@@ -236,8 +237,7 @@ class CyclePacks(private val root: File) {
          *  either side, as its chart is kept five nm either side. The line
          *  is pairs of latitude and longitude, as /api/course gives it. A
          *  failure where the engine could not say (Engine.rule has logged
-         *  why), never an empty set read as "nothing to keep" (the audit's
-         *  AND-3 and AND-5). */
+         *  why), never an empty set read as "nothing to keep". */
         fun regions(line: List<List<Double>>): Result<Set<String>> = runCatching {
             val names = HashSet<String>()
             for ((lat, lon) in samples(line, everyNm = 2.0).getOrThrow()) {

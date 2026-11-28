@@ -29,12 +29,12 @@ export default function BriefCard({
   marks,
   onClose,
   onLegs,
-  route,
+  routeKey,
 }: {
   name: ReactNode;
   /** Under the name in its pinned head, at every size: the altitude, when,
    *  the airplane, where from and to. It was a line under the head the
-   *  Brief scrolled over (the UI audit's B2, 2026-11-17). */
+   *  Brief scrolled over. */
   line: ReactNode;
   contents: Record<PanelTab, ReactNode>;
   /** The briefing's warnings, over every page. */
@@ -44,7 +44,8 @@ export default function BriefCard({
   onClose: () => void;
   /** The legs asked for from a page: FPL's nav log in place of the card. */
   onLegs: () => void;
-  route: string;
+  /** The route its pages are of, for their stale dim (PanelTabs). */
+  routeKey: string;
 }) {
   // Its live reports kept fresh by themselves (on their timers and as the
   // card comes back into sight); asked again now from its ••• (ShareMenu).
@@ -59,10 +60,10 @@ export default function BriefCard({
         <PanelTabs
           printing={false}
           marks={marks}
-          route={route}
           notice={notice}
           contents={contents}
           onLegs={onLegs}
+          routeKey={routeKey}
           overview={BriefOverview}
           before={
             // Its room over the name the grabber's, which the pinned head's frost reaches up over (PinnedHead).
@@ -70,6 +71,11 @@ export default function BriefCard({
               <CardHead
                 name={name}
                 sub={line}
+                // The route, the altitude, when and the airplane wrap under
+                // "Brief" rather than run off the panel: at the owner's larger
+                // text a two-stop route lost its destination ("C81 → KGCT →
+                // KIML → KDE…") and an iPhone its time.
+                wrap
                 below={<VerdictPill />}
                 nameTestId="brief-name"
                 onClose={onClose}

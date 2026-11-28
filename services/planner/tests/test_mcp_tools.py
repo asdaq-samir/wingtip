@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 from mcp.types import TextContent
-from wingtip import airports, notams, procedures, tfr, weather
+from wingtip import airports, field_facts, notams, procedures, tfr, weather
 
 from app.mcp import calls, records
 
@@ -115,6 +115,55 @@ def test_nearest_airports_filter_by_runway_and_tower(monkeypatch):
     assert [a["ident"] for a in near["airports"]] == ["KJVL", "KUGN"]
     towered = answer(call("nearest_airports", {"lat": 42.3, "lon": -88.1, "towered_only": True}))
     assert [a["ident"] for a in towered["airports"]] == ["KJVL"]
+
+
+def test_nearest_airports_filter_by_fuel_and_approach_and_say_how_far_they_searched(monkeypatch):
+    _nearest(
+        monkeypatch,
+        [_field("C81", 2.1), _field("KJVL", 30.0, fuel=["100LL", "Jet A"], instrument_approach=True), _field("KUGN", 12.0, fuel=["100LL"])],
+    )
+    # Each field's own fuel and approach, as NASR's tables would give them.
+    monkeypatch.setattr(
+        field_facts,
+        "facts_for",
+        lambda found: [{"fuel": p.get("fuel", []), "instrument_approach": p.get("instrument_approach")} for p in found],
+    )
+    fuelled = answer(call("nearest_airports", {"lat": 42.3, "lon": -88.1, "fuel": "100LL"}))
+    assert [a["ident"] for a in fuelled["airports"]] == ["KJVL", "KUGN"] and fuelled["searched_nm"] == 30.0
+    ifr = answer(call("nearest_airports", {"lat": 42.3, "lon": -88.1, "instrument_approach_only": True}))
+    assert [a["ident"] for a in ifr["airports"]] == ["KJVL"]
+
+
+def test_search_airports_pages_past_the_endpoints_eight(monkeypatch):
+    """The mcp audit of 2026-11-23, M2: the endpoint's first 8 were said
+    to be all of them. Asked for one past the page, the tool knows there
+    are more, and says a total only once the last page is in sight."""
+    asked = []
+    springfields = [{"ident": f"K{n:03}", "name": "Springfield", "municipality": "Springfield"} for n in range(30)]
+
+    def search(query, limit=8, **_):
+        asked.append(limit)
+        return springfields[:limit]
+
+    monkeypatch.setattr(airports, "search_airports", search)
+    first = answer(call("search_airports", {"query": "Springfield", "limit": 10}))
+    assert asked == [11] and first["count"] == 10 and first["has_more"] is True and first["total"] is None
+    last = answer(call("search_airports", {"query": "Springfield", "limit": 25, "offset": 10}))
+    assert last["count"] == 20 and last["has_more"] is False and last["total"] == 30
+
+
+def test_search_airports_ends_at_its_reach_with_no_next_page(monkeypatch):
+    """The round 6 audit, P4: past the offset the tool takes, the page
+    says it is the last, never a next_offset the tool would refuse."""
+    many = [{"ident": f"K{n:03}", "name": "Springfield", "municipality": "Springfield"} for n in range(600)]
+    monkeypatch.setattr(airports, "search_airports", lambda query, limit=8, **_: many[:limit])
+    # Counted by count_airports, not by a second search of every match (the round 9 audit).
+    monkeypatch.setattr(airports, "count_airports", lambda query, **_: len(many))
+    page = answer(call("search_airports", {"query": "Springfield", "limit": 25, "offset": 490}))
+    assert page["count"] == 25 and page["has_more"] is False and page["next_offset"] is None and "first 515" in page["note"]
+    # And its total is the number that matched, never null beside has_more false (the round 7
+    # audit, P-L2) nor only those paged (the round 8 audit).
+    assert page["total"] == 600
 
 
 def test_nearest_airports_needs_a_place():
@@ -223,6 +272,14 @@ def test_third_party_text_reaches_the_model_without_what_the_pilot_cannot_see():
     }
     assert calls.as_data("KDLH 011853Z 28012KT RMK AO2") == "KDLH 011853Z 28012KT RMK AO2"
     assert calls.as_data("Mañana Field") == "Mañana Field"
+
+
+def test_c1_controls_and_variation_selectors_are_taken_out_too():
+    """The security review of 2026-11-23, Low 11: C1 controls (U+0080 to
+    U+009F) and the variation selectors (U+FE00 to U+FE0F, U+E0100 to
+    U+E01EF) draw nothing and can carry bytes the model reads."""
+    hidden = "\x85\x9b" + "".join(chr(0xFE00 + n) for n in range(16)) + chr(0xE0100) + chr(0xE01EF)
+    assert calls.as_data(f"RWY 09/27 CLSD{hidden}\tWEF") == "RWY 09/27 CLSD\tWEF"
 
 
 def test_the_server_tells_the_model_quoted_text_is_data_not_instructions():

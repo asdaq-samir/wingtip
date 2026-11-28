@@ -9,6 +9,13 @@ import { keepAddressThroughReload } from "./freshLoad";
  *  fix that had not reached the phone). */
 export const OFFER_AFTER_MS = 5 * 60_000;
 
+/** How often a page kept in front looks for a new build: every twenty
+ *  minutes, and at once each time it comes back to the front. Each minute
+ *  it was 60 requests an hour for a build that comes a few times a day;
+ *  a deploy reaches a page in front within
+ *  the twenty, and one brought back at once. */
+const CHECK_EVERY_MS = 20 * 60_000;
+
 /** vite-plugin-pwa's stock prompt (its ReloadPrompt pattern: "Reload" to
  *  take the new build, or close it), as the app's stock toast with its
  *  action: news, not an error. Stays until it is answered. */
@@ -39,8 +46,8 @@ function offerReload(reloadNow: () => void, testId = "new-build") {
  * it is hidden, or the next open.
  *
  * The browser checks for a new worker on its own only on a navigation,
- * so a page kept open -- the phone, all day -- asks every minute and as
- * it comes back to the front: an iPhone stops a page's timers while it
+ * so a page kept open -- the phone, all day -- asks every CHECK_EVERY_MS
+ * and as it comes back to the front: an iPhone stops a page's timers while it
  * is away. The check is one small request for sw.js.
  *
  * A build still waiting after OFFER_AFTER_MS with the page in front is
@@ -101,13 +108,13 @@ export function takeNewBuildsWhenAway(
     immediate: false,
     onRegisteredSW(_url, registration) {
       if (!registration) return;
-      // A look for a new build each minute only while the page is in
+      // A look for a new build each CHECK_EVERY_MS only while the page is in
       // sight: hidden -- the phone locked in flight, three hours of it --
       // the look was a request a minute for nothing, and the return below
       // looks at once.
       window.setInterval(() => {
         if (document.visibilityState === "visible") void registration.update();
-      }, 60_000);
+      }, CHECK_EVERY_MS);
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") void registration.update();
       });

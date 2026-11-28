@@ -29,7 +29,7 @@ use super::wrap;
 use crate::geo;
 use crate::json::{self, Value};
 use std::cmp::Ordering;
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::BinaryHeap;
 use wingtip_core::grid::{Cell, Point};
 
 /// How far round the route the grid reaches, nm every way (5 degrees of latitude).
@@ -84,7 +84,7 @@ impl Clear {
     /// Whether the straight line from a to b keeps to clear cells, `ends`
     /// excepted (a field in a high valley): its points a third of a cell
     /// apart.
-    fn line_clear(&self, a: Point, b: Point, ends: &HashSet<Cell>) -> bool {
+    fn line_clear(&self, a: Point, b: Point, ends: &[Cell]) -> bool {
         let steps = 2usize.max(((b.0 - a.0).abs().max((b.1 - a.1).abs()) / (CELL_DEG / 3.0)) as usize + 1);
         (0..steps).all(|i| {
             let t = i as f64 / (steps - 1) as f64;
@@ -120,7 +120,10 @@ impl PartialOrd for Open {
 /// percent of the geodesic over a few cells.
 fn shortest(g: &Clear, start: Point, end: Point) -> Option<Vec<Cell>> {
     let (s, e) = (g.cell(start), g.cell(end));
-    let ends: HashSet<Cell> = [s, e].into_iter().collect();
+    let ends = [s, e];
+    // Each cell's cost so far and the cell before, row by row (as ways.rs): the grid is dense.
+    let cols = g.f.cols;
+    let at = |c: Cell| c.0 as usize * cols + c.1 as usize;
     let shrink: Vec<f64> = (0..g.f.rows).map(|r| (g.f.lat0 + (r as f64 + 0.5) * CELL_DEG).to_radians().cos()).collect();
     let cost = |a: Cell, b: Cell| {
         let dy = (a.0 - b.0) as f64 * CELL_DEG * 60.0;
@@ -129,16 +132,24 @@ fn shortest(g: &Clear, start: Point, end: Point) -> Option<Vec<Cell>> {
     };
     let mut frontier = BinaryHeap::new();
     frontier.push(Open(0.0, s));
-    let mut came: HashMap<Cell, Option<Cell>> = HashMap::from([(s, None)]);
-    let mut spent: HashMap<Cell, f64> = HashMap::from([(s, 0.0)]);
-    while let Some(Open(_, here)) = frontier.pop() {
+    let mut came = vec![usize::MAX; g.f.rows * cols];
+    let mut spent = vec![f64::INFINITY; g.f.rows * cols];
+    spent[at(s)] = 0.0;
+    while let Some(Open(f, here)) = frontier.pop() {
         if here == e {
             let mut path = vec![here];
-            while let Some(Some(prev)) = came.get(path.last().unwrap()) {
-                path.push(*prev);
+            let mut i = at(here);
+            while came[i] != usize::MAX {
+                i = came[i];
+                path.push(((i / cols) as i64, (i % cols) as i64));
             }
             path.reverse();
             return Some(path);
+        }
+        // Reached more cheaply since it was queued, and looked round from at that cost already.
+        let so_far = spent[at(here)];
+        if f > so_far + cost(here, e) {
+            continue;
         }
         for dr in -1..=1 {
             for dc in -1..=1 {
@@ -152,10 +163,10 @@ fn shortest(g: &Clear, start: Point, end: Point) -> Option<Vec<Cell>> {
                 if !g.is_clear(next) && !ends.contains(&next) {
                     continue;
                 }
-                let d = spent[&here] + cost(here, next);
-                if d < *spent.get(&next).unwrap_or(&f64::INFINITY) {
-                    spent.insert(next, d);
-                    came.insert(next, Some(here));
+                let d = so_far + cost(here, next);
+                if d < spent[at(next)] {
+                    spent[at(next)] = d;
+                    came[at(next)] = at(here);
                     frontier.push(Open(d + cost(next, e), next));
                 }
             }
@@ -201,7 +212,7 @@ pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], 
         }
     }
     let g = Clear { f, clear };
-    let ends: HashSet<Cell> = [g.cell(start), g.cell(end)].into_iter().collect();
+    let ends = [g.cell(start), g.cell(end)];
     if g.line_clear(start, end, &ends) {
         return Ok(Some(Vec::new()));
     }
@@ -209,8 +220,7 @@ pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], 
     // The fields with fuel near that way are the stepping stones.
     let way: Vec<Point> = path.iter().map(|&c| g.centre(c)).collect();
     let every = 1usize.max(way.len() / 200);
-    let picked: Vec<&Field> =
-        fields.iter().filter(|fd| way.iter().step_by(every).any(|p| geo::distance_nm(p.0, p.1, fd.at.0, fd.at.1) <= FIELD_NM)).collect();
+    let picked = near_way(&way.iter().step_by(every).copied().collect::<Vec<_>>(), fields);
     // And the way's own turns, where a straight line from one to the next
     // keeps clear, so a chain is always there.
     let mut points = vec![start];
@@ -255,10 +265,6 @@ pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], 
             if next == here {
                 continue;
             }
-            let leg = geo::distance_nm(nodes[here].0, nodes[here].1, nodes[next].0, nodes[next].1);
-            if leg > LEG_NM {
-                continue;
-            }
             let add = if next == count - 1 {
                 0.0
             } else if next < fields_end {
@@ -266,14 +272,22 @@ pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], 
             } else {
                 TURN_NM + OWN_POINT_NM
             };
+            // The sphere's distance less SPHERE_WITHIN is never more than the leg: a pair it
+            // rules out the geodesic would too, so most are never solved on the ellipsoid.
+            let (a, b) = (nodes[here], nodes[next]);
+            let least = geo::sphere_nm(a.0, a.1, b.0, b.1) / (1.0 + geo::SPHERE_WITHIN);
+            if least > LEG_NM || spent + least + add >= best[next] {
+                continue;
+            }
+            let leg = geo::distance_nm(a.0, a.1, b.0, b.1);
+            if leg > LEG_NM {
+                continue;
+            }
             let d = spent + leg + add;
             if d >= best[next] {
                 continue;
             }
-            let mut open = ends.clone();
-            open.insert(g.cell(nodes[here]));
-            open.insert(g.cell(nodes[next]));
-            if !g.line_clear(nodes[here], nodes[next], &open) {
+            if !g.line_clear(a, b, &[ends[0], ends[1], g.cell(a), g.cell(b)]) {
                 continue;
             }
             best[next] = d;
@@ -309,7 +323,8 @@ pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], 
     ))
 }
 
-pub fn call(name: &str, v: &Value) -> Result<String, String> {
+/// terrain_way_frame and terrain_way_round: the heights `given`, else the input's "terrain_ft".
+pub(super) fn call(name: &str, v: &Value, given: Option<&[f64]>) -> Result<String, String> {
     let r = Reader { name };
     let point = |key: &str| -> Result<Point, String> { r.point(v.get(key).ok_or_else(|| format!("{name}: \"{key}\" is missing"))?) };
     // The end read within 180 degrees of the start (wrap.rs), so a way
@@ -342,12 +357,10 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         out.push_str("]}");
         return Ok(out);
     }
-    let heights: Vec<f64> = r
-        .opt_list(v, "terrain_ft")?
-        .ok_or_else(|| format!("{name}: \"terrain_ft\" is missing"))?
-        .iter()
-        .map(|x| x.as_f64().unwrap_or(0.0))
-        .collect();
+    let heights: std::borrow::Cow<[f64]> = match given {
+        Some(h) => h.into(),
+        None => r.numbers(v, "terrain_ft").ok_or_else(|| format!("{name}: \"terrain_ft\" is missing"))??.into(),
+    };
     let fields: Vec<Field> = r
         .opt_list(v, "fields")?
         .unwrap_or(&[])
@@ -377,6 +390,9 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     out.push(']');
     Ok(out)
 }
+
+mod near;
+use near::near_way;
 
 #[cfg(test)]
 mod tests;

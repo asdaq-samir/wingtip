@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.plan
 
+import app.wingtipmaps.android.format.Format
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -42,6 +43,36 @@ class StopTimesTest {
         val times = StopTimes.of(depart, listOf(StopTimes.LegTime("KJVL", null, null)), listOf("KJVL"))
         assertNull(times[0])
         assertNull(times[1])
+    }
+
+    @Test
+    fun anArrivalSaysItsDayWhereItIsNotTheDepartures() {
+        // 14:27 CST on Monday 23 November 2026, as the owner's iPhone left.
+        val left = Instant.parse("2026-11-23T20:27:00Z").toEpochMilli()
+        val from = StopTimes.Left(left, chicago)
+        fun at(iso: String) = Instant.parse(iso).toEpochMilli()
+        assertEquals("09:00", StopTimes.words(depart, chicago, said = false, device = chicago, left = StopTimes.Left(depart, chicago)))
+        assertEquals("Tue 15:54", StopTimes.words(left + 1527 * 60_000L, chicago, said = false, device = chicago, left = from))
+        // Chicago's midnight, 06:00Z, turns the day, not UTC's.
+        assertNull(Format.arrivalDay(at("2026-11-24T05:59:00Z"), left, chicago, chicago))
+        assertEquals("Tue", Format.arrivalDay(at("2026-11-24T06:01:00Z"), left, chicago, chicago))
+        // 23:30 MST on the Monday is still Monday where it lands.
+        assertNull(Format.arrivalDay(at("2026-11-24T06:30:00Z"), left, denver, chicago))
+        assertEquals("11/30", Format.arrivalDay(at("2026-11-30T20:00:00Z"), left, chicago, chicago))
+        assertEquals("Tue 15:54 MST", StopTimes.words(at("2026-11-24T22:54:00Z"), denver, said = true, device = chicago, left = from))
+    }
+
+    /** With no zone said, the clock is this phone's, so the day it left is
+     *  counted there too (the r7 audit's A-M2): a phone in Los Angeles
+     *  leaving 01:00 EST Tuesday (22:00 PST Monday) says a same-day 23:00
+     *  arrival with no day. */
+    @Test
+    fun theBareClocksDayIsThePhones() {
+        val newYork = ZoneId.of("America/New_York")
+        val la = ZoneId.of("America/Los_Angeles")
+        val left = Instant.parse("2026-11-24T06:00:00Z").toEpochMilli()
+        val lands = Instant.parse("2026-11-24T07:00:00Z").toEpochMilli()
+        assertEquals("23:00", StopTimes.words(lands, la, said = false, device = la, left = StopTimes.Left(left, newYork)))
     }
 
     @Test

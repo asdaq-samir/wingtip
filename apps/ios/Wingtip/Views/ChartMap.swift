@@ -44,10 +44,10 @@ struct ChartMap: UIViewRepresentable {
     /// The route's legs, the one open and the tap that opens one
     /// (RouteLegLayer).
     var routeLegs = RouteLegInput()
-    /// Dark appearance and Setup's Chart at night, for the chart's dimming
-    /// and the course's night magenta (NightPalette).
+    /// Dark appearance and the Map card's Dimmer and Contrast (ChartLook),
+    /// for the chart's dimming and the course's night magenta (NightPalette).
     @Environment(\.colorScheme) var colorScheme
-    @AppStorage(ChartNight.key) var chartNight = ChartNight.dimmed.rawValue
+    var chartLook = ChartLookKept()
     /// Setup's Military fields and Private fields.
     @AppStorage(MapExtrasInput.Keys.military) var militaryFields = false
     @AppStorage(MapExtrasInput.Keys.privateFields) var privateFields = false
@@ -107,15 +107,15 @@ struct ChartMap: UIViewRepresentable {
         context.coordinator.onAirport = onAirport
         context.coordinator.onNavaid = onNavaid
         context.coordinator.onReveal = onReveal
-        let shade = (ChartNight(rawValue: chartNight) ?? .dimmed).shade(dark: colorScheme == .dark)
-        context.coordinator.dim(shade)
+        let shade = chartLook.shade(dark: colorScheme == .dark)
+        context.coordinator.dim(shade, night: colorScheme == .dark, on: map)
         context.coordinator.open(map, bottomInset: bottomInset)
         context.coordinator.onRegion = onRegion
         context.coordinator.useFields(extras.fieldSwitches(military: militaryFields, privateFields: privateFields), on: map)
         context.coordinator.weather.update(map, choice: airportWeather.choice, input: fieldWeather, zoom: Coordinator.zoom(of: map))
         context.coordinator.show(traffic, ownFt: ownFt, on: map)
         context.coordinator.flight?.update(map, flight)
-        context.coordinator.extras.update(map, extras, tiles: context.coordinator.overlay)
+        context.coordinator.extras.update(map, extras.shaded(shade), tiles: context.coordinator.overlay)
         context.coordinator.setFollowing = { [self] on in following = on }
         context.coordinator.setRouteAway = { [self] away in if routeAway != away { routeAway = away } }
         // Every move of the map here steps to its end with Reduce Motion
@@ -129,9 +129,8 @@ struct ChartMap: UIViewRepresentable {
             context.coordinator.fitted = fitRequest
             map.setVisibleMapRect(line.boundingMapRect, edgePadding: Self.routePadding(in: map), animated: MapMotion.animated)
         }
-        // The day's lift on the chart (ChartLift), none on the dimmed one at
-        // night: a change of either draws the chart again from the store.
-        let lift = shade == 0
+        // The day's lift by day and the Contrast's offset on it (ChartLift): a change draws the chart again.
+        let lift = colorScheme != .dark, contrast = chartLook.offset
         // Chart None (Charts.picked): no FAA chart, Apple's muted map
         // under the overlays, and nothing to wait for before it shows.
         if template == nil, let current = context.coordinator.overlay {
@@ -141,12 +140,12 @@ struct ChartMap: UIViewRepresentable {
         }
         if template == nil { context.coordinator.noChart() }
         context.coordinator.overlays.show(aeronautical: aeronautical, on: map, chart: context.coordinator.overlay)
-        if let template, context.coordinator.overlay?.template != template || context.coordinator.overlay?.lift != lift {
+        if let template, context.coordinator.overlay?.template != template || context.coordinator.overlay?.lift != lift || context.coordinator.overlay?.contrast != contrast {
             if let current = context.coordinator.overlay {
                 context.coordinator.tilesStopped()
                 map.removeOverlay(current)
             }
-            let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom, lift: lift)
+            let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom, lift: lift, contrast: contrast)
             let coordinator = context.coordinator
             overlay.onTile = { coordinator.chartTile() }
             // Under everything else drawn over Apple's map but the imagery under it close in.
@@ -222,7 +221,8 @@ struct ChartMap: UIViewRepresentable {
                 map.setVisibleMapRect(line.boundingMapRect, edgePadding: Self.routePadding(in: map), animated: MapMotion.animated)
             }
         }
-        context.coordinator.legLayer.update(map, routeLegs, night: shade > 0, below: context.coordinator.courseEdge)
+        context.coordinator.legLayer.update(map, routeLegs, night: colorScheme == .dark, below: context.coordinator.courseEdge,
+                                            marks: context.coordinator.routeMarks, dim: context.coordinator.overlayDim)
         (map as? RaisedMapView)?.use(MapTerrain(rawValue: terrain) ?? .flat, field: course?.destination.ident)
     }
 
@@ -284,13 +284,14 @@ struct ChartMap: UIViewRepresentable {
         let extras = MapExtrasState()
         /// The fields' weather on their marks (FieldWeatherState).
         let weather = FieldWeatherState()
-        /// The chart's renderer and the course's, kept to restyle when
-        /// the appearance or the setting changes; MapKit asks for a
-        /// renderer once per overlay.
+        /// The chart's renderer, kept to shade as the Dimmer moves; MapKit
+        /// asks for a renderer once per overlay. The lines over it take the
+        /// night's dim by their colours (OverlayDim).
         private var tiles: ChartTileRenderer?
-        private var courseRenderer: MKPolylineRenderer?
-        private var edgeRenderer: MKPolylineRenderer?
-        private var shade: CGFloat = 0
+        let overlayDim = OverlayDim()
+        // The Dimmer's shade and the night, the marks' and lines' dim.
+        private var shade: CGFloat = 0, night = false
+        private var settling: Task<Void, Never>?
 
         /// The chart's renderer let go, its loads stopped, as its overlay
         /// is taken off for another.
@@ -299,22 +300,33 @@ struct ChartMap: UIViewRepresentable {
             tiles = nil
         }
 
-        func dim(_ shade: CGFloat) {
-            guard shade != self.shade else { return }
-            self.shade = shade
-            tiles?.shade = shade
-            courseRenderer?.strokeColor = NightPalette.course
-            edgeRenderer?.strokeColor = NightPalette.routeEdge(night: shade > 0)
-            edgeRenderer?.setNeedsDisplay()
-            courseRenderer?.setNeedsDisplay()
+        func dim(_ shade: CGFloat, night: Bool, on map: MKMapView) {
+            guard shade != self.shade || night != self.night else { return }
+            let turned = night != self.night
+            (self.shade, self.night) = (shade, night)
+            tiles?.shade = shade // once a drag: the Dimmer comes as its slider lifts (ChartLookRows)
+            let brightness = MarkDim.alpha(shade: shade, night: night)
+            settling?.cancel()
+            guard turned else {
+                // A step (VoiceOver's, a key's): the words and lines recoloured
+                // once it stands still (the web's useSettledMapDim).
+                settling = Task { [weak self, weak map] in
+                    try? await Task.sleep(for: CourseRenderers.settle)
+                    guard !Task.isCancelled, let self, let map else { return }
+                    MarkDim.apply(brightness, on: map)
+                    overlayDim.set(brightness, on: map)
+                }
+                return
+            }
+            MarkDim.apply(brightness, on: map)
+            overlayDim.set(brightness, on: map)
+            if let edge = courseEdge, let renderer = map.renderer(for: edge) as? CourseEdgeRenderer {
+                renderer.turn(night: night, dim: overlayDim)
+            }
         }
 
-        /// The course's two strokes, points, as the web draws them where a
-        /// pilot reads a leg (glStyle's widths at zoom 10): the magenta core
-        /// and the thin edge round it.
-        static let courseWidth: CGFloat = 4.5, edgeWidth: CGFloat = 6.5
-
-        func mapView(_ mapView: MKMapView, rendererFor overlay: any MKOverlay) -> MKOverlayRenderer {
+        /// The overlay's renderer, before the night's dim takes it (OverlayDim, MarkDim.swift).
+        func made(_ mapView: MKMapView, for overlay: any MKOverlay) -> MKOverlayRenderer {
             if let renderer = flight?.renderer(for: overlay) { return renderer }
             if let renderer = legLayer.renderer(for: overlay) { return renderer }
             if let renderer = overlays.renderer(for: overlay) { return renderer }
@@ -328,45 +340,7 @@ struct ChartMap: UIViewRepresentable {
             if let imagery = overlay as? CloseImageryOverlay { return CloseImagery.shared.renderer(imagery, zoom: Self.zoom(of: mapView)) }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
             if let renderer = extras.renderer(for: overlay) { return renderer }
-            if let edge = overlay as? CourseEdgePolyline {
-                let renderer = MKPolylineRenderer(polyline: edge)
-                renderer.strokeColor = NightPalette.routeEdge(night: shade > 0)
-                renderer.lineWidth = Self.edgeWidth
-                renderer.lineJoin = .round
-                renderer.lineCap = .round
-                edgeRenderer = renderer
-                return renderer
-            }
-            if let hazard = overlay as? HazardPolyline {
-                // The legs a hazard tapped in the Brief is on, wide in
-                // amber under the course (HazardLegsViews.swift).
-                let renderer = MKPolylineRenderer(polyline: hazard)
-                renderer.strokeColor = UIColor.systemOrange.withAlphaComponent(0.6)
-                renderer.lineWidth = 10
-                renderer.lineCap = .round
-                renderer.lineJoin = .round
-                return renderer
-            }
-            if let procedure = overlay as? ProcedurePolyline {
-                // A procedure's path in the chart's procedure violet, as
-                // the web app draws a picked one.
-                let renderer = MKPolylineRenderer(polyline: procedure)
-                renderer.strokeColor = WingtipColor.Chart.procedure
-                renderer.lineWidth = 3
-                renderer.lineJoin = .round
-                return renderer
-            }
-            if let line = overlay as? MKPolyline {
-                // The web app's magenta course line, the night's lighter
-                // one over a dimmed chart.
-                let renderer = MKPolylineRenderer(polyline: line)
-                renderer.strokeColor = NightPalette.course
-                courseRenderer = renderer
-                renderer.lineWidth = Self.courseWidth
-                renderer.lineJoin = .round
-                renderer.lineCap = .round
-                return renderer
-            }
+            if let renderer = CourseRenderers.renderer(for: overlay, night: night) { return renderer }
             return MKOverlayRenderer(overlay: overlay)
         }
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import Synchronization
 import UIKit
 
 /// The tokens' states as SwiftUI colours that follow the appearance: the
@@ -6,7 +7,7 @@ import UIKit
 /// generated into WingtipPalette). A screen asks for the role, never a
 /// system colour, so the web and the phones say a problem or a caution in
 /// one ink.
-enum WingtipInk {
+nonisolated enum WingtipInk {
     /// A problem's words, said where it happened (ProblemLine).
     static let problem = Color(dynamic(\.destructiveInk))
     /// A caution's words: the owner's warn-never-limit.
@@ -31,15 +32,65 @@ enum WingtipInk {
     /// the sheet's own colour, by day or at night.
     static let sheet = Color(dynamic(\.sheet))
 
-    /// The roles by the appearance, and in the Native look (Look's
-    /// "native", read by its key so the widgets, which have no Look, build)
-    /// iOS's own label, grounds and blue; the states stay the theme's there.
+    /// The roles by the appearance in the picked look, its own palette's:
+    /// Wingtip's, Glass Cockpit's, Chart Ink's (the web's cream sheet and
+    /// its brown muted words) or Native's, iOS's own label, grounds and
+    /// blue. Increase Contrast lifts the grey words and the edges as the
+    /// web's prefers-contrast does (tokens.css, its muted foreground,
+    /// border and input): to sunlight's by day, and at night to sunlight's
+    /// night lift on the night's own grounds (color.theme.sunlight-night),
+    /// never sunlight's white, which would undo the pilot's dark adaptation
+    /// (AIM 8-1-6); the Native look's are iOS's own, which lift themselves.
     private static func dynamic(_ role: KeyPath<WingtipPalette, UIColor>) -> UIColor {
         UIColor { traits in
             let dark = traits.userInterfaceStyle == .dark
-            let native = UserDefaults.standard.string(forKey: "look") == "native"
-            let palette = native ? (dark ? WingtipPalette.nativeDark : .nativeLight) : (dark ? WingtipPalette.dark : .light)
-            return palette[keyPath: role].resolvedColor(with: traits)
+            let look = picked
+            if traits.accessibilityContrast == .high, look != "native", lifts(role) {
+                return (dark ? WingtipPalette.sunlightNight : .sunlight)[keyPath: role]
+            }
+            return palette(look, dark: dark)[keyPath: role].resolvedColor(with: traits)
         }
     }
+
+    private static func lifts(_ role: KeyPath<WingtipPalette, UIColor>) -> Bool {
+        role == \.mutedForeground || role == \.border || role == \.input
+    }
+
+    /// A look's palette by its kept name (Look's raw values, read by name
+    /// so the widgets, which have no Look, build).
+    private static func palette(_ look: String, dark: Bool) -> WingtipPalette {
+        switch look {
+        case "native": dark ? .nativeDark : .nativeLight
+        case "cockpit": dark ? .cockpitDark : .cockpitLight
+        case "ink": dark ? .inkDark : .inkLight
+        default: dark ? .dark : .light
+        }
+    }
+
+    /// The look picked, read from the defaults once and kept in step by the
+    /// app's root as Setup changes it (`keep`): a colour resolves on every
+    /// trait change in every view, on render threads too, and reads no
+    /// defaults there.
+    private static let kept = Mutex<String?>(nil)
+
+    private static var picked: String {
+        kept.withLock { name in
+            if let name { return name }
+            let read = UserDefaults.standard.string(forKey: "look") ?? "wingtip"
+            name = read
+            return read
+        }
+    }
+
+    /// The look Setup picked, for the colours resolved after it.
+    static func keep(look: String) { kept.withLock { $0 = look } }
+}
+
+/// The look picked, as a trait of the window (WindowTint): a change of it
+/// changes the colours' appearance, so UIKit resolves every dynamic colour
+/// again, the sheet's and the states' among them, as the look changes.
+nonisolated struct LookTrait: UITraitDefinition {
+    static let defaultValue = ""
+    static let affectsColorAppearance = true
+    static let name = "WingtipLook"
 }

@@ -36,6 +36,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
+from .. import stores
 from ..atomic import atomic_path
 from ..config import get_settings
 
@@ -226,7 +227,7 @@ def build(rows: Rows, path: Path | None = None) -> int:
         try:
             db.executescript(_SCHEMA)
             count = _load(db, rows, {}, replace=False)
-            db.execute(f"PRAGMA user_version = {SCHEMA}")
+            stores.stamp(db, SCHEMA)
             db.commit()
         finally:
             db.close()
@@ -258,14 +259,13 @@ def events(reg: str, day: str, path: Path | None = None) -> list[dict]:
     """The cases of the airplane `reg` dated within a day either side of
     `day` (YYYY-MM-DD; the NTSB's date is the local one where it happened,
     the replay's the UTC day), oldest first, each as app.schemas'
-    NtsbEvent. None where the store is not built yet."""
-    path = path or store_path()
-    if not path.exists():
+    NtsbEvent. None where the store is not built yet or is of an older shape."""
+    db = _shaped(path or store_path())
+    if db is None:
         return []
     wanted = registration(reg)
     names = {wanted} | ({"N" + wanted} if _N_BODY.match(wanted) else set())
     marks = ",".join("?" * len(names))
-    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     try:
         rows = db.execute(
             f"""
@@ -305,16 +305,18 @@ def events(reg: str, day: str, path: Path | None = None) -> list[dict]:
     return out
 
 
-def schema(path: Path | None = None) -> int:
-    """The store's shape on disk (SCHEMA), 0 where there is none."""
-    path = path or store_path()
+def _shaped(path: Path) -> sqlite3.Connection | None:
+    """A read-only connection to the store where it is there and of
+    SCHEMA's shape, else None: one of an older shape reads as none until
+    ingest makes it again (ingest.ntsb.due), where it was asked for columns
+    it lacks, a 500 on every airplane card."""
     if not path.exists():
-        return 0
-    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-    try:
-        return db.execute("PRAGMA user_version").fetchone()[0]
-    finally:
-        db.close()
+        return None
+    db = stores.read_only(path)
+    if stores.user_version(db) == SCHEMA:
+        return db
+    db.close()
+    return None
 
 
 def cases(reg: str, path: Path | None = None) -> list[dict]:
@@ -322,20 +324,16 @@ def cases(reg: str, path: Path | None = None) -> list[dict]:
     (cases since 2008, avall.mdb), newest first: its NTSB number, local
     date and place, kind, highest injury, the airplane's damage and phase,
     and the links to its CAROL report and docket. [] where the store is not
-    built; the kind and damage None in a store of the older shape until
-    ingest makes it again."""
-    path = path or store_path()
-    if not path.exists():
+    built or is of an older shape."""
+    db = _shaped(path or store_path())
+    if db is None:
         return []
     wanted = registration(reg)
     names = sorted({wanted} | ({"N" + wanted} if _N_BODY.match(wanted) else set()))
-    newer = schema(path) >= 2
-    kind, damage = ("e.kind", "a.damage") if newer else ("NULL", "NULL")
-    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     try:
         rows = db.execute(
             f"""
-            SELECT e.ev_id, e.ntsb_no, e.date, e.city, e.state, e.country, {kind}, e.highest_injury, {damage}, a.phase
+            SELECT e.ev_id, e.ntsb_no, e.date, e.city, e.state, e.country, e.kind, e.highest_injury, a.damage, a.phase
             FROM aircraft a JOIN events e ON e.ev_id = a.ev_id
             WHERE a.registration IN ({",".join("?" * len(names))})
             ORDER BY e.date DESC, e.ntsb_no
@@ -363,4 +361,4 @@ def cases(reg: str, path: Path | None = None) -> list[dict]:
     ]
 
 
-__all__ = ["CREDIT", "SCHEMA", "SOURCE", "apply", "build", "cases", "events", "phase_words", "registration", "schema", "store_path"]
+__all__ = ["CREDIT", "SCHEMA", "SOURCE", "apply", "build", "cases", "events", "phase_words", "registration", "store_path"]

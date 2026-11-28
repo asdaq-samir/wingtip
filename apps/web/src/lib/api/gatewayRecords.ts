@@ -1,5 +1,6 @@
 import { gateway, data } from "./http";
 import { ApiError } from "./errors";
+import type { Flying } from "../airplaneKind";
 import type {
   Aircraft,
   AssignLessonRequest,
@@ -32,6 +33,10 @@ import type {
 /** A logbook entry's columns kept of one drawn from the app's own track
  *  (features/logbook-auto), which a typed or imported entry has none of. */
 type TrackColumns = "airHours" | "touchAndGoes" | "fromTrack" | "flightId";
+/** The airplane's category, class and gear and the full stops (14 CFR
+ *  61.57(a)(1)(ii)), which a file's columns don't give: none, which the
+ *  engine counts toward no passenger currency and says it can't tell. */
+type AirplaneColumns = "category" | "aircraftClass" | "tailwheel" | "fullStopLandings";
 
 /** The gateway's calls for what the pilot keeps (./client's `api`): their
  *  airplanes, logbook, paperwork, training, instruction and flights. */
@@ -84,17 +89,33 @@ export const gatewayRecords = {
     remove: async (id: number): Promise<void> => {
       await gateway.DELETE("/api/logbook/{id}", { params: { path: { id } } });
     },
-    currency: () => gateway.GET("/api/logbook/currency").then(data<Currency>),
+    /** Judged for the airplane to be flown where it is given (14 CFR
+     *  61.57(a)(1)(ii)), else for the newest flight's. */
+    currency: (flying: Flying | null = null) =>
+      gateway.GET("/api/logbook/currency", { params: { query: flying ?? {} } }).then(data<Currency>),
     setCurrencyDates: (request: CurrencyDatesRequest) => gateway.PUT("/api/logbook/currency", { body: request }).then(data<Currency>),
     /** Whether the pilot is emailed before their currency runs out. */
     reminders: () => gateway.GET("/api/logbook/reminders").then(data<Reminders>),
     setReminders: (on: boolean) => gateway.PUT("/api/logbook/reminders", { body: { on } }).then(data<Reminders>),
     /** Flights from a file, those already in the logbook left out. */
-    importAll: (entries: Omit<LogbookEntryRequest, TrackColumns>[]) =>
+    importAll: (entries: Omit<LogbookEntryRequest, TrackColumns | AirplaneColumns>[]) =>
       gateway
         .POST("/api/logbook/import", {
-          // A file's flights were not drawn from a track (features/logbook-auto).
-          body: { entries: entries.map((e) => ({ ...e, airHours: 0, touchAndGoes: 0, fromTrack: false, flightId: null })) },
+          // A file's flights were not drawn from a track (features/logbook-auto),
+          // and don't say the airplane's category, class or gear.
+          body: {
+            entries: entries.map((e) => ({
+              ...e,
+              airHours: 0,
+              touchAndGoes: 0,
+              fromTrack: false,
+              flightId: null,
+              category: null,
+              aircraftClass: null,
+              tailwheel: null,
+              fullStopLandings: null,
+            })),
+          },
         })
         .then(data<LogbookImportResult>),
   },
@@ -107,8 +128,12 @@ export const gatewayRecords = {
   training: {
     get: () => gateway.GET("/api/training").then(data<Training>),
     setKnowledgeTest: (codes: string[]) => gateway.PUT("/api/training/knowledge-test", { body: { codes } }).then(data<Training>),
-    endorse: (code: string, endorsedOn: string) =>
-      gateway.PUT("/api/training/endorsements/{code}", { params: { path: { code } }, body: { endorsedOn } }).then(data<Training>),
+    /** With the make and model it names, where it names one (a solo's,
+     *  61.87(n); a solo cross-country's, 61.93(c)(2)). */
+    endorse: (code: string, endorsedOn: string, makeModel: string | null = null) =>
+      gateway
+        .PUT("/api/training/endorsements/{code}", { params: { path: { code } }, body: { endorsedOn, makeModel } })
+        .then(data<Training>),
     withdraw: (code: string) => gateway.DELETE("/api/training/endorsements/{code}", { params: { path: { code } } }).then(data<Training>),
     /** Their name as their certificate gives it, which endorsements use. */
     setName: (fullName: string) => gateway.PUT("/api/training/name", { body: { fullName } }).then(data<Training>),

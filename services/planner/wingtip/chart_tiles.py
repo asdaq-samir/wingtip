@@ -44,8 +44,7 @@ class TileUnavailable(RuntimeError):
     published archive could not be read just now. The server does not draw
     the tile itself instead: on its two cores, a CDN or S3 outage turned
     every tile the map asked for into a sheet fetched and drawn, and the
-    routes, nav logs and Briefs every pilot was waiting on starved (the ops
-    audit, 2026-11-21). The map leaves the tile blank and asks again."""
+    routes, nav logs and Briefs every pilot was waiting on starved. The map leaves the tile blank and asks again."""
 
 
 def rasters_covering(kind: ChartKind, bbox: Box, cycle: str | None = None) -> tuple[list, bool]:
@@ -94,6 +93,10 @@ def tile_bytes(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> 
     # named by them under the cache (CodeQL's py/path-injection).
     x, y, zoom, scale = int(x), int(y), int(zoom), int(scale)
     if not (chart_kind.min_zoom <= zoom <= chart_kind.max_zoom) or scale not in chart_grid.TILE_SCALES:
+        return None
+    # Off its zoom's grid is no tile, answered before anything is drawn
+    # or kept: each such ask made a folder and a .none file of its own.
+    if not (0 <= x < 2**zoom and 0 <= y < 2**zoom):
         return None
     cycle = chart_serving.serving_cycle_of(kind)
     archive = _archive(kind, cycle, scale)

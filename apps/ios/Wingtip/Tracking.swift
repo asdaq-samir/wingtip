@@ -81,14 +81,11 @@ final class Tracking {
     /// Recents kept, newest first.
     static let recentCount = 12
 
-    /// The app's store, and the UserDefaults the lists were in before
-    /// it, taken in on the first launch after the change; a test gives
-    /// its own of each.
-    init(container: ModelContainer = Records.container, defaults: UserDefaults = .standard, spoken: SpokenAlerts = SpokenAlerts()) {
+    /// The app's store; a test gives its own.
+    init(container: ModelContainer = Records.container, spoken: SpokenAlerts = SpokenAlerts()) {
         self.container = container
         self.spoken = spoken
         context = container.mainContext
-        Records.migrate(from: defaults, into: context)
         reload()
         // Another device's change, brought by iCloud, read in as it lands.
         remote = Task { [weak self] in

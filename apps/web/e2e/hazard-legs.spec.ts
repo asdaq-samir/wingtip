@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { drawn, grabberTo, openSection, openTab, settle, sideDrawer, slow } from "./helpers";
+import { drawn, frontSheet, grabberTo, inSheet, openSection, openTab, settle, sideDrawer, slow } from "./helpers";
 import { openSettingsPage } from "./mapCard";
 
 /**
@@ -59,7 +59,9 @@ test("a SIGMET says its legs and times, and a tap shows the legs on the map", as
   await openTab(page, "Weather");
   await openSection(page, "Adverse Conditions");
   const row = sideDrawer(page).getByTestId("on-route").first();
-  await expect(row).toHaveText(/^Legs 1–2 · \d\d:\d\d–\d\d:\d\d, valid till \d\d:\d\d [A-Z+0-9:-]+ \(\d{4}Z\)$/, { timeout: slow(90000) });
+  await expect(row).toHaveText(/^Legs 1–2 · \d\d:\d\d–\d\d:\d\d, valid till \d\d:\d\d [A-Z+0-9:-]+ \(\d{4}Z\)\s*Show on Map$/, {
+    timeout: slow(90000),
+  });
 
   // The legs in the orange band on the map's canvas (LegHighlightGl's probe).
   const highlighted = async () => (await drawn(page, "leg-highlight")).length;
@@ -67,6 +69,12 @@ test("a SIGMET says its legs and times, and a tap shows the legs on the map", as
   await row.click();
   await expect.poll(highlighted).toBeGreaterThan(0);
   await expect(row).toHaveAttribute("data-shown", "true");
+  await expect(row).toContainText("Hide");
+  // Shown from the Brief all the way up, the Brief comes down to half so
+  // the map is in sight (OnRouteRow; the owner, 2026-11-26): the row is
+  // brought back into sight for the second tap, as a finger would.
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
+  await inSheet(page, row);
   await row.click();
   await expect.poll(highlighted).toBe(0);
   await page.unrouteAll({ behavior: "ignoreErrors" });

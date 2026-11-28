@@ -88,7 +88,7 @@ def stations_near(points: list[tuple[float, float]]) -> list[str]:
     lats = np.array([known[i][0] for i in idents])
     lons = np.array([known[i][1] for i in idents])
     # A box round the track first (geo.corridor_bbox over its corners, the
-    # short way round 180: geo_boxes), so the distances are worked out for
+    # short way over 180: geo_boxes), so the distances are worked out for
     # the few stations it holds.
     t_lats = np.array([p[0] for p in track])
     t_lons = np.array([p[1] for p in track])

@@ -5,10 +5,13 @@ import {
   Crosshair,
   Ellipsis,
   Info,
+  ListPlus,
+  Map as MapIcon,
   Mountain,
   MoveUpRight,
   MoveVertical,
   Pencil,
+  PlaneLanding,
   Plus,
   Repeat2,
   Trash2,
@@ -54,20 +57,30 @@ export function PointFigures({
 }) {
   return (
     <span className={cn("flex shrink-0 flex-col items-end tabular-nums leading-tight", TEXT.detail)} data-testid={testId}>
-      {typeof time === "string" ? <span className="font-semibold">{time}</span> : time}
+      {/* The time in the text's own black, bold, a zone's or a picker's
+          own look inside it (the owner, 2026-11-24: "Eta should be black,
+          not grey for each stop"). */}
+      {time != null && <span className="font-semibold text-foreground">{time}</span>}
       {altitude != null && (
         <span
-          className={kind === "set" ? "font-semibold text-tint" : "text-muted-foreground"}
+          // At the wind's size under the fuel, the two lines of a point's
+          // figures matching across its line (the owner, 2026-11-24:
+          // "Altitude should be same text size as winds").
+          className={cn(TEXT.note, kind === "set" ? "font-semibold text-tint" : "text-muted-foreground")}
           data-testid="point-altitude-figure"
           data-kind={kind}
         >
           {/* "pub", "elev" and a line over or under a figure are for the
-              eye; VoiceOver says them in words (the audit's finding). */}
+              eye; VoiceOver says them in words. */}
           {/* The field's elevation with the mountain, an altitude flown or
               set with the arrow up, at the owner's ask ("Elevation can have
               an icon like wind does"). */}
           <span aria-hidden="true" className="inline-flex items-center gap-0.5">
-            {kind === "elev" ? <Mountain className="size-3.5 shrink-0" /> : <ArrowUp className="size-3.5 shrink-0" />}
+            {/* A charted crossing has no arrow: its line over or under the
+                figure says at or above, at or below, as the FAA's charts
+                draw it, and an arrow up on a descent read as a climb (the
+                owner, 2026-11-25). */}
+            {kind === "elev" ? <Mountain className="size-3.5 shrink-0" /> : kind !== "pub" && <ArrowUp className="size-3.5 shrink-0" />}
             {altitude} ft
           </span>
           <span className="sr-only">
@@ -84,10 +97,15 @@ const KIND_WORDS: Record<AltitudeKind, string> = { elev: "field elevation", crui
 
 /** What can be done at a point of the route, each there only where the
  *  point has it: the same items in FPL's "⋯" (PointMenu) and the route
- *  box's pill (RouteBox), in the same words and order, at the audit's
- *  finding (two menus for one point, in different words). */
+ *  box's pill (RoutePill), in the same words and order (two menus for one point had different words). First the
+ *  owner's set after ForeFlight's route editor (2026-11-23): Info, Insert
+ *  Before, Insert After, Show on Map, Procedures, then the rest, Remove
+ *  last. */
 interface PointActions {
   ident: string;
+  /** What is wrong at the point, said at the menu's head under its ident:
+   *  a point not known, a field closed, a caution (the pill's "!"). */
+  notes?: { text: string; tone: "error" | "caution" }[];
   /** Another point in its place (the route box's search). */
   onChange?: () => void;
   /** Flown direct to now: its item flies the route as planned again. */
@@ -103,9 +121,13 @@ interface PointActions {
   onHold?: () => void;
   held?: boolean;
   onInfo?: () => void;
-  /** The route's field asked to type a stop in after it (FPL's route open
-   *  to edit). */
+  /** The one search asked for a point to go in before it, or after it. */
+  onAddBefore?: () => void;
   onAddAfter?: () => void;
+  /** The map brought to it, ringed (the map's picked point). */
+  onShowOnMap?: () => void;
+  /** The field's Procedures, where the FAA publishes any for it. */
+  onProcedures?: () => void;
   /** One place earlier or later in the route: the drag's way without a
    *  drag, for a single tap or click (WCAG 2.5.7, web.md section 3). */
   onMoveUp?: () => void;
@@ -129,6 +151,44 @@ export function PointMenuItems({
   return (
     <Group>
       <Label>{a.ident}</Label>
+      {/* What is wrong there, in its colour, where a reader meets it first. */}
+      {a.notes?.map((note) => (
+        <Label key={note.text}>
+          <span className={note.tone === "error" ? "text-destructive" : "text-caution-ink"} data-testid={`${testId}-note`}>
+            {note.text}
+          </span>
+        </Label>
+      ))}
+      {a.onInfo && (
+        <Item onClick={later(a.onInfo)} data-testid={`${testId}-info`}>
+          <Info aria-hidden="true" />
+          Info
+        </Item>
+      )}
+      {a.onAddBefore && (
+        <Item onClick={later(a.onAddBefore, true)} data-testid={`${testId}-add-before`}>
+          <ListPlus aria-hidden="true" />
+          Insert Before
+        </Item>
+      )}
+      {a.onAddAfter && (
+        <Item onClick={later(a.onAddAfter, true)} data-testid={`${testId}-add-after`}>
+          <Plus aria-hidden="true" />
+          Insert After
+        </Item>
+      )}
+      {a.onShowOnMap && (
+        <Item onClick={a.onShowOnMap} data-testid={`${testId}-show`}>
+          <MapIcon aria-hidden="true" />
+          Show on Map
+        </Item>
+      )}
+      {a.onProcedures && (
+        <Item onClick={later(a.onProcedures)} data-testid={`${testId}-procedures`}>
+          <PlaneLanding aria-hidden="true" />
+          Procedures
+        </Item>
+      )}
       {a.onChange && (
         <Item onClick={later(a.onChange, true)} data-testid={`${testId}-change`}>
           <Pencil aria-hidden="true" />
@@ -158,18 +218,6 @@ export function PointMenuItems({
         <Item onClick={later(a.onHold)} data-testid={`${testId}-hold`}>
           <Repeat2 aria-hidden="true" />
           {a.held ? "Change Hold…" : "Hold Here…"}
-        </Item>
-      )}
-      {a.onInfo && (
-        <Item onClick={later(a.onInfo)} data-testid={`${testId}-info`}>
-          <Info aria-hidden="true" />
-          More Info
-        </Item>
-      )}
-      {a.onAddAfter && (
-        <Item onClick={later(a.onAddAfter, true)} data-testid={`${testId}-add-after`}>
-          <Plus aria-hidden="true" />
-          Add a Stop After
         </Item>
       )}
       {a.onMoveUp && (
@@ -230,13 +278,15 @@ export function PointMenu({
               aria-label={`${actions.ident}: more`}
               data-testid={testId}
               data-point-mark=""
-              // Its area 8 past its 32 (the stock button's clear 1-point
+              // Its area 44 round its 32 (the stock button's clear 1-point
               // edge is inside its box and the after is laid from inside it,
-              // so 6 past made 42; the iOS audit's P1, "C81: more" 32×32),
-              // but 6 on the words' side (7 from inside that edge), where
-              // the name's area begins in the line's 16 (TimelineRows'
-              // TIMELINE_GAP).
-              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent hit-y-2 after:-left-2 after:-right-[7px]"
+              // so 6 past made 42):
+              // 7 over and under, so the marks of two lines 12 apart meet
+              // and do not overlap, where 8 took a point or two of the next
+              // mark's; 8 across, but 6 on
+              // the words' side (7 from inside that edge), where the name's
+              // area begins in the line's 16 (TimelineRows' TIMELINE_GAP).
+              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent hit-y-[7px] after:-left-2 after:-right-[7px]"
             >
               {face}
             </Button>

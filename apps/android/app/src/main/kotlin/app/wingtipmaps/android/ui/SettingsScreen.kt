@@ -99,25 +99,23 @@ fun SettingsScreen(open: (SheetPage) -> Unit) {
     }
 }
 
-/** Look: the theme, the appearance and the screen's layout, each a row
- *  with its pick at the end and the stock menu (a setting of a few is a
- *  menu or a segmented control, decision 0017; the looks' names are too
- *  long to share a row at a large font, the sheet audit's P-2). */
+/** Look: the screen's layout, a row with its pick at the end and the
+ *  stock menu (a setting of a few is a menu or a segmented control,
+ *  decision 0017). Theme and Appearance are the Map card's, as the web's
+ *  and the iPhone's are (the owner, 2026-11-14). */
 @Composable
 private fun LookRows() {
     val context = LocalContext.current
-    ThemeRow(index = 0, count = 3)
-    AppearanceRow(index = 1, count = 3)
     // The plan under the one search, or the strip (StripLayout).
     val layout by rememberLayout()
     val layouts = linkedMapOf(LayoutPreference.PLAN to stringResource(R.string.layout_plan), LayoutPreference.STRIP to stringResource(R.string.layout_strip))
     MenuSettingRow(
         stringResource(R.string.layout), layouts[layout] ?: layouts.getValue(LayoutPreference.PLAN),
-        layouts.map { (key, label) -> label to { LayoutPreference.set(context, key) } }, index = 2, count = 3,
+        layouts.map { (key, label) -> label to { LayoutPreference.set(context, key) } }, index = 0, count = 1,
     )
 }
 
-/** Settings' Theme, the welcome's too: one of the four looks. */
+/** The Map card's Theme, the welcome's too: one of the four looks. */
 @Composable
 internal fun ThemeRow(index: Int, count: Int) {
     val context = LocalContext.current
@@ -125,7 +123,7 @@ internal fun ThemeRow(index: Int, count: Int) {
     MenuSettingRow(stringResource(R.string.theme), look.label, Look.entries.map { it.label to { LookPreference.set(context, it) } }, index = index, count = count)
 }
 
-/** Settings' Appearance, the welcome's too: System, Light, Dark, Dark + Bright. */
+/** The Map card's Appearance, the welcome's too: System, Light, Dark. */
 @Composable
 internal fun AppearanceRow(index: Int, count: Int) {
     val context = LocalContext.current
@@ -137,13 +135,12 @@ internal fun AppearanceRow(index: Int, count: Int) {
     )
 }
 
-/** Appearance's four in the web's words and order. */
+/** Appearance's three in the web's words and order. */
 @Composable
 private fun appearanceNames(): Map<Appearance, String> = linkedMapOf(
     Appearance.SYSTEM to stringResource(R.string.appearance_system),
     Appearance.LIGHT to stringResource(R.string.appearance_light),
     Appearance.DARK to stringResource(R.string.appearance_dark),
-    Appearance.DARK_BRIGHT to stringResource(R.string.appearance_dark_bright),
 )
 
 /** Map: how the map behaves -- each field's weather, the glide ring and

@@ -32,8 +32,8 @@ import app.wingtipmaps.android.api.generated.WeatherLoop as LoopAnswer
  * (`status`, its `kept`), and their ages are the engine's (kept_age).
  *
  * Under IFR the alternate filed is one of the fields (PlanAlternate, the
- * nav log's leg on to it). The flight's plates (the market-gap audit's
- * 3) are those the planner names (/api/plates/flight, FlightPlatesAsk):
+ * nav log's leg on to it). The flight's plates
+ * are those the planner names (/api/plates/flight, FlightPlatesAsk):
  * every chart of the departure, the destination and each stop, the
  * alternate's (the one filed, else the engine's 91.169 pick) and those of
  * the fields within the picked airplane's diversion range, each kept as

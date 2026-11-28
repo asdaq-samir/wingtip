@@ -133,11 +133,6 @@
     <string name="ask_help">The figures are the app\'s; Gemini Nano puts them in words on this phone and shows what it read.</string>
 
     <!-- The flight plan. -->
-    <string name="departure">Departure</string>
-    <string name="destination">Destination</string>
-    <string name="stops">Stops</string>
-    <string name="stops_help">Idents, separated by commas</string>
-    <string name="plan">Plan</string>
     <string name="under_reserve">Under the reserve the planner holds the flight to. Fly it with a fuel stop.</string>
     <string name="under_reserve_on">Under the reserve the planner holds the flight to on %1$s. Fly it with a fuel stop.</string>
 
@@ -155,13 +150,6 @@
     <string name="verdict_no_go">No-Go</string>
     <string name="where_to_or_ask">Where to, or ask</string>
 
-    <!-- Card actions (lib/cardActions.ts ACTION, docs/design/icons.md). -->
-    <string name="action_fly_here">Fly Here</string>
-    <string name="action_depart_from">Depart From</string>
-    <string name="action_hold_here">Hold Here</string>
-    <string name="action_call">Call</string>
-    <string name="action_address">Address</string>
-    <string name="action_copy">Copy</string>
 
     <!-- The map's cards. -->
     <string name="airspace">Airspace</string>
@@ -184,8 +172,6 @@
     <string name="receiver_brief">From Your Receiver</string>
     <string name="receiver_unnamed">the receiver</string>
     <string name="traffic_gone">No longer heard.</string>
-    <string name="track">Track</string>
-    <string name="stop_tracking">Stop Tracking</string>
     <string name="fact_floor">Floor</string>
     <string name="fact_ceiling">Ceiling</string>
     <string name="fact_hours">Hours</string>
@@ -519,10 +505,12 @@
     <string name="saved_flights_none">No saved flights yet. A flight saved on the web or the iPhone with this account is kept here.</string>
     <string name="replay_play">Play</string>
     <string name="replay_pause">Pause</string>
+    <!-- A replay's height the planner carried at the last good one (alt_held): said, so it is not read as sent. -->
+    <string name="replay_height_held">%1$s held</string>
     <string name="airplane_tab_flights">Flights</string>
     <string name="airplane_tab_info">Info</string>
-    <string name="airplane_follow">Follow</string>
-    <string name="airplane_unfollow">Following</string>
+    <!-- Fly This on the airplane flown already, greyed (the web's AirplaneCard). -->
+    <string name="flying_this">Flying This</string>
     <string name="airplane_photo_by">Photo: %1$s, Planespotters.net</string>
     <string name="said_replay_flight">Replay %1$s</string>
     <string name="share_airplane">Share the Airplane</string>

@@ -7,7 +7,13 @@
 # build and 655 green unit tests, then red in 10 s (run 43732738720).
 #
 #   scripts/ci/ios_test.sh build   xcodebuild build-for-testing
-#   scripts/ci/ios_test.sh test    xcodebuild test-without-building
+#   scripts/ci/ios_test.sh test    xcodebuild test-without-building, from the build's .xctestrun
+#
+# One leg builds (the iPhone's) and the others test that build
+# (scripts/ci/ios_products.py). Every resource is kept
+# (ENABLE_ONLY_ACTIVE_RESOURCES=NO, where a build for one device leaves out
+# what only another uses), so the iPhone's build runs on the iPad, and the
+# test step reads only Build/Products: the .xctestrun and what it names.
 #
 # Both steps take the same tests, by the run's kind. A pull request's
 # (UNIT_ONLY): the unit tests, in WingtipUnit, which builds no UI test.
@@ -26,13 +32,14 @@
 # IPAD_LEG_1 to IPAD_LEG_3 name, the fourth every other test, unit tests
 # included, by skipping those, so no class is in none. Split by the
 # classes' measured times on a slow hosted runner (run 45136421052,
-# 2026-11-23), where two legs ran out of their 45 minutes: a leg spends
-# some 18 minutes before its first test (the build 7, the simulator's boot
-# 2 to 4, the runner's install and launch the rest), then the accessibility
-# audits about 11 (leg 1), the card rule's suite about 15 (leg 2), the card
-# scroll, page toggle, iPad layout and documents suites about 16 (leg 3),
-# and the unit tests about 9 with the rest (leg 4): each leg some 30 to 35
-# minutes.
+# 2026-11-23), where two legs ran out of their 45 minutes: a leg spent
+# some 18 minutes before its first test (its own build 7 to 9 and the
+# engine 3.5, the simulator's boot 2 to 4, the runner's install and launch
+# the rest), then the accessibility audits about 11 (leg 1), the card rule's
+# suite about 15 (leg 2), the card scroll, page toggle, iPad layout and
+# documents suites about 16 (leg 3), and the unit tests about 9 with the
+# rest (leg 4). Each leg now tests the iPhone's build, booting while it is
+# made, so the build is paid once, not on each leg.
 #
 # xcodebuild's output goes to $RUNNER_TEMP/xcodebuild.log, the build's and
 # then the tests' (the job uploads it on failure). Each step prints its
@@ -59,7 +66,8 @@ IPAD_LEG_1="AccessibilityAuditTests LaunchTests MapButtonsTests PlateMapTests St
 IPAD_LEG_2="CardRuleTests"
 IPAD_LEG_3="CardScrollTests SheetPageToggleTests IPadLayoutTests DocumentsIPadTests"
 log=$RUNNER_TEMP/xcodebuild.log
-opts=(-destination "platform=iOS Simulator,id=$SIM" -derivedDataPath "$RUNNER_TEMP/derived")
+products=$RUNNER_TEMP/derived/Build/Products
+opts=(-destination "platform=iOS Simulator,id=$SIM")
 
 case "$step" in
   build)
@@ -104,10 +112,8 @@ case "$LEG" in
   *" 4/4") only=() scheme=Wingtip && for c in $IPAD_LEG_1 $IPAD_LEG_2 $IPAD_LEG_3; do only+=("-skip-testing:WingtipUITests/$c"); done ;;
 esac
 
-# This step's part of the log starts here: a verdict above it is another
-# step's, or an earlier run's.
-from=$(($(wc -l < "$log") + 1))
-said() { tail -n "+$from" "$log"; }
+# The build: the scheme's every test target, chosen from at the test step,
+# as -only-testing at the build would be written into the .xctestrun.
 # ENABLE_DEBUG_DYLIB=NO: one app binary, as CI needs no Xcode Previews.
 # With the debug dylib on, the app's Wingtip.debug.dylib and its
 # __preview.dylib both write Wingtip_dependency_info.dat, and Xcode links
@@ -116,7 +122,27 @@ said() { tail -n "+$from" "$log"; }
 # AppIntents.framework in that file, skipped the Siri phrases
 # ("Metadata extraction skipped, no AppIntents.framework dependency
 # found"), and the string catalog's check read them as gone.
-# `only` is empty at night, which the Mac's bash 3.2 calls unset under -u.
+if [ "$step" = build ]; then
+  only=()
+  opts+=(-project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug -derivedDataPath "$RUNNER_TEMP/derived"
+    CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= COMPILER_INDEX_STORE_ENABLE=NO
+    ENABLE_DEBUG_DYLIB=NO ENABLE_ONLY_ACTIVE_RESOURCES=NO WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID")
+else
+  # The scheme's own run file as the build wrote it (Wingtip_ is not
+  # WingtipUnit_'s), which names the products beside it, wherever they were built.
+  runs=("$products/${scheme}_"*.xctestrun)
+  if [ ! -f "${runs[0]}" ]; then
+    echo "::error title=iOS test failed::no ${scheme}_*.xctestrun in $products: the build's products are not here"
+    exit 1
+  fi
+  opts+=(-xctestrun "${runs[0]}")
+fi
+
+# This step's part of the log starts here: a verdict above it is another
+# step's, or an earlier run's.
+from=$(($(wc -l < "$log") + 1))
+said() { tail -n "+$from" "$log"; }
+# `only` is empty at night and at the build, which the Mac's bash 3.2 calls unset under -u.
 #
 # Said as it goes, not only at the end: each test as it starts and ends,
 # and a line a minute with the runner's free memory, swap and simulators,
@@ -131,10 +157,7 @@ trap 'kill "$watch" 2>/dev/null || true' EXIT
 # NSUnbufferedIO: xcodebuild writes each line as it comes, where into a
 # pipe it held them in its buffer, and a leg stopped part way had shown
 # none of its tests (run 45152106014).
-NSUnbufferedIO=YES xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${opts[@]}" ${only[@]+"${only[@]}"} \
-  CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= COMPILER_INDEX_STORE_ENABLE=NO \
-  ENABLE_DEBUG_DYLIB=NO \
-  WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" "$action" 2>&1 \
+NSUnbufferedIO=YES xcodebuild "${opts[@]}" ${only[@]+"${only[@]}"} "$action" 2>&1 \
   | tee -a "$log" | grep --line-buffered -E "^Test Case '.*' (started|passed|failed|skipped)|^✘ Test" || true
 kill "$watch" 2>/dev/null || true
 
@@ -143,6 +166,11 @@ said | grep -nE "error:|error\b|Could not|Test (Case|Suite)|Executed|\*\* (BUILD
 said | grep -E "✔ Test|✘ Test|Test run with" || true
 # Not `grep -q`, which stops at the verdict and fails the pipe it closes.
 if ! said | grep -E "\*\* $verdict \*\*" > /dev/null; then
+  # Each failed test by name, from the result bundle (else the log).
+  if [ "$step" = test ]; then
+    { xcrun xcresulttool get test-results tests --path "$RUNNER_TEMP/Wingtip.xcresult" 2> /dev/null || true; } |
+      LOG=$log python3 scripts/ci/ios_failures.py
+  fi
   echo "::error title=iOS $step failed::xcodebuild $action did not end in ** $verdict ** (its errors above; the whole log is the run's native-ios-log artifact)"
   exit 1
 fi

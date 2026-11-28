@@ -1,7 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consoleSheet, grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
+import { consoleSheet, grabberTo, settle, settled, sideDrawer, sheetFoot, frontSheet } from "./helpers";
 import { expectPage, expectSearchInUse, expectShown, openAirport, showPage, toggle } from "./sheetPages";
 import { extrasOn } from "./extras";
+import { hold } from "./pacing";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
 test.beforeEach(({ page }) => extrasOn(page, "threeD"));
 
@@ -230,12 +231,14 @@ test("a route made goes to FPL; Search puts FPL's figures away with its page", a
   await expectPage(page, 1);
   // The figures at the foot are FPL's alone: at half, and at the pill on a
   // phone, where they are the pill in the route's row's place (the owner,
-  // 2026-11-11, the canvas's b).
+  // 2026-11-11, the canvas's b), in FPL's foot bar beside the sheet
+  // (sheet/FootBar).
+  const foot = page.getByTestId("foot-bar").or(page.getByTestId("panel-foot"));
   await grabberTo(page, "half");
-  await expect(page.getByTestId("panel-foot")).toBeVisible();
+  await expect(foot).toBeVisible();
   await grabberTo(page, "peek");
-  await expect(page.getByTestId("panel-foot")).toBeVisible();
-  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(foot).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
   // Half way up, FPL's bar is back with the route's row under it.
   await grabberTo(page, "half");
@@ -243,7 +246,7 @@ test("a route made goes to FPL; Search puts FPL's figures away with its page", a
   await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
   await showPage(page, 0);
   await expectPage(page, 0);
-  await expect(page.getByTestId("panel-foot")).toBeHidden();
+  await expect(foot).toBeHidden();
 });
 
 /** A finger put down at (x, y) and moved `dy` down, a frame apart, then
@@ -255,7 +258,7 @@ async function fingerDown(page: Page, x: number, y: number, dy: number) {
   await touch("touchStart", { x, y });
   for (let i = 1; i <= 12; i++) {
     await touch("touchMove", { x, y: y + (dy * i) / 12 });
-    await page.waitForTimeout(16);
+    await hold(page, 16);
   }
   await touch("touchEnd");
   await cdp.detach();

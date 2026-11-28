@@ -1,21 +1,25 @@
 import { useEffect } from "react";
-import type { ExpressionSpecification, LineLayerSpecification } from "maplibre-gl";
+import type { GeoJSONSource, LineLayerSpecification, MapSourceDataEvent, Map as MlMap } from "maplibre-gl";
 import { AirspaceCardBody } from "../cards/AirspaceCard";
 import { SheetCard } from "../../SheetCard";
 import { useMarkKey } from "../../../lib/address";
 import { MapCard } from "../../../lib/map/cards/MapCard";
-import { useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
+import { EMPTY, drawnWithData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { OVERLAY_SOURCE } from "../../../lib/map/gl/glOverlays";
 import { volumeOfTile } from "../../../lib/map/gl/glTileFeatures";
 import { AIRSPACE_LINE_LAYERS } from "../../../lib/map/gl/glStyle";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { useLinkedTileFeature } from "../../../lib/map/gl/useLinkedTileFeature";
+import { litEdge } from "../../../lib/map/gl/tileEdge";
 import { TAP } from "../../../lib/map/gl/layers/common";
 import { pickOnMap, useMapPickOwner, useMapRing } from "../../../lib/map/mapPick";
 import { CHART } from "../../../lib/tokens";
 
-/** A volume's id as its card and the light below read it (volumeOfTile's). */
-const VOLUME_ID: ExpressionSpecification = ["concat", "tile-", ["to-string", ["get", "number"]]];
+/** The lit edge's own source: the volume picked, its edge from the tiles'
+ *  pieces of it (tileEdge), so a pick sets this small source's data and
+ *  lays out none of the overlay tiles again, as a filter on their layer
+ *  did at each card's opening and closing. */
+const PICKED_SOURCE = "airspace-picked";
 
 /** The volume whose card is open, its edge again, wide, in the selection's
  *  yellow over its own ink, as a TFR picked is lit (the owner, 2026-11-18:
@@ -23,19 +27,61 @@ const VOLUME_ID: ExpressionSpecification = ["concat", "tile-", ["to-string", ["g
 const PICKED: LineLayerSpecification = {
   id: "airspace-picked",
   type: "line",
-  source: OVERLAY_SOURCE,
-  "source-layer": "airspace",
-  filter: ["boolean", false],
+  source: PICKED_SOURCE,
   layout: { "line-join": "round" },
   paint: { "line-color": CHART.selected, "line-width": 5, "line-opacity": 0.9 },
 };
+
+/** The lit volume's edge on its own source, from the tiles about the
+ *  view: again after a move or an overlay tile come in, at the next rest;
+ *  empty once none is lit. */
+function useLitEdge(map: MlMap, lit: string | null) {
+  const number = lit?.startsWith("tile-") ? lit.slice("tile-".length) : null;
+  useEffect(() => {
+    const show = (edge: GeoJSON.Feature | null) => {
+      if (!map.style) return;
+      const data = edge ? { type: "FeatureCollection" as const, features: [edge] } : EMPTY;
+      map.getSource<GeoJSONSource>(PICKED_SOURCE)?.setData(data);
+      drawnWithData(map, PICKED_SOURCE, data);
+    };
+    if (!number) return show(null);
+    let again = false;
+    let last: string | null = null;
+    const look = () => {
+      const found = map.getSource(OVERLAY_SOURCE) ? litEdge(map, OVERLAY_SOURCE, number, last) : { key: null, edge: null };
+      if (found === "drawn") return;
+      last = found.key;
+      show(found.edge);
+    };
+    const moved = () => {
+      again = true;
+    };
+    const tiled = (e: MapSourceDataEvent) => {
+      if (e.tile && e.sourceId === OVERLAY_SOURCE) again = true;
+    };
+    const rest = () => {
+      if (!again) return;
+      again = false;
+      look();
+    };
+    look();
+    map.on("moveend", moved);
+    map.on("sourcedata", tiled);
+    map.on("idle", rest);
+    return () => {
+      map.off("moveend", moved);
+      map.off("sourcedata", tiled);
+      map.off("idle", rest);
+    };
+  }, [map, number]);
+}
 
 /**
  * The Class B, C and D over the chart, each volume's line with a
  * translucent band along its inside and its altitudes in a dark tab on
  * its ring, one a shelf -- MapLibre's line layers and a symbol layer,
  * kept off each other by its collision; and the special-use areas'
- * lines and hatched bands (glStyle's specialUseLayers). A tap on a
+ * lines and hatched bands (design/map-style.json's). A tap on a
  * line opens the volume's card, by its address (`mark`), so a link opens
  * it too. The settings' Airspace turns them off (applyOverlayFilters).
  *
@@ -76,11 +122,9 @@ function TileAirspace() {
   });
   // Its edge lit while its card is up (AirspaceCardBody's useAreaWhileUp),
   // whichever map opened it.
-  useGlLayer("lines", {}, [PICKED]);
+  useGlLayer("lines", { [PICKED_SOURCE]: { type: "geojson", data: EMPTY } }, [PICKED]);
   const lit = useMapRing((s) => (s.area?.kind === "airspace" ? s.area.id : null));
-  useEffect(() => {
-    if (map.getLayer(PICKED.id)) map.setFilter(PICKED.id, ["==", VOLUME_ID, lit ?? "-"]);
-  }, [map, lit]);
+  useLitEdge(map, lit);
   useGlProbe("airspace-picked", [PICKED.id], (f) => ({ id: `tile-${f.properties.number}` }));
   const close = () => void setMark(null);
   useMapPickOwner("mark", !!asked, close);

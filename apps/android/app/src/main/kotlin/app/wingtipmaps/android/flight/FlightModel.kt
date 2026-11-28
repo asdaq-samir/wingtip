@@ -13,8 +13,15 @@ import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.engine.generated.glideReaches
 import app.wingtipmaps.android.engine.generated.stripFuel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.math.floor
 
 /**
  * The flight as the map screen reads it (RootScreen, MapPane, the figures
@@ -39,9 +46,6 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
 
     /** The alerts ahead said aloud, turned on and off from Settings. */
     val spoken: SpokenAlerts get() = session.spoken
-
-    /** The airplane tracked, by its hex. */
-    val tracked: StateFlow<String?> get() = session.tracking.hex
 
     /** The path this phone flew. */
     val trail: StateFlow<List<PathPoint>> get() = session.trail.points
@@ -81,11 +85,13 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
     fun hear(ahead: List<AheadAlert>) = session.spoken.hear(ahead)
 
     companion object {
+        /** The height step a glide is asked again at, ft (reaches). */
+        private const val REACH_STEP_FT = 100.0
+
         /** The fuel from the planner's totals, as the engine works it for
          *  the three apps (`strip_fuel`): with stops, each flight's own
          *  figures (`hops`, the tanks filled at each) and the one being
-         *  flown (`hop`), as the web's figures.ts sends them (the aviation
-         *  audit's AV-3); a failure where the engine could not. The nav
+         *  flown (`hop`), as the web's figures.ts sends them; a failure where the engine could not. The nav
          *  log's totals ask whether any flight is short with it. */
         fun stripFuelOf(totals: NavLogTotals?, hop: Int = 0, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> = Engine.stripFuel(
             fuelRequiredGal = totals?.fuelRequiredGal,
@@ -96,11 +102,32 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
         )
     }
 
-    /** Whether a field is within a still-air glide at pattern height, by the
-     *  engine's glide_reaches over the field's own elevation, at the picked
-     *  airplane's own glide ratio (false with none). */
-    fun glideReaches(fix: OwnShip.Fix, field: NearestAirport): Result<Boolean> =
-        Engine.glideReaches(fix.altitudeFt, fix.groundspeedKt, field.distanceNm, field.elevationFt, session.inFlight.glideRatio)
+    /** What a glide is asked from: the height floored to REACH_STEP_FT, so
+     *  it never claims more than the airplane has, the speed in tens of
+     *  knots for the key alone, and the glide ratio. */
+    private data class GlideAsk(val altitudeFt: Double?, val speedStep: Int?, val ratio: Double?)
+
+    /**
+     * Whether each field, by ident, is within a still-air glide at pattern
+     * height, by the engine's glide_reaches over the field's own elevation
+     * at the picked airplane's own glide ratio (false with none); worked out off the
+     * main thread, and again only as the height crosses a 100 ft step, the
+     * speed a 10 kt one or the glide ratio changes, not with every fix:
+     * the Nearest rows then draw once a step, not each second. The glide
+     * ratio is its flow, so a ratio given (AskFigures) is read at once,
+     * not only once a fix comes.
+     */
+    fun reaches(fields: List<NearestAirport>): Flow<Map<String, Result<Boolean>>> =
+        combine(session.ownShip.fix, session.inFlight.glideRatios) { fix, ratio ->
+            fix?.let { it to GlideAsk(it.altitudeFt?.let { ft -> floor(ft / REACH_STEP_FT) * REACH_STEP_FT }, it.groundspeedKt?.let { kt -> (kt / 10).toInt() }, ratio) }
+        }
+            .distinctUntilChanged { a, b -> a?.second == b?.second }
+            .map { asked ->
+                val (fix, ask) = asked ?: return@map emptyMap()
+                withContext(Dispatchers.Default) {
+                    fields.associate { it.ident to Engine.glideReaches(ask.altitudeFt, fix.groundspeedKt, it.distanceNm, it.elevationFt, ask.ratio) }
+                }
+            }
 
     /** The engine's airport_use_words key for a field (private, military or
      *  joint use), or null for a public one or when the engine cannot say. */

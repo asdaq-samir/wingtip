@@ -59,6 +59,7 @@ ORIGIN_HOST=origin.localhost
 ORIGIN_SECRET=$(openssl rand -hex 20)
 POSTGRES_PASSWORD=$(openssl rand -hex 20)
 APP_DB_PASSWORD=$(openssl rand -hex 20)
+FOLLOW_SHARE_KEY=$(openssl rand -hex 32)
 MAIL_HOST=mailpit
 MAIL_PORT=1025
 MAIL_USERNAME=rehearsal
@@ -73,6 +74,8 @@ fi
 # A .env written before the gateway had a role of its own (docs/SECURITY.md,
 # N4) gets its second password once.
 grep -q '^APP_DB_PASSWORD=' "$env_file" || echo "APP_DB_PASSWORD=$(openssl rand -hex 20)" >> "$env_file"
+# And one written before the planner demanded its follow share key, that key.
+grep -q '^FOLLOW_SHARE_KEY=' "$env_file" || echo "FOLLOW_SHARE_KEY=$(openssl rand -hex 32)" >> "$env_file"
 
 docker compose -p wingtip-prod --env-file "$env_file" \
   -f infra/docker-compose.prod.yml -f infra/rehearsal/docker-compose.rehearsal.yml up -d

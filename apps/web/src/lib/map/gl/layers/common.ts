@@ -1,5 +1,5 @@
 import type { CircleLayerSpecification, ExpressionSpecification } from "maplibre-gl";
-import { CHART, MAP_LABEL, type MapLabelKind } from "../../../tokens";
+import { CHART, DIMMER, MAP_LABEL, type MapLabelKind } from "../../../tokens";
 /** The map's words, in the page's Inter (GlMapShell's font-faces), in
  *  every look: the map's colours are the chart's own, not the look's. */
 export const GL_FONT = ["Inter"];
@@ -32,45 +32,62 @@ function labelByZoom(stops: readonly (readonly [glZoom: number, px: number])[]):
   return ["interpolate", ["linear"], ["zoom"], ...stops.flatMap(([z, px]) => [z, ["*", px, SCALE]])] as unknown as ExpressionSpecification;
 }
 
-/** The map's global state (MapLibre's `global-state`) that says it is
- *  dark: set from the page's dark theme (useDarkTheme) by ChartGl. */
-export const LABEL_NIGHT = "labelNight";
-const NIGHT: ExpressionSpecification = ["boolean", ["global-state", LABEL_NIGHT], false];
+/** The map's global state (MapLibre's `global-state`) that holds the light
+ *  the map's light-haloed words take after dark, their night inks' share
+ *  (mapDimWords' words: the paper's luminance under the Dimmer, so no word
+ *  is brighter than the chart under it), and 0 by day: set by ChartGl from
+ *  the page's dark theme and the Dimmer as committed. One figure for both,
+ *  so a theme's change, or a Dimmer's commit at night, is one change of
+ *  the state, which the words' colours by feature (a field's tower, a
+ *  hazard's own ink) have MapLibre lay their sources out again for. */
+export const LABEL_NIGHT = DIMMER.wordState;
+const LIGHT: ExpressionSpecification = ["number", ["global-state", LABEL_NIGHT], 0];
+const NIGHT: ExpressionSpecification = [">", LIGHT, 0];
 /** The light halo's colour: the chart's white by day; after dark the
- *  tag's dark at map.label.halo-night (0.85), as Apple Maps letters its
- *  dark map, light words on a dark halo (rules.md §13.6; the owner,
- *  2026-11-21). The white at 0.6 it was left the coloured idents at about
- *  2.5:1 over the dimmed chart; the night inks on this halo are 6.5:1 or
- *  more there (map.label.night-ink's worked contrast). One expression,
- *  read by every layer's paint, so the theme's change is one
+ *  tag's dark, whole, as Apple Maps letters its dark map, light words on a
+ *  dark halo (rules.md §13.6; the owner, 2026-11-21). Whole, not at
+ *  map.label.halo-night's 0.85 nor faded with the Dimmer: the words were
+ *  made see-through with the Dimmer, their halo with them, and read about
+ *  2:1 on the halo turned the paper's grey; now the words alone are dimmed, by colour (labelInk), and read
+ *  4.2:1 or more on it at the night's default Dimmer. One expression, read
+ *  by every layer's paint, so the theme's change is one
  *  setGlobalStateProperty. */
-const HALO_COLOUR: ExpressionSpecification = [
-  "case",
-  NIGHT,
-  `${CHART.tag}${Math.round(MAP_LABEL.haloNight * 255)
-    .toString(16)
-    .padStart(2, "0")}`,
-  CHART.casing,
-];
+const HALO_COLOUR: ExpressionSpecification = ["case", NIGHT, CHART.tag, CHART.casing];
 /** The halo round the map's labels: white by day and wide enough to read
  *  on the chart's own ink, dark after dark. */
 export const LABEL_HALO = { "text-halo-color": HALO_COLOUR, "text-halo-width": MAP_LABEL.halo } as const;
 
-const NIGHT_INK: Record<string, string> = MAP_LABEL.nightInk;
+/** Each day ink's night ink, a lighter one brought down to the towered
+ *  blue's light (map-dim's word-light)
+ *  (the fixes' near white, the VFR green, the mountains' grey), so that at
+ *  the words' light (LIGHT) every word is as light as the paper under the
+ *  Dimmer and none brighter (AIM 8-1-6); one darker kept as it is. Worked
+ *  out with the tokens (map-dim's nightWord), the phones' the same. And
+ *  the chart's white words (a runway's number, an altitude tab's, a VOR's
+ *  on its tag, the open card's field's) take the fixes' near white, so
+ *  after dark they are dimmed by their ink with the rest at the words'
+ *  light, their dark halo or tab whole. */
+const NIGHT_WORD: Record<string, string> = DIMMER.nightWord;
+const NIGHT_INK: Record<string, string> = { ...NIGHT_WORD, [CHART.casing]: NIGHT_WORD[CHART.fixInk]! };
+
+/** A colour at the words' light after dark (LIGHT): black at none, itself
+ *  at 1, as mapDim's dimmedColour takes the chart's brightness. */
+const atNightLight = (colour: unknown) => ["interpolate", ["linear"], LIGHT, 0, "black", 1, colour];
 
 /** A light-haloed word's ink: its day ink, and after dark that ink's night
  *  one (map.label.night-ink: the field's blue and magenta, the VFR green,
- *  the fixes' dark, the hazards' colours, each lighter), the halo dark
- *  under it. A colour is looked up here; an expression (a match on the
- *  field's tower, a hazard's own `ink`) is matched on what it gives, a
- *  colour not in the table keeping its own. Every layer whose words have
- *  the light halo writes its `text-color` through this. */
+ *  the fixes' dark, the hazards' colours, each lighter, none lighter than
+ *  the towered blue: NIGHT_INK) at the words' light, the halo dark under it. A colour is looked up here; an
+ *  expression (a match on the field's tower, a hazard's own `ink`) is
+ *  matched on what it gives, a colour not in the table keeping its own.
+ *  Every layer whose words have the light halo writes its `text-color`
+ *  through this, and mapDim leaves its words' opacity whole (wordsDimmed). */
 export function labelInk(day: string | ExpressionSpecification): ExpressionSpecification | string {
   const night =
     typeof day === "string"
       ? (NIGHT_INK[day] ?? day)
       : (["match", day, ...Object.entries(NIGHT_INK).flat(), day] as unknown as ExpressionSpecification);
-  return ["case", NIGHT, night, day] as unknown as ExpressionSpecification;
+  return ["case", NIGHT, atNightLight(night), day] as unknown as ExpressionSpecification;
 }
 
 export type LabelKind = keyof typeof MAP_LABEL.kind;

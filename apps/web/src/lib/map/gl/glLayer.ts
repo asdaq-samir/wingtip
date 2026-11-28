@@ -1,6 +1,5 @@
 import type { PickKind } from "../mapPick";
 import { createContext, useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
-import { prefersReducedMotion } from "../../motion";
 import { toDrawnLine } from "./legTap";
 import type {
   FilterSpecification,
@@ -11,13 +10,13 @@ import type {
   MapMouseEvent,
   SourceSpecification,
 } from "maplibre-gl";
+import { MAP_DIM, dimLayer, dimmedPaint } from "./mapDim";
+import { keptMapDim } from "./useChartLook";
 
 /**
- * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is
- * a React component that says, through these hooks, what it adds -- its
- * sources and its style layers, in one of the map's slots -- what data it
- * gives them, and what a tap on it does. The map (GlMapShell) owns the
- * camera, the sheet and the one tap that goes to the nearest thing.
+ * The WebGL map's layer API (lib/map/gl): each thing drawn on the map is a React component that says, through these
+ * hooks, what it adds -- its sources and its style layers, in one of the map's slots -- what data it gives them, and
+ * what a tap on it does. The map (GlMapShell) owns the camera, the sheet and the one tap that goes to the nearest thing.
  */
 
 /** Where a layer is drawn, bottom to top: land and water where the
@@ -154,22 +153,31 @@ const addedOf = (map: MlMap) => {
   return kept;
 };
 
-/** The map is being handed to the next tree that draws it (GlMapShell's
- *  park): the layers of the tree leaving stay where they are, for the
- *  next to claim as they are rather than draw again from nothing. */
+/** The map is being handed to the next tree that draws it (GlMapShell's park): the layers of the tree leaving stay
+ *  where they are, for the next to claim as they are rather than draw again from nothing. */
 export function parkLayers(map: MlMap) {
   parked.add(map);
 }
 
-/** The map taken up again: every layer of the last tree is unclaimed
- *  until the new tree adds the same. */
+/** Whether the map is being handed to the next tree (parkLayers), what it draws to be kept for that tree. */
+export const isParked = (map: MlMap) => parked.has(map);
+
+/** The map taken up again: every layer of the last tree is unclaimed until the new tree adds the same. */
 export function adoptLayers(map: MlMap) {
   parked.delete(map);
   unclaimed.set(map, new Set(addedOf(map).keys()));
 }
 
-/** Once the new tree has added its own: the last tree's layers it did not
- *  claim taken away, its layers first and then their sources. */
+/** What a new map's first style drew already (makeMap's chart), as a tree adding the same specs would have added
+ *  them: claimed where the first tree adds the same, swept where it does not (sweepLayers). */
+export function firstStyleLayers(map: MlMap, sources: Record<string, SourceSpecification>, layers: LayerSpecification[]) {
+  const kept = addedOf(map);
+  for (const [id, source] of Object.entries(sources)) kept.set(`s:${id}`, JSON.stringify(source));
+  for (const layer of layers) kept.set(`l:${layer.id}`, JSON.stringify(layer));
+  unclaimed.set(map, new Set(kept.keys()));
+}
+
+/** Once the new tree has added its own: the last tree's layers it did not claim taken away, layers then sources. */
 export function sweepLayers(map: MlMap) {
   const left = unclaimed.get(map);
   unclaimed.delete(map);
@@ -207,11 +215,16 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
       kept.set(key, as);
       left?.delete(key);
     }
+    // The Dimmer's share on the map before its first layer is drawn, where
+    // ChartGl has not set it yet: read at 1, a load at night drew every
+    // word and line at full light for its first frames (AIM 8-1-6).
+    if (layers.length && map.getGlobalState()[MAP_DIM] === undefined) map.setGlobalStateProperty(MAP_DIM, keptMapDim());
     for (const layer of layers) {
       const key = `l:${layer.id}`,
         as = JSON.stringify(layer);
       if (map.getLayer(layer.id) && kept.get(key) !== as) map.removeLayer(layer.id);
-      if (!map.getLayer(layer.id)) map.addLayer(layer, under && map.getLayer(under) ? under : slotId(slot));
+      // At the Dimmer's brightness at night, as everything drawn on the chart (mapDim).
+      if (!map.getLayer(layer.id)) map.addLayer(dimLayer(layer), under && map.getLayer(under) ? under : slotId(slot));
       kept.set(key, as);
       left?.delete(key);
     }
@@ -229,63 +242,6 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
       }
     };
   }, [map, slot, under]);
-}
-
-/** How long a layer of what changes over the chart -- weather, traffic,
- *  TFRs -- takes to fade in as its first data comes, rather than snap on. */
-const FADE_IN_MS = 250;
-
-/** Each layer type's opacities, the paint a fade sets. */
-const OPACITIES: Partial<Record<LayerSpecification["type"], string[]>> = {
-  fill: ["fill-opacity"],
-  line: ["line-opacity"],
-  circle: ["circle-opacity", "circle-stroke-opacity"],
-  symbol: ["icon-opacity", "text-opacity"],
-  raster: ["raster-opacity"],
-};
-
-/** The layers (useGlLayer's, called before this) clear as they are added,
- *  then, once `shown` is true, faded to their own opacities over
- *  FADE_IN_MS (at once under reduced motion). The opacities must be
- *  constants or zoom expressions, which MapLibre eases; one that differs
- *  by feature it would only switch. */
-export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
-  const { map } = useGlMap();
-  const spec = useRef(layers);
-  const state = useRef<"new" | "clear" | "done">("new");
-  useEffect(() => {
-    const each = (paint: (id: string, prop: string, to: unknown) => void) => {
-      for (const layer of spec.current) {
-        if (!map.getLayer(layer.id)) continue;
-        for (const prop of OPACITIES[layer.type] ?? [])
-          paint(layer.id, prop, (layer.paint as Record<string, unknown> | undefined)?.[prop] ?? 1);
-      }
-    };
-    const set = (id: string, k: string, v: unknown) => map.setPaintProperty(id, k as Parameters<MlMap["setPaintProperty"]>[1], v as never);
-    const fade = () => {
-      if (state.current === "done") return;
-      state.current = "done";
-      each((id, prop, to) => {
-        set(id, `${prop}-transition`, { duration: prefersReducedMotion() ? 0 : FADE_IN_MS, delay: 0 });
-        set(id, prop, to);
-      });
-    };
-    if (state.current === "new") {
-      state.current = "clear";
-      each((id, prop) => {
-        set(id, `${prop}-transition`, { duration: 0, delay: 0 });
-        set(id, prop, 0);
-      });
-      // Drawn clear once before the fade, or MapLibre has nothing to ease from.
-      if (shown) {
-        map.once("render", fade);
-        return () => {
-          map.off("render", fade);
-        };
-      }
-    }
-    if (shown) fade();
-  }, [map, shown]);
 }
 
 /** A GeoJSON source's data, set as it changes. */
@@ -344,7 +300,7 @@ const ranges = new WeakMap<MlMap, Map<string, [number, number]>>();
  *  layer added after the paint was set (made again from its spec, or not
  *  there yet) came back in its spec's day paint, and in the dark theme
  *  the chart close in was drawn undimmed while the region's level under
- *  it was dimmed (UI audit B10, 2026-11-17). */
+ *  it was dimmed. */
 export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
   const { map } = useGlMap();
   const key = JSON.stringify(paint);
@@ -354,8 +310,11 @@ export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
     const apply = () => {
       for (const id of ids.split(",")) {
         if (!map.getLayer(id)) continue;
-        for (const [k, v] of values) {
+        const layer = map.getLayer(id);
+        for (const [k, set] of values) {
           const name = k as Parameters<MlMap["setPaintProperty"]>[1];
+          // An opacity, or a colour dimmed by colour, keeps the Dimmer's share at night (mapDim).
+          const v = dimmedPaint(layer, k, set);
           // Only where it differs: setting it changes the style, which
           // would ask for this again.
           if (JSON.stringify(map.getPaintProperty(id, name)) !== JSON.stringify(v)) map.setPaintProperty(id, name, v as never);
@@ -372,12 +331,62 @@ export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
 }
 
 /** A tap on this layer's features while mounted; the handler is read at
- *  the tap, so a new one each render costs nothing. */
-export function useGlTap(layers: string[], reach: number, rank: number, onTap: GlTap["onTap"]) {
-  const { addTap } = useGlMap();
+ *  the tap, so a new one each render costs nothing. With `onLift`, the
+ *  feature the tap will find is also handed over as the finger or the
+ *  mouse lifts (onTapLift), before MapLibre's click: what a card asks the
+ *  planner for, asked sooner. */
+export function useGlTap(
+  layers: string[],
+  reach: number,
+  rank: number,
+  onTap: GlTap["onTap"],
+  onLift?: (feature: MapGeoJSONFeature) => void,
+) {
+  const { map, addTap } = useGlMap();
   const handler = useEffectEvent(onTap);
+  const lift = useEffectEvent((f: MapGeoJSONFeature) => onLift?.(f));
+  const lifts = !!onLift;
   const ids = layers.join();
   useEffect(() => addTap({ layers: ids.split(","), reach, rank, onTap: (f, e) => handler(f, e) }), [addTap, ids, reach, rank]);
+  useEffect(() => {
+    if (!lifts) return;
+    const tap: GlTap = { layers: ids.split(","), reach, rank, onTap: () => {} };
+    return onTapLift(map, (point) => {
+      const hit = map.style ? tapHit(map, tap, point) : null;
+      if (hit) lift(hit);
+    });
+  }, [map, lifts, ids, reach, rank]);
+}
+
+/** How far a finger may move between press and lift and still be a tap, px (MapLibre's click tolerance is 3). */
+const TAP_SLOP_PX = 6;
+
+/** `lifted` at each lift within TAP_SLOP_PX of its press, with no second
+ *  finger down in between, at the point in the map's own pixels. At the
+ *  lift, not the press: at the press every pan and pinch paid a
+ *  queryRenderedFeatures on its first frame. */
+function onTapLift(map: MlMap, lifted: (point: { x: number; y: number }) => void): () => void {
+  const target = map.getCanvasContainer();
+  let press: { id: number; x: number; y: number } | null = null;
+  const pressed = (e: PointerEvent) => {
+    press = e.isPrimary ? { id: e.pointerId, x: e.clientX, y: e.clientY } : null;
+  };
+  const up = (e: PointerEvent) => {
+    const was = press;
+    press = null;
+    if (!was || was.id !== e.pointerId || Math.hypot(e.clientX - was.x, e.clientY - was.y) > TAP_SLOP_PX) return;
+    const box = target.getBoundingClientRect();
+    lifted({ x: e.clientX - box.left, y: e.clientY - box.top });
+  };
+  const cancelled = () => void (press = null);
+  target.addEventListener("pointerdown", pressed);
+  target.addEventListener("pointerup", up);
+  target.addEventListener("pointercancel", cancelled);
+  return () => {
+    target.removeEventListener("pointerdown", pressed);
+    target.removeEventListener("pointerup", up);
+    target.removeEventListener("pointercancel", cancelled);
+  };
 }
 
 /** A tap on the chart that found nothing, while mounted. */

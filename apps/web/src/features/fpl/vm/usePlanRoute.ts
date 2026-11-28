@@ -34,6 +34,7 @@ import { procedureQuery } from "../../../lib/queryClient";
 import { drawnOnly } from "../../procedures";
 import { patternsOf } from "../../../lib/trafficPattern";
 import { useRouteEdits } from "../../route";
+import { useKept } from "./useKept";
 
 /**
  * The route as the address has it (usePlanWorkspace): its points, the
@@ -95,9 +96,18 @@ export function usePlanRoute() {
   // Load pressed again for the same route: a fresh nav log, fresh winds.
   const [load, setLoad] = useState(0);
   const showWaypoints = usePreferences((p) => p.waypoints);
-  // VFR or IFR, kept from flight to flight (the altitude's popover).
-  const flightRules = usePreferences((p) => p.flightRules);
+  // VFR or IFR, kept from flight to flight (the altitude's popover). A
+  // saved flight opened says its own (the address's `rules`, its picks'),
+  // planned with at once and kept as the setting, then taken off.
+  const keptRules = usePreferences((p) => p.flightRules);
   const setFlightRules = usePreferences((p) => p.setFlightRules);
+  const linkedRules = address.rules;
+  const flightRules = linkedRules ?? keptRules;
+  useEffect(() => {
+    if (!linkedRules) return;
+    setFlightRules(linkedRules);
+    void setAddress({ rules: null });
+  }, [linkedRules, setFlightRules, setAddress]);
   // The procedures picked at the route's fields, drawn (below): a leg
   // flown by them is planned the longer by their path, its time and fuel
   // with it, at the owner's word (the plan said 909 nm where the dry run
@@ -120,8 +130,7 @@ export function usePlanRoute() {
   // log asked for (usePlan's `settling`), once, not again for each as it
   // came. Not the runways into the wind: the planner picks those itself
   // (askedRunways, below), so the nav log no longer waits on the fields'
-  // cards and the page's picks, about a second on each new route (the speed
-  // audit of 2026-11-21).
+  // cards and the page's picks, about a second on each new route.
   const picksComing = useQueries({ queries: pickQueries, combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle") });
   // Those the CIFP has, once drawn, each with the fix ATC sent the airplane
   // direct to where there is one: one string, so the plan's key changes
@@ -151,14 +160,13 @@ export function usePlanRoute() {
   const holdsParamText = address.holds;
   const holds = useMemo(() => holdsOf(holdsParamText), [holdsParamText]);
   // The fuel the pilot set in the tanks leaving a field (`tanks`,
-  // "KOSH:30,KJVL:0"), from FPL's gauges (FuelSet); one not named, full.
+  // "KOSH:30,KJVL:0"), an address's own; one not named, full.
   const tanksParamText = address.tanks;
   const tanks = useMemo(() => tanksOf(tanksParamText), [tanksParamText]);
   // The runway each departure picked is left from ("KSTL:30R"): the
   // departure field's runway picked, a stop's to leave from -- flown by its
   // runway transition for it (wingtip.procedure_paths), where St. Louis's
-  // BERYY6 went out by its first, runway 11's, off 30R (the audit of
-  // 2026-10-21). A runway the wind turns, or the pilot picks, asks for the
+  // BERYY6 went out by its first, runway 11's, off 30R. A runway the wind turns, or the pilot picks, asks for the
   // log again, which the planner answers from its cache: the legs are
   // planned without the runways, their paths laid on after
   // (with_procedures).
@@ -198,7 +206,9 @@ export function usePlanRoute() {
   const hasPoints = !!planned.dep || !!planned.dest || planned.stops.length > 0;
   const wholeRoute = !!planned.dep && !!planned.dest;
   // The plan as it is asked for, but the airplane (usePlanAnswer's).
-  const planInputs: Omit<PlanParams, "aircraft"> = {
+  // The same object while its values are (useKept): the plan's own memos
+  // are keyed on it.
+  const planInputs = useKept<Omit<PlanParams, "aircraft">>({
     dep: planned.dep,
     dest: planned.dest,
     stops: planned.stops,
@@ -224,10 +234,11 @@ export function usePlanRoute() {
     // Checkpoints as the map shows them: the settings' Waypoints off, the
     // nav log runs from point to point, at the pilot's ask.
     checkpoints: showWaypoints,
-  };
+  });
   // The route's edits, each a change of the address (useRouteEdits).
   const edits = useRouteEdits({ planned, routePoints, setAddress });
-  return {
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({
     address,
     setAddress,
     engine,
@@ -257,7 +268,7 @@ export function usePlanRoute() {
     directParam: address.direct,
     planInputs,
     ...edits,
-  };
+  });
 }
 
 /** The route as the address has it, as the workspace's hooks read it. */

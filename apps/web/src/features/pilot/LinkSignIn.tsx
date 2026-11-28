@@ -23,7 +23,7 @@ import { WORDING } from "../../lib/wording/generated/wording";
  * The dialog names the account the link signs in to, masked, before the
  * pilot presses Sign in (linkAccount): a link to someone else's account,
  * mailed to the pilot so that what they save lands where the sender reads
- * it, shows an address that is not theirs (the security audit's L1).
+ * it, shows an address that is not theirs.
  */
 export default function LinkSignIn({ token }: { token: string }) {
   // The token taken off the address by the router (React Router's

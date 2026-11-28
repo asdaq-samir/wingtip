@@ -23,7 +23,8 @@ CNX") and flow constrained areas (FXA, not read).
   airport it names until its stop time.
 
 Kept in wingtip.live_reports (kind "flow"), one report an airport and
-program or restriction, until its end. Words only: what a program means
+program or restriction, until its end (the engine's flow_ends: six hours
+for one given none). Words only: what a program means
 for a flight is the engine's (the Go / No-Go's flow finding).
 """
 
@@ -34,6 +35,8 @@ import time
 import xml.etree.ElementTree as ET
 
 from . import live_reports, utc
+from .engine import ask as engine
+from . import xml_names
 
 KIND = "flow"
 #: The programs a title names, the most specific first.
@@ -42,24 +45,15 @@ PROGRAMS = (
     ("GROUND STOP", "ground stop"),
     ("AIRSPACE FLOW PROGRAM", "airspace flow program"),
 )
-#: How long a program with no end given is kept, s.
-OPEN_ENDED_S = 6 * 3600
 _TITLE = re.compile(r"ADVZY\s+(\d+)\s+([A-Z0-9]+)(?:/([A-Z0-9]+))?\s+(\d\d/\d\d/\d{4})\s+(.*)")
 _FIELD = re.compile(r"^\s*([A-Z][A-Z /]+?):\s*(.*?)\s*$", re.M)
 _MINUTES = re.compile(r"(\d+)")
 
 
-def _local(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
-
-
-def _find(root, name: str):
-    return next((e for e in root.iter() if _local(e.tag) == name), None)
-
-
-def _text(root, name: str) -> str:
-    found = _find(root, name)
-    return (found.text or "").strip() if found is not None else ""
+def _ends(found: dict, now: float) -> float:
+    """When it stops being kept: its own end, else the engine's (flow_ends,
+    six hours for a program the Command Center gives no end for)."""
+    return engine("flow_ends", heard=now, ends=found["ends"] or None)["ends"]
 
 
 def _minutes(text: str | None) -> int | None:
@@ -72,16 +66,16 @@ def advisory(root) -> dict | None:
     {"program", "airport", "cancelled", "number", "starts", "ends",
     "average_delay_min", "maximum_delay_min", "condition", "title",
     "text"}; None for any other advisory."""
-    title = " ".join(_text(root, "advisoryTitle").split())
+    title = " ".join(xml_names.text(root, "advisoryTitle").split())
     head = _TITLE.search(title)
     program = next((name for words, name in PROGRAMS if words in title), None)
     if head is None or program is None:
         return None
-    text = _text(root, "advisoryText")
+    text = xml_names.text(root, "advisoryText")
     fields = {k.strip(): v for k, v in _FIELD.findall(text)}
-    period = _find(root, "effectivePeriod")
-    starts = utc.epoch_or_none(_text(period, "startTime")) if period is not None else None
-    ends = utc.epoch_or_none(_text(period, "endTime")) if period is not None else None
+    period = xml_names.first(root, "effectivePeriod")
+    starts = utc.epoch_or_none(xml_names.text(period, "startTime")) if period is not None else None
+    ends = utc.epoch_or_none(xml_names.text(period, "endTime")) if period is not None else None
     return {
         "program": program,
         "airport": (fields.get("CTL ELEMENT") or head[2]).split()[0],
@@ -101,22 +95,22 @@ def restriction(root) -> list[dict]:
     """A restriction at each airport it names, as {"restriction",
     "airport", "kind" (ARRIVAL, DEPARTURE), "category" (MIT, MINIT...),
     "value", "reason", "facility", "starts", "ends", "id"}."""
-    airports = _text(root, "airports").split()
+    airports = xml_names.text(root, "airports").split()
     out = []
     for airport in airports:
         out.append(
             {
                 "restriction": True,
                 "airport": airport,
-                "kind": _text(root, "restrictionType") or None,
-                "category": _text(root, "restrictionCategory") or None,
-                "value": _text(root, "mitValue") or _text(root, "minitValue") or None,
-                "element": _text(root, "restrictedNasElements") or None,
-                "reason": _text(root, "reasonText") or None,
-                "facility": _text(root, "facility") or None,
-                "starts": utc.epoch_or_none(_text(root, "startTime")),
-                "ends": utc.epoch_or_none(_text(root, "stopTime")),
-                "id": _text(root, "restrictionId") or None,
+                "kind": xml_names.text(root, "restrictionType") or None,
+                "category": xml_names.text(root, "restrictionCategory") or None,
+                "value": xml_names.text(root, "mitValue") or xml_names.text(root, "minitValue") or None,
+                "element": xml_names.text(root, "restrictedNasElements") or None,
+                "reason": xml_names.text(root, "reasonText") or None,
+                "facility": xml_names.text(root, "facility") or None,
+                "starts": utc.epoch_or_none(xml_names.text(root, "startTime")),
+                "ends": utc.epoch_or_none(xml_names.text(root, "stopTime")),
+                "id": xml_names.text(root, "restrictionId") or None,
             }
         )
     return out
@@ -132,7 +126,7 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
     except ET.ParseError:
         return 0
     now = time.time() if now is None else now
-    if _find(root, "generalAdvisory") is not None:
+    if xml_names.first(root, "generalAdvisory") is not None:
         found = advisory(root)
         if found is None:
             return 0
@@ -140,11 +134,9 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
         if found["cancelled"]:
             live_reports.drop(KIND, key)
         else:
-            live_reports.put(
-                KIND, key, found, place=found["airport"], starts=found["starts"], ends=found["ends"] or now + OPEN_ENDED_S, now=now
-            )
+            live_reports.put(KIND, key, found, place=found["airport"], starts=found["starts"], ends=_ends(found, now), now=now)
         return 1
-    if _find(root, "restrictionMessage") is not None:
+    if xml_names.first(root, "restrictionMessage") is not None:
         found = restriction(root)
         for r in found:
             # Its stop time past is its end: a message that ends it early
@@ -155,7 +147,7 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
                 r,
                 place=r["airport"],
                 starts=r["starts"],
-                ends=r["ends"] or now + OPEN_ENDED_S,
+                ends=_ends(r, now),
                 now=now,
             )
         return len(found)

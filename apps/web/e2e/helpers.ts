@@ -8,6 +8,7 @@ export {
   slow,
   settle,
   sideDrawer,
+  sheetFoot,
   cardHost,
   frontSheet,
   showTabs,
@@ -23,6 +24,7 @@ export {
   openSidebar,
   closeCard,
   cardClose,
+  withFoot,
 } from "./sheetHelpers";
 export {
   openRoute,
@@ -63,4 +65,4 @@ export {
   stripShows,
   airportSearch,
 } from "./planHelpers";
-export { mapStill, tapTheChart, tapNear, airportMarks, waypointMarks, airportMark, drawn, chartZoom } from "./mapHelpers";
+export { mapStill, mapLayersOn, tapTheChart, tapNear, airportMarks, waypointMarks, airportMark, drawn, chartZoom } from "./mapHelpers";

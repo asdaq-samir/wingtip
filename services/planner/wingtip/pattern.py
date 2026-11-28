@@ -22,25 +22,19 @@ are fed from and carries the dicts across.
 from __future__ import annotations
 
 import csv
-import json
 import threading
 from pathlib import Path
 
-import wingtip_native
 
 from . import faa_data, remarks
 from .config import DATA_DIR
 from .magnetic import magnetic_variation_deg
 from .single_flight import once
+from .engine import ask as _ask
 
 FAA_CACHE_DIR = DATA_DIR / "raw" / "faa_nasr"
 
 _LOCK = threading.Lock()
-
-
-def _ask(name: str, **given):
-    """The engine's rule `name` on the input given, its answer parsed."""
-    return json.loads(wingtip_native.call(name, json.dumps(given)))
 
 
 def end_key(ident: str | None) -> str:

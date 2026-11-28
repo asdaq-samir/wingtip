@@ -43,6 +43,7 @@ import re
 import xml.etree.ElementTree as ET
 
 from . import live_reports
+from . import xml_names
 
 KIND = "itws"
 #: The products kept, by the number the feed gives them (its topic's
@@ -63,18 +64,6 @@ ALERT_TYPES = {"MB": "microburst", "WS": "wind shear", "GF": "gust front"}
 #: A location along a runway's alert area: RWY, or a number of miles on
 #: final (MF) or departure (MD).
 _PLACE = re.compile(r"^(\d)M([FD])$")
-
-
-def _text(root, tag: str) -> str:
-    found = root.find(f".//{tag}")
-    return (found.text or "").strip() if found is not None and found.text else ""
-
-
-def _number(root, tag: str) -> float | None:
-    try:
-        return float(_text(root, tag))
-    except ValueError:
-        return None
 
 
 def _where(code: str) -> str:
@@ -118,47 +107,47 @@ def alerts(xml: str) -> tuple[str, list[str], float | None, list[dict]]:
         root = ET.fromstring(xml)
     except ET.ParseError:
         return "", [], None, []
-    product = _text(root, "product_msg_id")
-    airports = _text(root, "product_header_airports").split()
-    expires = _number(root, "product_header_expiration_time_seconds")
+    product = xml_names.text(root, "product_msg_id")
+    airports = xml_names.text(root, "product_header_airports").split()
+    expires = xml_names.number(xml_names.text(root, "product_header_expiration_time_seconds"))
     found: list[dict] = []
     if product == "9840":
         for alert in root.iter("ca_rwy_alert"):
-            code = _text(alert, "ca_ra_type")
+            code = xml_names.text(alert, "ca_ra_type")
             if code:
                 found.append(
                     runway_alert(
-                        _text(alert, "ca_ra_region_id"),
+                        xml_names.text(alert, "ca_ra_region_id"),
                         code,
-                        _number(alert, "ca_ra_value"),
-                        _text(alert, "ca_ra_first_loc"),
-                        _text(alert, "ca_ra_last_loc"),
+                        xml_names.number(xml_names.text(alert, "ca_ra_value")),
+                        xml_names.text(alert, "ca_ra_first_loc"),
+                        xml_names.text(alert, "ca_ra_last_loc"),
                     )
                 )
     elif product in ("9893", "9894"):
-        if _text(root, "pmsg_status").upper() == "ON":
+        if xml_names.text(root, "pmsg_status").upper() == "ON":
             kind = "microburst" if product == "9893" else "wind shear"
             found.append({"alert": kind, "words": f"{kind.capitalize()} alert on the ATIS"})
     elif product == "9839":
-        if _text(root, "trnal_exists_flag") == "1":
-            radius = _number(root, "trnal_radius")
+        if xml_names.text(root, "trnal_exists_flag") == "1":
+            radius = xml_names.number(xml_names.text(root, "trnal_radius"))
             within = f" within {radius:.0f} nm" if radius else ""
             found.append({"alert": "tornado", "words": f"Tornado detected{within}"})
     elif product == "9834":
-        if _text(root, "gf_eti_near") == "1":
-            minutes = _number(root, "gf_eti_minutes")
+        if xml_names.text(root, "gf_eti_near") == "1":
+            minutes = xml_names.number(xml_names.text(root, "gf_eti_minutes"))
             when = f" in {minutes:.0f} min" if minutes is not None and minutes >= 0 else ""
             found.append({"alert": "gust front", "words": f"Gust front expected{when}", "minutes": minutes})
     elif product == "9857":
         for cell in root.iter("ht_cell"):
-            words = _text(cell, "htc_msg_text")
+            words = xml_names.text(cell, "htc_msg_text")
             if words:
                 found.append(
                     {
                         "alert": "storm cell",
                         "words": f"Storm within 5 nm: {words}",
-                        "lat": _number(cell, "htc_latitude"),
-                        "lon": _number(cell, "htc_longitude"),
+                        "lat": xml_names.number(xml_names.text(cell, "htc_latitude")),
+                        "lon": xml_names.number(xml_names.text(cell, "htc_longitude")),
                     }
                 )
     return product, airports, expires, found

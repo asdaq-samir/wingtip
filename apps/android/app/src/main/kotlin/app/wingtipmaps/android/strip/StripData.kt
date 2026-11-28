@@ -22,7 +22,20 @@ import java.time.ZoneId
  */
 
 /** A finding, as the engine's go / no-go names them (lib/findings). */
-enum class Finding { OK, CAUTION, STOP, UNKNOWN, PENDING }
+enum class Finding {
+    OK, CAUTION, STOP, UNKNOWN, PENDING;
+
+    companion object {
+        /** The engine's or the planner's finding by its name (lib/findings). */
+        fun named(name: String?): Finding = when (name) {
+            "ok" -> OK
+            "caution" -> CAUTION
+            "stop" -> STOP
+            "pending" -> PENDING
+            else -> UNKNOWN
+        }
+    }
+}
 
 /** The verdict over the flight, in the Brief's words (the engine's
  *  gonogo_verdict_line, once the brief is on this phone). */
@@ -142,7 +155,12 @@ object StripData {
     /** The clock some minutes after leaving, or null for a leg that
      *  cannot be flown. */
     fun timeAt(leaveMs: Long, minutes: Double?, zone: ZoneId = ZoneId.systemDefault()): String? =
-        minutes?.let { Format.clock(leaveMs + (it * 60_000).toLong(), zone) }
+        minutes?.let {
+            val at = leaveMs + (it * 60_000).toLong()
+            // Its day first where it is not the day the flight left (Format.arrivalDay).
+            val day = Format.arrivalDay(at, leaveMs, zone, zone)
+            (day?.let { d -> "$d " } ?: "") + Format.clock(at, zone)
+        }
 
     /** The route by its points, "C81 → KJVL → KDLH"; one airport to itself
      *  "KDLH local" (identSchema's routeName). */

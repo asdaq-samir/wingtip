@@ -30,11 +30,37 @@ nonisolated enum NightPalette {
         night ? WingtipColor.Chart.routeGreenNight.withAlphaComponent(0.9) : WingtipColor.Chart.routeGreen
     }
 
-    /// The thin edge round the course's magenta: dark by day, faint and
-    /// light over the dimmed chart, where dark would vanish (web
-    /// routeEdgePaint).
-    static func routeEdge(night: Bool) -> UIColor {
-        night ? UIColor.white.withAlphaComponent(0.35) : WingtipColor.Chart.routeEdge.withAlphaComponent(0.6)
+    /// The thin edge round the course's magenta: the dark rim by day and
+    /// at night (the web's CHART.routeEdge), where a light one at night
+    /// stood out of the dimmed chart, brighter than the course it edged.
+    /// As the web's routeEdgePaint, its weights design/tokens.json's
+    /// chart-look.route-edge-*: nearly whole at night, where the magenta
+    /// itself is under 3:1 on the dimmed paper and the edge carries the
+    /// line (about 4.7:1, WCAG 2.2 1.4.11 counting the adjacent colour);
+    /// as whole by day in the sunlight palette, which on iOS is the one
+    /// Increase Contrast brings (WingtipInk), the web's Sunlight look; else
+    /// lighter on the white chart.
+    @MainActor
+    static func routeEdge(night: Bool, sunlight: Bool = UIAccessibility.isDarkerSystemColorsEnabled) -> UIColor {
+        let weight = night ? WingtipChartLook.routeEdgeNight : sunlight ? WingtipChartLook.routeEdgeSunlight : WingtipChartLook.routeEdgeDay
+        return WingtipColor.Chart.routeEdge.withAlphaComponent(weight)
+    }
+
+    /// A mark's colour dimmed by colour to `brightness` (OverlayDim.colour),
+    /// moved only as far as it must to stand at least `least` to 1 off its
+    /// paper (WCAG 2.2 1.4.11's 3:1 for a mark that must be seen): the
+    /// brightness nearest the chart's that reaches it, so a warning cue is
+    /// never washed into the dimmed chart. Where none reaches it, the
+    /// chart's own.
+    static func dimmed(_ colour: UIColor, brightness: CGFloat, on paper: UIColor, least: Double = 3) -> UIColor {
+        let at = min(1, max(0, brightness))
+        for step in 0...100 {
+            let d = CGFloat(step) / 100
+            for b in [at - d, at + d] where (0...1).contains(b) {
+                if let ink = OverlayDim.colour(colour, brightness: b), contrast(ink, paper) >= least { return ink }
+            }
+        }
+        return OverlayDim.colour(colour, brightness: at) ?? colour
     }
 
     /// The casing under a line on the chart: white by day, the night's
@@ -46,9 +72,13 @@ nonisolated enum NightPalette {
 
     /// The halo behind a mark's words on the chart. By day white round the
     /// label's dark words; in dark appearance the words are light (.label)
-    /// and a white halo made them unreadable, so the halo is the night's
-    /// ground.
-    static let halo = UIColor(light: UIColor.white.withAlphaComponent(0.9), dark: ground.withAlphaComponent(0.9))
+    /// and a white halo made them unreadable, so the halo is the tag's
+    /// dark at map.label.halo-night's strength, full, as the web's: its
+    /// words dimmed by colour at night (MarkDim.word) read about 5:1 on it
+    /// at the default Dimmer, where a see-through halo let the dimmed
+    /// paper show through.
+    static let halo = UIColor(light: UIColor.white.withAlphaComponent(0.9),
+                              dark: WingtipColor.Chart.tag.withAlphaComponent(WingtipMapLabel.haloNight))
 
     /// The fill of a field's ring and own ship's disc on the chart.
     static let markFill = UIColor(light: UIColor.white.withAlphaComponent(0.85), dark: surface.withAlphaComponent(0.9))
@@ -76,25 +106,6 @@ nonisolated enum NightPalette {
         }
         return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
     }
-}
-
-/// The chart in dark appearance, from Setup: as printed, or dimmed so the
-/// white paper chart does not take the pilot's night vision. Dimmed unless
-/// asked otherwise, as the web app's Settings has it (Chart at night).
-enum ChartNight: String, CaseIterable, Identifiable {
-    case normal, dimmed
-
-    /// The key Setup and the map share, as the web app's preference.
-    static let key = "chartAtNight"
-
-    var id: String { rawValue }
-    var label: String { self == .normal ? "Normal" : "Dimmed" }
-
-    /// How much of the night's ground is laid over each tile: none by day
-    /// or as printed; at night the paper down to about a fifth of its
-    /// light, as the web app's brightness(0.5) filter takes it, its black
-    /// type still 5:1 on it.
-    func shade(dark: Bool) -> CGFloat { dark && self == .dimmed ? 0.5 : 0 }
 }
 
 extension UILabel {

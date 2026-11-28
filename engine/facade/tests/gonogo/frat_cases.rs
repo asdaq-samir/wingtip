@@ -62,6 +62,16 @@ fn what_makes_the_flight_unlawful_is_high_whatever_the_points() {
     let checked = |good_through: &str| VorCheck::Checked { good_through: s(good_through), within_limit: true };
     assert!(frat::assess(&frat::Input { ifr: true, vor_check: checked("2026-10-20"), ..quiet_risk() }).factors.is_empty());
     assert_eq!(keys(&frat::assess(&frat::Input { ifr: true, vor_check: checked("2026-10-01"), ..quiet_risk() })), ["vor"]);
+    // 91.171(a)(2), "within the preceding 30 days": a check on 5 Sep is
+    // good through 5 Oct, DAY, its 30th day (inspections_due's until); one
+    // on 4 Sep is a day past it on its 31st.
+    let through = |on: &str| {
+        let due = call("inspections_due", &format!(r#"{{"vor_check":{{"on":"{on}","kind":"VOT","error_deg":0}}}}"#));
+        due["vor_check"]["until"].as_str().unwrap().to_owned()
+    };
+    assert_eq!((through("2026-09-05"), through("2026-09-04")), (s(DAY), s("2026-10-04")));
+    assert!(frat::assess(&frat::Input { ifr: true, vor_check: checked(&through("2026-09-05")), ..quiet_risk() }).factors.is_empty());
+    assert_eq!(keys(&frat::assess(&frat::Input { ifr: true, vor_check: checked(&through("2026-09-04")), ..quiet_risk() })), ["vor"]);
     assert!(frat::assess(&frat::Input { ifr: true, ..quiet_risk() }).factors.is_empty());
     let lapsed = Currency { flight_review_until: Some(s("2026-09-30")), ..current() };
     assert_eq!(frat::assess(&frat::Input { currency: Some(lapsed), ..quiet_risk() }).level, "high");
@@ -123,6 +133,7 @@ pub(super) fn good() -> Inspections {
         annual_good_through: Some(s("2026-10-31")),
         hours_now: Some(1250.0),
         hundred_hour_due_at_hours: Some(1300.5),
+        for_hire: None,
         static_check_good_through: Some(s("2027-01-31")),
         transponder_check_good_through: Some(s("2027-01-31")),
         elt_inspection_good_through: Some(s("2027-02-28")),
@@ -163,6 +174,10 @@ fn the_static_test_only_under_ifr_the_transponder_and_the_100_hour_as_cautions()
         frat::inspection_factors(&Inspections { transponder_check_good_through: Some(s("2026-09-30")), ..good() }, DAY, false);
     assert_eq!((transponder[0].key.as_str(), transponder[0].points, transponder.len()), ("transponder", 3, 1));
     assert_eq!(inspection_keys(&Inspections { hours_now: Some(1300.5), ..good() }, false), ["hundredHour"]);
+    // 91.409(b): owed only for hire; the owner's "not for hire" leaves a
+    // due 100-hour unweighed, and their "for hire" weighs it.
+    assert!(inspection_keys(&Inspections { hours_now: Some(1300.5), for_hire: Some(false), ..good() }, false).is_empty());
+    assert_eq!(inspection_keys(&Inspections { hours_now: Some(1300.5), for_hire: Some(true), ..good() }, false), ["hundredHour"]);
     assert!(inspection_keys(&Inspections { hours_now: Some(1300.4), ..good() }, false).is_empty());
 }
 

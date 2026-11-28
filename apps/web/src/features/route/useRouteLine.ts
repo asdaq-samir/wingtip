@@ -13,7 +13,7 @@ const NO_CHIPS: RouteChip[] = [];
 /** Where along each way its chip sits, a share of its length, by the
  *  way's place among all those offered: kept off the line's ends, where
  *  at a whole route's zoom a chip at a fifth covered the departure's mark
- *  (the chips win their place over the names since the UI audit's B6). */
+ *  (the chips win their place over the names). */
 const WAY_CHIP_SHARES = [0.3, 0.45, 0.6, 0.75];
 
 /** A chip's way: the route with its fuel stops (`fuel`), Avoid Class B
@@ -58,8 +58,7 @@ function wayWarning(hazards: RouteOptions["hazards"], crosses: number[]): string
  * word (2026-11-08): the route as typed by its own nav log's totals
  * (`typedNm`, `typedGal`), a way by the planner's answer for it
  * (RouteOption's distance_nm and fuel_gal), none worked out here. "None"
- * and "Over Land" at 1h 14m each told a pilot nothing apart (the FPL
- * audit's A15). Null where there are not two cards to pick between.
+ * and "Over Land" at 1h 14m each told a pilot nothing apart. Null where there are not two cards to pick between.
  */
 export function wayCards({
   chips,

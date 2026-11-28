@@ -5,7 +5,6 @@ import { findingRows } from "../vm/planWords";
 import { FloatingBar, FloatingBarButton, TabCount } from "../../../components/FloatingBar";
 import { ICON } from "../../../lib/icons";
 import type { PlanSlices } from "../vm/planSlices";
-import { MAKES_WAY } from "../../../components/sheet/pinAtFoot";
 import { EDGE_ROOM } from "../../../components/sheet/insets";
 import { FLOATING_BAR_ROOM, FLOATING_BAR_SHEET_ROOM } from "../../../components/floatingBarLook";
 import { cn } from "cn";
@@ -23,7 +22,7 @@ import { cn } from "cn";
  * bar with a ... instead of share"), which holds only Route Options, Share
  * link and Open in ForeFlight (RouteMore, the owner, 2026-11-21), File its
  * own button beside the bar.
- * From half up; at the pill the figures alone, large (FlightFoot).
+ * From half up, under the figures; at the pill the figures alone, large (FlightFoot).
  * What the Brief found to act on is counted on its glyph's corner, red
  * where one is a stop, amber where all are cautions (CardTabBar's
  * FloatingBar's TabCount, the one badge, each colour one meaning): the findings themselves
@@ -50,8 +49,8 @@ export function FplTabBar({
   more: ReactNode;
   fileable?: boolean;
   onFile?: () => void;
-  /** The suggested routes out above the route and on the map, or put
-   *  away; greyed while there are no ways to offer (routesOffered). */
+  /** The suggested routes out in the figures' place and on the map, or
+   *  put away; greyed while there are no ways to offer (routesOffered). */
   routes?: RouteOptions;
 }) {
   const { course } = vm.plan;
@@ -59,26 +58,19 @@ export function FplTabBar({
   const { briefMark } = vm.brief;
   const found = findingRows(useVerdict((v) => v.items)).length;
   return (
-    // See-through, as the airport card's bar is (CardTabBar): the route
-    // runs on under the glass, whose own denser bar fill and blur keep its
-    // words readable (the owner, 2026-11-18: "tabs bar is not see through?
-    // Is it different then airport card?"), where a fade to the sheet's
-    // solid colour behind it (the UI audit's B1) hid the route as a white
-    // band. Across the sheet's whole width, out over the foot's 16-point
-    // sides (SheetParts' px-4); only the capsule takes taps. At the sheet's
-    // foot, the Apple way, the route's figures held on its top just over
-    // it; as the sheet goes down toward the pill it moves down out of
-    // their way and they slide under it to the foot's edge, the pill's
-    // face (data-makes-way, sheet/pinAtFoot's MAKES_WAY; the owner,
-    // 2026-11-22: "I want it the Apple way at the bottom and figures
-    // should pin at the bottom of the plan and the slide under the tabs to
-    // pin to the pill as the card becomes a pill").
+    // Glass, as the airport card's bar is (CardTabBar; the owner,
+    // 2026-11-18: "Is it different then airport card?"), on the foot's own
+    // solid ground now, the figures over it, so no route runs under it and
+    // nothing behind it is dimmed. Across the sheet's whole width, out over the foot's 16-point
+    // sides (SheetParts' px-4); only the capsule takes taps. Under the
+    // figures in FPL's foot, one stack (FlightFoot's GroundFoot; on a phone
+    // the fixed bar beside the sheet, sheet/FootBar), folded away at the
+    // pill.
     // Its room under it the floating bar's (FLOATING_BAR_SHEET_ROOM), in
     // place of the sheet's 8-point edge (EDGE_ROOM) under the foot: the
     // margin takes back the difference, 4 points with no home indicator.
     <div
-      data-makes-way=""
-      className={cn("pointer-events-none -mx-4 flex justify-center gap-2 px-4 pt-2", FLOATING_BAR_ROOM, MAKES_WAY)}
+      className={cn("pointer-events-none -mx-4 flex justify-center gap-2 px-4 pt-2", FLOATING_BAR_ROOM)}
       style={{ marginBottom: `calc(${FLOATING_BAR_SHEET_ROOM} - ${EDGE_ROOM})` }}
       data-testid="fpl-actions"
     >
@@ -97,19 +89,35 @@ export function FplTabBar({
           badge={briefMark && found > 0 && <TabCount count={found} mark={briefMark} testId="route-brief-count" />}
           label="Brief"
           spoken={briefMark && found > 0 ? `Brief, ${found} ${found === 1 ? "finding" : "findings"} to look at` : undefined}
-          onClick={openBrief}
+          onClick={() => {
+            // Its card over FPL, and the figures back in the foot for when
+            // it closes (FlightFoot's GroundFoot).
+            routes?.onShown(false);
+            openBrief();
+          }}
           // Nothing to brief while a point of the route is not known, as
-          // the Nav Log and the Profile have nothing (the UI audit's B8).
+          // the Nav Log and the Profile have nothing.
           disabled={!!vm.plan.s.unknownPlace}
           testId="route-brief"
           data-finding={briefMark ?? undefined}
         />
-        <BarAction icon={<ICON.navLog />} label="Nav Log" onClick={openNavLogCard} disabled={!course} testId="route-navlog" />
+        <BarAction
+          icon={<ICON.navLog />}
+          label="Nav Log"
+          onClick={() => {
+            routes?.onShown(false);
+            openNavLogCard();
+          }}
+          disabled={!course}
+          testId="route-navlog"
+        />
         {/* Route Options, a tab of the bar's own beside Nav Log, in the
             route glyph FPL's button had before it read "FPL" (the owner,
             2026-11-22: "route option can show in the tab bar instead with
             the previous fpl icon we used"), where it was More's first item;
-            pressed while the suggested routes are out. */}
+            pressed while the suggested routes are out, their chips then in
+            the figures' place over the bar (FlightFoot's GroundFoot; the
+            owner, 2026-11-23). */}
         {/* Always there, so the bar never shifts; greyed, and named why,
             with no ways to suggest (the owner, 2026-11-22: "Routes should
             always show in the tab bar, just disabled if no routes"). */}

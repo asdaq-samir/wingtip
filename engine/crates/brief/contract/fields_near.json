@@ -1,0 +1,100 @@
+{
+  "x-call": "wingtip_brief::fields::near::call",
+  "description": "Which box of the phone's cycle packs to read for the fields round the airplane with no planner (Nearest, the emergency assistant, the on-device Ask), for best_fields to rank: asked first with no box, the first box, half a degree of latitude each way (about 30 nm, past a light single's still-air glide from 10,000 ft above the ground); asked again with the fields found in it, a box twice as tall where they are fewer than `want`, to two degrees at most (about 120 nm); null where they are enough or the box read was the widest, when the fields read go to best_fields. Longitude is widened by the latitude's cosine (held to 0.2 at most near the pole). A box to read, not an aviation figure: which fields are landing sites, and their order, are best_fields'.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FieldsNearInput",
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "object",
+          "description": "The airplane, degrees.",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "want": {
+          "type": "number",
+          "description": "How many fields are wanted: the box widens until it holds as many."
+        },
+        "half_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The box last read, its `half_deg` as this rule gave it; null on the first ask."
+        },
+        "found": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "How many fields the packs held in that box; null on the first ask."
+        }
+      },
+      "required": [
+        "at",
+        "want"
+      ],
+      "additionalProperties": false
+    },
+    "answer": {
+      "title": "FieldsNearAnswer",
+      "type": "object",
+      "properties": {
+        "box": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The box to read next, degrees; null: rank the fields read with best_fields.",
+          "properties": {
+            "south": {
+              "type": "number"
+            },
+            "west": {
+              "type": "number"
+            },
+            "north": {
+              "type": "number"
+            },
+            "east": {
+              "type": "number"
+            },
+            "half_deg": {
+              "type": "number",
+              "description": "Its half height, degrees of latitude: sent back as `half_deg`."
+            }
+          },
+          "required": [
+            "south",
+            "west",
+            "north",
+            "east",
+            "half_deg"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "box"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

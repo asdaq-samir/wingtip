@@ -174,15 +174,19 @@ export const SHEET_SECONDS = MOTION.sheet;
  *  phone's floating sheet (PhoneSheetContent). Written out whole, as
  *  Tailwind finds a class only as it is written. */
 export const SHEET_CORNERS = "rounded-[var(--radius-sheet)]";
-/** A box in the middle of the screen from `md` up, an iOS alert's corners
- *  (the sheets audit's D3, 2026-10-17): the dialogs and alerts. On a
+/** A box in the middle of the screen from `md` up, an iOS alert's corners:
+ * the dialogs and alerts. On a
  *  phone each is a sheet, with the sheet's corners. */
 export const DIALOG_CORNERS = "rounded-[var(--radius-dialog)]";
 /** What is behind every sheet and dialog, one dimming for all of them (the
- *  sheet consolidation, 2026-10-27): the page a tenth darker and lightly
- *  blurred, half in the dark theme, where the dialogs dimmed it a fifth
- *  or a half and the sheets a tenth. */
-export const DIM = "bg-black/10 dark:bg-black/50 supports-backdrop-filter:backdrop-blur-xs solid:backdrop-blur-none";
+ *  sheet consolidation, 2026-10-27): the page a tenth darker, half in the
+ *  dark theme, where the dialogs dimmed it a fifth or a half and the
+ *  sheets a tenth. Dimmed only, as Apple's sheets and alerts are: its
+ *  light blur was a backdrop filter over the whole screen and the live
+ *  map, run again every frame its opacity followed a finger on the sheet
+ *  and every frame the map drew under it, the largest blur in the app on
+ *  an iPad. */
+export const DIM = "bg-black/10 dark:bg-black/50";
 /** The panel at rest, its tabs and the route's figures: a rectangle with
  *  round corners, at the pilot's ask ("more of a rectangle"), where it was
  *  a capsule, its ends half its height round. */
@@ -218,8 +222,7 @@ export const GRABBER_BAR = "h-[5px] w-9 rounded-full bg-muted-foreground/40";
 export const CAPSULE_HIT = "relative rounded-full hit-1.5";
 
 /** A tinted capsule that adds a field to the route -- the Stops' Add
- *  Stop and Direct To (StopsCard) -- one height, padding and hit area (the
- *  consistency audit, 2026-10-23): 32 points with a 44-point area round
+ *  Stop and Direct To (StopsCard) -- one height, padding and hit area: 32 points with a 44-point area round
  *  it as a pseudo-element, so the capsule is not grown to make it. */
 export const ADD_CAPSULE =
   `${CAPSULE_HIT} h-8 shrink-0 bg-tint/12 px-3.5 font-semibold text-tint outline-none ` +
@@ -245,7 +248,7 @@ export const usePanelDragging = create<{ dragging: boolean }>(() => ({ dragging:
 export const FLYING_STACK = "gap-3 [&_button]:size-[60px]";
 /** The map's buttons on the ground: 44 px (size.map-button) whatever the
  *  pilot's text size, as Apple Maps' do not grow with Dynamic Type (the
- *  scale audit's Q1, the owner, 2026-11-21; they were rem, 54 at 19.65 px),
+ *  owner, 2026-11-21; they were rem, 54 at 19.65 px),
  *  their glyphs 20 px (size.glyph-map). Their 44-point hit area is the
  *  button itself (index.css's --tap-target is px too). */
 export const MAP_BUTTON_SIZE = "[&_button]:size-(--size-map-button)";

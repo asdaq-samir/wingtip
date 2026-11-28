@@ -13,6 +13,7 @@ import {
   settled,
   showTabs,
   sideDrawer,
+  sheetFoot,
   slow,
   frontSheet,
 } from "./helpers";
@@ -67,8 +68,8 @@ test.describe("/app/plan", () => {
     await expect(firstRow(page)).toBeVisible();
     // The empty route is on FPL's page of the sheet's pager, beside
     // Search's off the screen's edge: out of sight, not out of the page.
-    await expect(sideDrawer(page).getByTestId("timeline-type-route")).not.toBeInViewport();
-    await expect(sideDrawer(page).getByTestId("flight-line")).toHaveCount(0);
+    await expect(sideDrawer(page).getByTestId("route-type-open")).not.toBeInViewport();
+    await expect(sheetFoot(page).getByTestId("flight-line")).toHaveCount(0);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await fromRest(page);
@@ -78,7 +79,7 @@ test.describe("/app/plan", () => {
     // canvas's b; the pill's one fixed height, sheet/insets), the route's
     // row from half up; in the side panel they are pinned under the one
     // search. A no-break space between a figure and its unit, so \s.
-    const figures = sideDrawer(page).getByTestId("flight-line");
+    const figures = sheetFoot(page).getByTestId("flight-line");
     await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
     if ((page.viewportSize()?.width ?? 0) < 660) {
       await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
@@ -93,7 +94,7 @@ test.describe("/app/plan", () => {
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.
     await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
-    await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
+    await expect(sheetFoot(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
     await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
     expect(await page.getByTestId("toolbar-trigger").count()).toBe(0);
   });
@@ -125,7 +126,7 @@ test.describe("/app/plan", () => {
     await fromRest(page);
     // Share among the route's chips half way.
     await openPanel(page);
-    await sideDrawer(page).getByTestId("share-route").click();
+    await sheetFoot(page).getByTestId("share-route").click();
     // The route's own link, in FPL's Share tile (the owner's pick A, 2026-11-15): the GPX file this read went with the SD-card
     // and USB files (the owner, 2026-11-02, "No need for sd card or usb").
     await expect(page.getByTestId("share-link")).toBeVisible();

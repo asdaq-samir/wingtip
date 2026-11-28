@@ -7,6 +7,9 @@ nonisolated struct RouteLegInput {
     var legs: [RouteLegs.MapLeg] = []
     var selected: Int?
     var onSelect: ((Int) -> Void)?
+    /// The tops of climb and descent (RouteLegModel.legPoints), drawn by
+    /// the route's marks from map.zoom.route-tags (RouteMarksLayer).
+    var points: [RouteLegs.LegPoint] = []
 }
 
 /// The green either side of the selected leg's magenta, as ForeFlight
@@ -56,12 +59,14 @@ final class RouteLegLayer: NSObject, UIGestureRecognizerDelegate {
         return RouteLegs.nearest(to: at, segments: segments)
     }
 
-    func update(_ map: MKMapView, _ next: RouteLegInput, night: Bool, below edge: (any MKOverlay)?) {
+    /// The night's green goes through the map's dim (OverlayDim.recolour),
+    /// so the casing is never drawn at full light over the dimmed chart.
+    func update(_ map: MKMapView, _ next: RouteLegInput, night: Bool, below edge: (any MKOverlay)?, marks: RouteMarksLayer, dim: OverlayDim) {
         input = next
+        marks.showLegPoints(next.points, on: map)
         if night != self.night {
             self.night = night
-            casingRenderer?.strokeColor = NightPalette.routeGreen(night: night)
-            casingRenderer?.setNeedsDisplay()
+            if let casingRenderer { dim.recolour(casingRenderer, stroke: NightPalette.routeGreen(night: night)) }
         }
         let leg = next.selected.flatMap { i in next.legs.indices.contains(i) ? next.legs[i] : nil }
         guard leg != drawn else { return }
@@ -82,7 +87,7 @@ final class RouteLegLayer: NSObject, UIGestureRecognizerDelegate {
         renderer.strokeColor = NightPalette.routeGreen(night: night)
         // Wider than the edge (ChartMap's edgeWidth), so the green shows
         // either side of it.
-        renderer.lineWidth = ChartMap.Coordinator.edgeWidth + 5
+        renderer.lineWidth = CourseRenderers.edgeWidth + 5
         renderer.lineCap = .round
         renderer.lineJoin = .round
         casingRenderer = renderer

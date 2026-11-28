@@ -4,13 +4,22 @@ import Foundation
 /// How the airplane cards write things, as the web app's pastFlightFormat
 /// and FlightCard do.
 enum FlightWords {
-    /// A name in the FAA's or a registry's capitals as a name is written:
-    /// "CESSNA 172S" as "Cessna 172S", its codes (a letter, a figure) kept.
-    static func nameCase(_ text: String) -> String {
-        text.split(separator: " ", omittingEmptySubsequences: false).map { word -> String in
-            guard word.count >= 2, word.allSatisfy({ $0.isLetter && $0.isUppercase }) else { return String(word) }
-            return String(word.prefix(1)) + word.dropFirst().lowercased()
-        }.joined(separator: " ")
+    /// What a name's case is asked as (the engine's `name_case` kinds).
+    enum NameKind: String {
+        /// A maker's or a model's: "CESSNA 172S" as "Cessna 172S", its
+        /// initials kept (IAE, CFM).
+        case maker
+        /// A registrant's or an operator's: "UNITED AIRLINES INC" as
+        /// "United Airlines Inc".
+        case person
+    }
+
+    /// A name in the FAA's or a registry's capitals as a name is written,
+    /// the engine's `name_case`, as the web writes it; as sent where the
+    /// engine cannot say (the raw text stays as sent).
+    static func nameCase(_ text: String, _ kind: NameKind = .person) -> String {
+        let cased: String? = try? Engine.rule("name_case", EngineContract.NameCaseInput(text: text, kind: kind.rawValue))
+        return cased ?? text
     }
 
     /// How long, as every duration is written (Format.duration): "2h 13m", "41m".
@@ -67,12 +76,14 @@ enum FlightWords {
 
     /// How far and which way another airplane is from own ship, and how
     /// high against it: "12 nm NE of you, 500 ft above", the engine's
-    /// `distance_nm` and `bearing_deg`; thrown where it cannot say.
-    static func fromYou(_ fix: OwnShip.Fix, lat: Double, lon: Double, altitudeFt: Double?) throws -> String {
+    /// `distance_nm` and `bearing_deg`; thrown where it cannot say. From
+    /// own ship's place and height as a card reads them (OwnShip's
+    /// coarseCoordinate and markedFt), not each fix.
+    static func fromYou(_ at: CLLocationCoordinate2D, ownFt: Double?, lat: Double, lon: Double, altitudeFt: Double?) throws -> String {
         let plane = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-        let nm = try Flight.distanceNm(fix.coordinate, plane)
-        let bearing = try Engine.bearingDeg(lat1: fix.coordinate.latitude, lon1: fix.coordinate.longitude, lat2: lat, lon2: lon)
+        let nm = try Flight.distanceNm(at, plane)
+        let bearing = try Engine.bearingDeg(lat1: at.latitude, lon1: at.longitude, lat2: lat, lon2: lon)
         return "\(Format.distance(nm, decimals: 0)) \(AirportWords.compassPoint(bearing)) of you"
-            + (fix.altitudeFt.flatMap { own in altitudeFt.map { ", " + against($0 - own) } } ?? "")
+            + (ownFt.flatMap { own in altitudeFt.map { ", " + against($0 - own) } } ?? "")
     }
 }

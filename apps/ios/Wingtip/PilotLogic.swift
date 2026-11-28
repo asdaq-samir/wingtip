@@ -102,6 +102,15 @@ enum Endorsing {
         try Engine.endorsementLapse(until: instructor.until, untilKind: instructor.untilKind, signedOn: signedOn)
     }
 
+    /// What the instructor is warned of before signing with these fields,
+    /// never a block: an A.13 naming an airport of part 91 appendix D,
+    /// section 4, where no student, sport or recreational pilot may take
+    /// off or land solo (14 CFR 91.131(b)(2)). The engine's
+    /// `endorsement_warnings`, the web's lib/endorsements signingWarnings.
+    static func warnings(_ code: String, fields: [String: String]) throws -> [String] {
+        try Engine.endorsementWarnings(code: code, fields: fields)
+    }
+
     /// The latest of each kind signed in the app, not voided and its
     /// instructor borne out by the FAA airmen registry; the
     /// record comes newest first (the engine's `endorsements_in_force`,

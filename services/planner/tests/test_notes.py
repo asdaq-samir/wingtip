@@ -7,6 +7,7 @@ from wingtip import checkpoint_notes
 
 from app.main import app
 from app.routers import notes
+from app.settings import get_settings
 
 client = TestClient(app)
 
@@ -78,7 +79,29 @@ def test_a_note_longer_than_500_characters_is_refused(monkeypatch, tmp_path):
     assert (
         client.post(
             "/api/checkpoint-notes",
+            headers={"X-Pilot-Id": "42"},
             json={"departure_ident": "C81", "destination_ident": "KDLH", "lat": 45.0, "lon": -90.0, "description": long},
         ).status_code
         == 422
     )
+
+
+def test_a_note_written_with_no_pilot_is_the_shared_one_only_on_a_one_user_stack(monkeypatch, tmp_path):
+    """The security review of 2026-11-23, L9: a write that reached the
+    planner without the gateway's X-Pilot-Id would have been everyone's
+    note. Refused, unless the stack says nobody signs in (APP_OPEN_WRITES)."""
+    _setup(monkeypatch, tmp_path)
+    body = {"departure_ident": "C81", "destination_ident": "KDLH", "lat": 45.0, "lon": -90.0, "description": "Shared: the lake"}
+    monkeypatch.delenv("APP_OPEN_WRITES", raising=False)
+    get_settings.cache_clear()
+    assert client.post("/api/checkpoint-notes", json=body).status_code == 401
+    assert checkpoint_notes.load_notes() == []
+
+    monkeypatch.setenv("APP_OPEN_WRITES", "true")
+    get_settings.cache_clear()
+    try:
+        assert client.post("/api/checkpoint-notes", json=body).status_code == 200
+    finally:
+        monkeypatch.delenv("APP_OPEN_WRITES")
+        get_settings.cache_clear()
+    assert _route_notes()[0]["saved"] == "Shared: the lake"

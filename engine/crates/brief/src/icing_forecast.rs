@@ -1,18 +1,23 @@
-//! Forecast icing on an IFR route (#216, item 6): the icing severity the
-//! Aviation Weather Center forecasts on each leg at the altitude it is
-//! flown, and the layer the icing is in, read from the AWC's vertical
-//! cross-sections along the leg -- the icing its Graphical Forecasts for
-//! Aviation draw (AIM 7-1-4: "icing ... forecasts are available ... from the
-//! surface up to 30,000 ft MSL"), which the AWC makes from its Current and
-//! Forecast Icing Products (CIP, FIP). The planner fetches each leg's
-//! section for the hour the airplane is on it (wingtip.icing_forecast); what
-//! the section says for the flight is decided here.
+//! Forecast icing on an IFR route (#216, item 6): the icing severity
+//! forecast on each leg at the altitude it is flown, and the layer the icing
+//! is in, read from a vertical section along the leg (AIM 7-1-4: "icing ...
+//! forecasts are available ... from the surface up to 30,000 ft MSL"). The
+//! planner samples each leg's section out of the NWS's Current Icing
+//! Product analysis and its In-Flight Icing forecast grids, which the
+//! weather service keeps (wingtip.icing_forecast; NWS SCN 26-87 and 25-80);
+//! what the section says for the flight is decided here, and which stored
+//! hours a leg is read off and how they merge (`icing_forecast_hours`, a
+//! leg's `hours`): the nearest its middle and every other within an hour,
+//! each point and level the worst of them (the owner, 2026-11-27, "Grids,
+//! worst of nearby hours").
 //!
 //! A section is `width` columns along the leg by `data_levels` levels up,
 //! its `values` level-fastest (`values[level + column * data_levels]`, as
-//! the AWC's own page reads them), each the AWC's severity category: 0
-//! none, 1 trace, 2 light, 3 moderate, 4 heavy (the GFA's legend: "Trace,
-//! Light, Mod, Heavy"), a negative value no forecast there. `sfc_hgt` is
+//! the AWC's own page reads them), each the severity category: 0 none, 1
+//! trace, 2 light, 3 moderate, 4 severe (GRIB2 code table 4.228, "none,
+//! trace, light, moderate, and severe", as NWS SCN 26-87 gives the CIP's
+//! and the IFI's; AIM 7-1-19's scale ends at severe too), a negative value
+//! no forecast there. `sfc_hgt` is
 //! the ground under each column in metres; a level under it is ground, not
 //! air, and is not read.
 //!
@@ -31,17 +36,18 @@ use crate::json::{self, Value};
 use wingtip_core::sort::StableSort;
 use wingtip_core::units::FT_PER_M;
 
-/// The AWC's severity categories by their number (the GFA's legend; "heavy"
-/// is the AWC's word where AIM 7-1-19's scale ends at "severe").
-pub const SEVERITY: [&str; 5] = ["none", "trace", "light", "moderate", "heavy"];
+/// The severity categories by their number (GRIB2 code table 4.228 as the
+/// NWS's CIP and IFI give them; AIM 7-1-19's scale).
+pub const SEVERITY: [&str; 5] = ["none", "trace", "light", "moderate", "severe"];
 
 type R<T> = Result<T, String>;
 
-/// One leg's section as the AWC sends it.
+/// One leg's section as the planner samples it off a stored hour.
 struct Section<'a> {
     width: usize,
     levels: usize,
-    values: &'a [Value],
+    /// The categories, level-fastest; NaN where a value is not a number.
+    values: Vec<f64>,
     ground_m: Option<&'a [Value]>,
 }
 
@@ -54,16 +60,12 @@ impl Section<'_> {
         {
             return None;
         }
-        let v = self.values[level + column * self.levels].as_f64()?;
+        let v = self.values[level + column * self.levels];
         (v >= 0.0).then(|| (v.round() as i64).clamp(0, 4) as u8)
     }
 }
 
-fn section<'a>(name: &str, v: &'a Value, levels_ft: &[f64]) -> R<Option<Section<'a>>> {
-    let s = match v.get("section") {
-        None | Some(Value::Null) => return Ok(None),
-        Some(s) => s,
-    };
+fn parse<'a>(name: &str, s: &'a Value, levels_ft: &[f64]) -> R<Section<'a>> {
     let count = |key: &str| s.get(key).and_then(Value::as_f64).filter(|n| *n >= 0.0 && n.fract() == 0.0).map(|n| n as usize);
     let width = count("width").ok_or_else(|| format!("{name}: a section's \"width\" is missing"))?;
     let levels = count("data_levels").ok_or_else(|| format!("{name}: a section's \"data_levels\" is missing"))?;
@@ -75,7 +77,42 @@ fn section<'a>(name: &str, v: &'a Value, levels_ft: &[f64]) -> R<Option<Section<
         return Err(format!("{name}: a section of {width} by {levels} has {} values", values.len()));
     }
     let ground_m = s.get("sfc_hgt").and_then(Value::as_array).filter(|g| g.len() == width);
-    Ok(Some(Section { width, levels, values, ground_m }))
+    Ok(Section { width, levels, values: values.iter().map(|v| v.as_f64().unwrap_or(f64::NAN)).collect(), ground_m })
+}
+
+/// A member there and not null.
+fn present(v: Option<&Value>) -> Option<&Value> {
+    v.filter(|s| !matches!(s, Value::Null))
+}
+
+/// A leg's section, and, where the leg sends the stored hours near it
+/// (`hours`, the nearest first, as `icing_forecast_hours` picks them), the
+/// nearest hour's own beside it.
+///
+/// The hours merge as the owner chose (2026-11-27, "Grids, worst of nearby
+/// hours"; the review that day found the IFI alone a category or two under
+/// the AWC's sections on some legs): each point and level the worst
+/// category of every hour sent, so a leg is never read under the worst the
+/// store holds near it. An hour whose grid could not be read (null) is
+/// left out; with the nearest hour's gone the leg is unchecked, never
+/// clear. The ground is the nearest hour's section's.
+fn sections<'a>(name: &str, v: &'a Value, levels_ft: &[f64]) -> R<(Option<Section<'a>>, Option<Section<'a>>)> {
+    let Some(hours) = present(v.get("hours")) else {
+        return Ok((present(v.get("section")).map(|s| parse(name, s, levels_ft)).transpose()?, None));
+    };
+    let hours = hours.as_array().ok_or_else(|| format!("{name}: a leg's \"hours\" are not a list"))?;
+    let Some(first) = present(hours.first()) else { return Ok((None, None)) };
+    let nearest = parse(name, first, levels_ft)?;
+    let mut worst = Section { width: nearest.width, levels: nearest.levels, values: nearest.values.clone(), ground_m: nearest.ground_m };
+    for other in hours[1..].iter().filter(|h| !matches!(h, Value::Null)) {
+        let other = parse(name, other, levels_ft)?;
+        if other.width != worst.width {
+            return Err(format!("{name}: a leg's hours are {} and {} columns wide", worst.width, other.width));
+        }
+        // f64::max keeps the number where one side is none (NaN).
+        worst.values.iter_mut().zip(&other.values).for_each(|(w, o)| *w = w.max(*o));
+    }
+    Ok((Some(worst), Some(nearest)))
 }
 
 /// The levels read for an altitude: the highest at or under it and the
@@ -97,9 +134,38 @@ fn severity_value(s: Option<u8>) -> Value {
     s.map_or(Value::Null, |s| Value::String(SEVERITY[s as usize].to_owned()))
 }
 
+/// The worst category at the altitude over the leg, and the columns iced
+/// there and known (`(iced, known)`; known 0 where no column is).
+fn at_altitude(s: &Section, altitude_ft: f64, levels_ft: &[f64]) -> (Option<u8>, (usize, usize)) {
+    let read = levels_for(altitude_ft, levels_ft);
+    let (mut known, mut iced, mut worst): (usize, usize, Option<u8>) = (0, 0, None);
+    for column in 0..s.width {
+        let here = read.iter().filter_map(|l| s.at(column, *l, levels_ft)).max();
+        if let Some(c) = here {
+            known += 1;
+            if c > 0 {
+                iced += 1;
+            }
+            worst = Some(worst.map_or(c, |w| w.max(c)));
+        }
+    }
+    (worst, (iced, known))
+}
+
+/// The share of the leg in icing, to a hundredth; None where no column is
+/// known.
+fn share_of((iced, known): (usize, usize)) -> Option<f64> {
+    (known > 0).then(|| (iced as f64 / known as f64 * 100.0).round() / 100.0)
+}
+
 /// One leg: the worst at its altitude, the share of the leg in icing there,
-/// and the layer icing is forecast in over the leg at any level.
-fn leg(index: usize, altitude_ft: f64, s: Option<&Section>, levels_ft: &[f64], valid: Value) -> (Value, Option<u8>) {
+/// and the layer icing is forecast in over the leg at any level. `own`, the
+/// nearest hour's section where `s` merges the hours near it: the share is
+/// its own, as its grid gives it, not raised by the merging -- unless it
+/// has no icing at the altitude while the merged section has, when the
+/// merged share goes with the severity it found (a share of none beside a
+/// severity is no answer).
+fn leg(index: usize, altitude_ft: f64, s: Option<&Section>, own: Option<&Section>, levels_ft: &[f64], valid: Value) -> (Value, Option<u8>) {
     let Some(s) = s else {
         return (
             obj(vec![
@@ -113,17 +179,17 @@ fn leg(index: usize, altitude_ft: f64, s: Option<&Section>, levels_ft: &[f64], v
             None,
         );
     };
-    let read = levels_for(altitude_ft, levels_ft);
-    let (mut known, mut iced, mut worst): (usize, usize, Option<u8>) = (0, 0, None);
-    for column in 0..s.width {
-        let here = read.iter().filter_map(|l| s.at(column, *l, levels_ft)).max();
-        if let Some(c) = here {
-            known += 1;
-            if c > 0 {
-                iced += 1;
-            }
-            worst = Some(worst.map_or(c, |w| w.max(c)));
-        }
+    let (worst, merged) = at_altitude(s, altitude_ft, levels_ft);
+    let mut share = share_of(merged);
+    // Whether the nearest hour has icing at all is its count of iced
+    // columns, not its share rounded: one column in two hundred rounds to
+    // none yet is icing of its own, and its share stands.
+    if let Some(own) = own
+        && worst.is_some_and(|c| c > 0)
+        && let (_, counted @ (iced, _)) = at_altitude(own, altitude_ft, levels_ft)
+        && iced > 0
+    {
+        share = share_of(counted);
     }
     let (mut bottom, mut top): (Option<f64>, Option<f64>) = (None, None);
     for column in 0..s.width {
@@ -138,7 +204,7 @@ fn leg(index: usize, altitude_ft: f64, s: Option<&Section>, levels_ft: &[f64], v
         (Some(b), Some(t)) => obj(vec![("bottom_ft", Value::Number(b)), ("top_ft", Value::Number(t))]),
         _ => Value::Null,
     };
-    let share = if known == 0 { Value::Null } else { Value::Number((iced as f64 / known as f64 * 100.0).round() / 100.0) };
+    let share = share.map_or(Value::Null, Value::Number);
     (
         obj(vec![
             ("index", Value::Number(index as f64)),
@@ -182,9 +248,9 @@ fn route(name: &str, v: &Value) -> R<Value> {
     for (i, l) in legs.iter().enumerate() {
         let altitude_ft =
             l.get("altitude_ft").and_then(Value::as_f64).ok_or_else(|| format!("{name}: leg {i}'s \"altitude_ft\" is missing"))?;
-        let s = section(name, l, &levels_ft)?;
+        let (s, own) = sections(name, l, &levels_ft)?;
         let valid = l.get("valid_s").and_then(Value::as_f64).map_or(Value::Null, Value::Number);
-        let (answer, worst) = leg(i, altitude_ft, s.as_ref(), &levels_ft, valid);
+        let (answer, worst) = leg(i, altitude_ft, s.as_ref(), own.as_ref(), &levels_ft, valid);
         match worst {
             None => unchecked.push(Value::Number(i as f64)),
             Some(c) => found.push((i, altitude_ft, c)),
@@ -218,10 +284,68 @@ fn route(name: &str, v: &Value) -> R<Value> {
     Ok(obj(vec![("legs", Value::Array(out)), ("worst", worst_value), ("unchecked", Value::Array(unchecked)), ("line", line)]))
 }
 
+/// How far past the stored cycle's last hour, or before its first, a leg is
+/// still read from it:
+/// the stored hours are an hour apart, and each stands for the half hour
+/// either side of it.
+const HALF_HOUR_S: f64 = 1800.0;
+
+/// How near a leg's middle another stored hour is read beside the nearest:
+/// the hours either side of it (the owner, 2026-11-27, "Grids, worst of
+/// nearby hours").
+const NEAR_S: f64 = 3600.0;
+
+/// The stored hours a leg whose middle is at `middle_s` is read off, the
+/// nearest first -- the CIP's analysis where it and an IFI hour are as
+/// near, the earliest for a time just before them all -- then every other within
+/// NEAR_S of it in the order stored; none for a time more than half an
+/// hour past the last or before the first, as each hour stands for the
+/// half hour either side of it and no further.
+fn hours_for(times: &[(f64, bool)], middle_s: f64) -> Vec<usize> {
+    let last = times.iter().map(|t| t.0).fold(f64::NEG_INFINITY, f64::max);
+    let first = times.iter().map(|t| t.0).fold(f64::INFINITY, f64::min);
+    if times.is_empty() || middle_s > last + HALF_HOUR_S || middle_s < first - HALF_HOUR_S {
+        return Vec::new();
+    }
+    let mut nearest = 0;
+    for (i, (t, cip)) in times.iter().enumerate() {
+        let (best, best_cip) = times[nearest];
+        let (d, best_d) = ((t - middle_s).abs(), (best - middle_s).abs());
+        if d < best_d || (d == best_d && *cip && !best_cip) {
+            nearest = i;
+        }
+    }
+    let near = (0..times.len()).filter(|i| *i != nearest && (times[*i].0 - middle_s).abs() < NEAR_S);
+    std::iter::once(nearest).chain(near).collect()
+}
+
+/// `icing_forecast_hours`: which stored hours each leg is read off, by
+/// index, for the planner to sample and send back as the leg's `hours`.
+fn hours(name: &str, v: &Value) -> R<Value> {
+    let stored = v.get("hours").and_then(Value::as_array).ok_or_else(|| format!("{name}: \"hours\" are missing"))?;
+    let times: Vec<(f64, bool)> = stored
+        .iter()
+        .map(|h| {
+            let t = h.get("valid_s").and_then(Value::as_f64).ok_or_else(|| format!("{name}: an hour's \"valid_s\" is missing"))?;
+            Ok((t, h.get("source").and_then(Value::as_str) == Some("cip")))
+        })
+        .collect::<R<_>>()?;
+    let middles = v.get("middles_s").and_then(Value::as_array).ok_or_else(|| format!("{name}: \"middles_s\" are missing"))?;
+    let legs = middles
+        .iter()
+        .map(|m| {
+            let m = m.as_f64().ok_or_else(|| format!("{name}: a middle is not a number"))?;
+            Ok(Value::Array(hours_for(&times, m).into_iter().map(|i| Value::Number(i as f64)).collect()))
+        })
+        .collect::<R<_>>()?;
+    Ok(obj(vec![("legs", Value::Array(legs))]))
+}
+
 /// The rule `name` worked on `v`.
 pub fn call(name: &str, v: &Value) -> R<String> {
     let answer = match name {
         "icing_forecast_route" => route(name, v)?,
+        "icing_forecast_hours" => hours(name, v)?,
         _ => return Err(format!("the engine has no rule called {name:?}")),
     };
     let mut out = String::new();
@@ -241,6 +365,27 @@ mod tests {
         assert_eq!(levels_for(4000.0, &LEVELS), vec![1]);
         assert_eq!(levels_for(2000.0, &LEVELS), vec![0]);
         assert_eq!(levels_for(9000.0, &LEVELS), vec![3]);
+    }
+
+    #[test]
+    fn a_leg_reads_the_nearest_hour_first_then_those_within_an_hour() {
+        // 13Z IFI, 14Z IFI, 14Z CIP, 15Z IFI; a middle at 14:10Z.
+        let t = |h: f64| h * 3600.0;
+        let stored = [(t(13.0), false), (t(14.0), false), (t(14.0), true), (t(15.0), false)];
+        // 13Z is 70 minutes off, 15Z 50.
+        assert_eq!(hours_for(&stored, t(14.0) + 600.0), vec![2, 1, 3]);
+        // On the hour: the CIP's, then the IFI's same hour; 13Z and 15Z are
+        // an hour off, not within it.
+        assert_eq!(hours_for(&stored, t(14.0)), vec![2, 1]);
+        // Half an hour past the last is still read; a second more is not.
+        assert_eq!(hours_for(&stored, t(15.5)), vec![3]);
+        assert!(hours_for(&stored, t(15.5) + 1.0).is_empty());
+        // Half an hour before the first is read off it; a second more, or
+        // hours before them all, is not.
+        assert_eq!(hours_for(&stored, t(12.5)), vec![0]);
+        assert!(hours_for(&stored, t(12.5) - 1.0).is_empty());
+        assert!(hours_for(&stored, t(10.0)).is_empty());
+        assert!(hours_for(&[], t(10.0)).is_empty());
     }
 
     #[test]

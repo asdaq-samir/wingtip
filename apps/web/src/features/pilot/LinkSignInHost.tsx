@@ -2,7 +2,7 @@ import { Suspense, lazy, useState } from "react";
 
 /** The emailed link's sign-in sheet (LinkSignIn) on a chunk of its own,
  *  drawn only on a page a sign-in link opened: the first load's budget
- *  (scripts/first-load.mjs, the speed audit 2026-11-12). */
+ *  (scripts/first-load.mjs). */
 const LinkSignIn = lazy(() => import("./LinkSignIn"));
 
 /** The token an emailed sign-in link brought, from the address's

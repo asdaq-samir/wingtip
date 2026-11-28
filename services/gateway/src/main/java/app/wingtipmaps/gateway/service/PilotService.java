@@ -115,8 +115,7 @@ public class PilotService {
                 // (MagicLinkAuthenticationToken) and found by it at each
                 // request. Left standing, it named the old address, which
                 // is free now: whoever signs up with it next would be
-                // signed in on those sessions as soon as they did (the deep
-                // security review of 2026-11-21). The pilot signs in on
+                // signed in on those sessions as soon as they did. The pilot signs in on
                 // those devices again, with the new address.
                 sessions.findByPrincipalName(before).keySet().forEach(sessions::deleteById);
                 return changed;
@@ -218,7 +217,7 @@ public class PilotService {
      * -- by the provider's subject, or the link's address. It ran the whole
      * find-or-create on every request, which could write a provider's new
      * address on a read and made a deleted pilot again from a session that
-     * outlived them (the September simplification audit's F-BE01-1). The
+     * outlived them. The
      * one write left is a developer listed since they signed in, made one
      * at their next request ({@link #withListedRole}).
      */

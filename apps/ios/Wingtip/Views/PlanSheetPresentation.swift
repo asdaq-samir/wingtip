@@ -19,7 +19,7 @@ struct PlanSheetPresentation: ViewModifier {
             // web's sheet is: iOS 26's glass sheet at half took the yellow
             // chart under it, and the Nav Log's "No Legs Yet", You's Sign In
             // and the FPL's rows at the largest text fell under 4.5:1 there
-            // (WCAG 2.2 1.4.3, the accessibility audit). Glass stays on what
+            // (WCAG 2.2 1.4.3). Glass stays on what
             // floats over the map (docs/design/ios.md).
             .presentationBackground(WingtipInk.sheet)
             .interactiveDismissDisabled()

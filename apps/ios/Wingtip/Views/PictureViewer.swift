@@ -123,6 +123,8 @@ struct PictureViewer: View {
     @State private var problem: String?
     /// The pilot's own marks on, the tool picker up (PlateMarkup).
     @State private var markup = MarkupState()
+    /// A chart's pages at night as the plate on the map (PageLook).
+    private var pageLook = PageLookKept()
 
     var body: some View {
         NavigationStack {
@@ -130,9 +132,9 @@ struct PictureViewer: View {
                 if let images {
                     Group {
                         if let georeference = picture.georeference {
-                            PlatePictures(images: images, georeference: georeference, markup: markup)
+                            PlatePictures(images: images, georeference: georeference, markup: markup, look: pageLook.look(chart: true))
                         } else {
-                            ZoomablePictures(images: images, markup: markup)
+                            ZoomablePictures(images: images, markup: markup, look: pageLook.look(chart: picture.isChart))
                         }
                     }
                     .ignoresSafeArea(edges: .bottom)
@@ -187,10 +189,11 @@ struct PlatePictures: View {
     let images: [UIImage]
     let georeference: APIPlateGeoreference
     let markup: MarkupState
+    var look = PageLook()
 
     var body: some View {
         let mark = PlatePosition.mark(inFlight.fix, georeference: georeference)
-        ZoomablePictures(images: images, mark: mark, markup: markup)
+        ZoomablePictures(images: images, mark: mark, markup: markup, look: look)
             .accessibilityValue(mark == nil ? "" : "You are here")
     }
 }
@@ -208,6 +211,8 @@ struct ZoomablePictures: UIViewRepresentable {
     var mark: PageMark?
     /// The pilot's marks over the pages (PlateMarkup).
     var markup = MarkupState()
+    /// A chart's night look (PageLook); a photo's none.
+    var look = PageLook()
 
     func makeUIView(context: Context) -> PagesScrollView {
         let view = PagesScrollView()
@@ -220,157 +225,13 @@ struct ZoomablePictures: UIViewRepresentable {
     func updateUIView(_ view: PagesScrollView, context: Context) {
         if !view.images.elementsEqual(images, by: ===) { view.images = images }
         if view.mark != mark { view.mark = mark }
+        if view.look != look { view.look = look }
         view.markup.key = markup.key
         view.markup.on = markup.on
         if view.cleared != markup.clears {
             view.cleared = markup.clears
             view.markup.clear()
         }
-    }
-}
-
-final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
-    private let container = UIView()
-    private var laidWidth: CGFloat = 0
-    /// The airplane on the first page, inside the zoomed content so it
-    /// stays on its point through a pinch, a drag and a double tap, and
-    /// scaled back each zoom so it keeps its size, as the map's mark does.
-    private let ownShip = PageOwnShipView()
-    /// The pilot's marks over the pages, zoomed with them (MarkupLayer).
-    let markup = MarkupLayer()
-    /// The Clear Markups done (MarkupState.clears).
-    var cleared = 0
-    static let gap: CGFloat = 8
-
-    var images: [UIImage] = [] {
-        didSet {
-            container.subviews.forEach { $0.removeFromSuperview() }
-            for image in images {
-                let page = UIImageView(image: image)
-                page.contentMode = .scaleAspectFit
-                page.backgroundColor = .white
-                container.addSubview(page)
-            }
-            container.addSubview(markup)
-            laidWidth = 0
-            setNeedsLayout()
-        }
-    }
-
-    var mark: PageMark? {
-        didSet { placeOwnShip() }
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        delegate = self
-        minimumZoomScale = 1
-        maximumZoomScale = 8
-        bouncesZoom = true
-        showsHorizontalScrollIndicator = false
-        backgroundColor = .systemBackground
-        addSubview(container)
-        let twice = UITapGestureRecognizer(target: self, action: #selector(doubleTapped(_:)))
-        twice.numberOfTapsRequired = 2
-        addGestureRecognizer(twice)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
-
-    /// The pages the view's width, one under another, laid again when
-    /// the width changes (a turn of the phone).
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let width = bounds.width
-        if width > 0, width != laidWidth {
-            laidWidth = width
-            if zoomScale != 1 { zoomScale = 1 }
-            var y: CGFloat = 0
-            for case let page as UIImageView in container.subviews {
-                let size = page.image?.size ?? .zero
-                let height = size.width > 0 ? width * size.height / size.width : 0
-                page.frame = CGRect(x: 0, y: y, width: width, height: height)
-                y += height + Self.gap
-            }
-            container.frame = CGRect(x: 0, y: 0, width: width, height: max(0, y - Self.gap))
-            contentSize = container.frame.size
-            markup.place(width: width, height: container.frame.height)
-            placeOwnShip()
-        }
-        centre()
-    }
-
-    /// The airplane at its fractions of the first page, turned to the
-    /// track on the page; off the page, none.
-    private func placeOwnShip() {
-        guard let mark, let page = container.subviews.first(where: { $0 is UIImageView }) else {
-            ownShip.removeFromSuperview()
-            return
-        }
-        if ownShip.superview !== container { container.addSubview(ownShip) }
-        container.bringSubviewToFront(ownShip)
-        ownShip.center = CGPoint(x: page.frame.minX + page.frame.width * mark.x, y: page.frame.minY + page.frame.height * mark.y)
-        ownShip.show(mark, zoom: zoomScale)
-    }
-
-    /// A page shorter than the screen sits in its middle, as Photos'.
-    private func centre() {
-        let spare = max(0, (bounds.height - safeAreaInsets.top - safeAreaInsets.bottom - contentSize.height) / 2)
-        if contentInset.top != spare { contentInset = UIEdgeInsets(top: spare, left: 0, bottom: spare, right: 0) }
-    }
-
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? { container }
-
-    func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        centre()
-        if let mark { ownShip.show(mark, zoom: zoomScale) }
-    }
-
-    @objc private func doubleTapped(_ tap: UITapGestureRecognizer) {
-        // The zoom steps rather than glides with Reduce Motion on (MapMotion).
-        if zoomScale > 1.01 {
-            setZoomScale(1, animated: MapMotion.animated)
-        } else {
-            let at = tap.location(in: container)
-            let size = CGSize(width: bounds.width / 3, height: bounds.height / 3)
-            zoom(to: CGRect(x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height), animated: MapMotion.animated)
-        }
-    }
-}
-
-/// Own ship on a plate's page: the map's airplane (PlaneMarkView), a blue
-/// arrow in a white disc turned to the track while flying, a dot where it
-/// is still or has no track.
-final class PageOwnShipView: UIView {
-    private let arrow = UIImageView()
-    static let side: CGFloat = 28
-
-    override init(frame: CGRect) {
-        super.init(frame: CGRect(x: 0, y: 0, width: Self.side, height: Self.side))
-        arrow.frame = bounds.insetBy(dx: 3, dy: 3)
-        arrow.contentMode = .scaleAspectFit
-        arrow.tintColor = UIColor.systemBlue
-        backgroundColor = NightPalette.markFill
-        layer.cornerRadius = Self.side / 2
-        layer.borderWidth = 1
-        layer.borderColor = WingtipColor.Chart.shade.withAlphaComponent(0.4).cgColor
-        addSubview(arrow)
-        isUserInteractionEnabled = false
-        isAccessibilityElement = false
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
-
-    /// Its glyph for the mark, kept its size at the page's zoom and
-    /// turned to the track on the page.
-    func show(_ mark: PageMark, zoom: CGFloat) {
-        let turned = mark.moving && mark.rotationDeg != nil
-        arrow.image = UIImage(systemName: turned ? "location.north.fill" : "circle.fill")
-        let scale = zoom > 0 ? 1 / zoom : 1
-        transform = CGAffineTransform(scaleX: scale, y: scale)
-            .rotated(by: turned ? (mark.rotationDeg ?? 0) * .pi / 180 : 0)
     }
 }
 

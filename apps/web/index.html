@@ -111,6 +111,10 @@
         html, body { height: auto; overflow: visible; }
       }
     </style>
+    <!-- The pilot's theme, look and sunlight scheme on <html> before the
+         body is painted (AIM 8-1-6): first-frame.js, a blocking script of
+         the page's own origin put last in the head by the build
+         (vite-plugins/firstFrame, from src/lib/prefs/firstFrame.ts). -->
   </head>
   <body>
     <div id="root"></div>

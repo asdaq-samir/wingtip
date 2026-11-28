@@ -9,6 +9,8 @@ import { airplaneChosen, usePreferences } from "../../lib/preferences";
 import { typeOf } from "../../lib/aircraftChoice";
 import { pilotQuery } from "../../lib/queryClient";
 import { flightsQuery } from "../../lib/queryClientRecords";
+import { saysKind, kindWords } from "../../lib/airplaneKind";
+import { useAirplaneFlown } from "../../lib/useCurrency";
 import { entryRequest, flightEnded, likelyFlight, type Edits } from "./draftEntry";
 import { asked, forget, record, recorded, useRecorded } from "./recorder";
 
@@ -36,6 +38,8 @@ export function useAutoLogbook() {
   const askedTo = useRecorded((s) => s.value.askedTo);
   const aircraft = usePreferences((p) => p.aircraft);
   const { data: pilot } = useQuery(pilotQuery);
+  // What the airplane picked's profile says it is (14 CFR 61.57(a)(1)(ii)).
+  const { kind } = useAirplaneFlown();
   const [problem, setProblem] = useState<string | null>(null);
 
   // Each fix into the track, as own ship gets it (its GPS, not a dry run).
@@ -94,7 +98,7 @@ export function useAutoLogbook() {
   const save = useMutation({
     mutationFn: async () => {
       if (!draft.data) throw new Error("No draft to log.");
-      const entry = await api.logbook.add(entryRequest(draft.data, edits, byInstruments, linked));
+      const entry = await api.logbook.add(entryRequest(draft.data, edits, byInstruments, linked, kind));
       // The flight's debrief reads its track from the account.
       if (entry.flightId) {
         await api.flights.saveTrack(entry.flightId, {
@@ -127,6 +131,9 @@ export function useAutoLogbook() {
     draftError: draft.error,
     retry: () => void draft.refetch(),
     edits,
+    /** The airplane's category, class and gear the entry is logged with,
+     *  from its profile, in words; none once another airplane is typed. */
+    kindSaid: edits.aircraft === undefined && saysKind(kind) ? `${kindWords(kind)}, from its profile` : undefined,
     edit: (patch: Edits) => setEdits((e) => ({ ...e, ...patch })),
     byInstruments,
     setByInstruments,

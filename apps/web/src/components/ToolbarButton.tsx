@@ -8,7 +8,8 @@ import { EXPANDED_BUTTON } from "./expandedButton";
  * iOS toolbar draws one. The word is on show; an icon alone (a sparkle,
  * a brain) had to be long-pressed on a phone for its name, and nobody
  * does. `label`, when given, is the accessible name -- the longer name
- * ("Filters"), which starts with the word shown ("Filter").
+ * ("More actions"), which holds the word shown ("More") whole: "Filters"
+ * over a shown "Filter" was axe's label-content-name-mismatch (WCAG 2.5.3).
  * A stock ghost Button, so it composes like one: a PopoverTrigger or a
  * DropdownMenuTrigger `asChild` outside it, `ref` and every other prop
  * on the button; ringed while what it opened is open.

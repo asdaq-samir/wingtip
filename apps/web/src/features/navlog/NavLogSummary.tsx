@@ -11,7 +11,7 @@ export function NavLogSummary({ noWind, nav, perLeg }: { noWind: string | null; 
   const cloudsUnplaced = !!nav && !nav.altitude_selection.cloud_clearance_kept && !perLeg;
   if (!noWind && !cloudsUnplaced) return null;
   return (
-    <div className="mb-3" data-testid="navlog-summary">
+    <div className="mb-3 pt-2" data-testid="navlog-summary">
       <ListGroup>
         {noWind && <ListRow title={<span className="text-destructive">{noWind}</span>} />}
         {/* The clouds forecast near a leg leave it no legal altitude (14

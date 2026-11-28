@@ -31,6 +31,9 @@ struct AirportCard: View {
     /// and the badges.
     @State private var notams = FieldNotams()
     @State private var tab: CardTab = .info
+    /// The runways' sketch, asked of the engine once as the field loads
+    /// (runway_sketch), for the tiles and the Charts tab.
+    @State private var sketch: [RunwaySketchLayout.Strip] = []
     @State private var shown: ShownPicture?
     /// Scrolled past the head: its name in the bar (the owner's scrolling
     /// rule, 2026-11-10).
@@ -52,14 +55,14 @@ struct AirportCard: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
-                Section { AirportTiles(place: place, photos: photos, shown: $shown) }
+                Section { AirportTiles(place: place, photos: photos, sketch: sketch, shown: $shown) }
                 switch tab {
                 case .info:
                     AirportReadyCard(ident: place.ident)
                     AirportInfoTab(place: place)
                 case .weather: AirportWeatherTab(place: place, refresh: refresh)
                 case .runways: AirportRunwaysTab(place: place)
-                case .charts: AirportChartsTab(place: place, shown: $shown)
+                case .charts: AirportChartsTab(place: place, sketch: sketch, shown: $shown)
                 }
             } else if let problem {
                 // Said in place (ProblemLine); a field not found has
@@ -99,7 +102,10 @@ struct AirportCard: View {
         .environment(live)
         .environment(notams)
         .navigationDestination(item: $notams.opened) { NotamsOnPage(notams: notams, open: $0) }
-        .onChange(of: place) { _, fresh in notams.attach(fresh) }
+        .onChange(of: place) { _, fresh in
+            notams.attach(fresh)
+            sketch = fresh.map { RunwaySketchLayout.strips($0.runways, lat: $0.lat, lon: $0.lon) } ?? []
+        }
         .fullScreenCover(item: $shown) { PictureViewer(picture: $0) }
         // The live reports, asked again while the card is open; the RVR
         // judged against the pilot's own visibility minimum.
@@ -251,7 +257,7 @@ private enum PreviewData {
 
 #Preview("AirportChartsTab") {
     @Previewable @State var shown: ShownPicture? = nil
-    List { AirportChartsTab(place: PreviewData.place, shown: $shown) }.environment(FieldNotams())
+    List { AirportChartsTab(place: PreviewData.place, sketch: [], shown: $shown) }.environment(FieldNotams())
 }
 
 /// The bar's title hidden while the card's own head shows the name, and

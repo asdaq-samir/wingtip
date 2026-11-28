@@ -48,8 +48,8 @@ final class TrackedRingView: MKAnnotationView {
         frame = CGRect(x: 0, y: 0, width: 40, height: 40)
         layer.cornerRadius = 20
         layer.borderWidth = 3
-        layer.borderColor = UIColor.systemBlue.cgColor
-        backgroundColor = UIColor.systemBlue.withAlphaComponent(0.12)
+        layer.borderColor = WingtipColor.Chart.mapBlue.cgColor
+        backgroundColor = WingtipColor.Chart.mapBlue.withAlphaComponent(0.12)
         isEnabled = false
         displayPriority = .required
         zPriority = .min
@@ -85,6 +85,8 @@ final class FlightMapLayer: NSObject {
     private var forecastAreas: ForecastRunMapLayer?
     /// The model weather's field, its G-AIRMETs and the value tapped (ModelWeatherLayer).
     private var modelWeather: ModelWeatherLayer?
+    /// The TFRs, always on the map (TfrLayer).
+    private let tfrs = TfrLayer()
 
     func attach(_ map: MKMapView) {
         self.map = map
@@ -95,6 +97,7 @@ final class FlightMapLayer: NSObject {
         weatherLoop.attach(map)
         forecastAreas.attach(map)
         modelWeather.attach(map)
+        tfrs.attach(map)
         (self.nexrad, self.weatherLoop, self.forecastAreas, self.modelWeather) = (nexrad, weatherLoop, forecastAreas, modelWeather)
     }
 
@@ -176,11 +179,12 @@ final class FlightMapLayer: NSObject {
         if let forecastAreas, let renderer = forecastAreas.renderer(for: overlay) { return renderer }
         if let modelWeather, let renderer = modelWeather.renderer(for: overlay) { return renderer }
         if let renderer = ApproachLines.renderer(for: overlay) { return renderer }
+        if let renderer = tfrs.renderer(for: overlay) { return renderer }
         if let ring = overlay as? GlidePolyline {
             // Dashed in the tint, as the web app's ring: what the airplane
             // reaches in still air, not a boundary to fly by.
             let renderer = MKPolylineRenderer(polyline: ring)
-            renderer.strokeColor = UIColor.systemBlue.withAlphaComponent(0.85)
+            renderer.strokeColor = WingtipColor.Chart.mapBlue.withAlphaComponent(0.85)
             renderer.lineWidth = 2
             renderer.lineDashPattern = [8, 6]
             return renderer
@@ -214,6 +218,7 @@ final class FlightMapLayer: NSObject {
 
     func view(for annotation: any MKAnnotation, on map: MKMapView) -> MKAnnotationView? {
         if let modelWeather, let view = modelWeather.view(for: annotation, on: map) { return view }
+        if let view = tfrs.view(for: annotation, on: map) { return view }
         guard annotation is TrackedRing else { return nil }
         return map.dequeueReusableAnnotationView(withIdentifier: TrackedRingView.reuse, for: annotation)
     }

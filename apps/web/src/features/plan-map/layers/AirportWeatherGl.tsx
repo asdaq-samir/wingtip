@@ -5,7 +5,7 @@ import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLa
 import { glZoom } from "../../../lib/map/gl/glStyle";
 import { labelHalo, labelInk, labelText } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
-import { weatherMarksOf } from "../../../lib/map/marks/airportWeather";
+import { weatherMarksOfAll, type PinWeather } from "../../../lib/map/marks/airportWeather";
 import { airportWeatherDrawn } from "../../../lib/map/marks/airportWeatherPrefs";
 import { useAirportWeatherShown } from "../../../lib/map/marks/useAirportWeatherShown";
 import { WORSE_ID } from "../../../lib/map/marks/stationModel";
@@ -122,19 +122,29 @@ export default function AirportWeatherGl({ fields, worse }: { fields: AirportPin
   useGlLayer("marks", { [SOURCE]: { type: "geojson", data: EMPTY } }, LAYERS, "airports");
   const data = useMemo<GeoJSON.FeatureCollection>(() => {
     const badged = new Set(worse);
-    const features: GeoJSON.Feature[] = [];
+    const shown: AirportPin[] = [];
     const seen = new Set<string>();
     for (const f of fields) {
       if (seen.has(f.ident) || (!f.weather && !badged.has(f.ident))) continue;
       seen.add(f.ident);
-      const marks = f.weather ? weatherMarksOf(f.weather, demonstrated) : null;
+      shown.push(f);
+    }
+    // One call into the engine for every field's wind (wind_marks).
+    const reported = shown.filter((f): f is AirportPin & { weather: PinWeather } => !!f.weather);
+    const marked = weatherMarksOfAll(
+      reported.map((f) => f.weather),
+      demonstrated,
+    );
+    const marksOf = new Map(reported.map((f, n) => [f.ident, marked[n]]));
+    const features: GeoJSON.Feature[] = shown.map((f) => {
+      const marks = marksOf.get(f.ident);
       const properties: Record<string, unknown> = { ident: f.ident, worse: badged.has(f.ident), lines: marks?.lines ?? "" };
       if (marks) {
         Object.assign(properties, { dir: marks.dir, over: marks.over, far: marks.far, variable: marks.variable });
         if (marks.barb) properties.barb = marks.barb;
       }
-      features.push({ type: "Feature", properties, geometry: { type: "Point", coordinates: [f.lon, f.lat] } });
-    }
+      return { type: "Feature", properties, geometry: { type: "Point", coordinates: [f.lon, f.lat] } };
+    });
     return { type: "FeatureCollection", features };
   }, [fields, worse, demonstrated]);
   useGlData(SOURCE, data);

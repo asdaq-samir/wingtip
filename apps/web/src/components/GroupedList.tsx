@@ -1,4 +1,4 @@
-import { Children, Fragment, useId, type ComponentProps, type ReactNode } from "react";
+import { Children, Fragment, useContext, useId, type ComponentProps, type ReactNode } from "react";
 import { Link } from "react-router";
 import { Check, ChevronRight, ExternalLink } from "lucide-react";
 import { Button as BaseButton } from "@base-ui/react/button";
@@ -8,9 +8,10 @@ import { cn } from "cn";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "./ui/item";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
-import { TEXT } from "../lib/text";
+import { GROUP_LABEL, TEXT } from "../lib/text";
 import { safeHref } from "../lib/safeHref";
 import SectionTitle from "./SectionTitle";
+import { InSection } from "./sectionLayout";
 
 // A group's box, plain on a sheet or translucent on a glass card.
 const GROUP_BASE = "gap-0 has-data-[size=sm]:gap-0 has-data-[size=xs]:gap-0";
@@ -53,16 +54,21 @@ export function ListGroup({
   className?: string;
 }) {
   const id = useId();
+  // Under a section's title its title is a group's label (GROUP_LABEL); a
+  // page's or a card's own groups keep the section title's 20.
+  const inSection = useContext(InSection);
   const rows = Children.toArray(children).filter(Boolean);
   return (
     <section aria-labelledby={title ? id : undefined} className={className}>
       {title && (
         <div className="flex items-end justify-between gap-2">
           {/* At the box's own edge, the sheet's and the card's one
-              sixteen-point inset (the sheet audit's F-B3), where four more
+              sixteen-point inset, where four more
               put the titles out of line with the card's name. */}
           <div className="flex items-center gap-2 pb-1.5">
-            <SectionTitle id={id}>{title}</SectionTitle>
+            <SectionTitle id={id} className={inSection ? GROUP_LABEL : undefined}>
+              {title}
+            </SectionTitle>
             {badge}
           </div>
           {action}
@@ -214,7 +220,7 @@ export function ListRow({
     return (
       <Item
         size="sm"
-        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline! hover:bg-muted/50 pointer-coarse:active:bg-muted"
+        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline! hover:bg-muted/50 pointer-coarse:active:bg-muted pointer-coarse:active:duration-0"
         // What a wrapper hands a row (a sheet's Close, its click) goes on
         // the link; a button's own attributes do not.
         render={
@@ -263,7 +269,7 @@ export function ListRow({
     return (
       <Item
         size="sm"
-        className="min-h-11 cursor-pointer rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 hover:bg-muted/50 pointer-coarse:active:bg-muted"
+        className="min-h-11 cursor-pointer rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 hover:bg-muted/50 pointer-coarse:active:bg-muted pointer-coarse:active:duration-0"
         render={<label className={buttonProps.className}>{body}</label>}
       />
     );
@@ -272,7 +278,7 @@ export function ListRow({
     return (
       <Item
         size="sm"
-        className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
+        className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted pointer-coarse:active:duration-0"
         render={
           <RadioPrimitive.Root value={radio} nativeButton disabled={buttonProps.disabled} render={<BaseButton {...buttonProps} />}>
             {body}
@@ -285,7 +291,7 @@ export function ListRow({
     return (
       <Item
         size="sm"
-        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
+        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted pointer-coarse:active:duration-0"
         render={<BaseButton {...buttonProps}>{body}</BaseButton>}
       />
     );

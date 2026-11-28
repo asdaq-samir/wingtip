@@ -185,6 +185,31 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
   return rows;
 }
 
+/** A leg's procedure fixes, each at its minutes from the departure. */
+export type LegFixMinutes = { from: string; to: string; minutes: Map<string, number> };
+
+/** The minutes from the departure to each procedure fix on the route, by
+ *  the leg it is flown on, for FPL's list to time a fix as it times a stop
+ *  (the owner, 2026-11-24): the planner's minutes from its leg's start
+ *  (LegProcedure's `fix_min`, wingtip.flight_procedures.fix_minutes) on
+ *  from when the airplane starts the leg -- the row the leg ends at, less
+ *  the leg's ETE. By leg, not by ident alone, so a field's fix is timed on
+ *  its own leg, where GOPAC at KPWK took the time of a later leg's GOPAC
+ *  (the owner's screen, 2026-11-24: 16:25 at a field landed at 13:41).
+ *  None where the plan has no time (no airplane). */
+export function fixMinutes(rows: NavLogRow[]): LegFixMinutes[] {
+  const legs: LegFixMinutes[] = [];
+  for (const row of rows) {
+    if (row.kind === "departure" || isLegPoint(row) || row.minutesFlown === null) continue;
+    const leg = row.leg;
+    if (!leg?.procedure?.fix_min || leg.ete_min === null) continue;
+    const start = row.minutesFlown - leg.ete_min;
+    const minutes = new Map(Object.entries(leg.procedure.fix_min).map(([ident, min]) => [ident, start + min] as const));
+    legs.push({ from: leg.from, to: leg.to, minutes });
+  }
+  return legs;
+}
+
 /** What a row's figures are: the piece of its leg that arrives at it,
  *  the whole leg where nothing cuts it; the departure has none. */
 export const legOf = (row: NavLogRow): Leg | undefined => (row.kind === "departure" ? undefined : (row.part ?? row.leg));
@@ -206,7 +231,7 @@ export const phaseOf = (row: NavLogRow): "climb" | "descent" | "cruise" => legOf
  * Said on the row that ends the leg, where the minutes fall (a top of
  * climb or descent cuts the leg before them), so its miles over its
  * ground speed come to its minutes: "1.5 nm · 3.4 min" read as 1.5 nm
- * at 86 kt, a minute, with 2.3 unsaid (the FPL audit's A4, 2026-11-08).
+ * at 86 kt, a minute, with 2.3 unsaid.
  * What it is: a departure, a pattern landed by, or an approach.
  */
 export function procedureOf(row: NavLogRow): { nm: number; min: number | null; word: "departure" | "pattern" | "approach" } | null {

@@ -143,7 +143,7 @@ def test_each_runway_ends_rvr_is_kept_in_feet_and_six_thousand_is_the_most():
     assert rvr.heard(fixture("stdds_rvr.xml"), now=NOW) == len(ends)
     assert {e["runway"] for e in rvr.at_airport("DFW", now=NOW)} == {e["runway"] for e in ends}
     # Ten minutes on it is no longer RVR now.
-    assert rvr.at_airport("KDFW", now=NOW + rvr.RVR_FRESH_S + 1) == []
+    assert rvr.at_airport("KDFW", now=NOW + 10 * 60 + 1) == []
 
 
 def test_a_reading_of_00_or_ff_is_no_reading_never_zero():
@@ -163,8 +163,10 @@ def test_a_d_atis_is_kept_by_its_airport_and_broadcast_and_read_by_the_engine():
     assert (reading["information"], reading["time_z"], reading["altimeter_inhg"]) == ("I", "0353Z", 30.06)
     assert reading["wind"] == {"from_deg": None, "kt": 3, "gust_kt": None, "variable": True}
     assert (reading["visibility_sm"], reading["temp_c"], reading["dewpoint_c"]) == (10, 7, 3)
-    # Two hours on (two of AIM 4-1-13's hourly updates, the engine's datis_ends) it is no longer the airport's.
-    assert datis.at_airport("KMSP", now=NOW + 2 * 3600 + 1) == []
+    # 75 minutes on (AIM 4-1-13's hourly update and a quarter hour, the engine's datis_ends) it is no longer
+    # the airport's; just before, it still is.
+    assert datis.at_airport("KMSP", now=NOW + 75 * 60 - 1) != []
+    assert datis.at_airport("KMSP", now=NOW + 75 * 60 + 1) == []
 
 
 def test_a_departure_event_is_kept_under_its_ident_with_the_times_it_gives():

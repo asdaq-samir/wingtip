@@ -2,10 +2,8 @@ import { useCallback, useMemo } from "react";
 import { altitudesOf, routeName, visitKey } from "../../../lib/identSchema";
 import { shortName } from "../../../lib/aircraftChoice";
 import { clockTime, flightLevel, zoneName } from "../../../lib/format";
-import { useMinuteClock } from "../../../lib/useMinuteClock";
-import { legsWithoutWind } from "../../plan";
 import { usePlanFigures } from "./usePlanFigures";
-import { useGeo } from "../../../lib/geo";
+import { useGeo, type LatLon } from "../../../lib/geo";
 import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
 import { useProgressToast } from "../../../lib/useProgressToast";
 import { useVerdict } from "../../../lib/verdict";
@@ -17,6 +15,7 @@ import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanFpl } from "./usePlanFpl";
 import { coursePoints } from "../../../lib/course";
+import { useKept } from "./useKept";
 
 /**
  * What the screen says of the plan (usePlanWorkspace): its progress, its
@@ -37,16 +36,8 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   useProgressToast(progressWords(s.navStage, s.stage, s.briefing.state === "loading"));
   // The flight's figures before the nav log's, at the pilot's ask for them as soon as can be (TripFigures' `estimate`): this
   // route's course distance, the airplane's book cruise speed and burn (its own where set) and its profile's taxi fuel.
-  // Each the engine's, asked again only as the airplane, the totals or the minute change (usePlanFigures).
-  const minute = useMinuteClock();
-  const { cruiseTasKt, fuelBurnGph, taxiFuelGal, windsStale } = usePlanFigures({
-    aircraft,
-    profiles,
-    engine,
-    totals: s.totals,
-    minute,
-    depart,
-  });
+  // Each the engine's, asked again only as the airplane changes (usePlanFigures).
+  const { cruiseTasKt, fuelBurnGph, taxiFuelGal } = usePlanFigures({ aircraft, profiles, engine });
   // Before the course comes, at the tap: the great circles between the
   // route's points, placed from the airport index the browser keeps
   // (placeOf) -- the figures at once, where they waited a second or more
@@ -60,10 +51,10 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   const straightNm = useMemo(() => {
     if (!geo || !routed || !index || !planned.dest) return null;
     const points = [planned.dep, ...planned.stops, `${planned.dest}`].map((p) => placeOf(index, p));
-    if (points.some((p) => !p)) return null;
-    let nm = 0;
-    for (let i = 1; i < points.length; i++) nm += geo.distanceNm(points[i - 1]!, points[i]!);
-    return nm;
+    const placed = points.filter((p): p is LatLon => p !== null);
+    if (placed.length !== points.length) return null;
+    // Every leg in one call to the engine (legsNm), not one a leg.
+    return geo.legsNm(placed).reduce((sum, nm) => sum + nm, 0);
   }, [geo, routed, index, planned.dep, planned.stops, planned.dest]);
   const estimate = useMemo(
     () =>
@@ -140,8 +131,7 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
       // Written as the route box writes it (FL-090), the owner's format.
       cruiseFt ? flightLevel(cruiseFt) : null,
       // With its zone, "leaving 14:00 CST", as the Depart row and the
-      // timeline write a clock time: a bare "14:00" read as Z or local
-      // (the Brief audit of 2026-11-21, finding 13).
+      // timeline write a clock time: a bare "14:00" read as Z or local.
       depart ? `leaving ${clockTime(new Date(depart))} ${zoneName(new Date(depart))}` : "leaving now",
       shortName(aircraftLabel),
     ]
@@ -162,15 +152,8 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     address: route.address,
     setAddress: route.setAddress,
   });
-  // What planning again would bring in fresh, said by the refresh's dot:
-  // winds past the forecast's period the legs were flown on, legs flown
-  // with none, and the briefing's weather that could not be fetched again.
-  const stale = [
-    windsStale && "the winds are out of date",
-    s.totals && legsWithoutWind(s.totals) && "some legs have no winds",
-    (s.briefing.state === "failed" || (s.briefing.state === "ready" && s.briefing.refreshError)) && "the weather could not be fetched",
-  ].filter((why): why is string => !!why);
-  return {
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({
     ...saving,
     unflyable: s.unflyable,
     unflyableBrief: s.unflyable?.brief,
@@ -190,6 +173,5 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     airspaceOf,
     altitudeAt,
     briefLine,
-    stale,
-  };
+  });
 }

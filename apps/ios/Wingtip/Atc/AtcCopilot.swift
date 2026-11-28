@@ -132,9 +132,8 @@ final class AtcCopilot {
     /// differently, those AIM 4-4-7 b asks be read back first.
     static func readbackLines(_ check: EngineContract.ReadbackCheckAnswer) -> [String] {
         guard !check.items.isEmpty else { return ["Readback complete"] }
-        let capital = { (s: String) in s.prefix(1).uppercased() + s.dropFirst() }
         return check.items.sorted { $0.required && !$1.required }.map { i in
-            i.said.map { "\(capital(i.item)): \($0) said, \(i.cleared) given" } ?? "\(capital(i.item)) \(i.cleared) not read back"
+            i.said.map { "\(Format.capital(i.item)): \($0) said, \(i.cleared) given" } ?? "\(Format.capital(i.item)) \(i.cleared) not read back"
         }
     }
 }

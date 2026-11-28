@@ -10,7 +10,8 @@ data class MapField(val ident: String, val lat: Double, val lon: Double)
 
 /**
  * Where the map goes as the sheet's content changes (the owner's
- * map-follows-sheet rule; the Android audit's AND-2): a new route fitted
+ * map-follows-sheet rule):
+ * a new route fitted
  * to what the sheet leaves of the map, and an open card's field brought
  * into sight, never while the map follows own ship; and the map's credits.
  */
@@ -37,8 +38,7 @@ class MapCamera {
          *  region's, where its runways and its neighbours are read. */
         private const val FIELD_ZOOM = 9.0
 
-        /** No logo and no attribution button on the map (the Android audit's
-         *  AND-15): rules.md §7.2-7.3 keeps only Google's credit on the map,
+        /** No logo and no attribution button on the map: rules.md §7.2-7.3 keeps only Google's credit on the map,
          *  while its tiles are drawn, and this map draws none; MapLibre's logo
          *  sat half under the floating toolbar and its (i) was a 21-dp target.
          *  The chart's and MapLibre's credits are Help & About's (AboutCredits). */

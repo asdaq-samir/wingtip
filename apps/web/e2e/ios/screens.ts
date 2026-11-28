@@ -1,5 +1,17 @@
 import { expect, type Page } from "@playwright/test";
-import { controlsInSight, openNavLog, grabberTo, openSection, openTab, settle, sideDrawer, slow } from "../helpers";
+import {
+  cardHost,
+  controlsInSight,
+  openNavLog,
+  grabberTo,
+  openSection,
+  openTab,
+  settle,
+  sideDrawer,
+  sheetFoot,
+  slow,
+  withFoot,
+} from "../helpers";
 import { markWith } from "../marks";
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
@@ -37,7 +49,7 @@ export const SCREENS: Screen[] = [
       await expect(sideDrawer(page).getByTestId("route-editor").or(sideDrawer(page).getByTestId("route-summary")).first()).toBeVisible({
         timeout: slow(30000),
       });
-      await expect(sideDrawer(page).getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
+      await expect(sheetFoot(page).getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
     },
   },
   {
@@ -46,7 +58,7 @@ export const SCREENS: Screen[] = [
     name: "route panel, half way",
     ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=full`);
-      await expect(sideDrawer(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30000) });
+      await expect(sheetFoot(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30000) });
       await controlsInSight(page);
       // The plan in, its figures whole: not judged fading in.
       await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(30000) });
@@ -87,12 +99,12 @@ export const SCREENS: Screen[] = [
       await page.getByTestId("navlog-ete").waitFor({ timeout: slow(120000) });
       await openTab(page, tab);
       if (tab === "En Route") await openSection(page, "Along the Route");
-      await expect(sideDrawer(page).locator('[role="tabpanel"]:not([hidden]):not([inert])').getByTestId(shown).first()).toBeVisible({
+      await expect(cardHost(page).locator('[role="tabpanel"]:not([hidden]):not([inert])').getByTestId(shown).first()).toBeVisible({
         timeout: slow(30000),
       });
       // And the briefing in: the Brief's Go / No-Go says what it found.
       if (tab === "Preflight") {
-        await expect(sideDrawer(page).getByTestId("verdict-weather")).not.toHaveAttribute("data-finding", "pending", {
+        await expect(cardHost(page).getByTestId("verdict-weather")).not.toHaveAttribute("data-finding", "pending", {
           timeout: slow(60000),
         });
       }
@@ -109,17 +121,17 @@ export const SCREENS: Screen[] = [
       await expect(page.getByTestId("fly-here")).toBeEnabled({ timeout: slow(30000) });
       if (part === ", all the way up") {
         await grabberTo(page, "full");
-        await expect(sideDrawer(page).getByTestId("place-details")).toBeVisible();
+        await expect(cardHost(page).getByTestId("place-details")).toBeVisible();
       }
       if (part === ", its Weather tab") {
-        await sideDrawer(page).getByTestId("place-tab-weather").click();
+        await withFoot(cardHost(page)).getByTestId("place-tab-weather").click();
         // Then pulled all the way up, as a pilot does to read it: a tab
         // picked leaves the card where it is (rules.md, the pilot's drag
         // chooses the size), and the wait for it to rise on its own held
         // at half on every phone but the largest, where the click's own
         // scroll into view had pulled it up.
         await grabberTo(page, "full");
-        await expect(sideDrawer(page).getByTestId("place-weather-summary")).toBeVisible();
+        await expect(cardHost(page).getByTestId("place-weather-summary")).toBeVisible();
       }
     },
   })),
@@ -223,15 +235,17 @@ export const SCREENS: Screen[] = [
       );
       await page.goto("/app/plan?flight=a89c1e");
       await settle(page);
-      // Half way, as it opens.
-      await expect(sideDrawer(page).getByTestId("flight-now")).toBeAttached({ timeout: slow(30000) });
+      // Half way, as it opens on Info (the owner, 2026-11-27): its action row, always drawn
+      // (its facts are not where CI has no FAA registry and the flight only an operator).
+      // In the card's host, the inspector on an iPad on its side (cardHost), not the side panel.
+      await expect(cardHost(page).getByTestId("airplane-actions")).toBeVisible({ timeout: slow(30000) });
       if (part === "Alert menu") {
-        await sideDrawer(page).getByTestId("flight-alert").click();
+        await cardHost(page).getByTestId("airplane-alerts").click();
         await expect(page.getByTestId("flight-alert-menu")).toBeVisible();
       }
       if (part === "card all the way up") {
         await grabberTo(page, "full");
-        await expect(sideDrawer(page).getByTestId("flight-details")).toBeVisible();
+        await expect(cardHost(page).getByTestId("airplane-info")).toBeVisible();
       }
     },
   })),

@@ -22,6 +22,10 @@ final class FlightUI {
     /// What the engine refused of a figure typed into one of the alerts,
     /// said in an alert of its own rather than the figure dropped unsaid.
     var problem: String?
+    /// FPL's route drawn as its box of pills (RouteBoxSection) rather
+    /// than its grouped list, turned by the round toggle at the card's
+    /// lower right (RouteBoxToggle), as the web's routeOpen.
+    var routeBox = false
 }
 
 /// The alerts that ask for one figure or two, as iOS asks: a fix off a
@@ -114,22 +118,27 @@ struct RouteExtrasSection: View {
 
     var body: some View {
         if plan.routed {
-            Section {
-                DirectStrip()
-                // Under IFR, the alternate after the destination, as the
-                // web files it (14 CFR 91.169).
-                if rules == .ifr { AlternateRow() }
-                ForEach(plan.extras.holds) { hold in
-                    Button { nav.push(.hold(hold.fix)) } label: {
-                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                            Text("Hold at \(hold.fix)").foregroundStyle(.primary)
-                            Text(hold.words).font(.footnote).foregroundStyle(.secondary)
+            // Only with something in it: a header over no rows read as a
+            // second, empty "Route" under the route (the iPhone's
+            // screenshot, 2026-11-23).
+            if hasEdits {
+                Section {
+                    DirectStrip()
+                    // Under IFR, the alternate after the destination, as the
+                    // web files it (14 CFR 91.169).
+                    if rules == .ifr { AlternateRow() }
+                    ForEach(plan.extras.holds) { hold in
+                        Button { nav.push(.hold(hold.fix)) } label: {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                Text("Hold at \(hold.fix)").foregroundStyle(.primary)
+                                Text(hold.words).font(.footnote).foregroundStyle(.secondary)
+                            }
                         }
                     }
+                    .onDelete { at in at.map { plan.extras.holds[$0].fix }.forEach { plan.setHold(at: $0, nil) } }
+                } header: {
+                    Text("Route")
                 }
-                .onDelete { at in at.map { plan.extras.holds[$0].fix }.forEach { plan.setHold(at: $0, nil) } }
-            } header: {
-                Text("Route")
             }
             Section("In Flight") {
                 // The one Nearest list, with Divert (NearestView).
@@ -137,6 +146,12 @@ struct RouteExtrasSection: View {
                 NavigationLink(value: SheetPage.flight("notes")) { Label("Checkpoint Notes", systemImage: "text.bubble") }
             }
         }
+    }
+
+    /// Whether the section has a row: a Direct to or why one failed, the
+    /// alternate under IFR, or a hold.
+    private var hasEdits: Bool {
+        plan.extras.direct != nil || plan.directProblem != nil || rules == .ifr || !plan.extras.holds.isEmpty
     }
 }
 

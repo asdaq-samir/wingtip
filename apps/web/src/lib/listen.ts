@@ -83,7 +83,7 @@ function errorWords(code: string): string {
   }
   // Safari's recognizer is Apple's server's, not the device's: with no
   // connection it fails with "network", which was said as the device
-  // being unable to (the offline audit, 2026-11-10). Said as what it is.
+  // being unable to. Said as what it is.
   if (code === "network") return NEEDS_CONNECTION;
   if (code === "language-not-supported") return NOT_HERE;
   if (code === "audio-capture") return noMicrophone();

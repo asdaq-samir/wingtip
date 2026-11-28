@@ -11,7 +11,6 @@ import { api } from "./api/client";
 import { callEngine, engineLoaded, type EngineInput } from "./engine/engine";
 import { zuluTime } from "./format";
 import type { FlowProgram, ItwsProduct, SaaStatus } from "./api/types";
-import type { VerdictInput } from "./verdict";
 import { capitalised } from "./capitals";
 
 type Feed = EngineInput<"live_feed_refresh">["feed"];
@@ -87,14 +86,6 @@ export const datisQuery = (airport: string | null | undefined) => ({
   meta: { silent: true },
 });
 
-export const departuresQuery = (ident: string | null | undefined) => ({
-  queryKey: ["live", "departures", ident?.toUpperCase() ?? ""],
-  queryFn: () => api.liveDepartures(ident!),
-  enabled: !!ident && ident.length >= 2,
-  ...cadence("departures"),
-  meta: { silent: true },
-});
-
 /** A time as the app says one in Zulu: "2130Z". */
 export function zulu(unixS: number): string {
   return zuluTime(new Date(unixS * 1000));
@@ -121,7 +112,9 @@ export function programLines(programs: FlowProgram[]): string[] {
   return programs.map(programLine).filter((l): l is string => !!l);
 }
 
-type When = VerdictInput["airspace"]["specialUse"][number]["when"];
+/** When a special-use area is in use as the flight passes: its times of
+ *  use's (gonogo_sua_when), or SFDPS's status now. */
+type When = "active" | "not-scheduled" | "by-notam" | "unknown" | "active-now" | "cold-now";
 
 /** An area's word for the Go / No-Go: SFDPS's status where it has one in
  *  force at the pass (active-now, cold-now), else its times of use's. An

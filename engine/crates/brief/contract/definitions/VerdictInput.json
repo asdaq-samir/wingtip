@@ -198,14 +198,21 @@
             "number",
             "null"
           ],
-          "description": "The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log."
+          "description": "The highest altitude planned, feet MSL, for 14 CFR 91.211's oxygen (gonogo_brief's oxygen finding); null before the nav log."
         },
         "oxygen": {
           "type": [
             "boolean",
             "null"
           ],
-          "description": "Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked."
+          "description": "Whether the airplane picked carries supplemental oxygen (its profile's supplemental_oxygen). Read as JavaScript reads it; false, the safer side, with no airplane picked."
+        },
+        "pressurized": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether its cabin is pressurised (its profile's pressurized): 14 CFR 91.211(b)'s FL250 and FL350 then, not (a)'s heights. False with no airplane picked."
         }
       }
     },
@@ -292,6 +299,26 @@
           },
           "description": "Fields whose distances were read past the POH's table: a caution."
         },
+        "tailwind": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Fields whose runway has the wind behind it (the check's fit \"tailwind\"; AIM 4-3-6c): a caution."
+        },
+        "close": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Fields whose runway fits with less than SAFO 19001's 15 per cent to spare (a distance's close): a caution."
+        },
         "unchecked": {
           "type": [
             "array",
@@ -301,6 +328,16 @@
             "type": "string"
           },
           "description": "Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok."
+        },
+        "standard_day": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
         }
       }
     },
@@ -320,6 +357,13 @@
             "null"
           ],
           "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "no_load": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The airplane has a POH loading but the pilot gave no load: the finding is unknown, 'give your load', never the POH's sample airplane as the flight's (14 CFR 91.9(a), 91.103). Read as JavaScript reads it."
         },
         "problems": {
           "type": [

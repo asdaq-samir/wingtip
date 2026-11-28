@@ -1,5 +1,5 @@
 {
- "ios_shared_references": 154,
+ "ios_shared_references": 153,
  "ios_root_view_lines": 168,
  "android_root_screen_lines": 243,
  "android_map_pane_lines": 303,
@@ -21,9 +21,9 @@
  "haversine_formulas": 0,
  "degree_margin_formulas": 0,
  "copy_paste_clones": 21,
- "one_home_findings": 9,
+ "one_home_findings": 5,
  "rules_outside_engine": 3,
  "hand_built_web_controls": 1,
  "web_hand_hit_areas": 0,
- "files_over_400_lines": 13
+ "files_over_400_lines": 12
 }

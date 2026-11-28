@@ -18,9 +18,6 @@ town are given here, not the street.
 
 from __future__ import annotations
 
-import contextlib
-import csv
-import io
 import json
 import logging
 import re
@@ -30,45 +27,25 @@ import time
 import zipfile
 from pathlib import Path
 
-from . import outside, registry_history
+from . import outside, registry_history, stores
+from .registry_reader import SCHEMA, _file, _reading, ready
+from .registry_reader import addresses as _addresses
 from . import registry_codes as codes
 from .atomic import atomic_path
+from .config import REGISTRY_HEADERS
+from .faa_data import zip_csv
 
 log = logging.getLogger(__name__)
 
 URL = "https://registry.faa.gov/database/ReleasableAircraft.zip"
-#: The registry's host (Akamai) turns a plain client away (403) and a
-#: browser's agent alone too (503), and answers one with a browser's
-#: Accept and Accept-Language as well (measured 2026-10-11).
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-    "Accept": "*/*",
-    "Accept-Language": "en-US,en;q=0.9",
-}
 DEFAULT_DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "faa_registry"
 DB_NAME = "registry.sqlite"
 #: The copy on disk is read again once it is this old, s: the FAA's is
 #: written each night.
 MAX_AGE_S = 24 * 3600
 
-#: The file's shape: user_version, so a copy of an older shape is read
-#: again from the FAA's download rather than asked for columns it lacks
-#: (2: the reference files in full, every MASTER field and the
-#: deregistered, document and reserved files, 2026-11-14).
-SCHEMA = 2
-
 _LOCK = threading.Lock()
 _BUILDING = threading.Event()
-
-
-def _rows(archive: zipfile.ZipFile, name: str):
-    """A file of the archive as rows of stripped fields by its header's
-    names (the FAA's files carry a byte-order mark and a trailing comma)."""
-    with archive.open(name) as raw:
-        reader = csv.reader(io.TextIOWrapper(raw, encoding="utf-8-sig", errors="replace"))
-        header = [h.strip() for h in next(reader)]
-        for row in reader:
-            yield dict(zip(header, (cell.strip() for cell in row)))
 
 
 _MODELS = """CREATE TABLE models (code TEXT PRIMARY KEY, manufacturer TEXT, model TEXT, aircraft_type TEXT,
@@ -92,15 +69,17 @@ def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, 
     """ACFTREF and ENGINE in full into their tables (ardata.pdf, "Aircraft
     Reference File" and "Engine Reference File"), and what each airplane's
     row takes of them, as tuples: ACFTREF's ninety thousand models as
-    dicts were a hundred megabytes of the planner's."""
+    dicts were a hundred megabytes of the planner's. Each table's rows go
+    in as they are read (executemany over a generator), never held whole
+    beside the look-up (the 94,241 models were held twice)."""
     db.execute(_MODELS)
     db.execute(_ENGINES)
     models, engines = {}, {}
-    rows = []
-    for r in _rows(archive, "ACFTREF.txt"):
-        models[r["CODE"]] = (r["MFR"], r["MODEL"], r["NO-ENG"], r["NO-SEATS"])
-        rows.append(
-            (
+
+    def model_rows():
+        for r in zip_csv(archive, "ACFTREF.txt"):
+            models[r["CODE"]] = (r["MFR"], r["MODEL"], r["NO-ENG"], r["NO-SEATS"])
+            yield (
                 r["CODE"],
                 _maker(r["MFR"]),
                 r["MODEL"] or None,
@@ -116,13 +95,11 @@ def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, 
                 r.get("TC-DATA-SHEET") or None,
                 _maker(r.get("TC-DATA-HOLDER", "")),
             )
-        )
-    db.executemany(f"INSERT OR REPLACE INTO models VALUES ({','.join('?' * 13)})", rows)
-    rows = []
-    for r in _rows(archive, "ENGINE.txt"):
-        engines[r["CODE"]] = (r["MFR"], r["MODEL"], r["HORSEPOWER"], r["THRUST"])
-        rows.append(
-            (
+
+    def engine_rows():
+        for r in zip_csv(archive, "ENGINE.txt"):
+            engines[r["CODE"]] = (r["MFR"], r["MODEL"], r["HORSEPOWER"], r["THRUST"])
+            yield (
                 r["CODE"],
                 _maker(r["MFR"]),
                 r["MODEL"] if r["MODEL"] and r["MODEL"] != "NONE" else None,
@@ -130,8 +107,9 @@ def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, 
                 codes.number(r["HORSEPOWER"]) or None,
                 codes.number(r["THRUST"]) or None,
             )
-        )
-    db.executemany(f"INSERT OR REPLACE INTO engines VALUES ({','.join('?' * 6)})", rows)
+
+    db.executemany(f"INSERT OR REPLACE INTO models VALUES ({','.join('?' * 13)})", model_rows())
+    db.executemany(f"INSERT OR REPLACE INTO engines VALUES ({','.join('?' * 6)})", engine_rows())
     return models, engines
 
 
@@ -191,33 +169,16 @@ def build(zip_path: Path, db_path: Path) -> int:
         try:
             models, engines = _reference(archive, db)
             db.execute(_AIRCRAFT)
-            count = 0
-            batch = []
-            for r in _rows(archive, "MASTER.txt"):
-                if r.get("N-NUMBER"):
-                    batch.append(_airplane(r, models, engines))
-                if len(batch) >= 5000:
-                    db.executemany(insert, batch)
-                    count += len(batch)
-                    batch = []
-            db.executemany(insert, batch)
-            count += len(batch)
+            airplanes = (_airplane(r, models, engines) for r in zip_csv(archive, "MASTER.txt") if r.get("N-NUMBER"))
+            count = db.executemany(insert, airplanes).rowcount
             db.execute("CREATE INDEX aircraft_mode_s ON aircraft (mode_s_hex)")
             # DEREG, DOCINDEX and RESERVED, where the archive has them.
-            registry_history.build(archive, db, _rows)
-            db.execute(f"PRAGMA user_version = {SCHEMA}")
+            registry_history.build(archive, db, zip_csv)
+            stores.stamp(db, SCHEMA)
             db.commit()
         finally:
             db.close()
     return count
-
-
-def schema(db_path: Path) -> int:
-    """The shape of the registry file on disk (SCHEMA), 0 where there is none."""
-    if not db_path.exists():
-        return 0
-    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
-        return db.execute("PRAGMA user_version").fetchone()[0]
 
 
 def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
@@ -227,7 +188,7 @@ def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
     directory = Path(directory)
     db_path = directory / DB_NAME
     fresh = db_path.exists() and time.time() - db_path.stat().st_mtime < MAX_AGE_S
-    if not force and fresh and schema(db_path) == SCHEMA:
+    if not force and fresh and stores.version(db_path) == SCHEMA:
         return False
     with _LOCK:
         if _BUILDING.is_set():
@@ -236,7 +197,7 @@ def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
     try:
         directory.mkdir(parents=True, exist_ok=True)
         zip_path = directory / "ReleasableAircraft.zip"
-        resp = outside.get(URL, headers=HEADERS, timeout=300, stream=True)
+        resp = outside.get(URL, headers=REGISTRY_HEADERS, timeout=300, stream=True)
         resp.raise_for_status()
         with open(zip_path, "wb") as out:
             for chunk in resp.iter_content(1 << 20):
@@ -249,22 +210,29 @@ def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
         _BUILDING.clear()
 
 
+def addresses(n_numbers: frozenset[str], directory: Path = DEFAULT_DIR) -> frozenset[str]:
+    """The Mode S addresses of these N-numbers (registry_reader.addresses)."""
+    return _addresses(n_numbers, Path(directory) / DB_NAME)
+
+
+def version(directory: Path = DEFAULT_DIR) -> tuple | None:
+    """Which registry file is on disk (its path, inode and mtime); None where none is."""
+    return _file(Path(directory) / DB_NAME)
+
+
 def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Path = DEFAULT_DIR) -> dict | None:
     """An airplane's registration by its transponder's ICAO address or its
     N-number; None where the registry is not read yet or has no such
     airplane (one registered abroad among them). "status" is the FAA's
     status in words, "standing" whether it is valid, not in effect
     ("lapsed") or something between ("other": a form not returned, a
-    sale reported, a renewal notice)."""
+    sale reported, a renewal notice). None too where the file is of an
+    older shape, until ingest builds it again (registry_reader.ready)."""
     db_path = Path(directory) / DB_NAME
-    if not db_path.exists():
+    if not ready(db_path):
         return None
     n = (n_number or "").strip().upper().replace("-", "")
-    # closing(): sqlite3's own `with` commits or rolls back but never
-    # closes, and each lookup left a connection for the collector (a
-    # ResourceWarning since Python 3.13).
-    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
-        db.row_factory = sqlite3.Row
+    with _reading(db_path) as db:
         row = None
         # adsb.lol marks a TIS-B / ADS-R pseudo-address with "~": it is not a
         # Mode S code the FAA assigned, so it must not match an owner's.
@@ -272,28 +240,55 @@ def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Pa
             row = db.execute("SELECT * FROM aircraft WHERE mode_s_hex = ?", (hex_id.lower(),)).fetchone()
         if row is None and re.fullmatch(r"N[1-9][0-9A-Z]{0,4}", n):
             row = db.execute("SELECT * FROM aircraft WHERE n_number = ?", (n,)).fetchone()
-    if row is None:
-        return None
+        if row is None:
+            return _last_registration(db, hex_id, n)
     found = dict(row)
     code = found.pop("status_code") or ""
     found["standing"] = codes.standing(code)
     found["status"] = codes.status(code)
     found["fractional"] = bool(found["fractional"])
-    # A file of the older shape (SCHEMA 1) until the next read has none.
     found["co_owner_names"] = json.loads(found.get("co_owner_names") or "[]")
-    return found
+    return codes.short_type(found)
+
+
+def _last_registration(db: sqlite3.Connection, hex_id: str | None, n: str) -> dict | None:
+    """An airplane with no registration in effect, by its last canceled one
+    (DEREG.txt), newest canceled first: its make, model, year and address
+    as the FAA last had them, "Deregistered" its status and "lapsed" its
+    standing. The owner's N6460R, a 1966 PA-28-140 canceled 2024-03-09 with
+    its registration pending, read "Not registered" and nothing more
+    (2026-11-27): it is public data, shown (the owner, 2026-11-26)."""
+    row = db.execute(
+        """SELECT d.*, m.manufacturer, m.model, m.aircraft_type, m.engines, m.seats,
+                  e.manufacturer || ' ' || e.model AS engine, e.engine_type, e.horsepower, e.thrust_lb
+           FROM deregistered d LEFT JOIN models m ON m.code = d.model_code LEFT JOIN engines e ON e.code = d.engine_code
+           WHERE d.n_number = ? OR (? != '' AND d.mode_s_hex = ?) ORDER BY d.cancel_date DESC LIMIT 1""",
+        (n, (hex_id or "").lower(), (hex_id or "").lower()),
+    ).fetchone()
+    if row is None:
+        return None
+    found = dict(row)
+    found.pop("status_code", None)
+    found.pop("export_country", None)
+    cancelled = found.pop("cancel_date", None)
+    return codes.short_type(
+        {
+            **found,
+            "status": "Deregistered",
+            "standing": "lapsed",
+            "fractional": False,
+            "co_owner_names": [],
+            "expires": None,
+            "last_action": cancelled or found.get("last_action"),
+        }
+    )
 
 
 def _one(db_path: Path, table: str, code: str | None) -> dict | None:
-    if not code or not db_path.exists():
+    if not code or not ready(db_path):
         return None
-    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
-        db.row_factory = sqlite3.Row
-        try:
-            row = db.execute(f"SELECT * FROM {table} WHERE code = ?", (code,)).fetchone()
-        except sqlite3.OperationalError:
-            # A file of the older shape, without the table, until the next read.
-            return None
+    with _reading(db_path) as db:
+        row = db.execute(f"SELECT * FROM {table} WHERE code = ?", (code,)).fetchone()
     return dict(row) if row else None
 
 

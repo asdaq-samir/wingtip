@@ -46,15 +46,25 @@ CHART_BYTES = 372_000
 STEP_NM = 5.0
 
 
+#: The open fields as last worked out, with the airport table they came
+#: from: worked out again only when that table is a new one (a NASR
+#: cycle), not on every state list and state's plates asked.
+_OPEN: list = [None, {}]
+
+
 def _open_fields() -> dict:
     """{FAA ident: (the ident the app shows, lat, lon)} of every open field
     the FAA lists, closed ones left out (`_closed`, decision 0043)."""
-    us = _us_airports(DEFAULT_CACHE_PATH)
-    us = us[us["_closed"].isna()] if "_closed" in us.columns else us
+    table = _us_airports(DEFAULT_CACHE_PATH)
+    held, found = _OPEN
+    if held is table:
+        return found
+    us = table[table["_closed"].isna()] if "_closed" in table.columns else table
     found = {}
     for local, shown, lat, lon in zip(us["local_code"], us["_display_ident"], us["latitude_deg"], us["longitude_deg"]):
         if isinstance(local, str) and local.strip():
             found.setdefault(local.strip().upper(), (str(shown), float(lat), float(lon)))
+    _OPEN[:] = [table, found]
     return found
 
 

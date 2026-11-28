@@ -1,9 +1,9 @@
-import { cn } from "cn";
-import { CardAction as Action } from "../../components/CardAction";
+import { Fragment, type ReactNode } from "react";
+import { CardAction as Action, CardActionRow } from "../../components/CardAction";
 import { FavoriteTile } from "../../components/FavoriteTile";
 import { useIsDesktop } from "../../hooks/use-desktop";
 import type { AirportPlace } from "../../lib/api/types";
-import { ACTION } from "../../lib/cardActions";
+import { ACTION, CARD_ACTIONS } from "../../lib/generated/cardActions";
 import { useLiveRefresh } from "../../lib/liveRefresh";
 import { usePreferences } from "../../lib/preferences";
 import { sameField } from "../../lib/procedures";
@@ -86,69 +86,72 @@ export default function PlaceActions({
   const timed = time && !closed ? time : null;
   // Add Stop off: Address at the row's end in its place, off the stop's ask.
   const stopOff = !!onAddStop && (!!addStopOff || !!closed);
-  const addStop = onAddStop && (asStop || !stopOff) && (
-    <Action
-      icon={<ACTION.addStop.icon />}
-      label={ACTION.addStop.label}
-      filled={asStop}
-      disabled={!place || !!addStopOff || !!closed}
-      spoken={addStopOff || closed ? `${ACTION.addStop.label}: ${addStopOff ?? closed}` : undefined}
-      onClick={() => place && onAddStop(place)}
-      testId="place-add-stop"
-      keys={keyed ? keyHint("S") : undefined}
-    />
-  );
-  return (
-    // Every tile 56 tall (min-h-14) as Maps' are: the shared tile keeps its
-    // own size elsewhere, where the half card has no room for it.
-    <div className={cn("grid gap-2 pt-3 *:min-h-14", onAddStop ? "grid-cols-4" : "grid-cols-3")} data-testid="place-actions">
-      {asStop ? (
-        addStop
-      ) : (
-        <>
-          <Action
-            icon={<ACTION.flyHere.icon />}
-            // "≈": the book's speed in still air, not the nav log's legs (as the figure strip marks its estimate).
-            label={timed ? `≈ ${duration(timed.minutes)}` : ACTION.flyHere.label}
-            filled
-            busy={flying}
-            disabled={!place || !!closed}
-            spoken={
-              closed
-                ? `${ACTION.flyHere.label}: ${closed}`
-                : timed
-                  ? // The time in sight first, so the name holds it (WCAG 2.5.3,
-                    // Label in Name; axe's label-content-name-mismatch).
-                    `≈ ${duration(timed.minutes)} to Fly Here, about ${spokenDuration(timed.minutes)} at ${Math.round(timed.tasKt)} knots, no wind`
-                  : undefined
-            }
-            testId="fly-here"
-            keys={keyed ? keyHint("F") : undefined}
-            onClick={() => place && onFlyHere(place)}
-          />
-          {addStop}
-        </>
-      )}
+  // The row is its kind's (design/card-actions.json): each tile's wiring
+  // here, which tiles and their order there.
+  const kind = asStop ? "airportAsStop" : stopOff ? "airportStopOff" : "airport";
+  const tiles: Record<(typeof CARD_ACTIONS)[typeof kind][number], ReactNode> = {
+    flyHere: (
+      <Action
+        icon={<ACTION.flyHere.icon />}
+        // "≈": the book's speed in still air, not the nav log's legs (as the figure strip marks its estimate).
+        label={timed ? `≈ ${duration(timed.minutes)}` : ACTION.flyHere.label}
+        filled
+        busy={flying}
+        disabled={!place || !!closed}
+        spoken={
+          closed
+            ? `${ACTION.flyHere.label}: ${closed}`
+            : timed
+              ? // The time in sight first, so the name holds it (WCAG 2.5.3,
+                // Label in Name; axe's label-content-name-mismatch).
+                `≈ ${duration(timed.minutes)} to Fly Here, about ${spokenDuration(timed.minutes)} at ${Math.round(timed.tasKt)} knots, no wind`
+              : undefined
+        }
+        testId="fly-here"
+        keys={keyed ? keyHint("F") : undefined}
+        onClick={() => place && onFlyHere(place)}
+      />
+    ),
+    addStop: onAddStop && (
+      <Action
+        icon={<ACTION.addStop.icon />}
+        label={ACTION.addStop.label}
+        filled={asStop}
+        disabled={!place || !!addStopOff || !!closed}
+        spoken={addStopOff || closed ? `${ACTION.addStop.label}: ${addStopOff ?? closed}` : undefined}
+        onClick={() => place && onAddStop(place)}
+        testId="place-add-stop"
+        keys={keyed ? keyHint("S") : undefined}
+      />
+    ),
+    call: (
       <Action
         icon={<ACTION.call.icon />}
         label={ACTION.call.label}
         disabled={!place?.phone}
         href={place?.phone ? `tel:${place.phone}` : undefined}
-        spoken={place?.phone ? `Call ${place.phone}` : "Call: no phone listed"}
+        spoken={place?.phone ? `${ACTION.call.label} ${place.phone}` : `${ACTION.call.label}: no phone listed`}
         testId="place-call"
       />
-      <PlaceFavorite ident={place?.ident ?? ident} place={place} />
-      {(asStop || stopOff) && (
-        <Action
-          icon={<ACTION.address.icon />}
-          label={ACTION.address.label}
-          disabled={!place}
-          href={place ? mapsLink(place) : undefined}
-          spoken={place?.address ? `${ACTION.address.label} in Maps: ${place.address}` : "Open in Maps"}
-          testId="place-address-action"
-        />
-      )}
-    </div>
+    ),
+    favorite: <PlaceFavorite ident={place?.ident ?? ident} place={place} />,
+    address: (
+      <Action
+        icon={<ACTION.address.icon />}
+        label={ACTION.address.label}
+        disabled={!place}
+        href={place ? mapsLink(place) : undefined}
+        spoken={place?.address ? `${ACTION.address.label} in Maps: ${place.address}` : "Open in Maps"}
+        testId="place-address-action"
+      />
+    ),
+  };
+  return (
+    <CardActionRow columns={onAddStop ? 4 : 3} testId="place-actions">
+      {CARD_ACTIONS[kind].map((name) => (
+        <Fragment key={name}>{tiles[name]}</Fragment>
+      ))}
+    </CardActionRow>
   );
 }
 

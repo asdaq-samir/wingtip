@@ -90,7 +90,7 @@ def clock_0200z(monkeypatch):
 
 def _serve(name: str, answer: Mock, at: float = T0200Z) -> None:
     """`name` fetched from a stubbed aviationweather.gov at `at` and stored."""
-    with patch("app.fetch.requests.get", return_value=answer), patch("app.aviationweather.time.time", return_value=at):
+    with patch("app.fetch.outside.get", return_value=answer), patch("app.aviationweather.time.time", return_value=at):
         aviationweather.fetch_source(name)
 
 
@@ -98,7 +98,7 @@ def _serve(name: str, answer: Mock, at: float = T0200Z) -> None:
 
 
 def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
-    with patch("app.fetch.requests.get", return_value=METARS) as mock_get:
+    with patch("app.fetch.outside.get", return_value=METARS) as mock_get:
         aviationweather.fetch_source("metars")
     assert mock_get.call_args.args[0] == "https://aviationweather.gov/data/cache/metars.cache.xml.gz"
     assert mock_get.call_args.kwargs["headers"]["User-Agent"].startswith("wingtip-maps/")  # wingtip.config.REQUEST_HEADERS, every ask
@@ -116,14 +116,10 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
         "ceiling_cover": "OVC",  # the ceiling layer's own, for the station model's "OVC 006"
         "visibility_sm": 2.0,
         "visibility_plus": False,
-        "wind_dir_true_deg": None,
-        "wind_speed_kt": None,
-        "wind_gust_kt": None,
-        "altimeter_in_hg": None,
-        "temp_c": None,
-        "dewpoint_c": None,
-        "lat": None,
-        "lon": None,
+        "visibility_minus": False,
+        # None of the rest is in this report, the wind's variable range among them.
+        **dict.fromkeys(("wind_dir_true_deg", "wind_variable_deg", "wind_speed_kt", "wind_gust_kt", "altimeter_in_hg")),
+        **dict.fromkeys(("temp_c", "dewpoint_c", "lat", "lon")),
     }
     assert result["C81"] is None
 
@@ -136,7 +132,7 @@ def test_metars_are_kept_however_long_an_outage_with_their_own_times():
     _serve("metars", METARS)
     assert weather_store.read("metars").until is None
     with (
-        patch("app.fetch.requests.get", side_effect=requests.ConnectionError("no route to host")),
+        patch("app.fetch.outside.get", side_effect=requests.ConnectionError("no route to host")),
         patch("tenacity.nap.time.sleep"),
         pytest.raises(fetch.FetchFailed),
     ):
@@ -225,7 +221,7 @@ def test_a_certificate_failure_is_not_retried():
     """An expired or untrusted certificate fails the same way every time;
     the back-off would only delay the same answer by six seconds."""
     with (
-        patch("app.fetch.requests.get", side_effect=requests.exceptions.SSLError("certificate has expired")) as mock_get,
+        patch("app.fetch.outside.get", side_effect=requests.exceptions.SSLError("certificate has expired")) as mock_get,
         patch("tenacity.nap.time.sleep") as mock_sleep,
     ):
         with pytest.raises(fetch.FetchFailed, match="certificate has expired"):
@@ -237,23 +233,21 @@ def test_a_certificate_failure_is_not_retried():
         metar_for_idents(["C81"])
 
 
-def test_a_request_refused_as_asked_is_not_retried_and_one_too_many_is():
+def test_a_request_refused_as_asked_is_asked_once_here_the_session_asking_again_on_a_429():
     """The windtemp API's 400 since its tables were discontinued (NWS SCN
     26-47) is the same answer on every try: three tries and their back-off
-    put 6.5 s on a plan. A 429 asks to be tried later, and is."""
+    put 6.5 s on a plan. A 429 asks to be tried later: wingtip.outside's
+    session does, under the one call here (its RETRY), and no loop here
+    asks again on top of it."""
+    from wingtip import outside
+
     refused = Mock(status_code=400, text='{"status":"error","error":"Wind/temp tables have been discontinued"}')
-    with patch("app.fetch.requests.get", return_value=refused) as mock_get, patch("tenacity.nap.time.sleep") as mock_sleep:
+    with patch("app.fetch.outside.get", return_value=refused) as mock_get, patch("tenacity.nap.time.sleep") as mock_sleep:
         with pytest.raises(fetch.FetchFailed, match="refused: 400"):
             fetch.get("https://aviationweather.gov/api/data/windtemp", {"fcst": "06"})
     assert mock_get.call_count == 1
     mock_sleep.assert_not_called()
-
-    busy = Mock(status_code=429, text="slow down")
-    busy.raise_for_status.side_effect = requests.HTTPError("429 Client Error")
-    with patch("app.fetch.requests.get", return_value=busy) as mock_get, patch("tenacity.nap.time.sleep"):
-        with pytest.raises(fetch.FetchFailed, match="after 3 attempts"):
-            fetch.get("https://aviationweather.gov/api/data/windtemp", {"fcst": "06"})
-    assert mock_get.call_count == 3
+    assert 429 in outside.RETRY.status_forcelist and outside.RETRY.total == 3
 
 
 def test_an_unchanged_product_is_not_downloaded_or_parsed_again(monkeypatch):
@@ -275,7 +269,7 @@ def test_an_unchanged_product_is_not_downloaded_or_parsed_again(monkeypatch):
         parsed.append(1)
         return ["held"]
 
-    monkeypatch.setattr(fetch.requests, "get", get)
+    monkeypatch.setattr(fetch.outside, "get", get)
     monkeypatch.setitem(aviationweather.SOURCES, "airsigmets", ("https://example/airsigmets", parse, lambda data, at: at + 3 * 3600))
     aviationweather.fetch_source("airsigmets")
     aviationweather.fetch_source("airsigmets")

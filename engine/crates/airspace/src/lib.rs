@@ -26,6 +26,7 @@ pub mod calls;
 pub mod class_b_band;
 pub mod drills;
 pub mod field_name;
+pub mod navaid_kinds;
 pub mod pack;
 mod pack_kept;
 pub mod pack_query;

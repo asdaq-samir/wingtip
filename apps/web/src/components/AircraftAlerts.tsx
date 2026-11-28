@@ -5,11 +5,10 @@ import CloseButton from "./CloseButton";
 import MapBanner, { BannerButton } from "./MapBanner";
 import { airborneNow, alertKey, dismissFired as dismiss, fired, useFiredAlerts, type Watched } from "../lib/aircraftAlerts";
 import type { FlightStatus } from "../lib/api/types";
+import { planeLink } from "../lib/flightLink";
 import { useOwnShip } from "../lib/map/position/ownShip";
 import { useTracking } from "../lib/map/position/tracking";
 import { usePreferences } from "../lib/preferences";
-import { useExtra } from "../lib/extras";
-import { isOwn, useOwnAirplanes } from "../lib/airplane/ownAirplane";
 import { flightStatusQuery } from "../lib/queryClientTraffic";
 import { say } from "../lib/speech";
 
@@ -23,12 +22,9 @@ const answers = (results: UseQueryResult<FlightStatus>[]) => results.map((r) => 
  * before, and one that goes off said on the map and aloud, then let go.
  */
 function useAircraftAlertWatch() {
-  // Another airplane's alerts wait, kept, while Other Airplanes is off in
-  // Settings' Extras (lib/airplane/ownAirplane); the pilot's own are watched.
-  const kept = usePreferences((s) => s.aircraftAlerts);
-  const others = useExtra("otherAirplanes");
-  const own = useOwnAirplanes();
-  const alerts = useMemo(() => (others ? kept : kept.filter((a) => isOwn(own, a.hex))), [others, kept, own]);
+  // Every airplane's alerts the pilot asked for: what they say is public
+  // (the owner, 2026-11-26: "it's all public info").
+  const alerts = usePreferences((s) => s.aircraftAlerts);
   const hexes = useMemo(() => [...new Set(alerts.map((a) => a.hex))], [alerts]);
   const results = useQueries({ queries: hexes.map((hex) => flightStatusQuery(hex)), combine: answers });
   const watched = useRef(new Map<string, Watched>());
@@ -95,7 +91,7 @@ export default function AircraftAlerts() {
               // Its card, where the planner is open; from another page, the planner on it.
               const pick = useTracking.getState().pick;
               if (pick) pick(alert.hex);
-              else window.location.assign(`/app/plan?flight=${alert.hex}`);
+              else window.location.assign(planeLink({ hex: alert.hex, name: alert.title }).url);
               dismiss(alert.id);
             }}
           >

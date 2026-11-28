@@ -121,7 +121,7 @@ def ingest_line(beats: dict, now: float) -> list[dict]:
     """ingest itself, where no SWIM feed is set up: every SWIM line is then
     "off", which never alerts, so an ingest that had stopped (its beat
     gone quiet: the followed airplanes, the live store's upkeep) said
-    nothing (the ops audit, 2026-11-21). Where a feed is set up, its own
+    nothing. Where a feed is set up, its own
     line already goes stale with ingest's beat; where ingest has never
     beaten, every SWIM line already asks whether it is running."""
     ingest = beats.get("ingest")

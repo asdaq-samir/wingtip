@@ -1,4 +1,6 @@
-import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
+import { useController, type Control, type FieldErrors, type UseFormRegister } from "react-hook-form";
+import PullDown from "../../components/PullDown";
+import { AIRPLANE, KIND_CHOICES, NOT_SAID } from "../../lib/airplaneKind";
 import { errorIdOf, invalidProps } from "../../lib/fieldError";
 import FieldHit from "../../components/FieldHit";
 import { Input } from "../../components/ui/input";
@@ -19,6 +21,36 @@ const problem = (id: string, message?: string) =>
       {message}
     </span>
   ) : undefined;
+
+/** Its category, class (14 CFR 61.5(b)'s words) and gear: a pull-down
+ *  each, "" in the form where not said. A class picked with no category
+ *  says Airplane, the category each of them is (61.5(b)(2)). */
+function KindRows({ control }: { control: Control<AircraftFormValues> }) {
+  const fields = {
+    category: useController({ control, name: "category" }).field,
+    aircraftClass: useController({ control, name: "aircraftClass" }).field,
+    gear: useController({ control, name: "gear" }).field,
+  };
+  const rows = [
+    ["category", "Category"],
+    ["aircraftClass", "Class"],
+    ["gear", "Gear"],
+  ] as const;
+  return rows.map(([name, title]) => (
+    <ListRow key={name} title={title}>
+      <PullDown
+        label={title}
+        value={fields[name].value || NOT_SAID}
+        options={KIND_CHOICES[name]}
+        testId={`aircraft-${name}`}
+        onChange={(v) => {
+          fields[name].onChange(v === NOT_SAID ? "" : v);
+          if (name === "aircraftClass" && v !== NOT_SAID && !fields.category.value) fields.category.onChange(AIRPLANE);
+        }}
+      />
+    </ListRow>
+  ));
+}
 
 /** The airplane form's fields: what it is, its speeds and burns, its tanks
  *  and its flight plan items, each a row of a grouped list. */
@@ -75,6 +107,10 @@ export function AircraftFields({
             />
           </FieldHit>
         </ListRow>
+        {/* What it is to passenger currency (14 CFR 61.57(a)(1)(ii)):
+            judged for the airplane to be flown, and a logbook entry in it
+            filled in with them. Not said until set. */}
+        <KindRows control={control} />
       </ListGroup>
       <SpeedAndBurnGroups formId={formId} control={control} errors={errors} />
       {/* What the cruise figures mean to the planner, said where

@@ -2,6 +2,7 @@ package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.dto.AirplaneFlown;
 import app.wingtipmaps.gateway.dto.CurrencyDatesRequest;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.LogbookEntryDto;
@@ -13,6 +14,7 @@ import app.wingtipmaps.gateway.service.LogbookService;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,7 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -32,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Pilot-scoped as the aircraft are: 401 signed out.
  */
 @RestController
-@RequestMapping("/api/logbook")
+@org.springframework.web.bind.annotation.RequestMapping("/api/logbook")
 public class LogbookController {
 
     private final LogbookService logbook;
@@ -72,9 +74,26 @@ public class LogbookController {
         return PilotResponses.done(logbook.delete(pilot, id));
     }
 
+    /** Where the pilot stands; passengers judged for the airplane to be
+     *  flown where its category and class are given (14 CFR
+     *  61.57(a)(1)(ii)), a tailwheel not said judged as one; else for the
+     *  newest flight's. */
     @GetMapping("/currency")
-    public ResponseEntity<CurrencyDto> currency(Pilot pilot) {
-        return ResponseEntity.ok(currencyOf(pilot));
+    public ResponseEntity<CurrencyDto> currency(
+            Pilot pilot,
+            @RequestParam(required = false) @Nullable String category,
+            @RequestParam(required = false) @Nullable String aircraftClass,
+            @RequestParam(required = false) @Nullable Boolean tailwheel) {
+        AirplaneFlown flying = category == null || aircraftClass == null
+                ? null
+                : new AirplaneFlown(category, aircraftClass, tailwheel);
+        return ResponseEntity.ok(planner.currency(
+                logbook.list(pilot),
+                pilot.getFlightReviewOn(),
+                pilot.getMedicalExpiresOn(),
+                pilot.getIpcOn(),
+                PilotDay.today(),
+                flying));
     }
 
     /** Whether the pilot is emailed before their currency runs out
@@ -130,6 +149,10 @@ public class LogbookController {
                 e.getAirHours(),
                 e.getTouchAndGoes(),
                 e.isFromTrack(),
-                e.getFlightId());
+                e.getFlightId(),
+                e.getCategory(),
+                e.getAircraftClass(),
+                e.getTailwheel(),
+                e.getFullStopLandings());
     }
 }

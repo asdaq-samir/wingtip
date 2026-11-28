@@ -55,6 +55,7 @@ fn plan(name: &str, v: &Value) -> Result<String, String> {
         medical_expires_on: date(name, v, "medical_expires_on")?,
         ipc_on: date(name, v, "ipc_on")?,
         today: today_iso,
+        flying: currency::flying(name, v.get("flying"))?,
     };
     let ratings = list(name, v, "ratings")?;
     let rated = |r: &str| ratings.iter().any(|x| x.as_str() == Some(r));

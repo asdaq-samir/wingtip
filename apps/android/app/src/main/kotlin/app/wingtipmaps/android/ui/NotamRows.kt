@@ -17,6 +17,8 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +31,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.api.generated.RankedNotam
@@ -36,6 +39,7 @@ import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
+import java.time.Instant
 
 /**
  * The airport card's NOTAMs, its view model's part the tab draws: the
@@ -79,8 +83,7 @@ fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
     }
     val long = said.size > FieldNotams.FIRST
     item(key = "notams-title") { NotamsTitle(long, notams.all, said.size, notams.toggle, pad) }
-    // How old the list is, kept or fresh, as the route's NOTAMs say it (the
-    // offline audit's 3, 2026-11-21; AIM 5-1-3, 14 CFR 91.103).
+    // How old the list is, kept or fresh, as the route's NOTAMs say it (AIM 5-1-3, 14 CFR 91.103).
     notams.fetchedAtMs?.let { at -> item(key = "notams-age") { KeptAgeLine(KeptForAir.NOTAMS, at, pad) } }
     if (said.isEmpty()) {
         item(key = "notams-none") {
@@ -104,10 +107,10 @@ fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
                 }
                 Text(name, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = pad.padding(top = WingtipSpace.Md).animateItem())
             }
-            items(group, key = { "n-" + it.notam.id }) { s -> NotamRow(s, { notams.open(listOf(s.notam)) }, pad.animateItem()) }
+            items(group, key = { "n-" + it.notam.id }) { s -> NotamRow(s, notams.ranked?.timeZone, { notams.open(listOf(s.notam)) }, pad.animateItem()) }
         }
     } else {
-        items(if (long) said.take(FieldNotams.FIRST) else said, key = { "n-" + it.notam.id }) { s -> NotamRow(s, { notams.open(listOf(s.notam)) }, pad.animateItem()) }
+        items(if (long) said.take(FieldNotams.FIRST) else said, key = { "n-" + it.notam.id }) { s -> NotamRow(s, notams.ranked?.timeZone, { notams.open(listOf(s.notam)) }, pad.animateItem()) }
     }
     if (notams.ranked?.unchecked.orEmpty().isNotEmpty()) {
         item(key = "notams-unchecked") {
@@ -170,18 +173,21 @@ private fun NoteRow(words: String, modifier: Modifier) {
  * page ("Full card is fine"). A tap opens it there.
  */
 @Composable
-fun NotamRow(s: FieldNotams.Said, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun NotamRow(s: FieldNotams.Said, zone: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val muted = !FieldNotams.active(s.notam)
     ListItem(
         onClick = onClick,
         leadingContent = { NotamState(s.notam) },
-        supportingContent = { NotamLines(s) },
+        supportingContent = { NotamLines(s, zone) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier.fillMaxWidth(),
     ) {
-        // The words as sent, where the engine has no what, at most three lines.
-        val clamp = s.read?.what == null && !FieldNotams.isTfr(s.notam)
-        Text(notamWhat(s.what), color = if (muted) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified, maxLines = if (clamp) 3 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
+        // Titled what happened, as its own card is (notam_card, rules.md
+        // 19), else its what; the words as sent, where the engine has
+        // neither, at most three lines.
+        val title = s.card?.title
+        val clamp = title == null && s.read?.what == null && !FieldNotams.isTfr(s.notam)
+        Text(notamWhat(title ?: s.what), color = if (muted) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified, maxLines = if (clamp) 3 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -216,47 +222,48 @@ fun notamWhat(what: String): AnnotatedString {
 }
 
 /**
- * A NOTAM's lines under its what: its times, labelled, in the device's own
- * time (FieldNotams.timeLines), and where it is only where the engine can
- * say it is not obvious (the owner, 2026-11-11: "title(what), when, where
- * ... on different lines"). An inactive one is muted throughout.
+ * A NOTAM's lines under its what, on its row and on its own card alike:
+ * its times (NotamTimes.timeLines), labelled, in the field's own time with
+ * its zone (`zone`, the planner's), each on one line, never wrapped (the
+ * owner, 2026-11-23: "one line each"): where how long until it ("· in
+ * 551d") does not fit beside the time, the line drops it (OneLine). Then
+ * where it is, only where the engine can say it is not obvious (the owner,
+ * 2026-11-11: "title(what), when, where ... on different lines"). Its end
+ * is "Permanent" where the engine's notam_card says it runs until the
+ * charts are updated. Read again each minute, so "in 18d" keeps up. An
+ * inactive one is muted throughout.
  */
 @Composable
-fun NotamLines(s: FieldNotams.Said, modifier: Modifier = Modifier) {
-    val times = FieldNotams.timeLines(s.notam, s.read)
+fun NotamLines(s: FieldNotams.Said, zone: String?, modifier: Modifier = Modifier) {
+    val now by AppClock.ticking(MINUTE_MS)
+    val untilCharts = s.card?.untilCharts == true
+    val times = remember(s, zone, untilCharts, now / MINUTE_MS) {
+        NotamTimes.timeLines(s.notam, s.read, untilCharts, zone, Instant.ofEpochMilli(now))
+    }
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val words = if (FieldNotams.active(s.notam)) MaterialTheme.colorScheme.onSurface else muted
+    val style = MaterialTheme.typography.bodyMedium
     Column(modifier) {
         times.forEach { t ->
             val label = stringResource(
                 when (t.label) {
-                    FieldNotams.Label.SINCE -> R.string.notam_since
-                    FieldNotams.Label.STARTS -> R.string.notam_starts
-                    FieldNotams.Label.ENDS -> R.string.notam_ends
-                    FieldNotams.Label.DURATION -> R.string.notam_duration
+                    NotamTimes.Label.SINCE -> R.string.notam_since
+                    NotamTimes.Label.STARTS -> R.string.notam_starts
+                    NotamTimes.Label.ENDS -> R.string.notam_ends
+                    NotamTimes.Label.DURATION -> R.string.notam_duration
                 },
             )
-            val value = timeWords(t)
-            Text(
-                buildAnnotatedString {
-                    withStyle(SpanStyle(color = muted)) { append(label) }
-                    append("  ")
-                    withStyle(SpanStyle(color = words)) { append(value) }
-                },
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            val value = if (t.permanent) stringResource(R.string.notam_permanent) else t.value.orEmpty()
+            fun line(text: String) = buildAnnotatedString {
+                withStyle(SpanStyle(color = muted)) { append(label) }
+                append("  ")
+                withStyle(SpanStyle(color = words)) { append(text) }
+            }
+            val soon = t.soon?.let { stringResource(R.string.notam_in, value, it) }
+            OneLine(listOfNotNull(soon?.let(::line), line(value)), style)
         }
-        s.where?.let { Text(it, color = muted, style = MaterialTheme.typography.bodyMedium) }
+        s.where?.let { Text(it, color = muted, style = style) }
     }
 }
 
-/** A time line's value: "11/12 08:32 local (est.) (in 18d)", or Permanent. */
-@Composable
-private fun timeWords(t: FieldNotams.TimeLine): String {
-    if (t.permanent) return stringResource(R.string.notam_permanent)
-    var v = t.value.orEmpty()
-    if (t.local) v = stringResource(R.string.notam_local, v)
-    if (t.estimated) v = stringResource(R.string.notam_estimated, v)
-    t.soon?.let { v = stringResource(R.string.notam_in, v, it) }
-    return v
-}
+private const val MINUTE_MS = 60_000L

@@ -80,7 +80,7 @@ export function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm<InspectionsValues>({
     resolver: zodResolver(inspectionsSchema),
     defaultValues: {
@@ -113,7 +113,10 @@ export function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
       eltBatteryDueOn: textOrNull(values.eltBatteryDueOn),
       hundredHourAtHours: numberOrNull(values.hundredHourAtHours),
       hoursNow: numberOrNull(values.hoursNow),
-      forHire: values.forHire,
+      // The owner's word only once given: a switch left as drawn on an
+      // airplane never answered keeps it not said (null), which the engine
+      // weighs as for hire (91.409(b)), not "not for hire".
+      forHire: recorded?.forHire != null || dirtyFields.forHire ? values.forHire : null,
     }),
   );
   const today = localDay();

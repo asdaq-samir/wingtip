@@ -5,7 +5,40 @@ import json
 
 import pytest
 
-from wingtip import airport_photos
+import requests
+
+from wingtip import airport_photos, ratelimit
+
+
+@pytest.fixture(autouse=True)
+def _sources_not_held(monkeypatch):
+    """Each test's USGS and Wikimedia held by no other test's failure."""
+    monkeypatch.setattr(airport_photos, "_USGS", ratelimit.Gate())
+    monkeypatch.setattr(airport_photos, "_WIKIMEDIA", ratelimit.Gate())
+
+
+def test_a_source_that_failed_is_not_asked_again_for_a_while(tmp_path, monkeypatch):
+    """Round 6's audit, N6: while the USGS or Wikipedia was down each card
+    open waited out its whole timeout and the retries."""
+    asked = []
+
+    def down(url, **kwargs):
+        asked.append((url, kwargs["timeout"]))
+        raise requests.ConnectionError("down")
+
+    monkeypatch.setattr(airport_photos.outside, "once_get", down)
+    for _ in range(2):
+        with pytest.raises(airport_photos.PhotoUnavailable):
+            airport_photos.aerial("KSCD", 33.27, -86.37, [], tmp_path)
+        assert airport_photos.ground_photo("KSCD", "https://en.wikipedia.org/wiki/X", tmp_path) is None
+    assert asked == [
+        (airport_photos.USGS_EXPORT, airport_photos.CARD_TIMEOUT_S),
+        (airport_photos.WIKIPEDIA_API, airport_photos.NAME_TIMEOUT_S),
+    ]
+    # Nothing kept for the failure: asked again once the hold is over.
+    airport_photos._WIKIMEDIA.until = -1.0
+    airport_photos.ground_photo("KSCD", "https://en.wikipedia.org/wiki/X", tmp_path)
+    assert len(asked) == 3
 
 
 def test_the_aerial_is_framed_on_the_runways_at_three_by_two():
@@ -49,8 +82,28 @@ def test_the_ground_photo_is_fetched_once_and_kept(tmp_path, monkeypatch):
         def raise_for_status(self):
             pass
 
-    monkeypatch.setattr(airport_photos.outside, "get", lambda url, **kw: fetched.append(url) or Answer())
+    monkeypatch.setattr(airport_photos.outside, "once_get", lambda url, **kw: fetched.append(url) or Answer())
     path = airport_photos.ground_photo_file("KSCD", "https://upload.wikimedia.org/x.jpg", tmp_path)
     assert path.read_bytes() == b"\xff\xd8jpeg"
     airport_photos.ground_photo_file("KSCD", "https://upload.wikimedia.org/x.jpg", tmp_path)
     assert fetched == ["https://upload.wikimedia.org/x.jpg"]
+
+
+def test_a_200_that_is_not_a_picture_holds_its_source(tmp_path, monkeypatch):
+    """Round 7's audit, N6: a captcha page for a photo was asked for again at each card open."""
+
+    class Page:
+        headers = {"content-type": "text/html"}
+        content = b"<html>"
+
+        def raise_for_status(self):
+            pass
+
+    asked = []
+    monkeypatch.setattr(airport_photos.outside, "once_get", lambda url, **kw: asked.append(url) or Page())
+    for _ in range(2):
+        with pytest.raises(airport_photos.PhotoUnavailable):
+            airport_photos.ground_photo_file("KSCD", "https://upload.wikimedia.org/x.jpg", tmp_path)
+        with pytest.raises(airport_photos.PhotoUnavailable):
+            airport_photos.aerial("KSCD", 33.27, -86.37, [], tmp_path)
+    assert len(asked) == 2

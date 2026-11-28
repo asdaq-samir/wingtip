@@ -34,6 +34,13 @@ enum RouteTurns {
         return ((degrees + 360).truncatingRemainder(dividingBy: 360)).rounded()
     }
 
+    /// The side a top of climb's or descent's name goes: square to the
+    /// course on its upper side, as the web's squareToCourse.
+    static func squareToCourse(_ courseDeg: Double) -> Double {
+        let left = ((Int(courseDeg.rounded()) - 90) % 360 + 360) % 360
+        return Double(left > 90 && left <= 270 ? (left + 180) % 360 : left)
+    }
+
     /// The first unit step along the line from vertex `i`, going `by`, past
     /// any vertex on the point itself.
     private static func leg(_ points: [MKMapPoint], from i: Int, by: Int) -> (x: Double, y: Double)? {
@@ -54,11 +61,15 @@ final class RoutePointAnnotation: NSObject, MKAnnotation {
     let coordinate: CLLocationCoordinate2D
     /// Degrees clockwise from up on a north-up map (RouteTurns.outside).
     let out: Double
+    /// A top of climb or descent (RouteLegs.LegPoint), which gives way to
+    /// the route's own marks where it would cover one.
+    let legPoint: Bool
 
-    init(name: String, coordinate: CLLocationCoordinate2D, out: Double) {
+    init(name: String, coordinate: CLLocationCoordinate2D, out: Double, legPoint: Bool = false) {
         self.name = name
         self.coordinate = coordinate
         self.out = out
+        self.legPoint = legPoint
     }
 
     var title: String? { name }
@@ -114,7 +125,13 @@ final class RoutePointMarkView: MKAnnotationView {
     private func lay() {
         guard let point = annotation as? RoutePointAnnotation else { return }
         pill.text = point.name
-        accessibilityLabel = "Route point \(point.name)"
+        accessibilityLabel = point.legPoint
+            ? (point.name == "TOC" ? Wording.topOfClimb : Wording.topOfDescent) : "Route point \(point.name)"
+        // A top of climb or descent is kept over every field's mark but
+        // gives way to the route's own (the web's leg points, under
+        // ROUTE_MARKS_LOWEST); the route's points never give way.
+        displayPriority = point.legPoint ? MKFeatureDisplayPriority(rawValue: 999) : .required
+        collisionMode = .rectangle
         let size = pill.intrinsicContentSize
         let pillSize = CGSize(width: size.width + 12, height: 20)
         pill.layer.cornerRadius = pillSize.height / 2
@@ -146,6 +163,13 @@ final class RouteMarksLayer {
     /// Whether the checkpoints' names show at the zoom now.
     private var checkpointNames = false
     private var points: [RoutePointAnnotation] = []
+    /// The tops of climb and descent, and the ones on the map now: none
+    /// below map.zoom.route-tags, where over the whole country a TOD's
+    /// pill sat on the fields it was between (the owner's iPhone
+    /// screenshot, 2026-11-23).
+    private var legPoints: [RouteLegs.LegPoint] = []
+    private var legMarks: [RoutePointAnnotation] = []
+    private var legZoom = 0.0
 
     func attach(to map: MKMapView) {
         map.register(CheckpointMarkView.self, forAnnotationViewWithReuseIdentifier: CheckpointMarkView.reuse)
@@ -198,14 +222,37 @@ final class RouteMarksLayer {
         map.addAnnotations(points)
     }
 
-    /// The map moved: the checkpoints' names in with the zoom, and each
-    /// point's name turned back outside its turn.
+    /// The tops of climb and descent brought to `wanted`, drawn only from
+    /// map.zoom.route-tags; nothing done while they are the same.
+    func showLegPoints(_ wanted: [RouteLegs.LegPoint], on map: MKMapView) {
+        guard wanted != legPoints else { return }
+        legPoints = wanted
+        placeLegPoints(on: map)
+    }
+
+    private func placeLegPoints(on map: MKMapView) {
+        map.removeAnnotations(legMarks)
+        legMarks = []
+        guard legZoom >= WingtipMapZoom.routeTags else { return }
+        legMarks = legPoints.map {
+            RoutePointAnnotation(name: $0.name, coordinate: CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon), out: $0.out, legPoint: true)
+        }
+        map.addAnnotations(legMarks)
+    }
+
+    /// The map moved: the checkpoints' names in with the zoom, the tops of
+    /// climb and descent in from map.zoom.route-tags, and each point's
+    /// name turned back outside its turn.
     func moved(_ map: MKMapView, zoom: Double) {
+        let tags = zoom >= WingtipMapZoom.routeTags
+        let wereTags = legZoom >= WingtipMapZoom.routeTags
+        legZoom = zoom
+        if tags != wereTags { placeLegPoints(on: map) }
         let names = zoom >= CheckpointAnnotation.namesFromZoom
         if names != checkpointNames {
             checkpointNames = names
             for mark in checkpointMarks.values { (map.view(for: mark.mark) as? CheckpointMarkView)?.showName(names) }
         }
-        for point in points { (map.view(for: point) as? RoutePointMarkView)?.turn(mapHeading: map.camera.heading) }
+        for point in points + legMarks { (map.view(for: point) as? RoutePointMarkView)?.turn(mapHeading: map.camera.heading) }
     }
 }

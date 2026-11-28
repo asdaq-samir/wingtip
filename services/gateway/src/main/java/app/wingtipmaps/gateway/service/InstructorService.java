@@ -88,16 +88,32 @@ public class InstructorService {
                     "You have asked " + ASKS_A_DAY + " instructors today: ask again tomorrow.");
         }
         links.save(new InstructorLink(student, address, now));
-        String name = EndorsementRecords.nameOf(student);
+        String name = mailedName(student);
+        // The subject is fixed and the name in the body is only a name's
+        // letters: the name is the student's own free text, and any
+        // account could mail any address a line of its choosing, a link
+        // among it.
         mail.send(
                 address,
-                name + " asks you to be their flight instructor",
+                "A pilot asks you to be their flight instructor",
                 name + " (" + student.getEmail()
                         + ") has asked you to be their flight instructor in Wingtip Maps: to see their"
                         + " way to the checkride, review the planning of their solo cross-countries and sign their endorsements"
                         + " there.\n\nTo answer, sign in to Wingtip Maps with this address (" + address
                         + ") and open Logbook, then"
                         + " Students." + mail.openLine());
+    }
+
+    /** The student's name as an invite mails it: letters, marks, spaces,
+     *  apostrophes and hyphens alone -- no dot, slash or colon to make a
+     *  link of -- at most 60, or "A Wingtip Maps pilot" where none is left. */
+    static String mailedName(Pilot student) {
+        String name = String.valueOf(EndorsementRecords.nameOf(student))
+                .replaceAll("[^\\p{L}\\p{M} '’-]", "")
+                .replaceAll("\\s+", " ")
+                .strip();
+        name = name.length() > 60 ? name.substring(0, 60).strip() : name;
+        return name.isEmpty() ? "A Wingtip Maps pilot" : name;
     }
 
     /** @return false where the student has no such instructor */

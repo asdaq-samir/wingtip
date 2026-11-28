@@ -5,9 +5,10 @@ import SwiftUI
 /// An airplane being tracked, as FlightAware's flight page and the web
 /// app's FlightCard show one, laid out as the airport card is (the owner's
 /// C1, 2026-11-14: "make sure the airplane card looks similar to airport
-/// card"): its callsign with what it is and who flies it; four tiles --
-/// Follow (filled: the map keeps it where it is on the screen), Alert,
-/// Debrief (its flight now or its last, replayed) and Favorite; its flight
+/// card"): its callsign with what it is and who flies it; its four tiles,
+/// the web's (AirplaneActions, the owner's design of 2026-11-26): Track
+/// (filled: the map keeps it in sight) or on the ground Fly This, Alerts,
+/// Favorite and Figures, its Share in the head; its flight
 /// now; its facts in the sideways strip (AirplaneFacts); its photo and
 /// where it has flown as the picture tiles; then Info (what it is, its
 /// scheduled route, the FAA's record) or Flights (the ones before), in the
@@ -19,17 +20,21 @@ struct AirplaneCard: View {
     @Environment(Airplanes.self) private var airplanes
     @Environment(Receiver.self) private var receiver
     @Environment(Plan.self) private var plan
+    @Environment(Navigator.self) private var nav
+    /// Back to the plan once flown, where the card was opened over it.
+    @Environment(\.showPlan) private var showPlan
     /// Other Airplanes' switch in Settings' Extras (Extra).
     @AppStorage(Extra.otherAirplanes.key) private var others = false
     let hex: String
-    @Environment(\.undoManager) private var undoManager
     @Environment(\.cardAtPill) private var atPill
     @Environment(\.lookAccent) private var accent
     @State private var model = AirplaneCardModel()
     @State private var tab: Tab = .info
     @State private var photo: APIAirplanePhoto?
-    /// The flight Debrief opened, pushed in this card.
-    @State private var debrief: PastFlightSummary?
+    /// Its N-number's Figures page pushed over it.
+    @State private var figuresOpen = false
+    /// The planner has a book for its registered type (Registered.profile).
+    @State private var booked = false
 
     /// Its pages: what it is first, as the airport card's Info, then its
     /// earlier flights.
@@ -65,8 +70,13 @@ struct AirplaneCard: View {
                               own: airplanes.records.map(\.tailNumber) + [plan.tail].compactMap { $0 }, others: others)
     }
     private var offersHistory: Bool { offers(detail) }
-    /// Its flight now, else its last: what Debrief replays.
-    private var debriefed: PastFlightSummary? { flights.first }
+    /// Its N-number, the one the plan would fly.
+    private var tail: String? { detail?.faa?.nNumber ?? (detail?.registration ?? plane?.registration).flatMap { $0.hasPrefix("N") ? $0 : nil } }
+    /// Its four actions' facts (AirplaneActions).
+    private var actionState: AirplaneActionState {
+        AirplaneActionState(name: name, hex: hex.lowercased(), airborne: plane != nil, heard: plane != nil, tracked: tracking.follow,
+                            tail: tail, booked: booked, owned: own, flying: tail != nil && plan.tail == tail, kept: kept)
+    }
 
     var body: some View {
         List {
@@ -114,11 +124,16 @@ struct AirplaneCard: View {
         }
         // A flown flight's card, pushed in this one: from its row, or Debrief's.
         .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight) }
-        .navigationDestination(item: $debrief) { flight in PastFlightCard(hex: hex, flight: flight) }
+        .navigationDestination(isPresented: $figuresOpen) { if let tail { AirplaneFiguresHost(tail: tail) } }
         .task(id: hex) {
             await model.load(hex, offered: offers)
             if let trail = detail?.trail { tracking.seed(trail, for: hex) }
             if let kept { tracking.remember(kept) }
+        }
+        // Whether the planner has a book for its registered type, for Fly This and Figures.
+        .task(id: detail?.faa?.nNumber) {
+            let faa = detail?.faa
+            booked = faa.flatMap { try? Registered.profile(manufacturer: $0.manufacturer, model: $0.model, year: $0.year) } != nil
         }
         // Its Planespotters.net photo, by its N-number where it has one.
         .task(id: detail?.faa?.nNumber ?? detail?.registration) {
@@ -147,8 +162,8 @@ struct AirplaneCard: View {
         VStack(spacing: WingtipSpace.md) {
             VStack(spacing: WingtipSpace.xs) {
                 Text(name).font(WingtipType.card).accessibilityAddTraits(.isHeader)
-                let what = [detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type,
-                            detail?.operatorName.map(FlightWords.nameCase)].compactMap { $0 }.joined(separator: " · ")
+                let what = [detail?.description.map { FlightWords.nameCase($0, .maker) } ?? detail?.type ?? plane?.type,
+                            detail?.operatorName.map { FlightWords.nameCase($0) }].compactMap { $0 }.joined(separator: " · ")
                 if !what.isEmpty { Text(what).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center) }
                 // Heard by the cockpit's own receiver, not the internet's,
                 // and how long ago.
@@ -156,46 +171,25 @@ struct AirplaneCard: View {
                     Text(heard).font(.subheadline).foregroundStyle(.secondary)
                 }
             }
-            HStack(spacing: WingtipSpace.sm) {
-                // Follow filled, the card's first thing to do; nothing to
-                // follow where it is not heard now.
-                let following = tracking.follow && plane != nil
-                Toggle(isOn: Binding(get: { following }, set: { tracking.follow = $0 })) {
-                    ActionFace(systemImage: "scope", title: following ? "Following" : "Follow")
-                }
-                .toggleStyle(.button)
-                .glassProminentButton()
-                .disabled(plane == nil)
-                .accessibilityLabel(following ? "Stop following \(name)" : "Follow \(name) on the map")
-                // Its alerts and Debrief, another's only while Other
-                // Airplanes is on (offersHistory).
-                if offersHistory {
-                    Menu {
-                        Toggle("Tell Me When It Takes Off", isOn: watchBinding(.takeoff))
-                        Toggle("Tell Me When It Lands", isOn: watchBinding(.land))
-                    } label: {
-                        ActionFace(systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell", title: "Alert")
-                    }
-                    .glassButton()
-                    Button { debrief = debriefed } label: { ActionFace(systemImage: "chart.xyaxis.line", title: "Debrief") }
-                        .glassButton()
-                        .disabled(debriefed == nil)
-                }
-                let starred = tracking.isFavorite(hex)
-                FavoriteToggle(starred: starred) { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } }
-                    .disabled(kept == nil)
-            }
-            .glassGroup(spacing: WingtipSpace.sm)
-            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+            AirplaneActions(state: actionState, follow: { tracking.follow = $0 }, fly: fly) { figuresOpen = true }
         }
         .padding(.horizontal, WingtipSpace.lg)
         .padding(.vertical, WingtipSpace.md)
     }
 
+    /// The plan flown with this airplane, then the plan shown.
+    private func fly() {
+        guard let tail else { return }
+        Task {
+            await plan.fly(tail: tail, own: airplanes.records, names: Array(airplanes.books.keys))
+            if let showPlan { showPlan() } else { nav.showPlan() }
+        }
+    }
+
     /// Info: what it is, its flight number's scheduled route and the FAA's record.
     @ViewBuilder private var info: some View {
         Section("Airplane") {
-            if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
+            if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model, .maker)) }
             if let op = detail?.operatorName { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
             LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
             LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
@@ -242,10 +236,6 @@ struct AirplaneCard: View {
             }
             ProblemLine(model.problem)
         }
-    }
-
-    private func watchBinding(_ kind: AirplaneWatch.Kind) -> Binding<Bool> {
-        Binding(get: { tracking.watching(hex, kind) }, set: { _ in tracking.toggleWatch(AirplaneWatch(hex: hex.lowercased(), name: name, kind: kind)) })
     }
 }
 
@@ -298,8 +288,11 @@ struct NowFlightRow: View {
                     .foregroundStyle(FlightWords.squawk(squawk) != nil ? WingtipInk.problem : Color.secondary)
                     .accessibilityLabel("Squawk \(SpokenFigures.digits(squawk))\(FlightWords.squawk(squawk).map { ", \($0)" } ?? "")")
             }
-            if let fix = ownShip.fix {
-                switch Result(catching: { try FlightWords.fromYou(fix, lat: plane.lat, lon: plane.lon, altitudeFt: plane.altitudeFt) }) {
+            // Own ship's place to a thousandth of a degree and height to
+            // 10 ft, so the card and the engine's sums are not run again
+            // at every fix.
+            if let at = ownShip.coarseCoordinate {
+                switch Result(catching: { try FlightWords.fromYou(at, ownFt: ownShip.markedFt, lat: plane.lat, lon: plane.lon, altitudeFt: plane.altitudeFt) }) {
                 case .success(let from): Text(from).font(.subheadline).foregroundStyle(.secondary)
                 case .failure(let error): ProblemLine(Result<Void, any Error>.failure(error), "How far it is from you")
                 }

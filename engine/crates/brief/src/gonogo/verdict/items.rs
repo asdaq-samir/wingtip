@@ -21,7 +21,7 @@ pub fn verdict_items(v: &Input) -> Vec<Item> {
 /// What the findings come to, in a line over them: (finding, words). The
 /// labels are named inside the sentence, so in its case, the FAA's codes
 /// kept: "Look again at runways, risk", "No-go as planned: TFRs & special
-/// use" (the Brief audit's finding 2, the owner 2026-11-21), as the fold's
+/// use" (the owner 2026-11-21), as the fold's
 /// rows already read them.
 pub fn verdict_line(items: &[Item]) -> (&'static str, String) {
     let findings: Vec<&str> = items.iter().map(|i| i.finding.as_str()).collect();
@@ -43,11 +43,15 @@ pub fn verdict_line(items: &[Item]) -> (&'static str, String) {
 /// what the finding reads: whether the destination needs one, and the one
 /// filed -- its ident, whether it is good (None: the pilot's to check;
 /// `good_given` false where the answer has no `good` at all), and its
-/// first reason.
+/// first reason; `failed` where the check was asked and could not be
+/// made (the planner's /api/alternate refused or its forecasts failed),
+/// `pending` while an app still awaits it.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Alternates {
     pub required: bool,
     pub alternate: Option<FiledAlternate>,
+    pub failed: bool,
+    pub pending: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -56,18 +60,43 @@ pub struct FiledAlternate {
     pub good: Option<bool>,
     pub good_given: bool,
     pub first_reason: Option<String>,
+    /// NASR lists it closed (ifr_alternate_check's `closed`).
+    pub closed: bool,
+}
+
+/// What an IFR flight's alternate comes to where no check was made: 14
+/// CFR 91.169(b) excuses the alternate only where the destination's
+/// forecasts "indicate" the 1-2-3 ceiling and visibility, and with no
+/// check nothing indicates it, so it is unknown, never ok (91.103: all
+/// available information).
+pub fn alternate_unchecked() -> (&'static str, String) {
+    ("unknown", "Alternate not checked: 14 CFR 91.169(b) excuses one only where the destination's forecast shows it".into())
 }
 
 /// What the IFR alternate comes to for the Go / No-Go
-/// (asked by the web's lib/verdict and the phones): a stop where the
-/// one filed will not do, a caution where one is needed (14 CFR
-/// 91.169(a)(2), (b)) and none is filed or the one filed is the pilot's
-/// to check; nothing where none is needed. (finding, detail).
+/// (asked by the web's lib/verdict and the phones): a stop where one is
+/// needed and none is filed (14 CFR 91.169(a)(2) is a prohibition: no IFR
+/// flight without the fuel to fly on to an alternate, which a plan with
+/// none can't show) or the one filed will not do; a caution where the one
+/// filed is the pilot's to check; unknown where the check failed, pending
+/// while it is awaited;
+/// nothing where none is needed. The verdict is advice and the pilot can
+/// still fly (the owner's "warn, never limit"; 91.3). (finding, detail).
 pub fn alternate_finding(data: Option<&Alternates>) -> Option<(&'static str, String)> {
+    if data.is_some_and(|d| d.failed) {
+        return Some(alternate_unchecked());
+    }
+    if data.is_some_and(|d| d.pending) {
+        return Some(("pending", "Checking the alternate (14 CFR 91.169)".into()));
+    }
     let data = data.filter(|d| d.required)?;
     let Some(alt) = &data.alternate else {
-        return Some(("caution", "An alternate is required (14 CFR 91.169): file one in Weather".into()));
+        return Some(("stop", "An alternate is required (14 CFR 91.169(a)(2)) and none is filed: file one in Weather".into()));
     };
+    // A closed field is never an alternate (decision 0043).
+    if alt.closed {
+        return Some(("stop", format!("{} is closed: file another alternate", alt.ident)));
+    }
     match (alt.good, alt.good_given) {
         (Some(false), _) => Some(("stop", format!("{} is under its alternate minimums at the ETA there", alt.ident))),
         // `good === null`: one left out says nothing.

@@ -90,7 +90,7 @@ struct ClearanceCraftSection: View {
         }
         guard !parts.isEmpty else { return nil }
         let line = parts.joined(separator: ", ")
-        return line.prefix(1).uppercased() + line.dropFirst()
+        return Format.capital(line)
     }
 
     /// The same for VoiceOver, each altitude in words (SpokenFigures).

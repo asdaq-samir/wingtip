@@ -108,7 +108,8 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
 | In flight: where the airplane is on its route, the next waypoint and the destination, the desired track, the fuel left; the vertical speed; the glide ring; own ship on an airport diagram (#218) | `navlog/dryRun.ts`, `lib/map/position/glide.ts` | the engine: `in_flight`, `vertical_speed`, `glide_ring`, `diagram_labels`, `diagram_graticule`, `diagram_point` (`InFlight`, `InstrumentsBar`, `DiagramPage`) | the engine's own tests, `InFlightTests` |
 | The dry run, and a GPX or KML track read | `navlog/dryRun.ts`, `lib/track.ts` | the engine: `dry_run`, `read_track`, `thin_track` (`DryRun`, `GPXTrack`) | the engine's own tests |
 | The logbook as CSV, out and in (ForeFlight Logbook Guide v14.0; 61.57(a), (b)) | `features/pilot/logbookCsv.ts` | the engine: `csv_rows`, `logbook_csv_read`, `logbook_csv_write` (`LogbookCSV`) | `logbookCsv.json` |
-| Endorsements' words, the lapse warning (61.197), those in force, ACS codes; a handbook page's figures | `lib/endorsements.ts`, `lib/checkride.ts`, `features/airplane/lib/handbookText.ts` | the engine: `endorsement_render`, `endorsement_lapse`, `endorsements_in_force`, `acs_codes`, `handbook_figures` | the engine's own tests |
+| Endorsements' words, the lapse warning (61.197), the A.13 airport warning (91.131(b)(2)), those in force, ACS codes; a handbook page's figures | `lib/endorsements.ts`, `lib/checkride.ts`, `features/airplane/lib/handbookText.ts` | the engine: `endorsement_render`, `endorsement_lapse`, `endorsement_warnings`, `endorsements_in_force`, `acs_codes`, `handbook_figures` | the engine's own tests |
+| True to magnetic (FAA-H-8083-25C, ch. 16); a visibility as a report writes it (FMH-1 Table 6-1) | `lib/magnetic.ts`, `lib/format/figures.ts` `reportedVisibility` | the engine: `magnetic_of`, `visibility_reportable` (`Emergency.magnetic`, `StripTrack`, `Format.reportedVisibility`; the same on Android) | `rules/flight.json`, `rules/weather.json` |
 | Runway numbers and calm winds (AIM 7-1-28); the FAA's words, airspace names, special-use limits, frequencies, fuel | `features/plan/pattern.ts`, `features/plan/wind.ts`, `lib/advisories.ts`, `lib/frequencies.ts`, `lib/airspace.ts`, `lib/stopServices.ts` | the engine: `gonogo_runway_number`, `runway_calm`, `wind_calm`, `faa_words`, `title_case`, `short_airspace_name`, `sua_altitudes`, `frequency_line`, `fuel_names` (`AirportWords`) | the engine's own tests |
 | An ATC clearance heard, read into its items and the route it gives (AIM 4-4-3, 5-2-6; figures AIM 4-2-8, 4-2-9) | `lib/clearance.ts` | the engine: `read_clearance`, `cleared_route` (`Clearance`) | `clearances.json` |
 | An ATIS or AWOS/ASOS broadcast heard, read into its figures (AIM 4-1-13, 7-1-11; JO 7110.65 2-6-6, 2-7-2) | `features/place/atis.ts` | the engine: `read_atis` (`Atis`) | `atis.json` |
@@ -456,6 +457,36 @@ these places:
   or leaves the box already asked for (`ViewFetch`, as the web's
   useGlView), the packs answering at once.
 
+- **A fix a second** (`OwnShip`): a view's body reads what changes
+  only when the screen would: the map its height to 10 ft (`markedFt`)
+  and the hazard colouring's height rounded down to 50 ft steps (never
+  up, so the red band never starts late) with whether the
+  airplane is at flying speed (`hazardFix`), so a fix in cruise runs
+  neither the map's body nor `ChartMap.updateUIView` nor the engine's
+  `hazard_view`; the cards their place to a thousandth of a degree
+  (`coarseCoordinate`) or whether there is a fix at all (`hasFix`), the
+  fix itself only in their actions. The flight recorder's reading of the
+  whole track (`logbook_from_track`, some 3,000 points four hours in)
+  runs off the main thread (2026-11-27).
+- **Launch** (`ScreenModels.loadKept`): the path flown, the recorder's
+  track and unsent tracks and the documents library (its shelf, its
+  trash, every info.json and kept.json) are read off the main thread
+  after the first frame, not in the app's init before it; nothing is
+  written over a file before it has been read, and a fix taken
+  meanwhile goes on after the track read.
+- **The loops** (`Repeating`): each wake may move by 15% of its
+  interval, so the receiver's, the traffic's, the Watch's, the Lock
+  Screen's, the widgets' and the in-flight copilot's wakes fall
+  together; a parked copilot writes nothing at each look.
+- **Once a fix** (2026-11-27, round 3): flying speed is asked of the
+  engine once (`OwnShip.took`), and the hazard, the path, the recorder
+  and the instruments (`InFlight.took`'s `underway`) read that answer.
+  The search's nearest fields are asked again by the coarse place, not
+  the fix, so the plan sheet's search does not run again each second; a
+  VOR card's radial is its own view, reading the exact fix only within
+  5 nm of the station. The recorder sends the whole track to the engine
+  once a minute of points below flying speed and once ten minutes at it.
+
 ## The map's look, beside the web's
 
 The web map's look of 2026-11-07/08 (#510, #537, #539, #541-#544) is
@@ -475,7 +506,18 @@ code:
   level enlarged past the pyramid's end, and covers a tile still loading
   with the part of the nearest level above it that is in memory. By day
   the web's lift of the chart (`ChartLift`: MapLibre's raster-contrast
-  and -saturation 0.1); at night, dimmed, as printed.
+  and -saturation 0.1); at night, dimmed, as printed. What is drawn
+  over it takes the same dim (`Views/MarkDim`, the web's `map-dim` tokens
+  and fixture): the marks by their alpha, own ship never, their words by
+  colour at the web's words' light on their opaque halo; the lines and areas (the course and its dark edge, the
+  airspace, the special-use areas, NEXRAD, the forecast areas) by their
+  colour, the web's DIM_BY_COLOUR (`OverlayDim`), so they keep their
+  contrast with the chart; the weather loop and the model weather by
+  their opacity, the obstacle dots by colour; the terrain hazard's tint
+  never. A chart's pages full screen are inverted once off the main
+  thread and shaded by a view's alpha (`PageLook`), and the airport
+  diagram with own ship is PDFKit's page inverted where it is drawn,
+  own ship and the hot spots over it undimmed (`DiagramNight`).
 - **ForeFlight-style overlays** (`Views/ChartOverlays`, `AirportMarks`):
   the planner's own airport mark (`Views/FieldMark`, the web's
   `airportMarkSvg`, option I of 2026-11-14: the surface class's ring in
@@ -920,8 +962,21 @@ SDK), so a build or a test runs there through `scripts/dev/one-at-a-time.sh`
 - a wave's validation (`validate-wave.yml`): the iPhone's set as on
   `main`, and the iPad's whole suite in four legs on four runners
   (`IPAD_LEG_1` to `IPAD_LEG_3` in `scripts/ci/ios_test.sh` and the
-  rest), some 30 to 35 minutes each with the build on a slow hosted
-  runner, where the night's one leg takes 34 to 48;
+  rest), where the night's one leg takes 34 to 48 minutes;
+- on every run with more than the iPhone's leg (main's push, a wave, the
+  night), the app and its tests are built once, by a leg of their own,
+  `build` (one leg building and testing ran past main's 25 minutes, run
+  45171956202): it runs `build-for-testing` and uploads its
+  `Build/Products` (the `.xctestrun` and what it names, as a tar that
+  keeps the binaries executable) as the run's `ios-products` artifact,
+  kept three days so one leg run again still finds it, and each device's
+  leg, started at the same time, boots its simulator, waits for that
+  artifact (asking every 30 s, an API error waited out) and runs
+  `test-without-building -xctestrun` with its own `-only-testing`
+  (`scripts/ci/ios_products.py`). The build keeps every device's
+  resources (`ENABLE_ONLY_ACTIVE_RESOURCES=NO`), so one build serves the
+  iPhone, the iPad and iPhone Duo; each leg had built the engine, the
+  project and the app itself, some 13 minutes before its first test;
 - every night (`native-ios.yml`, `full`): the whole suite (the launch,
   flow and accessibility tests, the store shots and the card rule's full
   suites, `CardRuleTests` and `CardScrollTests`) on the iPhone, the iPad

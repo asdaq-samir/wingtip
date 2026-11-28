@@ -1,0 +1,102 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A route typed or pasted, read as the route box and Type Route take it: each word as item 15 of a flight plan has it (AIM Appendix 4, route_read: DCT out, a speed and level group the cruise asked for), a position's \"@42.1,-88.2\" kept whole, the SIDs and STARs among the words (route_procedures; AIM 5-2-9, 5-4-1) the route's procedures, not points, and the rest the points whose form is a stop's (point_kind). goes_on where the words end in a procedure, its field still to be typed. Which field publishes a procedure, and as which kind, is the caller's, from the field's procedures.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RouteTypedInput",
+      "type": "object",
+      "properties": {
+        "words": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The words typed, each trimmed and uppercased here; blanks left out."
+        },
+        "procedures": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "false where the caller has nowhere to send procedures: every word is then read as a point."
+        }
+      },
+      "required": [
+        "words"
+      ]
+    },
+    "answer": {
+      "title": "RouteTypedAnswer",
+      "type": "object",
+      "properties": {
+        "words": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The words read, DCT and the level group taken out."
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The points among them in order, each a stop's form, the procedures left out."
+        },
+        "procedures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "before": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "after": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "before",
+              "after"
+            ]
+          },
+          "description": "The SIDs and STARs among the words, each with the nearest point before and after it (route_procedures)."
+        },
+        "cruise_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The cruise the first level group asked for, feet."
+        },
+        "goes_on": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "words",
+        "points",
+        "procedures",
+        "cruise_ft",
+        "goes_on"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

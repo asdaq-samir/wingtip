@@ -51,8 +51,39 @@ WASM = ROOT / "apps/web/src/lib/engine/wingtip-engine.wasm"
 # 575,000 when integration's module reached 1,248,403 bytes. 2026-11-14: the
 # module is 1,284,722 bytes and 559,841 gzipped on claude/integration (1,270,327
 # and 553,988 on main at b81400c15), 97% of the gzip budget.
-RAW_BUDGET = 1_320_000
-GZIP_BUDGET = 575_000
+# 2026-11-23 (round 4's make-room task): 1,205,318 bytes and 542,284
+# gzipped, from 1,266,898 and 570,167, by taking out the three rules only
+# the web's tests asked (proficiency_plan, departure_window,
+# least_crosswind: the engine's own tests hold them to the same fixtures)
+# and by wasm-opt's --converge and --low-memory-unused
+# (build-engine-wasm.sh). Both budgets lowered to just over what keeps the
+# module under WARN_AT, so the room freed (about 28 KB gzipped) is for the
+# next rules and the warning says when it is nearly gone.
+# 2026-11-27 (round 4's engine audit): lowered to just over the module as
+# it is, 1,220,487 bytes and 562,498 gzipped with gonogo_input and
+# route_typed_picks in (1,205,797 and 556,659 before them), so the budget
+# is the headroom really left and the next rule that grows the module is
+# looked at, never let through on room freed before (the ratchet only
+# goes down).
+# 2026-11-27 (round 5's engine audit): lowered again to just over the
+# module, 1,172,181 bytes and 527,329 gzipped from 1,220,487 and 562,498:
+# route_jurisdiction and route_adiz asked by the planner with the course
+# (app.route_borders), so Natural Earth's outlines (borders.bin) and their
+# reader left the module; the wind triangle and gonogo_input no longer
+# asked by the web by name (gonogo_brief builds the facts itself), and
+# oxygen_words in.
+# 2026-11-27 (round 6's engine audit): lowered again to just over the
+# module, 1,118,706 bytes and 502,955 gzipped from 1,172,181 and 527,329:
+# the NOTAM reader (notam_read, notam_card, notam_subject, notam_affects)
+# asked by the planner with a field's NOTAMs (app.notam_reading), with
+# the round's rule changes (variable winds, closed alternates, the
+# standard day) in.
+# 2026-11-27: lowered again to just over the module, 1,065,881 bytes and
+# 480,555 gzipped from 1,121,772 and 504,505: approach teaching and the
+# debriefs asked of the planner (app.routers.approach_teaching, POST
+# /api/debrief), twelve rules out, and map_dim_words in.
+RAW_BUDGET = 1_068_000
+GZIP_BUDGET = 482_000
 # A warning, not a failure, from here: the budget is not raised, so the next
 # rule that grows the module should be looked at before it is the one that fails.
 WARN_AT = 0.95

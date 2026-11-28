@@ -1,6 +1,5 @@
 import type { MapGeoJSONFeature, Marker } from "maplibre-gl";
-import { useEffect, useRef, type ReactNode } from "react";
-import { SHEET_SECONDS } from "../../../mapChrome";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
 import { usePreferences } from "../../../preferences";
@@ -8,8 +7,27 @@ import { drawOwnShip, ownShipMarker, placeOwnShip } from "./ownShipMarker";
 import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
-import { cameraOf } from "../camera";
+import { cameraOf, scrub } from "../camera";
+import { CAMERA_MS } from "../cameraRules";
 import { TAP } from "./common";
+import { pictureLayer } from "../markLayers";
+import { svgPicture, useGlSymbols, type GlSymbol } from "../useGlSymbols";
+
+/** Own ship's room on the chart, an empty picture the size of its
+ *  airplane (ownShipHtml's 34 points; the moving beam's wider box is a
+ *  glow, not the mark), which MapLibre's collision keeps clear: the
+ *  marker is HTML over the canvas, which the collision does not see, so
+ *  KORD's ident was drawn under the arrow (the owner's iPhone screenshot,
+ *  2026-11-23), and a 24-point room still left a field's ident with its
+ *  last letter, "W", out beside a wing (the same day's, near C81). Always
+ *  drawn, at the top of the marks' slot, so the chart's own labels give
+ *  way round it, but under the top slot, where the route's own idents and
+ *  the Class B fields' weather are placed first: parked at the departure,
+ *  a 40-point room took the departure's name and KORD's weather disc.
+ */
+const ROOM = "own-ship-room";
+const ROOM_PICTURE = svgPicture(ROOM, () => '<svg width="34" height="34"></svg>');
+const ROOM_LAYERS = [pictureLayer(ROOM, ROOM, { room: true })];
 
 /** The location arrow's close-in, in the app's levels. */
 const LOCAL_ZOOM = 9;
@@ -32,8 +50,7 @@ let flownRecentre = 0;
  * (recentred), a pick; a drag before the first fix comes lets that go
  * too. Each fix is a step of the owner's follow, one linear ease lasting
  * till the next fix, so the dry run's four fixes a second move the map at
- * one steady pace rather than starting and stopping at each (the flicker
- * audit's FL-13). Grey at its last place when own ship is turned off (the
+ * one steady pace rather than starting and stopping at each. Grey at its last place when own ship is turned off (the
  * owner, 2026-10-06).
  */
 export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
@@ -46,6 +63,16 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
   const follow = useOwnShip((s) => s.follow);
   const recentred = useOwnShip((s) => s.recentred);
   const recentreZoom = useOwnShip((s) => s.recentreZoom);
+  // The room moved a thousandth of a degree at a time (about 100 m: a
+  // few pixels at a flight's zooms, within the plane's own picture), so a
+  // fix that only jitters on the ground sets no new data.
+  const roomLat = fix ? Math.round(fix.lat * 1000) / 1000 : null;
+  const roomLon = fix ? Math.round(fix.lon * 1000) / 1000 : null;
+  const room = useMemo<GlSymbol[]>(
+    () => (roomLat === null || roomLon === null ? [] : [{ key: ROOM, lat: roomLat, lon: roomLon, picture: ROOM_PICTURE }]),
+    [roomLat, roomLon],
+  );
+  useGlSymbols(ROOM, ROOM_LAYERS, room, { slot: "marks" });
   const marker = useRef<Marker | null>(null);
   // The mark's HTML as last written (drawOwnShip).
   const drawn = useRef("");
@@ -92,14 +119,20 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
       // endFollows); the recentre had asked for it before the route came.
       if (!follow) return;
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
-      camera.pick([fix.lon, fix.lat], { zoom, duration: SHEET_SECONDS * 2000, keeps: intent });
+      camera.pick([fix.lon, fix.lat], { zoom, duration: CAMERA_MS, keeps: intent });
       return;
     }
     // Not over the arrow's move in: the owner lets the follow's steps go
     // by while a pick has the camera, as the next fix's ease, a quarter
     // second on in a dry run, stopped it part way, the map left two
     // levels short of the run's zoom (dry-run.spec, 2026-11-13).
-    if (follow) camera.follow(intent, [fix.lon, fix.lat]);
+    // A dry run's scrub under the finger jumps with it, an ease behind it
+    // being a step late at every move (the speed work, 2026-11-27); its
+    // first step after the press glides, the press landing miles along.
+    if (!follow) return;
+    const scrubbed = simulated && scrub.held;
+    camera.follow(intent, [fix.lon, fix.lat], { jump: scrubbed && (scrub.moved || "glide") });
+    if (scrubbed) scrub.moved = true;
   }, [map, fix, enabled, simulated, follow, recentred, recentreZoom]);
   // A tap on it its card (`card`), as Apple Maps' My Location opens one:
   // in the map's one tap, before anything under it, within a finger's

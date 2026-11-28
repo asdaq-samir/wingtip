@@ -35,21 +35,23 @@ enum TerrainHazard {
 
     typealias View = EngineContract.HazardViewAnswer
 
-    /// The GPS's height is passed in steps of this, ft, so a height
-    /// wandering a few feet does not colour the map again at every fix
-    /// (the web's useHazardView, as its pilot's view's 50 ft). A drawing
-    /// step, not a rule: the bands are the engine's.
+    /// The steps the map is coloured again by, ft: the engine reads the
+    /// GPS's height in its own 50 ft steps, rounded down (hazard_view), so
+    /// a height wandering within one asks nothing new. A repaint key, not
+    /// a rule: the height is sent as read and the bands are the engine's.
     static let stepFt = 50.0
 
-    static func stepped(_ ft: Double?) -> Double? {
-        ft.map { ($0 / stepFt).rounded() * stepFt }
+    /// The whole step a height is in, for telling a new colouring from a
+    /// few feet's wander; nil with no height.
+    static func step(_ ft: Double?) -> Int? {
+        ft.map { Int(($0 / stepFt).rounded(.down)) }
     }
 
     /// The colouring now, from the setting, the GPS's speed and height and
     /// the plan's cruise; `topsFt`, obstacle tops MSL, each levelled.
     static func view(setting: Setting, clearanceFt: Double?, speedKt: Double?, gpsFt: Double?, plannedFt: Double?,
                      topsFt: [Double] = []) throws -> View {
-        try Engine.hazardView(setting: setting.rawValue, speedKt: speedKt, gpsAltitudeFt: stepped(gpsFt), plannedAltitudeFt: plannedFt,
+        try Engine.hazardView(setting: setting.rawValue, speedKt: speedKt, gpsAltitudeFt: gpsFt, plannedAltitudeFt: plannedFt,
                               clearanceFt: clearanceFt, topsFt: topsFt)
     }
 
@@ -77,4 +79,11 @@ struct HazardInput: Equatable {
     var gpsFt: Double?
     /// The plan's cruise, ft MSL.
     var plannedFt: Double?
+
+    /// The same colouring asked: every figure alike, the height by its
+    /// whole step (TerrainHazard.step), as the engine reads it.
+    func same(_ other: HazardInput) -> Bool {
+        setting == other.setting && clearanceFt == other.clearanceFt && speedKt == other.speedKt
+            && TerrainHazard.step(gpsFt) == TerrainHazard.step(other.gpsFt) && plannedFt == other.plannedFt
+    }
 }

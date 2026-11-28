@@ -2,8 +2,8 @@ import { create } from "zustand";
 import type { PanelState } from "../../lib/mapChrome";
 import { coverCard, useSheetCards } from "../../lib/sheetCards";
 import { shownPx } from "./insets";
-import { prefersReducedMotion } from "../../lib/motion";
-import { MOTION } from "../../lib/tokens";
+import { timing } from "../../lib/motion";
+import { snapOffset } from "./sheetMotion";
 
 /** The room over a phone's bottom sheet's top edge, while there is one:
  *  the riding buttons' one container (OnSheetTop's portal), put in the
@@ -42,8 +42,20 @@ export function useRidingCard(): string | null {
  *  CardStack's cards are placed from it), where a card opening now comes
  *  up from; none with no bottom sheet. */
 export function frontOffset(): string | undefined {
-  const popup = useSheetTop.getState().slot?.parentElement?.parentElement;
-  return popup?.style.getPropertyValue("--drawer-snap-point-offset") || undefined;
+  return snapOffset(useSheetTop.getState().slot?.parentElement?.parentElement);
+}
+
+/** Where the sheet in front will be once card `id` has gone (the
+ *  Drawer's offset of its popup, in the sheet's frame as frontOffset's),
+ *  for the card to go back down to as it closes (CardStack's RISE): the
+ *  open card under it that covers the map most, else the sheet. */
+export function frontUnder(id: string): string | undefined {
+  const under = coverCard(useSheetCards.getState().stack, (entry) => entry.id !== id && entry.state === "open" && entry.at !== undefined);
+  const viewport = under && document.querySelector(`[data-card-viewport="${CSS.escape(under.id)}"]`);
+  const popup = viewport
+    ? viewport.querySelector<HTMLElement>("[data-sheet-card]")
+    : document.querySelector<HTMLElement>('[data-slot="map-panel"]');
+  return snapOffset(popup);
 }
 
 /** The one container the riding buttons are drawn in, moved from slot to
@@ -88,7 +100,7 @@ export function sheetTopRef(node: HTMLDivElement | null) {
 /** A front surface the buttons ride, the sheet's or a card's: the size it
  *  rests at (its popup's data-panel, MapPanel's and CardStack's) and how
  *  far a finger has it from there (Base UI's --drawer-swipe-movement-y). */
-type Surface = { at: PanelState; moved: number };
+type Surface = { at: PanelState; moved: number; gliding: number };
 
 const SIZES: readonly string[] = ["peek", "half", "full"];
 
@@ -96,7 +108,14 @@ function surfaceOf(slot: HTMLElement): Surface | null {
   const popup = slot.parentElement;
   const at = popup?.dataset.panel;
   if (!popup || !at || !SIZES.includes(at)) return null;
-  return { at: at as PanelState, moved: parseFloat(popup.style.getPropertyValue("--drawer-swipe-movement-y")) || 0 };
+  // And where a glide still under way has them now: a second hand-over
+  // inside the Drawer's time glides on from there, where they snapped to
+  // where they would have rested.
+  const gliding =
+    slot.getAnimations().length > 0 && typeof DOMMatrixReadOnly !== "undefined"
+      ? new DOMMatrixReadOnly(getComputedStyle(slot).transform).m42
+      : 0;
+  return { at: at as PanelState, moved: parseFloat(popup.style.getPropertyValue("--drawer-swipe-movement-y")) || 0, gliding };
 }
 
 /** Handed to a front sheet at another height -- a card put away over a
@@ -110,21 +129,18 @@ function surfaceOf(slot: HTMLElement): Surface | null {
  *  (shownPx), and the drag the one they left was under: both popups stand
  *  on the same viewport's foot. It was read off the slot they left, which
  *  was at times a popup drawn anew and hidden, measured at the screen's
- *  top, and the buttons swept down from off the screen as a card closed
- *  (the flicker audit, 2026-11-14, FL-2). */
+ *  top, and the buttons swept down from off the screen as a card closed. */
 function glideFrom(node: HTMLElement, was: Surface | null) {
   const popup = node.parentElement;
   const now = surfaceOf(node);
-  if (!was || !now || !popup || popup.hidden || prefersReducedMotion() || typeof node.animate !== "function") return;
+  // Under Reduce Motion too, as the sheets they ride keep their slide there (sheet/insets' SHEET_SLIDE).
+  if (!was || !now || !popup || popup.hidden || typeof node.animate !== "function") return;
   // All the way up they are out of sight (index.css): they come and go
   // there, never swept across the screen from a top above it.
   if (was.at === "full" || now.at === "full") return;
   const height = popup.offsetHeight;
   if (!height) return;
-  const by = shownPx(now.at, true, height) - shownPx(was.at, true, height) + was.moved - now.moved;
+  const by = shownPx(now.at, true, height) - shownPx(was.at, true, height) + was.moved - now.moved + was.gliding;
   if (Math.abs(by) < 1) return;
-  node.animate([{ transform: `translateY(${by}px)` }, { transform: "none" }], {
-    duration: MOTION.drawer * 1000,
-    easing: `cubic-bezier(${MOTION.drawerEase.join(",")})`,
-  });
+  node.animate([{ transform: `translateY(${by}px)` }, { transform: "none" }], timing("drawer"));
 }

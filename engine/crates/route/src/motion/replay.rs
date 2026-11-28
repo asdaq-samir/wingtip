@@ -14,15 +14,28 @@
 //!   last and 13 were more than 60 s apart. Past that the airplane was not
 //!   heard, and where it went is not known: a replay holds and says so
 //!   rather than drawing a straight line over it.
-//! - The height is smoothed over SMOOTH_ALT_S each side, on a straight
-//!   line fitted through the heights at the report's own time: a transponder's
-//!   pressure altitude comes in 25 ft steps (DO-260B, the barometric
-//!   altitude's 25 ft quantum), which a point-to-point climb rate reads as
-//!   bursts of thousands of feet a minute.
-//! - The vertical speed is the slope of the heights reported within
-//!   VS_SPAN_S each side, as a VSI's own lag averages it (FAA-H-8083-15B,
-//!   Ch. 5, the vertical speed indicator: "trend" then "rate" after 6 to
-//!   9 s).
+//! - The height is smoothed over the SMOOTH_ALT_S before each report, on
+//!   a straight line fitted through the heights at the report's own time:
+//!   a transponder's pressure altitude comes in 25 ft steps (DO-260B, the
+//!   barometric altitude's 25 ft quantum), which a point-to-point climb
+//!   rate reads as bursts of thousands of feet a minute. Only reports at
+//!   or before the moment are read, so the replay never shows a climb or
+//!   a descent before it began.
+//! - The vertical speed is the rate the report sent (readsb's baro_rate,
+//!   else its geometric rate), else the slope of the heights reported in
+//!   the VS_SPAN_S before it, as a VSI's own lag averages it
+//!   (FAA-H-8083-15B, Ch. 5, the vertical speed indicator: "trend" then
+//!   "rate" after 6 to 9 s). A VSI lags; it never leads: N722BD read -550
+//!   fpm 79 s before its last report while still climbing, from a slope
+//!   that looked 15 s ahead.
+//! - A held pressure altitude: readsb can repeat a stale one, N722BD's
+//!   8,750 ft for its last 9.7 s while its GNSS height fell from 9,475 to
+//!   325 ft. A report is held where it says so (`alt_held`), or where its
+//!   pressure altitude has not changed for up to HELD_SPAN_S while the
+//!   GNSS height or the rate sent moved more than HELD_FT. Its height is
+//!   never read into a fit or a rate; it carries the last good height
+//!   forward, marked `alt_held`, never null, so no host draws the airplane
+//!   on the ground.
 
 use super::{num, opt, opt_bool};
 use crate::geo;
@@ -36,8 +49,12 @@ pub const SMOOTH_ALT_S: f64 = 10.0;
 /// The position is averaged over this each side, s: a GPS log's jitter,
 /// not a turn (a standard-rate turn is 3 degrees a second).
 pub const SMOOTH_POS_S: f64 = 2.0;
-/// The vertical speed is read from the heights within this each side, s.
+/// The vertical speed is read from the heights within this before, s.
 pub const VS_SPAN_S: f64 = 15.0;
+/// A pressure altitude unchanged this long, s, while the GNSS height or the
+/// rate sent moved more than HELD_FT, is held (above).
+pub const HELD_SPAN_S: f64 = 60.0;
+pub const HELD_FT: f64 = 300.0;
 
 /// One report as it came.
 #[derive(Clone, Debug, PartialEq)]
@@ -50,6 +67,14 @@ pub struct Report {
     pub gs_kt: Option<f64>,
     pub track_deg: Option<f64>,
     pub ground: bool,
+    /// The rates the report sent, ft/min: readsb's baro_rate and geom_rate.
+    pub baro_rate_fpm: Option<f64>,
+    pub geom_rate_fpm: Option<f64>,
+    /// The GNSS (geometric) height, ft, where sent.
+    pub alt_geom_ft: Option<f64>,
+    /// The caller's word that the pressure altitude is held; None to let
+    /// the engine tell (held).
+    pub alt_held: Option<bool>,
 }
 
 /// One report made ready.
@@ -59,6 +84,8 @@ pub struct Sample {
     pub lat: f64,
     pub lon: f64,
     pub alt_ft: Option<f64>,
+    /// The height is the last good one carried forward over a held one.
+    pub alt_held: bool,
     pub gs_kt: Option<f64>,
     pub track_deg: Option<f64>,
     pub vs_fpm: Option<f64>,
@@ -94,13 +121,28 @@ pub fn condition(mut reports: Vec<Report>, gap_s: f64) -> Vec<Sample> {
         }
         out
     };
+    let held = held(&reports, &run);
+    // The good heights at or before each report in its run, within `span`.
+    let behind = |i: usize, span: f64| {
+        let (reports, run, held) = (&reports, &run, &held);
+        (0..=i).rev().take_while(move |&j| run[j] == run[i] && reports[i].t - reports[j].t <= span).filter(move |&j| !held[j])
+    };
+    let mut last_good: Option<f64> = None;
     let alt: Vec<Option<f64>> = (0..n)
         .map(|i| {
+            if i > 0 && run[i - 1] != run[i] {
+                last_good = None;
+            }
             reports[i].alt_ft?;
-            // On a line through them at its own time, as the position
-            // below: a mean leans toward the level a climb is heading for
-            // at a run's ends (250 ft high at N14511's first report).
-            line_at(window(i, SMOOTH_ALT_S).iter().filter_map(|&j| Some((reports[j].t, reports[j].alt_ft?))), reports[i].t)
+            if held[i] {
+                // Carried forward, never null (a null read as 0 puts the airplane on the ground).
+                return last_good.or(reports[i].alt_ft);
+            }
+            // On a line through the heights before it at its own time: a
+            // mean leans back toward where a climb came from.
+            let h = line_at(behind(i, SMOOTH_ALT_S).filter_map(|j| Some((reports[j].t, reports[j].alt_ft?))), reports[i].t);
+            last_good = h.or(last_good);
+            h
         })
         .collect();
     // The position each report's own time has on a straight line fitted
@@ -137,9 +179,10 @@ pub fn condition(mut reports: Vec<Report>, gap_s: f64) -> Vec<Sample> {
                 lat: pos[i].0,
                 lon: pos[i].1,
                 alt_ft: alt[i],
+                alt_held: held[i] && r.alt_ft.is_some(),
                 gs_kt: gs,
                 track_deg: track,
-                vs_fpm: vertical_speed(&reports, &run, i),
+                vs_fpm: vertical_speed(&reports, &run, &held, i),
                 along_nm: along,
                 gap: gap[i],
                 ground: r.ground,
@@ -148,24 +191,58 @@ pub fn condition(mut reports: Vec<Report>, gap_s: f64) -> Vec<Sample> {
         .collect()
 }
 
-/// The climb or descent at report `i`, ft/min: the slope of a straight
-/// line fitted (least squares) through the heights reported within
-/// VS_SPAN_S each side in its run, which reads a steady climb's rate
-/// through the 25 ft steps even at a run's ends; with none other in the
-/// span, the reports either side in its run; None where it has no height
-/// or no neighbour to read a change from.
-fn vertical_speed(reports: &[Report], run: &[usize], i: usize) -> Option<f64> {
-    reports[i].alt_ft?;
-    // The heights in its run, as (s from report i, ft).
-    let heights = || reports.iter().zip(run).filter(|(_, k)| **k == run[i]).filter_map(|(r, _)| Some((r.t - reports[i].t, r.alt_ft?)));
-    let mut near: Vec<(f64, f64)> = heights().filter(|p| p.0.abs() <= VS_SPAN_S).collect();
+/// Whether each report's pressure altitude is held (the module's head):
+/// the caller's `alt_held` where given, else unchanged through its run for
+/// up to HELD_SPAN_S while the GNSS height spread, or the rate sent added
+/// up, more than HELD_FT.
+fn held(reports: &[Report], run: &[usize]) -> Vec<bool> {
+    (0..reports.len())
+        .map(|i| {
+            if let Some(said) = reports[i].alt_held {
+                return said;
+            }
+            let Some(a) = reports[i].alt_ft else { return false };
+            let mut j = i;
+            while j > 0 && run[j - 1] == run[i] && reports[j - 1].alt_ft == Some(a) && reports[i].t - reports[j - 1].t <= HELD_SPAN_S {
+                j -= 1;
+            }
+            let geom: Vec<f64> = reports[j..=i].iter().filter_map(|r| r.alt_geom_ft).collect();
+            let spread = geom.iter().copied().fold(f64::NEG_INFINITY, f64::max) - geom.iter().copied().fold(f64::INFINITY, f64::min);
+            let by_rate: f64 = (j + 1..=i)
+                .filter_map(|k| Some(reports[k].geom_rate_fpm.or(reports[k].baro_rate_fpm)? * (reports[k].t - reports[k - 1].t) / 60.0))
+                .sum();
+            (geom.len() > 1 && spread > HELD_FT) || by_rate.abs() > HELD_FT
+        })
+        .collect()
+}
+
+/// The climb or descent at report `i`, ft/min: the rate it sent (readsb's
+/// baro rate, else its GNSS one; the GNSS one alone where the pressure
+/// altitude is held); else the slope of a straight line fitted (least
+/// squares) through the good heights in the VS_SPAN_S before it in its
+/// run, which reads a steady climb's rate through the 25 ft steps; with
+/// none other in that span, the report before it in its run; None where
+/// it has no height or nothing before it to read a change from -- never
+/// a report still to come.
+fn vertical_speed(reports: &[Report], run: &[usize], held: &[bool], i: usize) -> Option<f64> {
+    let r = &reports[i];
+    r.alt_ft?;
+    if held[i] {
+        return r.geom_rate_fpm;
+    }
+    if let Some(sent) = r.baro_rate_fpm.or(r.geom_rate_fpm) {
+        return Some(sent);
+    }
+    // The good heights before it in its run, as (s from report i, ft).
+    let heights = || {
+        (0..=i).rev().take_while(|&j| run[j] == run[i]).filter(|&j| !held[j]).filter_map(|j| Some((reports[j].t - r.t, reports[j].alt_ft?)))
+    };
+    let mut near: Vec<(f64, f64)> = heights().take_while(|p| p.0 >= -VS_SPAN_S).collect();
     // Level in cruise readsb keeps a point only every 20 s or so, wider
-    // than the span: there the reports either side of it are read, which
-    // the run holds within GAP_S, rather than no climb at all.
+    // than the span: there the report before it is read, which the run
+    // holds within GAP_S, rather than no climb at all.
     if near.len() < 2 {
-        let before = heights().rfind(|p| p.0 < -VS_SPAN_S);
-        let after = heights().find(|p| p.0 > VS_SPAN_S);
-        near.extend(before.into_iter().chain(after));
+        near.extend(heights().find(|p| p.0 < -VS_SPAN_S));
     }
     if near.len() < 2 {
         return None;
@@ -204,6 +281,10 @@ fn report(v: &Value) -> Result<Report, String> {
         gs_kt: opt(NAME, v, "gs_kt")?,
         track_deg: opt(NAME, v, "track_deg")?,
         ground: opt_bool(NAME, v, "ground")?.unwrap_or(false),
+        baro_rate_fpm: opt(NAME, v, "baro_rate_fpm")?,
+        geom_rate_fpm: opt(NAME, v, "geom_rate_fpm")?,
+        alt_geom_ft: opt(NAME, v, "alt_geom_ft")?,
+        alt_held: opt_bool(NAME, v, "alt_held")?,
     })
 }
 
@@ -230,6 +311,7 @@ pub(super) fn replay_rule(v: &Value) -> Result<String, String> {
         json::number(&mut out, s.lon);
         out.push_str(",\"alt_ft\":");
         json::opt_number(&mut out, s.alt_ft);
+        out.push_str(if s.alt_held { ",\"alt_held\":true" } else { ",\"alt_held\":false" });
         out.push_str(",\"gs_kt\":");
         json::opt_number(&mut out, s.gs_kt);
         out.push_str(",\"track_deg\":");

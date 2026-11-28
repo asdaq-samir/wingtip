@@ -45,9 +45,10 @@ export function useAirplanes(onRefused: (save: AirplaneSave, problem: string) =>
         const was = asked.id ? list?.find((a) => a.id === asked.id) : undefined;
         // A new airplane's other columns (its handbook, inspections) are
         // the server's to fill: the row shows what was typed.
-        // Its own figures (the profile's) stay the record's until it answers.
-        const { figures: _own, ...columns } = asked.request;
-        change({ put: { ...(was ?? ({} as Aircraft)), ...columns, id: asked.id ?? unsavedId() } });
+        // Its own figures (the profile's) stay the record's until it answers,
+        // and its kind where the request leaves it as it was.
+        const { figures: _own, kind, ...columns } = asked.request;
+        change({ put: { ...(was ?? ({} as Aircraft)), ...columns, ...(kind ? { kind } : {}), id: asked.id ?? unsavedId() } });
         try {
           await save.mutateAsync(asked);
           // The one place a list's save has nothing else to announce it: a

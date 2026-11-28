@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
+import { TYPE_CLASS } from "../../lib/tokens";
 
 // The words at iOS's sizes on a touch screen -- 17 points on a button,
 // 15 on a small one, 13 on the smallest -- and at 14 and 12 with a mouse
@@ -16,8 +17,12 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button";
 const GLASS_BUTTON =
   "border-0 bg-foreground/8 text-foreground shadow-none hover:bg-foreground/12 hover:text-foreground aria-expanded:bg-foreground/12";
 
+// Its transition names what eases (colours, ring, the press's dim and 1 px
+// give), not shadcn's transition-all: under `all` a size, a padding or
+// `visibility` set from a class eased too, so a figure's type trailed the
+// sheet and a hidden ••• lingered over the pill for 150 ms (web.md "never transition: all").
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm pointer-coarse:text-(length:--type-row) font-medium whitespace-nowrap transition-all outline-none select-none cursor-pointer focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring active:not-aria-[haspopup]:translate-y-px pointer-coarse:active:opacity-60 pointer-coarse:active:duration-0 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm pointer-coarse:text-(length:--type-row) font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,translate] outline-none select-none cursor-pointer focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring active:not-aria-[haspopup]:translate-y-px pointer-coarse:active:opacity-60 pointer-coarse:active:duration-0 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -38,11 +43,15 @@ const buttonVariants = cva(
         plain: "justify-start text-inherit hover:bg-transparent aria-expanded:bg-muted dark:hover:bg-muted/50 native:text-foreground",
         link: "text-tint underline-offset-4 hover:underline",
         // The app's own: a pane of the grey glass over the map and on the
-        // sheet, as Maps' round buttons are on iOS 26 (GLASS_BUTTON, the
-        // style audit of 2026-10-26) -- the text's colour at 8%, 12% under
+        // sheet, as Maps' round buttons are on iOS 26 (GLASS_BUTTON) -- the text's colour at 8%, 12% under
         // a pointer or with its menu out, flat, its glyph in the text's
         // colour. Only theme tokens, so each look changes it there.
         glass: GLASS_BUTTON,
+        // The app's own: words in the tint on the tint's light wash, as
+        // iOS draws a tinted capsule (the fuel stops' pill), a step more
+        // of the wash under a pointer or with its menu out; the press is
+        // the stock dim and give. The round Toggle's `tint` off (toggle.tsx).
+        tint: "bg-tint/12 text-tint hover:bg-tint/20 aria-expanded:bg-tint/20",
       },
       size: {
         default:
@@ -58,6 +67,12 @@ const buttonVariants = cva(
         // iOS 26's glass buttons in a sheet's head are (size.round-button,
         // rem: it grows with the head's words).
         "icon-round": "size-(--size-round-button)",
+        // The app's own: a capsule of words in a row (the fuel stops' pill,
+        // the procedures' "+ APCH"), as tall as the round Toggle beside it
+        // (size.chip, 32 points), the stock padding and a detail's type,
+        // its 44-point area a pseudo-element six points round it (hit-1.5),
+        // so the capsule is not grown to make it.
+        chip: cn("relative h-(--size-chip) gap-1 rounded-full px-2.5 hit-1.5", TYPE_CLASS.detail),
         // The app's own: words in a line of words, tapped as a link is (a
         // strip's "Show my position", a figure that opens its sheet) -- no
         // height, padding, gap or edge of its own, the text's size and

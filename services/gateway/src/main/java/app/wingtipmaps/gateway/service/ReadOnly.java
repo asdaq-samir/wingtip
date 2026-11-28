@@ -8,7 +8,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * A read-only transaction a service opens around its reads alone, where it
  * asks the planner after them: an annotated method would hold its Hikari
  * connection (a pool of ten) for every planner call inside it, each up to
- * 20 s with one retry (waste-server audit B).
+ * 20 s with one retry.
  */
 final class ReadOnly {
 

@@ -7,28 +7,17 @@ import { ListPicks, type ListPick } from "../../components/ListPicks";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
 import { Switch } from "../../components/ui/switch";
 import type { ProcedureList, ProcedureSummary } from "../../lib/api/types";
-import { runwayNumber } from "../plan";
 import { usePreferences } from "../../lib/preferences";
 import { transitionWords, type PickedProcedure } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import { procedureTrigger, TITLE, type TriggerLook } from "./ProcedureTrigger";
+import { ALL, approachGroups, NONE, PROCEDURES_FAILED, shortName } from "./procedureWords";
 import { faaWords } from "../../lib/advisories";
 import QueryState from "../../components/QueryState";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { WORDING } from "../../lib/wording/generated/wording";
 
 type Kind = ProcedureSummary["kind"];
-
-const ALL: Record<Kind, string> = { approach: "All approaches…", arrival: "All arrivals…", departure: "All departures…" };
-/** The one failure both the pull-down and the procedures sheet say. */
-export const PROCEDURES_FAILED = "The FAA's procedures could not be fetched.";
-const NONE: Record<Kind, string> = { approach: "No Approach", arrival: "No Arrival", departure: "No Departure" };
-
-/** An approach's name in its runway's group, the runway said by the group:
- *  "ILS RWY 09L" is "ILS", "RNAV (GPS) Y RWY 10R" is "RNAV (GPS) Y". */
-function shortName(p: ProcedureSummary): string {
-  return faaWords(p.kind === "approach" ? p.name.replace(/\s*RWY\s*\S+$/i, "") || p.name : p.name);
-}
 
 /**
  * One kind of a field's procedures picked from a pull-down, at the
@@ -56,6 +45,7 @@ export default function ProcedureMenu({
   onPick,
   onAll,
   onLearn,
+  onDeactivate,
 }: {
   ident: string;
   kind: Kind;
@@ -63,8 +53,7 @@ export default function ProcedureMenu({
   list: ProcedureList | undefined;
   /** Its ask: while it comes the list's shape, and where it could not be
    *  had, that it could not with Try again -- never "None published", which
-   *  told a pilot a field whose list failed has no approach (the audit's
-   *  CODE-4). */
+   *  told a pilot a field whose list failed has no approach. */
   query: UseQueryResult<ProcedureList> | undefined;
   /** The one of the kind in the route, and its name as the route's box
    *  says it. */
@@ -86,6 +75,9 @@ export default function ProcedureMenu({
   /** The approach picked taught (ApproachLesson): its brief, flown with
    *  coaching, and a quiz. An approach's menu alone. */
   onLearn?: () => void;
+  /** An approach activated, put back to loaded: off the route's line, not
+   *  flown (its Activate on FPL's list beside it). */
+  onDeactivate?: () => void;
 }) {
   const all = (list?.procedures ?? []).filter((p) => p.kind === kind);
   const plates = usePreferences((s) => s.plates);
@@ -95,8 +87,7 @@ export default function ProcedureMenu({
   // in the component: the field's line draws its pull-downs anew as its
   // runways come in, open, and as the runway picked into the wind folds it,
   // a second or more later on a slow connection, and a menu opened before
-  // that closed under the pilot's finger (procedures.spec and the iOS
-  // audit, CI 2026-10-28).
+  // that closed under the pilot's finger (procedures.spec, CI 2026-10-28).
   const menuKey = `${ident}:${kind}:${look}`;
   const me = useId();
   const open = useOpenMenu((s) => s.key === menuKey && s.owner === me);
@@ -135,21 +126,13 @@ export default function ProcedureMenu({
     act: () => (p.transitions.length > 0 ? push({ procedure: p, name }) : pick({ id: p.id, transition: null })),
   });
   const NO_CHOICE = "-";
-  // An approach's by runway: the runway landed on first, open; the rest a
-  // page each, in the runways' order; one circling only under Circling.
-  const byRunway = new Map<string, ProcedureSummary[]>();
-  for (const p of all) {
-    const key = p.runway ? runwayNumber(p.runway) : "Circling";
-    byRunway.set(key, [...(byRunway.get(key) ?? []), p]);
-  }
+  const { byRunway, first, others } = approachGroups(all, kind, runway, windward);
   // Another runway's row says the approach picked there, where it had a
   // tick drawn by hand: it opens that runway's page, and is no choice.
   const pickedOn = (r: string) => {
     const there = byRunway.get(r)?.find((p) => p.id === picked?.id);
     return there ? shortName(there) : undefined;
   };
-  const first = kind === "approach" ? ([runway, windward, ...byRunway.keys()].find((r) => r !== null && byRunway.has(r)) ?? null) : null;
-  const others = [...byRunway.keys()].filter((r) => r !== first).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   const title =
     page && "procedure" in page
       ? faaWords(page.procedure.name)
@@ -287,7 +270,17 @@ export default function ProcedureMenu({
                   data-testid="procedure-menu-learn"
                 />
               )}
-              {picked && <ListRow title={NONE[kind]} onClick={() => pick(null)} />}
+              {onDeactivate && (
+                <ListRow
+                  title="Deactivate"
+                  onClick={() => {
+                    toggle(false);
+                    onDeactivate();
+                  }}
+                  data-testid="procedure-menu-deactivate"
+                />
+              )}
+              {picked && <ListRow title={NONE[kind]} onClick={() => pick(null)} data-testid="procedure-menu-none" />}
               <ListRow
                 title={ALL[kind]}
                 chevron

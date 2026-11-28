@@ -1,6 +1,8 @@
 package app.wingtipmaps.android.plates
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
 import app.wingtipmaps.android.api.generated.PlateOverlay
 import app.wingtipmaps.android.engine.generated.EngineContract
 import kotlinx.coroutines.CoroutineScope
@@ -47,7 +49,7 @@ class PlateCardModelTest {
     fun theSettingsStartAsForeFlightsAndAreKeptOnThePhone() = runBlocking {
         val first = PlateLookStore(file, this)
         first.loaded.join()
-        assertEquals(PlateLook(annotations = true, invert = false, opacity = PlateLook.DEFAULT_OPACITY, shown = true), first.look.value)
+        assertEquals(PlateLook(annotations = true, invert = null, opacity = PlateLook.DEFAULT_OPACITY, shown = true), first.look.value)
         first.setAnnotations(false).join()
         first.setInvert(true).join()
         first.setOpacity(0.4f).join()
@@ -55,6 +57,23 @@ class PlateCardModelTest {
         val next = PlateLookStore(file, this)
         next.loaded.join()
         assertEquals(PlateLook(annotations = false, invert = true, opacity = 0.4f, shown = true), next.look.value)
+    }
+
+    /** Version 1 kept "false" for every pilot who never touched Invert
+     *  Plate Colors, a white plate at night (AIM 8-1-6): read as no pick,
+     *  so the plate follows the dark screen; a "false" picked since stays. */
+    @Test
+    fun anOldKeptFalseFollowsTheScreenAndAPickedOneStays() = runBlocking {
+        file.edit { it[booleanPreferencesKey("plate_invert")] = false }
+        val old = PlateLookStore(file, this)
+        old.loaded.join()
+        assertNull(old.look.value.invert)
+        assertTrue(old.look.value.copy(dark = true).inverted)
+        old.setInvert(false).join()
+        val next = PlateLookStore(file, this)
+        next.loaded.join()
+        assertEquals(false, next.look.value.invert)
+        assertFalse(next.look.value.copy(dark = true).inverted)
     }
 
     @Test

@@ -16,13 +16,17 @@ final class PlaneMarkView: MKAnnotationView {
         frame = CGRect(x: 0, y: 0, width: 28, height: 28)
         arrow.frame = bounds.insetBy(dx: 3, dy: 3)
         arrow.contentMode = .scaleAspectFit
-        arrow.tintColor = UIColor.systemBlue
+        arrow.tintColor = WingtipColor.Chart.mapBlue
         backgroundColor = NightPalette.markFill
         layer.cornerRadius = 14
         layer.borderWidth = 1
         layer.borderColor = WingtipColor.Chart.shade.withAlphaComponent(0.4).cgColor
         addSubview(arrow)
+        // Never dropped, and its room kept clear: a field's name under it
+        // gives way rather than being covered (rules.md, "The route over
+        // the whole country": no label is drawn under own ship).
         displayPriority = .required
+        collisionMode = .circle
         isEnabled = false
         // Not a button, but VoiceOver finds it on the map and says which
         // way it points.

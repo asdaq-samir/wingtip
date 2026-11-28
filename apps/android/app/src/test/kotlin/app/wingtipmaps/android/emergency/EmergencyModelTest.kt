@@ -69,8 +69,9 @@ class EmergencyModelTest {
         assertEquals("c172", askedAircraft)
         assertEquals("C81", s.picked!!.ident)
         assertEquals("555-0100", s.phone)
-        // The report's visibility, "more than" kept; none where no report says one.
-        assertEquals(mapOf("KUGN" to "10+ sm"), s.visibility)
+        // The report's visibility ("10+ sm") is the engine's, held on the
+        // device (MagneticAndVisibilityEngineTest); none where it cannot say.
+        assertEquals(emptyMap<String, String>(), s.visibility)
         // The checklist opened at the engine failure, the section the call names.
         assertEquals(1, s.section)
         val facts = rules.facts!!

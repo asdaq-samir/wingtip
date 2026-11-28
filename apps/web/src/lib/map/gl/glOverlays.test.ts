@@ -9,12 +9,15 @@ import {
   AIRSPACE_TILE_LAYERS,
   applyOverlayFilters,
   overlayStyle,
+  AIRPORTS_SOURCE,
+  OVERLAY_SOURCE,
+  markSelectedAirport,
   setAirportWeather,
   setOverlayExclusion,
-  setSelectedAirport,
 } from "./glOverlays";
 import { volumeOfTile, vorOfTile } from "./glTileFeatures";
 import { glZoom } from "./glStyle";
+import { CHART } from "../../tokens";
 
 const TILES: OverlayTiles = {
   cycle: "2026-10-29",
@@ -36,6 +39,8 @@ function fakeMap(ids: string[]) {
   const map = {
     style: {},
     setGlobalStateProperty: vi.fn((k: string, v: unknown) => set.state.set(k, v)),
+    getSource: () => ({}),
+    setFeatureState: vi.fn((f: { id: string }, v: unknown) => set.state.set(`feature:${f.id}`, v)),
     getLayer: (id: string) => (ids.includes(id) ? { id } : undefined),
     setFilter: vi.fn((id: string, f: unknown) => set.filter.set(id, f)),
     setLayoutProperty: vi.fn((id: string, k: string, v: unknown) => set.layout.set(`${id}.${k}`, v)),
@@ -69,7 +74,13 @@ describe("the overlay tiles' layers", () => {
       "vfr-waypoints-idents",
       "navaids",
       "navaids-idents",
+      // Each tier's towered fields over its others, one ink a layer (W1).
       "airports",
+      "airports-towered",
+      "airports-c",
+      "airports-c-towered",
+      "airports-kept",
+      "airports-kept-towered",
     ]);
     // Each class from its own zoom (AIRSPACE_FROM).
     const from = Object.fromEntries(layers.lines!.map((l) => [l.id, l.minzoom]));
@@ -95,15 +106,56 @@ describe("the overlay tiles' layers", () => {
     );
   });
 
-  it("leave the open card's field's ident to the ring's own, larger one", () => {
+  it("leave the open card's field's ident to the ring's own, by its feature state, its mark drawn over", () => {
     const { map, set } = fakeMap(["airports"]);
-    setSelectedAirport(map, "KMSN");
-    expect(set.state.get("selectedAirport")).toBe("KMSN");
-    setSelectedAirport(map, null);
-    expect(set.state.get("selectedAirport")).toBeNull();
-    const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
-    // Hidden by its paint, so the tiles are not laid out again at a tap.
-    expect(airports.paint!["text-opacity"]).toEqual(["case", ["==", ["get", "ident"], ["global-state", "selectedAirport"]], 0, 1]);
+    markSelectedAirport(map, "KMSN", true);
+    expect(set.state.get("feature:KMSN")).toEqual({ selected: true });
+    markSelectedAirport(map, "KMSN", false);
+    expect(set.state.get("feature:KMSN")).toEqual({ selected: false });
+    const style = overlayStyle(TILES, ORIGIN);
+    const airports = style.layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
+    // Hidden by its opacity and the feature's state alone, so a tap lays no tile out again, and its ink one colour a
+    // layer, read by no feature, so a night commit of the Dimmer lays none out either (W1); the words dimmed by their
+    // ink at night (labelInk), their opacity left as it is; the mark by the Dimmer's share, a constant a step repaints.
+    const selected = ["boolean", ["feature-state", "selected"], false];
+    expect(airports.paint!["text-opacity"]).toEqual(["case", selected, 0, 1]);
+    expect(JSON.stringify(airports.paint!["text-color"])).not.toContain("feature-state");
+    expect(JSON.stringify(airports.paint!["text-color"])).toContain(CHART.untowered);
+    const towered = style.layers.marks!.find((l) => l.id === "airports-towered") as SymbolLayerSpecification;
+    expect(JSON.stringify(towered.paint!["text-color"])).toContain(CHART.towered);
+    expect(towered.filter).toEqual(expect.arrayContaining([["==", ["get", "towered"], true]]));
+    const dim = ["*", ["coalesce", ["global-state", "mapDim"], 1], 1];
+    expect(airports.paint!["icon-opacity"]).toEqual(dim);
+    expect(JSON.stringify(airports.filter)).not.toContain("selected");
+    // The fields on a source of their own, each by its ident; the rest on another, each ring by its field's.
+    expect(airports.source).toBe(AIRPORTS_SOURCE);
+    expect(style.sources[AIRPORTS_SOURCE]).toMatchObject({ promoteId: { airports: "ident" } });
+    expect(style.sources[OVERLAY_SOURCE]).toMatchObject({ promoteId: { airspace: "ident" } });
+    expect(style.layers.lines!.every((l) => "source" in l && l.source === OVERLAY_SOURCE)).toBe(true);
+  });
+
+  it("dim the VOR's tag with its words, and the chart's white words, by their colour at night (R7-2, R7-5)", () => {
+    const style = overlayStyle(TILES, ORIGIN);
+    const all = [...style.layers.lines!, ...style.layers.marks!] as SymbolLayerSpecification[];
+    const of = (id: string) => all.find((l) => l.id === id)!;
+    // The tag a distance field in the towered blue, dimmed by its colour; neither faded by its opacity.
+    const vor = of("navaids-idents");
+    expect(vor.paint!["icon-color"]).toEqual([
+      "interpolate",
+      ["linear"],
+      ["coalesce", ["global-state", "mapDim"], 1],
+      0,
+      "black",
+      1,
+      CHART.towered,
+    ]);
+    expect(vor.paint!["icon-opacity"]).toBeUndefined();
+    // White words on a dark halo or tab at the words' light, the halo whole.
+    for (const id of ["navaids-idents", "runway-ends", "airspace-labels", "sua-labels"]) {
+      expect(JSON.stringify(of(id).paint!["text-color"]), id).toContain(JSON.stringify(["global-state", "labelNight"]));
+      expect(of(id).paint!["text-opacity"], id).toBeUndefined();
+    }
+    expect(of("runway-ends").paint!["text-halo-color"]).toBe(CHART.tag);
   });
 
   it("name the towered fields wherever they are drawn, from 5, and every other field from 8, each mark a little apart", () => {
@@ -117,6 +169,11 @@ describe("the overlay tiles' layers", () => {
       ["get", "ident"],
     ]);
     expect(airports.layout!["icon-padding"]).toBe(2);
+    // No bare mark: a field's mark and ident are placed together; a Class B's and the open card's keep the mark.
+    expect(airports.layout!["text-optional"]).toBe(false);
+    const kept = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports-kept") as SymbolLayerSpecification;
+    expect(kept.layout!["text-optional"]).toBe(true);
+    expect(kept.layout!["icon-allow-overlap"]).toBe(true);
     expect(airports.layout!["symbol-sort-key"]).toEqual(["get", "rank"]);
   });
 
@@ -149,6 +206,19 @@ describe("the overlay tiles' layers", () => {
       expect(JSON.stringify((marks.find((l) => l.id === id) as SymbolLayerSpecification).filter)).toContain(
         JSON.stringify(["global-state", "routeWaypoints"]),
       );
+    // Each on a source of its own, so a route's edit lays out those tiles alone, not the airspace's and the fixes'.
+    const byRoute = marks.filter((l) => /routeAirports|routeWaypoints/.test(JSON.stringify((l as SymbolLayerSpecification).filter)));
+    expect(byRoute.map((l) => l.id)).toEqual([
+      "vfr-waypoints",
+      "vfr-waypoints-idents",
+      "airports",
+      "airports-towered",
+      "airports-c",
+      "airports-c-towered",
+      "airports-kept",
+      "airports-kept-towered",
+    ]);
+    expect(byRoute.some((l) => (l as SymbolLayerSpecification).source === OVERLAY_SOURCE)).toBe(false);
   });
 
   it("show the private and military fields while the emergency assistant is open, the switches theirs again once it closes", () => {

@@ -10,7 +10,7 @@ import { barbId } from "./stationModel";
  * says for the mark. What counts -- zoomed out, a barb from 10 kt or a
  * gust, red past the airplane's demonstrated crosswind, the barb's flags,
  * barbs and half-barbs -- is the engine's
- * (wind_arrow, wind_barb; the least crosswind on the field's runways comes
+ * (wind_marks, wind_arrow and wind_barb for many fields at once; the least crosswind on the field's runways comes
  * worked out by the planner's least_crosswind); how it is written here is
  * the app's.
  */
@@ -62,22 +62,28 @@ export function stationLines(w: PinWeather): string {
   return [sight, ceilingWords(w)].filter(Boolean).join("\n");
 }
 
-/** A field's marks from its METAR, the picked airplane's demonstrated
- *  crosswind (null with none picked or no figure: the barb then never
- *  red, nothing assumed). */
-export function weatherMarksOf(w: PinWeather, demonstratedKt: number | null): WeatherMarks {
-  const shown = callEngine("wind_arrow", {
+/** Each field's marks from its METAR, with the picked airplane's
+ *  demonstrated crosswind (null with none picked or no figure: the barb
+ *  then never red, nothing assumed), in the order given. The engine is
+ *  asked once for them all (wind_marks), where each field was two calls
+ *  into the .wasm at every rebuild of the map's hundreds of METAR fields. */
+export function weatherMarksOfAll(ws: readonly PinWeather[], demonstratedKt: number | null): WeatherMarks[] {
+  if (ws.length === 0) return [];
+  const fields = ws.map((w) => ({
     speed_kt: w.wind_speed_kt ?? null,
     gust_kt: w.wind_gust_kt ?? null,
     crosswind_kt: w.crosswind_kt ?? null,
     demonstrated_kt: demonstratedKt,
+  }));
+  const answers = callEngine("wind_marks", { fields });
+  return ws.map((w, n) => {
+    // One answer a field asked; none drawn should the engine ever answer short.
+    const { shown, over, barb: drawn } = answers[n] ?? { shown: false, over: false, barb: null };
+    // Calm needs no direction; any other barb does, so a VRB wind is written.
+    const barb = drawn && (drawn.calm || w.wind_dir_true_deg != null) ? barbId(drawn, over) : null;
+    const variable = drawn && !barb ? `VRB${String(Math.round(w.wind_speed_kt ?? 0)).padStart(2, "0")}` : "";
+    return { barb, dir: w.wind_dir_true_deg ?? 0, lines: stationLines(w), far: shown && drawn !== null, over, variable };
   });
-  const directed = w.wind_dir_true_deg != null;
-  const drawn = w.wind_speed_kt == null ? null : callEngine("wind_barb", { speed_kt: w.wind_speed_kt });
-  // Calm needs no direction; any other barb does, so a VRB wind is written.
-  const barb = drawn && (drawn.calm || directed) ? barbId(drawn, shown.over) : null;
-  const variable = drawn && !barb ? `VRB${String(Math.round(w.wind_speed_kt ?? 0)).padStart(2, "0")}` : "";
-  return { barb, dir: w.wind_dir_true_deg ?? 0, lines: stationLines(w), far: shown.shown && drawn !== null, over: shown.over, variable };
 }
 
 /** What a screen reader says for a field's mark: "KJVL, IFR, wind 220 at

@@ -124,11 +124,11 @@ describe("FlightInputs' airplane", () => {
     }
   });
 
-  test("its ⓘ opens the airplane's card, and with none picked puts the focus in the field", () => {
+  test("its ⓘ opens the airplane's card on its Figures, and with none picked puts the focus in the field", () => {
     useProfileOpen.setState({ open: null });
     const { input } = pills("mine", [{ value: "mine", label: "N12345" }]);
     fireEvent.click(screen.getByRole("button", { name: "Airplane info" }));
-    expect(useProfileOpen.getState().open).toEqual({ tail: "N12345", focus: null });
+    expect(useProfileOpen.getState().open).toEqual({ tail: "N12345", focus: null, figures: true });
     cleanup();
     useProfileOpen.setState({ open: null });
     const none = pills();

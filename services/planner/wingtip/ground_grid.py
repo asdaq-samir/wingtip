@@ -19,9 +19,10 @@ the lowest ground under a leg -- 14 CFR 91.159's 3,000 ft above the surface
 is from there -- which the highest would put too high.
 
 Built once by `python -m wingtip.ground_grid` (resumable, row of tiles by row
-of tiles; the tiles are not kept), into data/raw/ground_grid. Where it has
-not been built, or a point is outside it, wingtip.terrain reads the tiles as it
-did.
+of tiles; the tiles are not kept), into data/raw/ground_grid; run again on a
+built grid, it fills the cells no pixel reached (`fill_holes`) and fetches
+nothing. Where it has not been built, or a point is outside it, wingtip.terrain
+reads the tiles as it did.
 """
 
 from __future__ import annotations
@@ -39,6 +40,7 @@ import requests
 from cachetools import TTLCache
 
 from . import geo, geo_boxes, outside
+from .config import user_agent
 from .elevation import terrarium_m
 from .units import M_TO_FT
 
@@ -51,7 +53,7 @@ COLS = int((EAST - WEST) * PER_DEG)
 #: The tiles it is read from.
 ZOOM = 11
 TILE_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
-HEADERS = {"User-Agent": "wingtip-maps/0.1 (VFR flight planner; terrain floor)"}
+HEADERS = {"User-Agent": user_agent("VFR flight planner; terrain floor")}
 DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "ground_grid"
 #: The grid's files, named for how its tiles were read: v2 since its
 #: voids, spikes and sea floor were read as wingtip.elevation.terrarium_m
@@ -135,7 +137,7 @@ def line_points(start: tuple, end: tuple) -> tuple[np.ndarray, np.ndarray, np.nd
     cell it crosses holds one -- a third of a cell apart -- and how far
     along each is, nm: (lats, lons, along_nm)."""
     total = float(geo.distance_nm(start[0], start[1], end[0], end[1]))
-    # The short way round 180 (geo_boxes): its longitudes, not 350 degrees.
+    # The short way over 180 (geo_boxes): its longitudes, not 350 degrees.
     span = max(abs(end[0] - start[0]), abs(geo_boxes.lon_near(end[1], start[1]) - start[1]))
     n = max(2, int(math.ceil(span * PER_DEG * 3)) + 1)
     # Along the great circle, not the straight line on the chart: the
@@ -194,10 +196,60 @@ def _into(high: np.ndarray, low: np.ndarray, x: int, y: int, heights: np.ndarray
     np.minimum.at(lo_flat, flat, values)
 
 
+def _around(grid: np.ndarray, pick) -> np.ndarray:
+    """Each cell's eight neighbours' `pick` (np.maximum or np.minimum) of
+    those reached; NONE where none of them is."""
+    padded = np.pad(grid, 1, constant_values=NONE)
+    rows, cols = grid.shape
+    out = np.full(grid.shape, NONE, dtype=grid.dtype)
+    for dr in (0, 1, 2):
+        for dc in (0, 1, 2):
+            if dr == dc == 1:
+                continue
+            near = padded[dr : dr + rows, dc : dc + cols]
+            reached = near != NONE
+            out = np.where(reached & (out == NONE), near, np.where(reached, pick(out, near), out))
+    return out
+
+
+def fill_holes(high: np.ndarray, low: np.ndarray) -> int:
+    """The cells no pixel reached -- a void in every pixel of the tiles, or
+    each one past HIGHEST_GROUND_FT and thrown out -- given the highest of
+    their neighbours' highest and the lowest of their lowest, ring by ring
+    in from the edge of a hole; how many. One such cell made ground_ft give
+    up on the whole leg, whose floor then took 6 to 12 s of tiles fetched
+    point by point (59 of them in the 2026-11-02 grid, KMSN-KTUS's floor
+    11.8 s). The neighbours' highest is
+    the conservative guess for a floor: it is the most a terrain clearance
+    is measured from round the hole, and RESAMPLED_MARGIN_FT stands on it
+    as on every cell; the lowest likewise keeps 91.159's surface low."""
+    filled = 0
+    while True:
+        holes = high == NONE
+        if not holes.any():
+            return filled
+        high_near, low_near = _around(high, np.maximum), _around(low, np.minimum)
+        reached = holes & (high_near != NONE)
+        if not reached.any():
+            return filled
+        high[reached], low[reached] = high_near[reached], low_near[reached]
+        filled += int(reached.sum())
+
+
+def holes() -> int | None:
+    """How many cells of the built grid no pixel reached; None where it is
+    not built."""
+    grids = _grids()
+    return None if grids is None else int((grids[0] == NONE).sum())
+
+
 def build(workers: int = 12) -> None:
     """Reads every zoom-11 tile over the grid into it, a row of tiles at
-    a time, keeping the rows done, so a build stopped carries on."""
+    a time, keeping the rows done, so a build stopped carries on; then
+    fills its holes. A grid already built has its holes filled and nothing
+    fetched."""
     DIR.mkdir(parents=True, exist_ok=True)
+    built = HIGH_PATH.exists() and LOW_PATH.exists() and not DONE_PATH.exists()
     if HIGH_PATH.exists() and LOW_PATH.exists():
         high = np.load(HIGH_PATH)
         low = np.load(LOW_PATH)
@@ -210,7 +262,7 @@ def build(workers: int = 12) -> None:
     session = outside.session(pool=workers)
     with ThreadPoolExecutor(workers) as pool:
         for y in range(y0, y1 + 1):
-            if y in done:
+            if built or y in done:
                 continue
             tiles = list(pool.map(lambda x, y=y: (x, _fetch(session, x, y)), range(x0, x1 + 1)))
             for x, heights in tiles:
@@ -223,10 +275,12 @@ def build(workers: int = 12) -> None:
                 np.save(LOW_PATH, low)
                 DONE_PATH.write_text(json.dumps(sorted(done)))
             print(f"row {y - y0 + 1} of {y1 - y0 + 1}", flush=True)
-    # Built: the rows' record goes, and the grid is read from now on.
+    # Built: its holes filled, the rows' record goes, and the grid is read
+    # from now on.
+    print(f"{fill_holes(high, low)} cells no pixel reached filled from round them", flush=True)
     np.save(HIGH_PATH, high)
     np.save(LOW_PATH, low)
-    DONE_PATH.unlink()
+    DONE_PATH.unlink(missing_ok=True)
     with _HELD_LOCK:
         _HELD.pop("grids", None)
         _NOT_BUILT.clear()

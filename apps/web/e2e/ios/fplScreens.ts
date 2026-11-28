@@ -1,9 +1,11 @@
 import { expect } from "@playwright/test";
 import {
+  cardHost,
   openRoute,
   typeRoute,
   controlsInSight,
   grabberTo,
+  inSheet,
   openProfile,
   openPanel,
   openTab,
@@ -11,6 +13,7 @@ import {
   showPlan,
   showTabs,
   sideDrawer,
+  sheetFoot,
   slow,
   stripShows,
 } from "../helpers";
@@ -54,7 +57,7 @@ export const FPL_SCREENS: Screen[] = [
       await settle(page);
       await openPanel(page);
       await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible({ timeout: slow(30000) });
-      await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+      await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
     },
   },
   // The route's Procedures, its fields down a line in the order they are
@@ -72,7 +75,7 @@ export const FPL_SCREENS: Screen[] = [
       await settle(page);
       await openTab(page, "Nav Log");
       await openRoute(page);
-      await expect(page.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(30000) });
+      await expect(page.getByTestId("runway-pill").first()).toBeVisible({ timeout: slow(30000) });
     },
   },
   // The route's Procedures with an approach's own page open, as ForeFlight
@@ -148,7 +151,7 @@ export const FPL_SCREENS: Screen[] = [
       await page.goto("/app/plan?near=1");
       await settle(page);
       await openPanel(page);
-      await expect(sideDrawer(page).getByTestId("nearest-card")).toBeVisible();
+      await expect(cardHost(page).getByTestId("nearest-card")).toBeVisible();
     },
   },
   {
@@ -184,20 +187,22 @@ export const FPL_SCREENS: Screen[] = [
     // reasons and the ways round the high ground.
     name: "no legal altitude, opened",
     ready: async (page) => {
-      await page.route("**/api/planner/navlog**", (route) =>
-        route.fulfill({
-          status: 200,
-          contentType: "application/x-ndjson",
-          body:
-            JSON.stringify({
-              type: "error",
-              retry: false,
-              detail: "No legal VFR cruising altitude 1-15 nm along the route",
-              reasons: ["The terrain and obstacles there need 10,600 ft."],
-              advice: "Route around the high ground.",
-              detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0, via: ["BEPKE"] }],
-            }) + "\n",
-        }),
+      await page.route(
+        (url) => url.pathname.startsWith("/api/planner/navlog"),
+        (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/x-ndjson",
+            body:
+              JSON.stringify({
+                type: "error",
+                retry: false,
+                detail: "No legal VFR cruising altitude 1-15 nm along the route",
+                reasons: ["The terrain and obstacles there need 10,600 ft."],
+                advice: "Route around the high ground.",
+                detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0, via: ["BEPKE"] }],
+              }) + "\n",
+          }),
       );
       await page.goto(`/app/plan?${ROUTE}&view=full`);
       await controlsInSight(page);
@@ -226,12 +231,20 @@ export const FPL_SCREENS: Screen[] = [
       await page.goto(`/app/plan?${ROUTE}&view=full`);
       await controlsInSight(page);
       await page.getByTestId("depart-date").click({ timeout: slow(30000) });
-      // Pulled all the way up for the month's last day: at half the card
-      // has the time over the calendar, which runs on under the fold
-      // (DepartPicker, the UI audit's B7), and a day there is out of
-      // sight, where the click waited on it till the test's six minutes.
-      await grabberTo(page, "full");
-      await page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last().click();
+      // The picker open and its calendar in (its code comes as it opens)
+      // before a day is asked for: the night's iOS audit waited six minutes
+      // on a day of a calendar that was never in the page.
+      await expect(page.getByTestId("depart-picker")).toBeVisible({ timeout: slow(30000) });
+      const day = page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last();
+      await expect(day).toBeAttached({ timeout: slow(30000) });
+      // The month's last day in sight: at half the picker's own card has
+      // the time over the calendar, which runs on under the fold
+      // (DepartPicker, the UI audit's B7), so that card is pulled all the
+      // way up; a popover beside a side panel is in sight as it is, and
+      // the map's grabber is not pressed under it, which took the focus
+      // out of the popover and closed it.
+      await inSheet(page, day);
+      await day.click();
       // The time one button, its hours and minutes two wheels under it
       // (ui/time-field), opened so the audit measures them too.
       await page.getByTestId("depart-time").click();

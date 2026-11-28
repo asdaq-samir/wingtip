@@ -84,6 +84,13 @@
         null
       ],
       "description": "ifr_alternate_check's: \"military\" or \"joint\" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said."
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it."
     }
   },
   "required": [

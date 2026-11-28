@@ -2,14 +2,13 @@ import Foundation
 
 /// The Go / No-Go at a glance, the owner's rule for every brief
 /// (2026-11-03): the verdict, then at most three one-sentence lines a
-/// pilot acts on, the rest in one row. Each line is a finding of the
-/// planner's answer (GoNoGoAnswer) in its words; nothing is judged here,
-/// only picked and cut to a glance.
-enum Glance {
-    /// As many lines as a glance holds, and the longest one sentence.
-    static let most = 3
-    static let longest = 140
-
+/// pilot acts on, the rest in one row. Which findings make the lines, how
+/// each is worded and cut, and the folded row's words are the engine's
+/// (`gonogo_glance_lines`, engine/crates/brief/src/gonogo/glance.rs), the
+/// rule the web's glance asks too, so the iPhone, the iPad and the web say
+/// the same answer the same way. This only asks it of the planner's
+/// answer (GoNoGoAnswer) and finds each line's finding again.
+struct Glance: Equatable {
     /// One line of the glance: the finding it is, and the sentence.
     struct Line: Equatable, Identifiable, Sendable {
         let key: String
@@ -18,89 +17,48 @@ enum Glance {
         var id: String { key }
     }
 
-    /// A finding's rank for the glance: what stops the flight first, then
-    /// what wants a look, then what is not yet or not worked out; nothing
-    /// is said for a clear finding.
-    private static func rank(_ finding: String) -> Int? {
-        switch finding {
-        case "stop": 0
-        case "caution": 1
-        case "pending": 2
-        case "unknown": 3
-        default: nil
+    /// The lines, worst first.
+    let lines: [Line]
+    /// The findings the lines are of, in their order.
+    let acted: [VerdictItem]
+    /// The findings folded into one row, and its words; nil where the
+    /// lines said everything.
+    let rest: [VerdictItem]
+    let restWords: String?
+    /// The row's finding: the worst of those folded into it.
+    let restFinding: String
+
+    /// The glance of an answer, the engine asked once per answer rather
+    /// than at every redraw of a view showing it (the strip's head redraws
+    /// as the in-flight figures tick): the last answer's kept beside it.
+    static func of(_ answer: GoNoGoAnswer) -> Glance {
+        if let last, last.answer == answer { return last.glance }
+        let made = Glance(answer)
+        last = (answer, made)
+        return made
+    }
+
+    private static var last: (answer: GoNoGoAnswer, glance: Glance)?
+
+    init(_ answer: GoNoGoAnswer) {
+        let items = answer.items.map {
+            EngineContract.GonogoItem(key: $0.key, label: $0.label, tab: $0.tab, section: $0.section, finding: $0.finding, detail: $0.detail)
         }
-    }
-
-    /// The findings a pilot acts on, worst first and in the planner's
-    /// order within a rank.
-    static func acted(_ answer: GoNoGoAnswer) -> [VerdictItem] {
-        answer.items.enumerated()
-            .compactMap { i, item in rank(item.finding).map { (rank: $0, at: i, item: item) } }
-            .sorted { ($0.rank, $0.at) < ($1.rank, $1.at) }
-            .map(\.item)
-    }
-
-    /// The glance's lines: the first `most` of the findings acted on.
-    static func lines(_ answer: GoNoGoAnswer) -> [Line] {
-        acted(answer).prefix(most).map { Line(key: $0.key, finding: $0.finding, words: sentence($0)) }
-    }
-
-    /// The findings the glance leaves to its one folded row: the ones past
-    /// its lines, then the clear ones.
-    static func rest(_ answer: GoNoGoAnswer) -> [VerdictItem] {
-        let shown = Set(lines(answer).map(\.key))
-        let over = acted(answer).filter { !shown.contains($0.key) }
-        return over + answer.items.filter { rank($0.finding) == nil }
-    }
-
-    /// The folded row's words: "Weather, fuel and airspace: nothing to
-    /// fix", with "2 more to look at" before it where lines ran over; nil
-    /// where the lines said everything.
-    static func restWords(_ answer: GoNoGoAnswer) -> String? {
-        let rest = rest(answer)
-        guard !rest.isEmpty else { return nil }
-        let over = rest.filter { rank($0.finding) != nil }
-        let clear = rest.filter { rank($0.finding) == nil }
-        var parts: [String] = []
-        if !over.isEmpty { parts.append("\(over.count) more to look at") }
-        if !clear.isEmpty { parts.append("\(listed(clear.map { lowered($0.label) })): nothing to fix") }
-        let words = parts.joined(separator: "; ")
-        return words.prefix(1).uppercased() + words.dropFirst()
-    }
-
-    /// A finding as one sentence: its name, what was found, a full stop;
-    /// cut at a word to the longest a line holds.
-    static func sentence(_ item: VerdictItem) -> String {
-        var words = item.detail.trimmingCharacters(in: .whitespacesAndNewlines)
-        // The label opens the sentence, so in sentence case: "Weight &
-        // balance: …" from the engine's "Weight & Balance" (rules.md §17.7).
-        let name = lowered(item.label)
-        let label = name.prefix(1).uppercased() + name.dropFirst()
-        words = words.isEmpty ? label : "\(label): \(words)"
-        if let last = words.last, !".!?…".contains(last) { words += "." }
-        guard words.count > longest else { return words }
-        let cut = String(words.prefix(longest - 1))
-        let atWord = cut.lastIndex(of: " ").map { String(cut[..<$0]) } ?? cut
-        return atWord.trimmingCharacters(in: CharacterSet(charactersIn: " ,;:")) + "…"
-    }
-
-    /// A label inside a sentence: the engine's Title Case names ("TFRs &
-    /// Special Use", "Weight & Balance") lowered word by word, a code's
-    /// word kept ("TFRs & special use"), as the engine's own glance and
-    /// verdict lines set them (in_sentence, engine/crates/brief/src/gonogo/glance.rs;
-    /// docs/design/rules.md §17, rule 7).
-    private static func lowered(_ label: String) -> String {
-        label.split(separator: " ", omittingEmptySubsequences: false)
-            .map { word in word.prefix(2).filter(\.isUppercase).count == 2 ? String(word) : word.lowercased() }
-            .joined(separator: " ")
-    }
-
-    /// "Weather", "weather and fuel", "weather, fuel and airspace".
-    private static func listed(_ names: [String]) -> String {
-        switch names.count {
-        case 0: ""
-        case 1: names[0]
-        default: names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1]
+        let byKey = Dictionary(answer.items.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        guard let glance = try? Engine.gonogoGlanceLines(items: items) else {
+            // The engine could not be asked: every finding in the one row,
+            // where the pilot opens each, never a line of our own making.
+            lines = []
+            acted = []
+            rest = answer.items
+            restWords = answer.items.isEmpty ? nil : String(localized: "Every finding")
+            restFinding = answer.line.finding
+            return
         }
+        lines = glance.act.map { Line(key: $0.key, finding: $0.finding, words: $0.line) }
+        acted = glance.act.compactMap { byKey[$0.key] }
+        rest = glance.rest.items.compactMap { byKey[$0.key] }
+        restWords = glance.rest.line.isEmpty ? nil : glance.rest.line
+        restFinding = glance.rest.finding
     }
 }

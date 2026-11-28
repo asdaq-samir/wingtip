@@ -13,7 +13,7 @@ from fastapi import APIRouter, Query, Response
 from wingtip import airports, fixes, geo, geo_boxes, procedures
 from wingtip.engine import ask as engine
 
-from ..router_basics import near_points
+from ..router_basics import points
 from ..schemas.clearance import ClearanceAsk, ClearancePlaces, ClearanceWords
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 
@@ -34,7 +34,7 @@ def _corridor(near: tuple) -> list[tuple[float, float, float, float]]:
     its ends, and a box round both ends is most of the country."""
     boxes = []
     for (lat1, lon1), (lat2, lon2) in zip(near, near[1:] or near):
-        # The short way round 180 (geo_boxes): Adak to Shemya is 378 nm, not
+        # The short way over 180 (geo_boxes): Adak to Shemya is 378 nm, not
         # 350 degrees of boxes; fixes.within and places_in read one past it.
         lon2 = geo_boxes.lon_near(lon2, lon1)
         steps = max(1, int(max(abs(lat2 - lat1), abs(lon2 - lon1))))
@@ -153,7 +153,7 @@ def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
     airport by its name, AIM 4-4-3 a), each phrase of its route as the
     points in it, and its SID and STAR among its fields' own. A place
     found by its sound alone is not `sure`; one not found has no ident."""
-    near = near_points(ask.near)
+    near = tuple(points(ask.near))
     places = _places(near)
     # The places anywhere spelled or named in what was said, besides those
     # near the route: the engine puts the nearer of two alike first, PYKLA
@@ -182,15 +182,16 @@ def clearance_words(response: Response, near: str = Query(default=""), dep: str 
     phone's recognizer to listen for: the departure's SIDs as said, the
     navaids' names, then the fixes' five letters as words, at most 100."""
     response.headers["Cache-Control"] = "private, max-age=3600"
-    places = _places(near_points(near))
+    places = _places(tuple(points(near)))
     names = _navaid_names(places)
     words: list[str] = []
     listed = procedures.procedures_at(dep) if dep else None
     for p in (listed or {}).get("procedures", []):
         m = re.fullmatch(r"([A-Z]+)\d", p["id"]) if p["kind"] == "departure" else None
         if m:
-            words.append(f"{names.get(m.group(1), m.group(1).title())} departure")
+            words.append(f"{names.get(m.group(1), engine('title_case', text=m.group(1)))} departure")
     words += sorted({n for n in names.values()})
-    words += sorted({p["ident"].title() for p in places if p["what"] == "fix" and len(p["ident"]) == 5})
+    fives = [p["ident"] for p in places if p["what"] == "fix" and len(p["ident"]) == 5]
+    words += sorted(set(engine("title_case", texts=fives))) if fives else []
     seen: set[str] = set()
     return {"words": [w for w in words if not (w in seen or seen.add(w))][:MOST_WORDS]}

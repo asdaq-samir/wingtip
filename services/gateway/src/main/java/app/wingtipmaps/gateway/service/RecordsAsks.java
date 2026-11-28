@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
  * <p>The pages read their records in a short read-only transaction and ask
  * the planner after it: a Hikari connection held across the planner's
  * calls (up to 20 s each, with one retry) let about ten slow pages empty the
- * pool of ten (waste-server audit B).
+ * pool of ten.
  */
 final class RecordsAsks {
 
@@ -48,10 +48,17 @@ final class RecordsAsks {
     }
 
     /** What {@code held} say for a flight on {@code flightOn} (null for
-     *  none), asked once a {@code key}. */
-    int endorsements(Object key, Supplier<List<PlannerHeldEndorsement>> held, @Nullable LocalDate flightOn) {
+     *  none) in {@code makeModel} (61.93(d)(4), (5): "for the make and
+     *  model of aircraft to be flown"; null and the checks can't tell),
+     *  asked once a {@code key}, which names both. */
+    int endorsements(
+            Object key,
+            Supplier<List<PlannerHeldEndorsement>> held,
+            @Nullable LocalDate flightOn,
+            @Nullable String makeModel) {
         return endorsementsOf.computeIfAbsent(key, k -> {
-            endorsements.add(new PlannerEndorsementsAsk(held.get()).flightOn(flightOn));
+            endorsements.add(
+                    new PlannerEndorsementsAsk(held.get()).flightOn(flightOn).makeModel(makeModel));
             return endorsements.size() - 1;
         });
     }
@@ -64,8 +71,12 @@ final class RecordsAsks {
                 : endorsements(
                         key,
                         () -> signed.stream()
-                                .map(e -> PlannerAsks.held(e.getCode(), e.getSignedOn(), null))
+                                .map(e -> PlannerAsks.held(
+                                        e.getCode(),
+                                        e.getSignedOn(),
+                                        e.getFields().get("mm")))
                                 .toList(),
+                        null,
                         null);
     }
 

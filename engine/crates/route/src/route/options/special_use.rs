@@ -1,5 +1,4 @@
-//! Special-use airspace on route options' ways (the aviation audit's AV-6,
-//! the routes audit's P11 and O2). A prohibited area closes its cells (14
+//! Special-use airspace on route options' ways. A prohibited area closes its cells (14
 //! CFR 91.133(a), AIM 3-4-2). A restricted area, a MOA, a warning area and
 //! an alert area cost more to cross and are never closed: their times of
 //! use are not read here, and the owner's rule is to warn, never limit.

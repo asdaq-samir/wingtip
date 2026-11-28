@@ -1,0 +1,114 @@
+import { useEffect, useRef } from "react";
+import type { MapSourceDataEvent, Map as MlMap } from "maplibre-gl";
+import { OVERLAY_FEATURE_STATE, OVERLAY_STATE } from "../../generated/overlayLayers";
+import { isParked } from "./glLayer";
+
+/** The map's global state that says a map keeps its rings to the fields it
+ *  draws (usePlacedFieldRings is on): a map that never sets it (the training
+ *  map) draws every ring. The plan's map is made with it on (makeMap's
+ *  `ringsByField`), so setting it at mount changes nothing and lays out no
+ *  tile; each real change of it lays every overlay tile out again. */
+export const RINGS_BY_FIELD = OVERLAY_STATE.ringsByField;
+
+/** Each ring's feature state (the overlay source's `airspace` ids are their
+ *  `ident`, glOverlays): whether its primary field is drawn now, which a
+ *  Class C's or D's ring's opacity reads (design/map-style.json's
+ *  placedRing), so no ring stands bare where its field gave way to a bigger
+ *  one (the owner's iPhone recording, 2026-11-23). An opacity by feature
+ *  state, not a filter by the map's global state: a filter's change laid
+ *  every overlay tile out again at each rest of the map; a state's change repaints only. */
+const PLACED = OVERLAY_FEATURE_STATE.placed;
+
+/** How long a map handed to the next tree (isParked) keeps its rings to
+ *  its fields for that tree to take up, before they are every ring again. */
+const HANDOVER_MS = 1000;
+/** The maps keeping their rings to their fields now, by how many do, and
+ *  the idents each set placed at its last rest (kept through a handover,
+ *  as the states are). */
+const keeping = new WeakMap<MlMap, number>();
+const placedOn = new WeakMap<MlMap, Set<string>>();
+
+/** Keeps each Class C and D ring's PLACED state to what the map drew at its
+ *  last rest: the placed symbols of `layers` (queryRenderedFeatures returns
+ *  only the symbols that won their place) and the fields among `own` (ICAO
+ *  or FAA idents, the route's and the stops') in `fields`' airports. Only
+ *  the idents whose state changes since the last rest are set, from the
+ *  placed set alone: a ring with no state is not drawn, so the rings
+ *  themselves are never looked through (a querySourceFeatures over every
+ *  C and D polygon of the tiles at each rest). The route's idents are read
+ *  at each rest, so a route's edit sets no global state; nor does a map
+ *  handed to the next tree, which keeps RINGS_BY_FIELD for it: each change
+ *  of it lays every overlay tile out again. */
+export function usePlacedFieldRings(map: MlMap, rings: string, fields: string, layers: string[], own: string[]) {
+  const ownKey = own.join();
+  const ownRef = useRef(ownKey);
+  const writeRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    ownRef.current = ownKey;
+    writeRef.current();
+  }, [ownKey]);
+  useEffect(() => {
+    const write = () => {
+      if (!map.style || !map.getSource(rings) || !layers.every((id) => map.getLayer(id))) return;
+      const placed = new Set<string>();
+      for (const f of map.queryRenderedFeatures({ layers })) placed.add(String(f.properties.faa_id ?? ""));
+      const idents = ownRef.current ? ownRef.current.split(",") : [];
+      if (idents.length && map.getSource(fields))
+        for (const f of map.querySourceFeatures(fields, { sourceLayer: "airports", filter: ["in", ["get", "ident"], ["literal", idents]] }))
+          placed.add(String(f.properties.faa_id ?? ""));
+      placed.delete("");
+      const state = (ident: string, on: boolean) =>
+        map.setFeatureState({ source: rings, sourceLayer: "airspace", id: ident }, { [PLACED]: on });
+      const last = placedOn.get(map) ?? new Set<string>();
+      for (const ident of placed) if (!last.has(ident)) state(ident, true);
+      for (const ident of last) if (!placed.has(ident)) state(ident, false);
+      placedOn.set(map, placed);
+    };
+    writeRef.current = write;
+    // Looked again only at a rest after something that can change what is
+    // placed: the camera's move, or a tile of the fields' or the rings'
+    // source come in or laid out again (a setting's filter, a theme's
+    // change). An idle comes after every frame drawn at rest too -- each
+    // of the traffic's updates, a weather mark's, a paint's -- and a
+    // whole-screen queryRenderedFeatures at each was some ten a second
+    // with traffic followed.
+    let moved = true;
+    const changed = () => {
+      moved = true;
+    };
+    const tiled = (e: MapSourceDataEvent) => {
+      if (e.tile && (e.sourceId === fields || e.sourceId === rings)) moved = true;
+    };
+    const rest = () => {
+      if (!moved) return;
+      moved = false;
+      write();
+    };
+    keeping.set(map, (keeping.get(map) ?? 0) + 1);
+    // A no-op on the plan's map, made with it on (makeMap), so its first
+    // mount lays out no overlay tile again.
+    if (map.style) map.setGlobalStateProperty(RINGS_BY_FIELD, true);
+    map.on("moveend", changed);
+    map.on("sourcedata", tiled);
+    map.on("idle", rest);
+    write();
+    return () => {
+      writeRef.current = () => {};
+      map.off("moveend", changed);
+      map.off("sourcedata", tiled);
+      map.off("idle", rest);
+      keeping.set(map, (keeping.get(map) ?? 1) - 1);
+      const letGo = () => {
+        if (!map.style || keeping.get(map)) return;
+        placedOn.delete(map);
+        // Every ring again, said outright: a map made with them kept to
+        // their fields (makeMap's default for the plan's) would go back to it.
+        map.setGlobalStateProperty(RINGS_BY_FIELD, false);
+        if (map.getSource(rings)) map.removeFeatureState({ source: rings, sourceLayer: "airspace" });
+      };
+      // A map being handed over keeps them a moment for the next tree's own.
+      if (isParked(map)) setTimeout(letGo, HANDOVER_MS);
+      else letGo();
+    };
+  }, [map, rings, fields, layers]);
+}

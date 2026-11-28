@@ -14,6 +14,7 @@
           "variable": false
         },
         "visibility_sm": 10,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "few",
@@ -49,6 +50,7 @@
           "variable": false
         },
         "visibility_sm": 10,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "clear",
@@ -80,6 +82,7 @@
           "variable": false
         },
         "visibility_sm": 2.5,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "overcast",
@@ -117,6 +120,7 @@
           "variable": true
         },
         "visibility_sm": 7,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "scattered",
@@ -158,6 +162,7 @@
           "variable": false
         },
         "visibility_sm": 10,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "clear",
@@ -191,6 +196,7 @@
           "variable": false
         },
         "visibility_sm": 10,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "few",
@@ -226,6 +232,7 @@
           "variable": true
         },
         "visibility_sm": 6,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "broken",
@@ -269,6 +276,7 @@
           "variable": true
         },
         "visibility_sm": 0.75,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "obscured",
@@ -302,6 +310,7 @@
           "variable": false
         },
         "visibility_sm": 10,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "clear",
@@ -339,6 +348,7 @@
           "variable": false
         },
         "visibility_sm": 10,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "clear",
@@ -374,6 +384,7 @@
           "variable": false
         },
         "visibility_sm": 0.5,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "overcast",
@@ -411,6 +422,7 @@
           "variable": false
         },
         "visibility_sm": 10,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "scattered",
@@ -450,6 +462,7 @@
           "variable": false
         },
         "visibility_sm": 10,
+        "visibility_minus": false,
         "sky": [
           {
             "cover": "clear",
@@ -478,6 +491,7 @@
         "time_z": null,
         "wind": null,
         "visibility_sm": null,
+        "visibility_minus": false,
         "sky": [],
         "temp_c": null,
         "dewpoint_c": null,
@@ -489,6 +503,33 @@
         },
         "remarks": [],
         "raw": "Plan a trip to Las Vegas"
+      }
+    },
+    {
+      "name": "Less than a quarter mile is said as less than, never as a quarter (FMH-1 chapter 6's M1/4SM)",
+      "heard": "Duluth information Delta, wind calm, visibility less than one quarter, altimeter two niner niner two",
+      "reading": {
+        "information": "D",
+        "time_z": null,
+        "wind": {
+          "from_deg": null,
+          "kt": 0,
+          "gust_kt": null,
+          "variable": false
+        },
+        "visibility_sm": 0.25,
+        "visibility_minus": true,
+        "sky": [],
+        "temp_c": null,
+        "dewpoint_c": null,
+        "altimeter_inhg": 29.92,
+        "approach": null,
+        "runways": {
+          "landing": [],
+          "departing": []
+        },
+        "remarks": [],
+        "raw": "Duluth information Delta, wind calm, visibility less than one quarter, altimeter two niner niner two"
       }
     }
   ]

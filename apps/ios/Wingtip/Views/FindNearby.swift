@@ -68,7 +68,9 @@ struct FindNearbyView: View {
 
     var body: some View {
         List {
-            if ownShip.fix == nil {
+            // The place to a thousandth of a degree, not each fix, read here
+            // (OwnShip.coarseCoordinate), so the list is not drawn again each second.
+            if ownShip.coarseCoordinate == nil {
                 ContentUnavailableView("Finding your position…", systemImage: "location", description: Text("Find Nearby is from where the airplane is."))
             } else if let problem {
                 Section {
@@ -96,7 +98,7 @@ struct FindNearbyView: View {
         }
         .navigationTitle(kind.title)
         .onAppear { ownShip.askLocation() }
-        .task(id: ownShip.fix.map { "\(($0.coordinate.latitude * 60).rounded()),\(($0.coordinate.longitude * 60).rounded())" }) { await load() }
+        .task(id: ownShip.byTheMile) { await load() }
     }
 
     private func load() async {

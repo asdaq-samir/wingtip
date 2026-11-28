@@ -145,7 +145,7 @@ interface PlannerApi {
     /**
      * GET airport/{ident}/notams
      * Airport Notams
-     * One field&#39;s own NOTAMs (the FAA&#39;s feed, by any ident it goes by) and the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks a route&#39;s: the field read as a stop from an hour ago to three hours ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight uses). With no flight there is no runway in use or cruise altitude to weigh. &#x60;unchecked&#x60; names the TFRs when their list could not be had; &#x60;time_zone&#x60; is the field&#39;s, for its NOTAMs&#39; local times.
+     * One field&#39;s own NOTAMs (the FAA&#39;s feed, by any ident it goes by) and the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks a route&#39;s: the field read as a stop from an hour ago to three hours ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight uses). With no flight there is no runway in use or cruise altitude to weigh. &#x60;unchecked&#x60; names the TFRs when their list could not be had; &#x60;time_zone&#x60; is the field&#39;s, for its NOTAMs&#39; local times. Each NOTAM comes read for the card: its &#x60;reading&#x60;, &#x60;card&#x60; and &#x60;subject&#x60; (app.notam_reading).
      * Responses:
      *  - 200: Successful Response
      *  - 404: No such field
@@ -371,6 +371,34 @@ interface PlannerApi {
     suspend fun alternate(@Query("dest") dest: kotlin.String, @Query("eta") eta: kotlin.String, @Query("tas_kt") tasKt: kotlin.Double, @Query("alternate") alternate: kotlin.String? = ""): Response<app.wingtipmaps.android.api.generated.Alternates>
 
     /**
+     * POST approach/debriefs
+     * Approach Debriefs
+     * The approaches a track flew, one for each time it came down a final: of the field&#39;s approaches drawn, the one whose final it fitted best, the one picked where it fits as well, each fix by fix against the procedure (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) in the engine&#39;s ApproachDebrief. A POST for the drawings and the track; it changes nothing.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedApproachFindAsk
+     * @return [kotlin.collections.List<kotlin.collections.Map<kotlin.String, kotlin.Any>>]
+     */
+    @POST("approach/debriefs")
+    suspend fun approachDebriefs(@Body appWingtipmapsAndroidApiGeneratedApproachFindAsk: app.wingtipmaps.android.api.generated.ApproachFindAsk): Response<kotlin.collections.List<kotlin.collections.Map<kotlin.String, kotlin.Any>>>
+
+    /**
+     * POST approach/lesson
+     * Approach Lesson
+     * An approach taught as an instructor teaches it, from the FAA&#39;s coded procedure (FAA-H-8083-16B, chapter 4): the briefing, the steps flown fix by fix at &#x60;gs_kt&#x60; with the way to each, the quiz, and the side view. What the coded data does not hold, the minimums above all, is \&quot;See the plate\&quot;, never a figure made up. A POST for the drawing; it changes nothing.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedLessonAsk
+     * @return [app.wingtipmaps.android.api.generated.ApproachTaught]
+     */
+    @POST("approach/lesson")
+    suspend fun approachLesson(@Body appWingtipmapsAndroidApiGeneratedLessonAsk: app.wingtipmaps.android.api.generated.LessonAsk): Response<app.wingtipmaps.android.api.generated.ApproachTaught>
+
+    /**
      * GET approach-plate/{cycle}/{ident}/{procedure}.png
      * Approach Plate
      * The plan view of an approach&#39;s plate placed on the map (&#x60;airport_procedure_plate&#x60;), as a picture: black on clear, north up, for the cycle in force.
@@ -403,6 +431,20 @@ interface PlannerApi {
      */
     @GET("approach-plate-page/{cycle}/{ident}/{procedure}.png")
     suspend fun approachPlatePage(@Path("cycle") cycle: kotlin.String, @Path("ident") ident: kotlin.String, @Path("procedure") procedure: kotlin.String): Response<Unit>
+
+    /**
+     * POST approach/debriefs/transition
+     * Approach Transition
+     * Of an approach&#39;s transitions drawn, the one the track came in by: every fix of it before the final passed, the closest to it on the way; null where none was flown, so the approach stays from vectors.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedApproachTransitionAsk
+     * @return [Unit]
+     */
+    @POST("approach/debriefs/transition")
+    suspend fun approachTransition(@Body appWingtipmapsAndroidApiGeneratedApproachTransitionAsk: app.wingtipmaps.android.api.generated.ApproachTransitionAsk): Response<Unit>
 
     /**
      * GET briefing
@@ -1886,16 +1928,17 @@ interface PlannerApi {
     /**
      * GET traffic/flight/{hex_id}
      * Traffic Flight
-     * An airplane being tracked: what it is, the field it took off from and its track today (wingtip.traffic.flight); no track where its trace cannot be had.
+     * An airplane being tracked: what it is, the field it took off from and its track today (wingtip.traffic.flight); no track where its trace cannot be had. Followed from now on, its flights recorded, only where a signed-in pilot opened it (X-Pilot-Id, set by the gateway).
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
      *
      * @param hexId
+     * @param xPilotId  (optional)
      * @return [app.wingtipmaps.android.api.generated.FlightDetail]
      */
     @GET("traffic/flight/{hex_id}")
-    suspend fun trafficFlight(@Path("hex_id") hexId: kotlin.String): Response<app.wingtipmaps.android.api.generated.FlightDetail>
+    suspend fun trafficFlight(@Path("hex_id") hexId: kotlin.String, @Header("X-Pilot-Id") xPilotId: kotlin.String? = null): Response<app.wingtipmaps.android.api.generated.FlightDetail>
 
     /**
      * GET traffic/flight/{hex_id}/history
@@ -1932,7 +1975,7 @@ interface PlannerApi {
     /**
      * GET traffic/flight/{hex_id}/history/{flight_id}
      * Traffic Past Flight
-     * One of those flights&#39; reports, for its track log and its replay (wingtip.traffic.past_flight); 404 where it is not one of them.
+     * One of those flights&#39; reports, for its track log and its replay (wingtip.traffic.past_flight), made ready to replay by the engine (wingtip.traffic.replay_ready: gaps, a held or missing height carried at the last good one); 404 where it is not one of them.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -1987,6 +2030,20 @@ interface PlannerApi {
      */
     @GET("traffic/flight/{hex_id}/status")
     suspend fun trafficStatus(@Path("hex_id") hexId: kotlin.String): Response<app.wingtipmaps.android.api.generated.FlightStatus>
+
+    /**
+     * GET usage/daily
+     * Usage Daily
+     * Every route&#39;s calls on each finished UTC day from &#x60;since&#x60; on, today left out until it is over: totals by route template, method and status, tied to no pilot (docs/privacy-inventory.md).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param since The first UTC day wanted, YYYY-MM-DD
+     * @return [app.wingtipmaps.android.api.generated.UsageDays]
+     */
+    @GET("usage/daily")
+    suspend fun usageDaily(@Query("since") since: kotlin.String): Response<app.wingtipmaps.android.api.generated.UsageDays>
 
     /**
      * GET waypoints/in-view

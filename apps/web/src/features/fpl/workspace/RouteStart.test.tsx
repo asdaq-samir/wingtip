@@ -2,31 +2,31 @@
 /**
  * The route before it is whole, drawn as the timeline draws a whole one
  * (the owner, 2026-11-18): the two ends to pick, each asking the one
- * search, and Type or Paste a Route last, opening the route's field --
- * with half a route's ✕ and a cleared route's Undo at its end while the
- * field is folded.
+ * search, and the box's toggle at the Destination's end, opening the
+ * route's field in the box's place -- no row of its own, no Undo or ✕
+ * beside it.
  */
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { usePlanUndo } from "../../../lib/planUndo";
 import type { PlanSlices } from "../vm/planSlices";
-import { EmptyRoute, MissingEnd, TypeRow } from "./RouteStart";
+import { BoxToggle, EmptyRoute, MissingEnd } from "./RouteStart";
 
 afterEach(cleanup);
 beforeEach(() => usePlanUndo.setState({ undoName: null, undo: () => {} }));
 
 function slices({ hasPoints = false, routed = false, boxOpen = false } = {}) {
-  const routeList = { boxOpen, clearRoute: vi.fn(), setRouteOpen: vi.fn(), pickEnd: vi.fn() };
+  const routeList = { boxOpen, clearRoute: vi.fn(), typeInPlace: vi.fn(), pickEnd: vi.fn() };
   const vm = { route: { hasPoints, routed }, routeList } as unknown as PlanSlices<"route" | "routeList">;
   return { vm, routeList };
 }
 
 describe("the empty route", () => {
-  test("is the timeline's card: the two ends in a placeholder's words, then Type or Paste a Route and Open a Route File", () => {
+  test("is the timeline's card: the two ends in a placeholder's words, the box's toggle at its end", () => {
     const { vm } = slices();
     render(<EmptyRoute vm={vm} />);
     const card = screen.getByRole("group", { name: "The route" });
-    expect(card.textContent).toBe("DepartureDestinationType or Paste a RouteOpen a Route File");
+    expect(card.textContent).toBe("DepartureDestination");
     expect(screen.getByRole("button", { name: "Pick the departure" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Pick the destination" })).toBeTruthy();
   });
@@ -49,14 +49,17 @@ describe("the empty route", () => {
   });
 });
 
-describe("Type or Paste a Route", () => {
-  test("has the route box's toggle at its end, even on an empty route, opening the field", () => {
+describe("the box's toggle", () => {
+  test("sits in the Destination's row, the card's last, with no row of its own, opening the field", () => {
     const { vm, routeList } = slices();
     render(<EmptyRoute vm={vm} />);
     const toggle = screen.getByRole("button", { name: "Type the route" });
     expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    expect(screen.queryByTestId("timeline-type-row")).toBeNull();
+    const dest = screen.getByTestId("timeline-pick-dest").parentElement!;
+    expect(dest.contains(toggle)).toBe(true);
     fireEvent.click(toggle);
-    expect(routeList.setRouteOpen).toHaveBeenCalledWith(true);
+    expect(routeList.typeInPlace).toHaveBeenCalledOnce();
   });
 
   test("opens the route's field and puts the focus in it", () => {
@@ -64,36 +67,24 @@ describe("Type or Paste a Route", () => {
     const field = document.createElement("input");
     field.dataset.testid = "route-type";
     document.body.append(field);
-    render(<TypeRow vm={vm} />);
-    fireEvent.click(screen.getByTestId("timeline-type-route"));
-    expect(routeList.setRouteOpen).toHaveBeenCalledWith(true);
+    render(<BoxToggle vm={vm} />);
+    fireEvent.click(screen.getByTestId("route-type-open"));
+    expect(routeList.typeInPlace).toHaveBeenCalledOnce();
     expect(document.activeElement).toBe(field);
     field.remove();
   });
 
-  test("is not drawn while the field is open: the field is the row then", () => {
+  test("is not on the card while the field is open under it: the field's own is", () => {
     const { vm } = slices({ boxOpen: true });
-    render(<TypeRow vm={vm} />);
-    expect(screen.queryByTestId("timeline-type-route")).toBeNull();
+    render(<EmptyRoute vm={vm} />);
+    expect(screen.queryByTestId("route-type-open")).toBeNull();
   });
 
-  test("half a route: the field's ✕ at its end clears it", () => {
-    const { vm, routeList } = slices({ hasPoints: true });
-    render(<TypeRow vm={vm} />);
-    fireEvent.click(screen.getByRole("button", { name: "Clear the route" }));
-    expect(routeList.clearRoute).toHaveBeenCalled();
-    expect(screen.queryByTestId("route-undo")).toBeNull();
-  });
-
-  test("a route just cleared: Undo at its end puts it back; nothing to undo, none", () => {
+  test("no Undo or ✕ beside it: they are the field's, or the toast's", () => {
+    usePlanUndo.setState({ undoName: "Route", undo: vi.fn() });
     const { vm } = slices();
-    const { rerender } = render(<TypeRow vm={vm} />);
+    render(<EmptyRoute vm={vm} />);
     expect(screen.queryByTestId("route-undo")).toBeNull();
-    const undo = vi.fn();
-    usePlanUndo.setState({ undoName: "Route", undo });
-    rerender(<TypeRow vm={vm} />);
-    fireEvent.click(screen.getByTestId("route-undo"));
-    expect(undo).toHaveBeenCalled();
     expect(screen.queryByTestId("route-box-clear")).toBeNull();
   });
 });

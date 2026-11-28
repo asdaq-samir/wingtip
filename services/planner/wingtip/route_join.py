@@ -2,29 +2,25 @@
 points, the hops' altitude selections joined into one, and the totals of
 the hops' figures."""
 
+import math
+
 from . import geo
 
 
 def course_line(start: tuple, end: tuple, step_nm: float = 5.0) -> list:
-    """The course line as [[lat, lon], ...], following the great circle.
+    """The course line as [[lat, lon], ...], following the great circle, a
+    point at most `step_nm` apart, both ends the points given.
 
-    Stepped with the bearing recomputed toward the destination at every
-    point, which is what makes it the actual great circle: hold the
-    initial bearing constant instead and you trace a different path that
-    sits a couple of miles off true course at the midpoint of a 300 nm
-    leg. That matters because candidate positions come from great-circle
-    cross-track distance, so a line drawn any other way would show
-    on-course checkpoints as visibly off it.
+    On the geodesic itself (geo.great_circle_points), in one vectorised
+    ask of the engine: stepping with the bearing worked out again at every
+    point took two engine calls a step, some 120 for a 300 nm leg. Holding the first bearing instead
+    would trace a rhumb-like path a couple of miles off true course
+    mid-leg, and checkpoints placed by great-circle cross-track distance
+    would show off a line drawn so.
     """
     total = geo.distance_nm(start[0], start[1], end[0], end[1])
-    points, current, travelled = [list(start)], start, 0.0
-    while travelled + step_nm < total:
-        bearing = geo.bearing_deg(current[0], current[1], end[0], end[1])
-        current = geo.destination_point(current[0], current[1], bearing, step_nm)
-        travelled += step_nm
-        points.append(list(current))
-    points.append(list(end))
-    return points
+    lats, lons = geo.great_circle_points(start, end, math.ceil(total / step_nm) + 1)
+    return [[float(lat), float(lon)] for lat, lon in zip(lats, lons)]
 
 
 def route_line(r) -> list:

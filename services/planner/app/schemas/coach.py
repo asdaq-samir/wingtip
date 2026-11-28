@@ -10,12 +10,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .pilot import Flying
+
 
 class CoachLogbookEntry(BaseModel):
     """One logbook entry, the columns the currency rules read; a column
     missing is none of it."""
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     flownOn: date
     totalHours: float = 0
@@ -29,6 +31,12 @@ class CoachLogbookEntry(BaseModel):
     approaches: int = 0
     holding: bool = False
     tracking: bool = False
+    # 61.57(a)(1): passengers count only the landings in the airplane's
+    # category and class, a tailwheel's to a full stop; unsaid, none.
+    category: str | None = None
+    aircraftClass: str | None = Field(None, alias="class")
+    tailwheel: bool | None = None
+    fullStopLandings: int | None = None
 
 
 class CoachEndorsement(BaseModel):
@@ -90,6 +98,7 @@ class CoachAsk(BaseModel):
     flightReviewOn: date | None = None
     medicalExpiresOn: date | None = None
     ipcOn: date | None = None
+    flying: Flying | None = Field(None, description="The airplane to be flown (14 CFR 61.57(a)(1)(ii)); none judges the newest flight's.")
     ratings: list[Literal["student", "private", "commercial", "atp", "instrument", "cfi"]] = []
     held: list[CoachEndorsement] = Field([], max_length=60)
     debriefs: list[CoachDebrief] = Field([], max_length=40)

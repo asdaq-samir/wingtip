@@ -23,6 +23,7 @@ from collections import Counter
 from datetime import datetime
 
 
+from .atomic import held
 from . import chart_archives, chart_cuts, chart_cycle, chart_prepare, chart_publish, chart_pyramid, chart_serving, chart_sheets, config
 from .chart_kinds import KINDS
 
@@ -46,19 +47,8 @@ def refresh_lock(wait: bool = False):
     restarted), and failing that a pyramid status file touched in the
     last ten minutes, which missed a shell refresh's hours of preparing
     and a sheet slower than ten minutes."""
-    import fcntl
-
-    config.CHART_TILE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    with (config.CHART_TILE_CACHE_DIR / _REFRESH_LOCK).open("a") as handle:
-        try:
-            fcntl.flock(handle, fcntl.LOCK_EX if wait else fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            yield False
-            return
-        try:
-            yield True
-        finally:
-            fcntl.flock(handle, fcntl.LOCK_UN)
+    with held(config.CHART_TILE_CACHE_DIR / _REFRESH_LOCK, wait=wait) as got:
+        yield got
 
 
 def refresh(kinds: tuple = tuple(KINDS), workers: int = 2, prune: bool = True, publish_bucket: str | None = None, client=None) -> str:
@@ -148,7 +138,7 @@ def prune_behind_served() -> list[str]:
     a corridor's sheets as routes need them, some 6 GB for the whole
     country a cycle, and only the refresh pruned them, which runs in its
     own task with its own disk: the server's data disk kept every cycle's
-    until it filled (the ops audit, 2026-11-21). Locally the refresh
+    until it filled. Locally the refresh
     prunes, and this does nothing."""
     if not config.CHART_TILES_URL:
         return []

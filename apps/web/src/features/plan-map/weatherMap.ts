@@ -69,14 +69,20 @@ export function routeThrough(
   line: [number, number][],
   altitudeFt: number | null,
 ): { nm: number; relation: "below" | "in" | "above" | null } | null {
+  // Every leg's length and course, and every mile's point along it, each
+  // in one call to the engine: a call a mile was some 300 crossings into
+  // the .wasm for each area's card at each draw.
+  const points = line.map(([lat, lon]) => ({ lat, lon }));
+  const legs = geo.legs(points);
+  const steps: (LatLon & { bearing: number; nm: number; weight: number })[] = [];
+  legs.distanceNm.forEach((length, i) => {
+    for (let s = 0.5; s < length; s += 1)
+      steps.push({ ...points[i]!, bearing: legs.bearingDeg[i]!, nm: s, weight: Math.min(1, length - s + 0.5) });
+  });
   let nm = 0;
-  for (let i = 1; i < line.length; i++) {
-    const a = { lat: line[i - 1]![0], lon: line[i - 1]![1] },
-      b = { lat: line[i]![0], lon: line[i]![1] };
-    const length = geo.distanceNm(a, b),
-      course = geo.bearingDeg(a, b);
-    for (let s = 0.5; s < length; s += 1) if (inside(geo.destination(a, course, s), area.coords)) nm += Math.min(1, length - s + 0.5);
-  }
+  geo.destinations(steps).forEach((p, k) => {
+    if (inside(p, area.coords)) nm += steps[k]!.weight;
+  });
   if (nm < 0.5) return null;
   if (altitudeFt == null || area.from_freezing_level) return { nm, relation: null };
   const low = area.low_ft ?? -Infinity,

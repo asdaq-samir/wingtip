@@ -235,7 +235,11 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
       });
       // Not while a replay's camera has the map (features/replay/camera,
       // which marks the map's container): it keeps the airplane in sight.
-      if (playing && !pilotMoved() && !map.getContainer().dataset.replayCamera) {
+      // Playing, or scrubbed while paused (the clock moved by the pilot's
+      // finger): a scrub took the airplane off the screen with the map
+      // left behind it. Either way the camera's follow with an edge jumps,
+      // never eases, so the map keeps up with the finger.
+      if (!pilotMoved() && !map.getContainer().dataset.replayCamera) {
         // Put in the middle once within 15% of the screen's edge (the
         // camera's follow, with its edge).
         cameraOf(map).follow("replay", [here.lon, here.lat], { edge: 0.15 });
@@ -277,6 +281,8 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
  *  heights' colours, fitted, and its replay. */
 export function PastFlightGl({ hex, id }: { hex: string; id: number }) {
   const { data } = useQuery(pastFlightQuery(hex, id));
+  // Made ready by the engine on the planner (replay_track: gaps, a held
+  // or missing height carried at the last good one), drawn and played alike.
   useEffect(() => {
     if (data) usePastFlight.setState({ points: data.points });
   }, [data]);

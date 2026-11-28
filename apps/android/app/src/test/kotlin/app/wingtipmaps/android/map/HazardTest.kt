@@ -15,6 +15,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 /** The map's hazard colouring asked and drawn as the web's is, held to the
@@ -44,12 +45,14 @@ class HazardTest {
     }
 
     @Test
-    fun theGpsHeightMovesInFiftyFootSteps() {
-        assertEquals(8500.0, Hazard.stepped(8524.0)!!, 0.0)
-        assertEquals(8550.0, Hazard.stepped(8526.0)!!, 0.0)
-        assertEquals(null, Hazard.stepped(null))
-        val fix = OwnShip.Fix(0.0, 0.0, 5512.0, null, 110.0, 5.0, 0)
-        assertEquals(5500.0, Hazard.input(Hazard.Setting.FLIGHT, fix, null, null).gpsAltitudeFt!!, 0.0)
+    fun theGpsHeightGoesToTheEngineAsReadAndRepaintsByWholeSteps() {
+        // The engine rounds down (hazard_view); the app sends the GPS's own
+        // height and asks again only when its 50 ft step changes.
+        val at = { ft: Double -> Hazard.input(Hazard.Setting.FLIGHT, OwnShip.Fix(0.0, 0.0, ft, null, 110.0, 5.0, 0), null, null) }
+        assertEquals(5512.0, at(5512.0).gpsAltitudeFt!!, 0.0)
+        assertEquals(Hazard.repaintKey(at(5500.0)), Hazard.repaintKey(at(5549.0)))
+        assertNotEquals(Hazard.repaintKey(at(5549.0)), Hazard.repaintKey(at(5550.0)))
+        assertNotEquals(Hazard.repaintKey(at(-10.0)), Hazard.repaintKey(at(10.0)))
     }
 
     @Test

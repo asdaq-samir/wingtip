@@ -27,7 +27,6 @@ import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.search.FlightCard
 import app.wingtipmaps.android.search.SearchMemory
@@ -109,13 +108,13 @@ private fun UnderSearch(head: @Composable () -> Unit, page: @Composable () -> Un
 /** Nothing typed: the assistant's answer where there is one, the flight's
  *  card, then Nearest, Favorites and Recents, as the search shows them. */
 @Composable
-internal fun Home(plan: Plan, ownShip: OwnShip, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, modifier: Modifier = Modifier) {
+internal fun Home(plan: Plan, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    // The fix read here, for the nearest fields' rows, rather than by the root.
-    val fix by ownShip.fix.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
     val search: SearchModel = hiltViewModel()
     val found by search.state.collectAsStateWithLifecycle()
+    // The nearest fields' glide answers, a step at a time (not the fix each second).
+    val reach = rememberGlideReach(found.nearest)
     val memory = remember(context) { SearchMemory.of(context) }
     val favorites by memory.favorites.collectAsStateWithLifecycle()
     val recents by memory.recents.collectAsStateWithLifecycle()
@@ -129,6 +128,6 @@ internal fun Home(plan: Plan, ownShip: OwnShip, answer: @Composable () -> Unit, 
         item(key = "flight") {
             FlightCard(state, tail, onOpen = { onPick(SearchPick.Flight) }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg))
         }
-        nothingTyped(favorites, own.values, recents, found.nearest, found.nearestProblem, fix, onPick = onPick)
+        nothingTyped(favorites, own.values, recents, found.nearest, found.nearestProblem, reach, onPick = onPick)
     }
 }

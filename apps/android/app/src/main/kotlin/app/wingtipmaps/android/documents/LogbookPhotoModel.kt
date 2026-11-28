@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.documents.model.DocumentRead
+import app.wingtipmaps.android.logbook.AirplaneKind
 import app.wingtipmaps.android.logbook.LogbookChanged
 import app.wingtipmaps.android.logbook.LogbookSource
 import app.wingtipmaps.android.logbook.ServerLogbook
@@ -89,8 +90,16 @@ class LogbookPhotoModel @Inject constructor(private val source: LogbookSource) :
         if (s.logging || s.toLog == 0) return
         _state.update { it.copy(logging = true, rowProblems = emptyMap()) }
         viewModelScope.launch {
+            // The pilot's logbook, for each airplane's category, class and gear where it has said them; none where it can't be read.
+            val logbook = try {
+                source.entries().orEmpty()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyList()
+            }
             for (i in (s.confirmed - s.logged).sorted()) {
-                val entry = rows.getOrNull(i)?.entry?.let(LogbookReview::request) ?: continue
+                val entry = rows.getOrNull(i)?.entry?.let { LogbookReview.request(it) { tail -> AirplaneKind.of(logbook, tail) } } ?: continue
                 try {
                     source.add(entry)
                     _state.update { it.copy(logged = it.logged + i) }

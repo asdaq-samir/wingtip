@@ -256,3 +256,7 @@ pub fn sua_when(times_of_use: Option<&str>, utc: Clock, local: Option<Clock>) ->
         "not-scheduled"
     }
 }
+
+#[cfg(test)]
+#[path = "pass_times_tests.rs"]
+mod boundary_tests;

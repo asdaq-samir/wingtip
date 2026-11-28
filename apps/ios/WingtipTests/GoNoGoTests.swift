@@ -135,7 +135,7 @@ struct OwnAirplaneAskTests {
     /// open squawks only.
     @Test func theRecordsInThePlannersNames() throws {
         let json = """
-        {"id":7,"tailNumber":"N3429J","typeDesignator":"P28A","cruiseTasKt":108,"fuelBurnGph":8.4,"createdAt":"2026-10-01T12:00:00Z","figures":{},"dueItems":[],
+        {"id":7,"tailNumber":"N3429J","typeDesignator":"P28A","kind":{},"cruiseTasKt":108,"fuelBurnGph":8.4,"createdAt":"2026-10-01T12:00:00Z","figures":{},"dueItems":[],
          "inspections":{"annualOn":"2026-03-02","annualGoodThrough":"2027-03-31","hoursNow":4210.5,"hundredHourDueAtHours":4280,"forHire":true},
          "openSquawks":[{"id":1,"reportedOn":"2026-10-01","text":"Nav light out","inoperative":true,"deferredFor":"91.213(d)"},
                         {"id":2,"reportedOn":"2026-09-01","text":"Door seal","inoperative":false,"fixedOn":"2026-09-20"}],
@@ -149,10 +149,14 @@ struct OwnAirplaneAskTests {
         let squawks = body["squawks"] as! [[String: Any]]
         #expect(squawks.count == 1 && squawks[0]["deferred_for"] as? String == "91.213(d)")
         #expect((body["vor_check"] as! [String: Any])["within_limit"] as? Bool == true)
-        // Not flown for hire, the 100-hour is not owed (14 CFR 91.409(b)).
+        #expect(inspections["for_hire"] as? Bool == true)
+        // Not for hire: the due date still goes, with for_hire false; the engine
+        // decides the 100-hour is not owed (14 CFR 91.409(b)).
         var notForHire = record
         notForHire.inspections.forHire = false
         let plain = try JSONSerialization.jsonObject(with: Planner.snakeEncoder.encode(OwnAirplaneAsk(notForHire))) as! [String: Any]
-        #expect((plain["inspections"] as! [String: Any])["hundred_hour_due_at_hours"] == nil)
+        let plainInspections = plain["inspections"] as! [String: Any]
+        #expect(plainInspections["for_hire"] as? Bool == false)
+        #expect(plainInspections["hundred_hour_due_at_hours"] as? Double == 4280)
     }
 }

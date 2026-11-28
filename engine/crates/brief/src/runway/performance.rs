@@ -7,10 +7,9 @@
 //! (crate::gonogo::runways) and FPL's runway chips go by the same sums.
 
 use super::pick::{available_ft, End, Runway};
-use super::wind::{crosswind_kt, headwind_kt, js_round, steady_or_gust_kt};
+use super::wind::{js_round, steady_or_gust_kt};
+use super::wind_variable::{worst_crosswind_kt, worst_headwind_kt};
 use crate::flight;
-use crate::gonogo::calls::{runway, table, In};
-use crate::json::{self, Value};
 
 /// The field's pressure altitude from its elevation and the altimeter
 /// setting reported: the standard atmosphere's height of the setting
@@ -234,12 +233,13 @@ pub fn end_distance(
 pub const DISTANCE_MARGIN: f64 = 1.15;
 
 /// A wind as a METAR reports it: true, in knots, each None where it is not
-/// reported.
+/// reported; `variable_deg` a variable direction's bounds (wind_variable).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct FitWind {
     pub dir_true_deg: Option<f64>,
     pub speed_kt: Option<f64>,
     pub gust_kt: Option<f64>,
+    pub variable_deg: Option<(f64, f64)>,
 }
 
 /// How one runway end suits the airplane (lib/runwayFit endFit).
@@ -247,8 +247,7 @@ pub struct FitWind {
 pub struct EndFit {
     /// The crosswind on the end, its gusts' where they are more, knots.
     pub crosswind_kt: f64,
-    /// Past the most the POH demonstrates (not a limitation, but beyond
-    /// what was flown).
+    /// Past the most the POH demonstrates (not a limitation, but beyond what was flown).
     pub crosswind_over: bool,
     /// The distance over a 50 ft obstacle, and the runway's length.
     pub needed_ft: Option<f64>,
@@ -262,6 +261,13 @@ pub struct EndFit {
     pub unknown: bool,
     /// The distance was read past the POH's table (Distances::beyond).
     pub beyond: bool,
+    /// The distance was worked out on a standard day's temperature at the
+    /// field (field_air), none being reported: a hot day's is longer
+    /// (FAA-H-8083-25C, chapter 11), so it is said, never "within" alone.
+    pub temp_assumed: bool,
+    /// The tailwind on the end, its gusts' where more (as the crosswind's,
+    /// erring toward the stronger wind), whole knots, 0 for none (AIM 4-3-6).
+    pub tailwind_kt: f64,
 }
 
 /// JavaScript's truth of a number: there, and not 0 or NaN.
@@ -294,23 +300,25 @@ pub fn end_fit(
     field: &FieldReport, weight_lb: Option<f64>, landing_end: Option<&End>,
 ) -> EndFit {
     // Along and across the end (wingtip.runway_wind.components_kt): none with
-    // no wind. A variable one (VRB, reported with no direction, AIM 7-1-28)
-    // may blow straight across, so all of it, gusts included, is
-    // crosswind, as the minimums' best crosswind takes it: a VRB15G25
-    // showed 0 kt across and never passed the demonstrated crosswind (the
-    // aviation check, 2026-10-27). It gives no headwind.
+    // no wind. A variable one (VRB, reported with no direction, AIM 7-1-28) may blow
+    // straight across, so all of it, gusts included, is crosswind, as the minimums'
+    // best crosswind takes it: a VRB15G25 showed 0 kt across and never passed the
+    // demonstrated crosswind (the aviation check, 2026-10-27). It gives no headwind.
+    // A variable direction, "230V310", is judged at its worst (wind_variable).
     let dir = heading_true_deg.and(wind.and_then(|w| w.dir_true_deg));
+    let arc = wind.and_then(|w| w.variable_deg);
     let across = |kt: Option<f64>| match (said(kt), heading_true_deg, dir) {
-        (Some(kt), Some(h), Some(d)) => crosswind_kt(d, kt, h),
+        (Some(kt), Some(h), Some(d)) => worst_crosswind_kt(d, arc, kt, h),
         (Some(kt), Some(_), None) => kt.abs(),
         _ => 0.0,
     };
-    let headwind = match (dir, said(wind.and_then(|w| w.speed_kt)), heading_true_deg) {
-        (Some(d), Some(speed), Some(h)) => headwind_kt(d, speed, h),
+    let along = |kt: Option<f64>| match (dir, said(kt), heading_true_deg) {
+        (Some(d), Some(kt), Some(h)) => worst_headwind_kt(d, arc, kt, h),
         _ => 0.0,
     };
+    let headwind = along(wind.and_then(|w| w.speed_kt));
     // Judged unrounded against the demonstrated crosswind, rounded for the
-    // page only (wind::crosswind_shown; the aviation audit's AV-10).
+    // page only (wind::crosswind_shown).
     let judged = steady_or_gust_kt(across(wind.and_then(|w| w.speed_kt)), Some(across(wind.and_then(|w| w.gust_kt))));
     let crosswind = super::wind::crosswind_shown(judged, js_round(judged), demonstrated_kt);
     let length_ft = available_ft(runway, landing_end);
@@ -332,63 +340,7 @@ pub fn end_fit(
         close,
         unknown: needed_ft.is_none() || length_ft.is_none(),
         beyond: distances.as_ref().is_some_and(Distances::beyond),
+        temp_assumed: distances.is_some() && field.temp_c.is_none(),
+        tailwind_kt: js_round((-headwind).max(-along(wind.and_then(|w| w.gust_kt))).max(0.0)),
     }
-}
-
-/// `{"aircraft"?: {"takeoff"?, "landing"?, "crosswind"?: {"demonstrated_kt"?}},
-/// "runway", "end": {"heading_true_deg"?}, "wind"?: {"dir_true_deg"?,
-/// "speed_kt"?, "gust_kt"?}, "elevation_ft"? (null: not known, no distance), "altimeter_in_hg"?, "temp_c"?,
-/// "weight_lb"?, "kind": "takeoff"|"landing"}`. A landing's end is the
-/// "end" given, its `displaced_threshold_ft` and `lda_ft` its own or, where
-/// it names its `ident`, the runway's end of that ident's.
-pub(crate) fn end_fit_rule(i: In, v: &Value) -> Result<String, String> {
-    let aircraft = i.obj(v, "aircraft")?;
-    let takeoff = i.str(v, "kind")? == "takeoff";
-    let t = match aircraft.map(|a| i.obj(a, if takeoff { "takeoff" } else { "landing" })).transpose()?.flatten() {
-        Some(t) => Some(table(i, t)?),
-        None => None,
-    };
-    let demonstrated = match aircraft.map(|a| i.obj(a, "crosswind")).transpose()?.flatten() {
-        Some(c) => i.opt_num(c, "demonstrated_kt")?,
-        None => None,
-    };
-    let r = runway(i, i.obj(v, "runway")?.map_or_else(|| i.err("runway", "is missing"), Ok)?)?;
-    let end = i.obj(v, "end")?;
-    let heading = match end {
-        Some(e) => i.opt_num(e, "heading_true_deg")?,
-        None => None,
-    };
-    let landing_end = match end.filter(|_| !takeoff) {
-        None => None,
-        Some(e) => {
-            let named = i.opt_str(e, "ident")?.and_then(|id| r.ends.iter().find(|x| x.ident == id).cloned()).unwrap_or_default();
-            Some(End {
-                displaced_threshold_ft: i.opt_num(e, "displaced_threshold_ft")?.or(named.displaced_threshold_ft),
-                lda_ft: i.opt_num(e, "lda_ft")?.or(named.lda_ft),
-                ..named
-            })
-        }
-    };
-    let wind = match i.obj(v, "wind")? {
-        Some(w) => Some(FitWind {
-            dir_true_deg: i.opt_num(w, "dir_true_deg")?,
-            speed_kt: i.opt_num(w, "speed_kt")?,
-            gust_kt: i.opt_num(w, "gust_kt")?,
-        }),
-        None => None,
-    };
-    let field = FieldReport {
-        elevation_ft: i.opt_num(v, "elevation_ft")?,
-        altimeter_in_hg: i.opt_num(v, "altimeter_in_hg")?,
-        temp_c: i.opt_num(v, "temp_c")?,
-    };
-    let f = end_fit(t.as_ref(), demonstrated, &r, heading, wind.as_ref(), &field, i.opt_num(v, "weight_lb")?, landing_end.as_ref());
-    let mut out = String::from("{\"crosswind_kt\":");
-    json::number(&mut out, f.crosswind_kt);
-    out.push_str(&format!(",\"crosswind_over\":{},\"needed_ft\":", f.crosswind_over));
-    json::opt_number(&mut out, f.needed_ft);
-    out.push_str(",\"length_ft\":");
-    json::opt_number(&mut out, f.length_ft);
-    out.push_str(&format!(",\"short\":{},\"close\":{},\"unknown\":{},\"beyond\":{}}}", f.short, f.close, f.unknown, f.beyond));
-    Ok(out)
 }

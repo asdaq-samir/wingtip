@@ -1,15 +1,16 @@
 import { useEffect, useEffectEvent, useRef } from "react";
-import { SHEET_SECONDS, useMapInsets } from "../../lib/mapChrome";
+import { useMapInsets } from "../../lib/mapChrome";
 import { useGlMap } from "../../lib/map/gl/glLayer";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { picked, pilotMoved } from "../../lib/map/gl/pilotCamera";
 import { cameraOf } from "../../lib/map/gl/camera";
+import { CAMERA_MS } from "../../lib/map/gl/cameraRules";
 import { FIT_MARGIN } from "../../lib/map/clear";
 import { lonBounds } from "../../lib/geo";
 
 /**
  * The map fitted to `points`, clear of the panel and the map's buttons,
- * flown there in the sheet's time, once for each thing the pilot picks
+ * flown there in the camera's time (CAMERA_MS), once for each thing the pilot picks
  * (`subject`: Nearest opened, a leg, a procedure or a pattern picked, the
  * Stops, a search sent, a past flight): a pick is when the map is the
  * app's to move (lib/map/gl/pilotCamera). The points that come or change
@@ -20,7 +21,7 @@ import { lonBounds } from "../../lib/geo";
  * Not past `maxZoom`, in the app's levels. Fitted by the camera's owner
  * (lib/map/gl/camera): every follow ends, as a route's fit ends it, and a
  * single point is brought into sight only if it is out of the room, not
- * fitted as a box of no size (the flicker audit's FL-20).
+ * fitted as a box of no size.
  */
 export function useGlFit(
   points: { lat: number; lon: number }[],
@@ -65,7 +66,7 @@ export function useGlFit(
       {
         margin: { ...FIT_MARGIN, top: FIT_MARGIN.top + top, bottom: FIT_MARGIN.bottom + bottom },
         maxZoom: glZoom(maxZoom),
-        duration: SHEET_SECONDS * 2000,
+        duration: CAMERA_MS,
       },
     );
   });

@@ -18,8 +18,9 @@ import { prefersReducedMotion } from "../motion";
  */
 /** A report a replay plays: a past flight's or the dry run's; one after
  *  a gap is marked -- nothing known between it and the last, so nothing is
- *  drawn there -- and may carry the climb. */
-export type ReplayPoint = PastFlightPoint & { gap?: boolean; vs_fpm?: number | null };
+ *  drawn there -- and may carry the climb and whether its height is held
+ *  (the planner's, made ready by the engine's replay_track). */
+export type ReplayPoint = PastFlightPoint;
 
 interface PastFlightState {
   hex: string | null;

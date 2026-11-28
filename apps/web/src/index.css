@@ -16,9 +16,11 @@
    previews are: Tailwind's own hover asks only (hover: hover), which a
    touch screen that also reports hover (an Android tablet, a touch
    Chromebook) matches, and a row tapped there kept its hover fill until
-   the next tap elsewhere. A finger's feedback is the press (:active). */
+   the next tap elsewhere. A finger's feedback is the press (:active).
+   Any pointer, not the first alone: an iPad with a trackpad reports its
+   touch screen first, and its hover never showed (the r5-ui audit's L5). */
 @custom-variant hover {
-  @media (hover: hover) and (pointer: fine) {
+  @media (any-hover: hover) and (any-pointer: fine) {
     &:hover {
       @slot;
     }
@@ -185,16 +187,22 @@ button,
 /* Clear of the map panel (MapPanel): its edge's corner controls sit
    past what the panel covers at rest (MapPage sets the insets), and past
    the home indicator, moving on the Drawer's own time and curve
-   (motion.drawer), so they keep pace with the sheet they sit by. */
+   (motion.drawer), so they keep pace with the sheet they sit by. Placed
+   at the safe area and moved the rest of the way by `translate`, which
+   the compositor eases: easing `top` and `bottom` laid the map's corners
+   out again every frame of the sheet's settle and the side panel's
+   coming and going (the animation audit of 2026-11-23, M4). */
 .maplibregl-map .maplibregl-ctrl-bottom-left,
 .maplibregl-map .maplibregl-ctrl-bottom-right {
-  bottom: max(var(--map-inset-bottom, 0px), env(safe-area-inset-bottom));
-  transition: bottom var(--motion-drawer) var(--motion-drawer-ease);
+  bottom: env(safe-area-inset-bottom);
+  translate: 0 calc(-1 * max(0px, var(--map-inset-bottom, 0px) - env(safe-area-inset-bottom)));
+  transition: translate var(--motion-drawer) var(--motion-drawer-ease);
 }
 .maplibregl-map .maplibregl-ctrl-top-left,
 .maplibregl-map .maplibregl-ctrl-top-right {
-  top: max(var(--map-inset-top, 0px), env(safe-area-inset-top));
-  transition: top var(--motion-drawer) var(--motion-drawer-ease);
+  top: env(safe-area-inset-top);
+  translate: 0 max(0px, var(--map-inset-top, 0px) - env(safe-area-inset-top));
+  transition: translate var(--motion-drawer) var(--motion-drawer-ease);
 }
 /* And the chart's credit at the right clear of the inspector's card
    (MapPanel, a touch screen from size.inspector wide). */
@@ -209,7 +217,7 @@ button,
    whole page at every change of the attributes it named. */
 [data-map-controls],
 [data-map-food] {
-  transition: opacity var(--motion-fade);
+  transition: opacity var(--motion-fade) var(--motion-sheet-ease);
 }
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
   opacity: 0;
@@ -308,6 +316,19 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
     size: landscape;
     margin: 10mm;
   }
+}
+
+/* The sheet's two rooms that one 16-point gap between groups
+   (space.group) is measured past, each said once by what keeps it:
+   --chips-foot, what FPL's bar row (sheet/SheetHead's SheetBarRow) leaves
+   under its chips, its 1.75rem less the look's heading line (3 at the
+   default look, 0 at Native); --box-foot, what the route's box
+   (fpl/workspace/RouteEditor) keeps under its last row. SheetHead's room
+   over the route's box and SheetScroller's end room take them away from
+   the gap, so it stays 16 when either changes (the r10 audit). */
+:root {
+  --chips-foot: max(0px, calc(1.75rem - var(--lead-heading)));
+  --box-foot: var(--space-sm);
 }
 
 /* Tailwind's md, the one width the phone's sheet gives way to the side
@@ -563,6 +584,16 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
 .tab-page[data-hidden] {
   content-visibility: hidden;
 }
+/* A tab's page still the last route's while the new route's is drawn
+   (PanelTabs' stale): dimmed after a moment, so a draw within a frame or
+   two never shows it, and back at once, with no fade, the moment the new
+   page is in. Opacity only, so it is the compositor's; under Reduce Motion
+   the dim still comes, on the same wait, without its fade. */
+.tab-stale[data-stale] {
+  opacity: 0.5;
+  transition: opacity var(--motion-fade) var(--motion-sheet-ease) 150ms;
+}
+
 @supports not (content-visibility: hidden) {
   .tab-away,
   .tab-page[data-hidden] {
@@ -669,6 +700,34 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
   pointer-events: none;
 }
 
+/* The stock Skeleton (components/ui/skeleton): out of sight for its first
+   300 ms, then in on a short fade, so an answer that comes within the
+   wait -- a prefetched one, and most of the planner's, 120 to 350 ms in
+   the round-4 audit -- is drawn without a skeleton flashing first;
+   then breathing once a motion.skeleton-pulse, held still with Reduce
+   Motion (its wait kept: the global rule below shortens durations, not
+   delays). */
+@keyframes skeleton-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes skeleton-breath {
+  50% {
+    opacity: 0.5;
+  }
+}
+[data-slot="skeleton"] {
+  animation: skeleton-in var(--motion-fade) var(--motion-sheet-ease) 300ms backwards;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="skeleton"] {
+    animation:
+      skeleton-in var(--motion-fade) var(--motion-sheet-ease) 300ms backwards,
+      skeleton-breath var(--motion-skeleton-pulse) cubic-bezier(0.4, 0, 0.6, 1) 300ms infinite;
+  }
+}
+
 /* Reduce Motion, honoured: sheets and popovers arrive, sections open,
    the map zooms and the spinners hold still, all without the motion.
    The durations are near zero rather than none, so the events the
@@ -682,6 +741,37 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* But a sheet's slide, and what is held against it, kept on the Drawer's
+     time (sheet/insets' SHEET_SLIDE): iOS keeps a sheet's slide under
+     Reduce Motion, a move along one axis the pilot made, where a jump
+     between sizes lost where the sheet went (the apple-design audit of
+     2026-11-23, M5; the owner took the recommendation). */
+  .sheet-slide {
+    transition-duration: var(--motion-drawer) !important;
+  }
+  /* And the iPad card's fade (cardMotion's SIDE_EASE), its move already
+     none under Reduce Motion: a fade is what iOS gives in a move's place
+     (the r5-ui audit's L6). */
+  .card-fade {
+    transition-duration: var(--motion-drawer) !important;
+  }
+  /* A card put away keeps its shorter time (cardMotion's AWAY, the
+     motion's page), where the two rules above held it to the Drawer's
+     450 ms and it left slower than it came. */
+  .sheet-slide[data-ending-style],
+  .card-fade[data-ending-style] {
+    transition-duration: var(--motion-page) !important;
+  }
+  /* And the sheet's content giving way to a card and back (SheetDrawer's
+     GIVE_WAY), a fade iOS keeps under Reduce Motion: cut, the search
+     stood back whole under a card still leaving. On the card's times:
+     the Drawer's as a card comes, the page's as it goes. */
+  .give-way {
+    transition-duration: var(--motion-page) !important;
+  }
+  [data-nested-drawer-open] .give-way {
+    transition-duration: var(--motion-drawer) !important;
+  }
 }
 
 /* A page giving way to the next (lib/viewTransition): React's
@@ -693,6 +783,12 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
    root would be. The Native look takes the browser's own cross-fade. */
 :root {
   view-transition-name: none;
+}
+/* The slide's snapshots take no taps: a second tap while it runs goes
+   through to the page it is bringing in, not into the picture over it
+   (the feel audit, 2026-11-27). */
+::view-transition {
+  pointer-events: none;
 }
 html:not([data-brand="native"])::view-transition-group(.page-step),
 html:not([data-brand="native"])::view-transition-group(.page-back) {
@@ -757,9 +853,11 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
    frame of a phone's (CPU 4x slower), 3.3 s of a drag up; 0.1 s with it
    kept to the glass (measured 2026-10-08). Nothing under a pane of glass
    reads it: a pane inside one sets its own. */
-/* How far up the map's panel is, 0 at the pill to 1 all the way
-   (MapPanel), registered so its change eases with the sheet's height
-   (mapChrome's SHEET_SETTLE) rather than jumping as a tap lets go. */
+/* Whether the sheet's foot is at half (0) or not (1), for the figures'
+   size beside the side panel and in flight (SheetFoot, lib/text's
+   GROW_FIGURE): set at once with the snap point, as what the sheet shows
+   follows its snap point the moment it is set (docs/design/web.md). Its
+   comment once said it eased with the sheet; nothing eases it. */
 @property --sheet-progress {
   syntax: "<number>";
   inherits: true;

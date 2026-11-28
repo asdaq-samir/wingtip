@@ -73,8 +73,7 @@ export async function keepRouteAnswers(
   // And the departure's, the destination's and each stop's own NOTAMs, the
   // airport card's list (GET /api/airport/{ident}/notams), which the worker
   // keeps as it passes (planner-api): before, a card opened in the air
-  // showed them only where it had been opened online (the offline audit
-  // of 2026-11-21, finding 6; 14 CFR 91.103 asks for the NOTAMs of every
+  // showed them only where it had been opened online (14 CFR 91.103 asks for the NOTAMs of every
   // field a flight uses).
   const notams = await Promise.allSettled(fields.map((ident) => client.fetchQuery({ ...fieldNotamsQuery(ident), staleTime: 0 })));
   notams.forEach((n) => (bytes += n.status === "fulfilled" ? bytesOf(n.value) : 0));

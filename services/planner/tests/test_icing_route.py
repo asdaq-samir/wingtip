@@ -1,7 +1,7 @@
 """GET /api/icing/route through its response model, wingtip.icing_forecast
 stubbed: the nav log's fixes, altitudes and times handed on as numbers, the
-engine's answer returned as it is, and the AWC down a 502 the page says
-in its own section, never "no icing"."""
+engine's answer returned as it is, and no icing forecast in the weather
+store a 502 the page says in its own section, never "no icing"."""
 
 from fastapi.testclient import TestClient
 from wingtip import icing_forecast
@@ -52,16 +52,36 @@ def test_the_legs_are_handed_on_and_the_answer_returned(monkeypatch):
     assert body["legs"][1]["severity"] is None
 
 
-def test_the_awc_down_is_a_502(monkeypatch):
+def test_no_forecast_stored_is_a_502(monkeypatch):
     def along(*args):
         raise icing_forecast.IcingForecastUnavailable("down")
 
     monkeypatch.setattr(icing_forecast, "along", along)
     resp = client.get("/api/icing/route", params=PARAMS)
     assert resp.status_code == 502
-    assert "forecast icing could not be checked" in resp.json()["detail"]
+    assert "icing on the route could not be checked" in resp.json()["detail"]
 
 
 def test_legs_and_fixes_that_do_not_agree_are_a_422(monkeypatch):
     resp = client.get("/api/icing/route", params={**PARAMS, "alt_ft": "8000"})
     assert resp.status_code == 422
+
+
+def test_severe_icing_is_answered_not_a_500(monkeypatch):
+    # The NWS grids' top category is "severe" (GRIB2 code table 4.228); the
+    # response model kept the AWC's "heavy" and answered 500 for Boston to
+    # New York at 14,000 ft (the planner's re-audit, 2026-11-27).
+    def along(fixes, altitudes, minutes, ground, start):
+        leg = {"index": 0, "altitude_ft": 14000, "severity": "severe", "share": 0.2, "layer": None, "valid_s": 1794195000}
+        return {
+            "legs": [leg, {**leg, "index": 1, "altitude_ft": 9000, "severity": "moderate"}],
+            "worst": {"severity": "severe", "altitudes_ft": [14000], "legs": [0]},
+            "unchecked": [],
+            "line": "Forecast icing, severe, at 14,000 ft on leg 1",
+            "issued": "2026-11-27T18:00:00Z",
+        }
+
+    monkeypatch.setattr(icing_forecast, "along", along)
+    resp = client.get("/api/icing/route", params=PARAMS)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["worst"]["severity"] == "severe"

@@ -24,7 +24,7 @@ enum KeepPlates {
     }
 
     /// Keeps one chart; the files it is kept in, or nil where it could not be had.
-    typealias Keeper = @MainActor @Sendable (Job) async -> [URL]?
+    typealias Keeper = @Sendable (Job) async -> [URL]?
 
     /// The charts kept at once: a few, so a state of thousands does not
     /// flood the planner, nor one slow page hold up the rest.
@@ -55,16 +55,18 @@ enum KeepPlates {
 
     /// A chart kept from the planner; its files, or nil where its pages or
     /// a picture could not be had. A chart already whole on the phone (a
-    /// stopped download going on) is not asked again.
-    @MainActor
-    static func keep(_ job: Job) async -> [URL]? {
+    /// stopped download going on) is not asked again. Off the main actor:
+    /// a state's thousands of charts are as many file checks and writes,
+    /// which would stutter the map and the lists there.
+    @concurrent
+    nonisolated static func keep(_ job: Job) async -> [URL]? {
         guard !whole(job) else { return files(of: job) }
         let key = key(job)
         guard let pages = try? await KeptForAir.answer(.plates, key: key, fetch: { try await Planner.faaChart(url: job.url, airport: job.ident) }).value
         else { return nil }
         for page in pages {
             let address = pictureAddress(page)
-            guard KeptForAir.picture(address) == nil else { continue }
+            guard !KeptForAir.hasPicture(address) else { continue }
             guard let data = try? await Planner.picture(page.path) else { return nil }
             KeptForAir.writePicture(data, path: address)
         }
@@ -72,22 +74,30 @@ enum KeepPlates {
     }
 
     /// Every chart kept, `atOnce` at a time, each told to `each` as it is
-    /// done (its files, or nil where it failed); none started once the
-    /// task is cancelled.
+    /// done (its files, or nil where it failed, and the bytes they come
+    /// to, measured off the main actor); none started once the task is
+    /// cancelled.
     @MainActor
-    static func keepAll(_ jobs: [Job], keeper: @escaping Keeper = { await keep($0) }, each: (Job, [URL]?) -> Void) async {
-        await withTaskGroup(of: (Job, [URL]?).self) { group in
+    static func keepAll(_ jobs: [Job], keeper: @escaping Keeper = { await keep($0) }, each: (Job, [URL]?, _ bytes: Int) -> Void) async {
+        await withTaskGroup(of: (Job, [URL]?, Int).self) { group in
             var next = jobs.makeIterator()
             for _ in 0..<atOnce {
                 guard let job = next.next() else { break }
-                group.addTask { (job, await keeper(job)) }
+                group.addTask { await kept(job, keeper) }
             }
-            while let (job, files) = await group.next() {
-                each(job, files)
+            while let (job, files, bytes) = await group.next() {
+                each(job, files, bytes)
                 guard !Task.isCancelled, let job = next.next() else { continue }
-                group.addTask { (job, await keeper(job)) }
+                group.addTask { await kept(job, keeper) }
             }
         }
+    }
+
+    /// One chart kept, and its files' bytes.
+    @concurrent
+    private nonisolated static func kept(_ job: Job, _ keeper: Keeper) async -> (Job, [URL]?, Int) {
+        let files = await keeper(job)
+        return (job, files, files?.reduce(0) { $0 + KeptForAir.size(of: $1) } ?? 0)
     }
 
     /// The charts of a flight's or a state's fields, in their order.

@@ -76,6 +76,13 @@ object ReadyFacts {
      *  the altitude the planner picked for the route; none before a leg. */
     fun cruise(altitudes: List<Double>): Double? = altitudes.maxOrNull()
 
+    /** The plan's cruise for the checks: the nav log's, else the pilot's
+     *  own altitude (a level group typed in the route box, the Altitude
+     *  Advisor's pick) before a log flies it, as the iPhone's ReadyFacts
+     *  asks (plan.altitudeFt ?? plan.ownAltitudeFt) and the altitude pill
+     *  already shows it. */
+    fun cruise(plan: Plan.State): Double? = cruise(plan.legs.map { it.altitudeFt }) ?: plan.altitudeFt
+
     /** The fields whose weather is asked: the departure, the destination
      *  and under IFR the alternate the nav log flies on to (PlanAlternate),
      *  by the roles ready_to_fly reads, as the web's readyFacts sends them. */

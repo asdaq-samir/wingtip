@@ -6,6 +6,9 @@ pub struct Dates<'a> {
     pub medical_expires_on: Option<&'a str>,
     pub ipc_on: Option<&'a str>,
     pub today: &'a str,
+    /// The airplane to be flown, for passenger currency (passengers.rs);
+    /// None judges the newest flight's.
+    pub flying: Option<Judged>,
 }
 
 pub(super) fn member(out: &mut String, key: &str) {
@@ -55,8 +58,11 @@ pub fn currency_json(name: &str, entries: &[Entry], dates: &Dates) -> Result<Str
         member(out, key);
         out.push_str(if v { "true" } else { "false" });
     };
-    let day_passengers = passengers_until(entries, &Entry::landings);
-    let night_passengers = passengers_until(entries, &|e| e.night_landings);
+    // 61.57(a)(1), (b)(1): for the airplane to be flown, as the logbook
+    // proves it (passengers.rs).
+    let p = passengers::passengers(entries, dates.flying.as_ref(), days_from_civil(today.0, today.1, today.2));
+    let day_passengers = p.day_until.clone();
+    let night_passengers = p.night_until.clone();
     let review_until = review.map(|r| end_of_month_after(r, FLIGHT_REVIEW_MONTHS));
     let due = crate::pilot::paperwork::pilot_due(crate::pilot::paperwork::PilotDays {
         flight_review_until: review_until.clone(),
@@ -67,6 +73,17 @@ pub fn currency_json(name: &str, entries: &[Entry], dates: &Dates) -> Result<Str
     });
     opt(&mut out, "dayPassengersUntil", day_passengers);
     opt(&mut out, "nightPassengersUntil", night_passengers);
+    opt(&mut out, "passengerClass", p.judged.as_ref().map(|j| j.class.clone()));
+    flag(&mut out, "passengerClassUnknown", p.judged.is_none());
+    member(&mut out, "passengerTailwheel");
+    out.push_str(match p.judged.as_ref().and_then(|j| j.tailwheel) {
+        Some(true) => "true",
+        Some(false) => "false",
+        None => "null",
+    });
+    opt(&mut out, "tailwheelPassengersUntil", p.tailwheel_until);
+    opt(&mut out, "dayPassengersUnknown", p.day_unknown);
+    opt(&mut out, "nightPassengersUnknown", p.night_unknown);
     opt(&mut out, "flightReviewOn", dates.flight_review_on.map(str::to_owned));
     opt(&mut out, "flightReviewUntil", review_until);
     opt(&mut out, "medicalExpiresOn", dates.medical_expires_on.map(str::to_owned));

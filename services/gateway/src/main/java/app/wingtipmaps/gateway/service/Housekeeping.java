@@ -16,8 +16,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * The nightly letting go of rows kept only for a while, so each table's
- * retention holds on a quiet day as on a busy one (the prelaunch audit,
- * 2026-11-21, P8): before this, the speed trend was pruned only when a
+ * retention holds on a quiet day as on a busy one: before this, the speed trend was pruned only when a
  * new sample came, the magic links only when another was asked for, and
  * the reminders sent never, until the account went. The device faults
  * have their own night (DiagnosticsService.prune). Then any deleted

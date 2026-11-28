@@ -8,9 +8,7 @@
     <string name="notam_ends">Ends</string>
     <string name="notam_duration">Duration</string>
     <string name="notam_permanent">Permanent</string>
-    <string name="notam_local">%1$s local</string>
-    <string name="notam_estimated">%1$s (est.)</string>
-    <string name="notam_in">%1$s (in %2$s)</string>
+    <string name="notam_in">%1$s · in %2$s</string>
     <string name="notam_number">NOTAM %1$s</string>
     <string name="notam_heading">NOTAM</string>
     <string name="notam_kind_tfr">TFR</string>
@@ -31,6 +29,13 @@
     <string name="tfr_contact">Point of Contact</string>
     <string name="tfr_call">Call %1$s</string>
     <string name="notam_badge_said">%1$s: %2$s</string>
+    <!-- A NOTAM's own card (rules.md 19, the web's NotamCard). -->
+    <string name="notam_fdc_number">FDC %1$s</string>
+    <string name="notam_affects_departure">Affects your departure</string>
+    <string name="notam_affects_stop">Affects your stop</string>
+    <string name="notam_affects_arrival">Affects your arrival</string>
+    <string name="notam_affects_alternate">Affects your alternate</string>
+    <string name="notam_not_authorized">Not authorized</string>
 
     <!-- The runways' badges. -->
     <string name="runway_best_wind">Best Wind</string>
@@ -53,7 +58,4 @@
     <string name="fuel">Fuel</string>
     <string name="fuel_none_listed">None listed</string>
     <string name="fuel_remarks">Fuel Remarks</string>
-
-    <!-- The card's actions. -->
-    <string name="action_favorite">Favorite</string>
 </resources>

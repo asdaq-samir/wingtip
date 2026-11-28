@@ -1,23 +1,28 @@
-import Foundation
 import Observation
+import UIKit
 
 /// How the plates on the map are drawn, from the plate's card: how solid
 /// the page is, whether its colours are turned white on black for the
 /// night, and whether the approach's fixes carry their tags (ForeFlight's
 /// plate settings, the owner's screenshot, 2026-11-11). Kept on the
 /// device, as the map's other switches are (MapExtrasInput.Keys).
+///
+/// The page at night is a page's own night look (PageLook): white on
+/// black as the pilot picked, else by the appearance, and shaded as the
+/// chart is by the Dimmer (ChartLook).
 nonisolated struct PlateLook: Equatable {
     /// The page's opacity, from clear (0) to solid (1).
     var opacity: Double = PlateLook.defaultOpacity
-    var inverted = false
     var annotations = true
+    /// White on black and the Dimmer's shade, as every page has them.
+    var page = PageLook()
 
     /// Solid enough to read the plate, the chart still faintly under it,
     /// as ForeFlight opens its plate on the map.
-    static let defaultOpacity = 0.85
+    static let defaultOpacity = WingtipChartLook.plateOpacity
     /// Never wholly clear: a page at nought would still take the map's
     /// taps with nothing to show for it.
-    static let leastOpacity = 0.1
+    static let leastOpacity = WingtipChartLook.plateLeastOpacity
 
     nonisolated enum Keys {
         static let opacity = "plate.opacity"

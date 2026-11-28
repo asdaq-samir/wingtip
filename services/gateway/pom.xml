@@ -355,7 +355,7 @@
                             <generatorName>spring</generatorName>
                             <modelPackage>app.wingtipmaps.gateway.planner.model</modelPackage>
                             <modelNamePrefix>Planner</modelNamePrefix>
-                            <modelsToGenerate>CheckpointNote,PilotNotes,PilotNotesForgotten,FeedHealth,FeedState,CurrencyAsk,Currency,LogbookEntry,ExperienceAsk,ExperienceItem,EndorsementsAsk,HeldEndorsement,Endorsements,ReviewCheck,EndorsementKind,EndorsementField,EndorsementFillAsk,EndorsementFilled,InstructorVerificationAsk,InstructorVerification,InspectionsAsk,VorCheckAsk,KeptItem,Inspections,VorCheck-Output,PaperworkDue,WordsSources,WordsSource,RecordsBatchAsk,RecordsBatch,SameFieldAsk,SameField</modelsToGenerate>
+                            <modelsToGenerate>CheckpointNote,PilotNotes,PilotNotesForgotten,FeedHealth,FeedState,CurrencyAsk,Currency,Flying,LogbookEntry,ExperienceAsk,ExperienceItem,EndorsementsAsk,HeldEndorsement,Endorsements,ReviewCheck,EndorsementKind,EndorsementField,EndorsementFillAsk,EndorsementFilled,InstructorVerificationAsk,InstructorVerification,InspectionsAsk,VorCheckAsk,KeptItem,Inspections,VorCheck-Output,PaperworkDue,WordsSources,WordsSource,RecordsBatchAsk,RecordsBatch,SameFieldAsk,SameField,UsageDays,UsageDay</modelsToGenerate>
                             <generateApis>false</generateApis>
                             <generateSupportingFiles>false</generateSupportingFiles>
                             <generateModelTests>false</generateModelTests>

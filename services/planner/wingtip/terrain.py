@@ -143,8 +143,7 @@ def floor_profile(
     the IFR floor (wingtip.ifr) and the side view (wingtip.profile) read
     them; `breaks_nm` is then not read. A leg off the direct line (a
     dog-leg, a pass, a way round a Class B) took the direct line's ground,
-    a valley's floor for a leg over the ridge beside it (the aviation
-    audit's AV-2, 2026-11-14). Without them, the direct line split at
+    a valley's floor for a leg over the ridge beside it. Without them, the direct line split at
     `breaks_nm`."""
     if fixes and len(fixes) > 2:
         return [

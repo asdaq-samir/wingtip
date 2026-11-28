@@ -1,15 +1,19 @@
 package app.wingtipmaps.android.map
 
+import app.wingtipmaps.android.design.generated.WingtipMapLabel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** The map's words as the web letters them: Larger Map Labels scales each
  *  size's outputs, never the zoom; after dark a light-haloed word takes its
- *  night ink on the dark halo, and a colour not in the table keeps its own. */
+ *  night word at the words' light on the dark halo, and a colour not in
+ *  the table keeps its own. */
 class MapLabelsTest {
     private fun layer(size: String, color: String, halo: String) = Json.parseToJsonElement(
         """{"id":"x","type":"symbol","layout":{"text-size":$size},"paint":{"text-color":$color,"text-halo-color":"$halo"}}""",
@@ -26,16 +30,38 @@ class MapLabelsTest {
     }
 
     @Test
-    fun afterDarkALightHaloedWordTakesItsNightInk() {
-        val paint = MapLabels.layer(layer("11", "\"#2465b8\"", "#ffffff"), 1f, night = true)["paint"]!!.jsonObject
-        assertEquals("#82b4ff", paint["text-color"]!!.jsonPrimitive.content)
-        assertEquals("rgba(20, 24, 31, 0.85)", paint["text-halo-color"]!!.jsonPrimitive.content)
+    fun afterDarkALightHaloedWordTakesItsNightWordAtTheWordsLight() {
+        val night = MapLabels.layer(layer("11", "\"#2465b8\"", "#ffffff"), 1f, night = true)
+        val paint = night["paint"]!!.jsonObject
+        // The towered blue's night ink, black at no light and itself at the
+        // words' whole light (MapDim.atWordLight), on the tag's dark whole.
+        assertEquals(
+            """["interpolate",["linear"],["number",["global-state","labelNight"],0],0,"black",1,"#82b4ff"]""",
+            paint["text-color"].toString(),
+        )
+        assertEquals("rgba(20, 24, 31, 1.00)", paint["text-halo-color"]!!.jsonPrimitive.content)
+        assertTrue(MapLabels.lightHaloed(night))
         // A dark-haloed word is left as it is.
-        val dark = MapLabels.layer(layer("11", "\"#ffffff\"", "#14181f"), 1f, night = true)["paint"]!!.jsonObject
-        assertEquals("#ffffff", dark["text-color"]!!.jsonPrimitive.content)
-        // An expression is matched on what it gives.
+        val dark = MapLabels.layer(layer("11", "\"#ffffff\"", "#14181f"), 1f, night = true)
+        assertEquals("#ffffff", dark["paint"]!!.jsonObject["text-color"]!!.jsonPrimitive.content)
+        assertFalse(MapLabels.lightHaloed(dark))
+        // An expression is matched on what it gives, then taken to the words' light.
         val matched = MapLabels.nightInk(Json.parseToJsonElement("""["case",true,"#2465b8","#c0309f"]"""))
-        assertEquals("match", matched.jsonArray[0].jsonPrimitive.content)
+        assertEquals("match", matched.jsonArray[6].jsonArray[0].jsonPrimitive.content)
+    }
+
+    @Test
+    fun afterDarkAHaloInAnExpressionIsDarkenedWhereverItIsLight() {
+        // The airports' halo, transparent under the open card's field, and the navaids', by kind (design/map-style.json).
+        val airports = Json.parseToJsonElement(
+            """{"id":"a","type":"symbol","paint":{"text-color":"#2465b8","text-halo-color":["case",["boolean",["feature-state","selected"],false],"transparent","#ffffff"]}}""",
+        ).jsonObject
+        val paint = MapLabels.layer(airports, 1f, night = true)["paint"]!!.jsonObject
+        assertEquals("""["case",["boolean",["feature-state","selected"],false],"transparent","rgba(20, 24, 31, 1.00)"]""", paint["text-halo-color"].toString())
+        // The towered blue's night ink at the words' light (MapDim.atWordLight).
+        assertEquals("""["interpolate",["linear"],["number",["global-state","labelNight"],0],0,"black",1,"#82b4ff"]""", paint["text-color"].toString())
+        // By day, as written.
+        assertEquals(airports, MapLabels.layer(airports, 1f, night = false))
     }
 
     /** The switch's scale is the font scale capped at 1.2, and the layers

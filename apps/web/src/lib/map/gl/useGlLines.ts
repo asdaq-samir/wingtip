@@ -2,6 +2,7 @@ import type { LineLayerSpecification, MapGeoJSONFeature } from "maplibre-gl";
 import { useMemo } from "react";
 import { useGlData, useGlLayer, type Slot } from "./glLayer";
 import { useGlProbe } from "./useGlProbe";
+import { withAlpha } from "../../rgb";
 
 // Each line drawn, by its name where it has one, for the browser tests.
 // With its colour, which says what a run is: a flown track's black where it
@@ -55,12 +56,11 @@ export function useGlLines(
         type: "line",
         source: id,
         layout: { "line-join": "round", "line-cap": dash ? "butt" : "round" },
-        paint: {
-          "line-color": ["get", "colour"],
-          "line-width": ["get", "width"],
-          "line-opacity": ["get", "opacity"],
-          ...(dash ? { "line-dasharray": dash } : {}),
-        },
+        // Each run's see-through in its colour (`ink`, withAlpha), the
+        // layer's opacity left to the Dimmer alone (mapDim), a constant: an
+        // opacity by feature times the Dimmer had MapLibre lay the source out
+        // again at each step of the slider at night.
+        paint: { "line-color": ["get", "ink"], "line-width": ["get", "width"], ...(dash ? { "line-dasharray": dash } : {}) },
       },
       // Read once a map (useGlLayer): the casing's look is the caller's constant.
     ],
@@ -78,7 +78,12 @@ export function useGlLines(
               .filter((r) => r.points.length > 1)
               .map((r) => ({
                 type: "Feature",
-                properties: { colour: r.colour, width: r.width, opacity: r.opacity ?? 1, ...(r.name ? { name: r.name } : {}) },
+                properties: {
+                  colour: r.colour,
+                  ink: withAlpha(r.colour, r.opacity ?? 1),
+                  width: r.width,
+                  ...(r.name ? { name: r.name } : {}),
+                },
                 geometry: { type: "LineString", coordinates: r.points.map(([lat, lon]) => [lon, lat]) },
               })),
           }

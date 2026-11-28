@@ -26,16 +26,13 @@ import time
 import xml.etree.ElementTree as ET
 
 from . import live_reports, utc
+from . import xml_names
 
 KIND = "departure"
 #: How long an event is kept, s: a day and a half, a flight's day either side.
 KEEP_S = 36 * 3600
 #: An element's name in snake case: clearanceDeliveryTime, clearance_delivery_time.
 _CAMEL = re.compile(r"(?<!^)(?=[A-Z])")
-
-
-def _local(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
 
 
 def event(xml: str) -> dict | None:
@@ -46,7 +43,7 @@ def event(xml: str) -> dict | None:
         root = ET.fromstring(xml)
     except ET.ParseError:
         return None
-    fields = {_local(e.tag): (e.text or "").strip() for e in root.iter() if (e.text or "").strip()}
+    fields = {xml_names.local(e.tag): (e.text or "").strip() for e in root.iter() if (e.text or "").strip()}
     ident = fields.get("aircraftID", "").upper()
     if not ident:
         return None

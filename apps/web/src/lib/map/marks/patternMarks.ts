@@ -14,7 +14,7 @@ import { CHART } from "../../tokens";
  */
 export const TEAL = CHART.pattern;
 /** A name's ground, darker: white words on the line's teal were 3.95:1,
- *  under the 4.5:1 small words need (WCAG 1.4.3; the iOS audit). This is
+ *  under the 4.5:1 small words need (WCAG 1.4.3). This is
  *  5.2:1. */
 const LABEL_TEAL = CHART.patternLabel;
 

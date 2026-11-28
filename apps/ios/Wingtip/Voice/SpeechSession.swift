@@ -18,8 +18,7 @@ import Synchronization
 /// English), each result told as it comes -- volatile while the words may
 /// still change, final once settled -- until `finish` settles the rest or
 /// `cancel` drops it. It replaced SFSpeechRecognizer's request and task,
-/// with the hand-built Once continuation and Feed (the stock audit,
-/// 2026-11-21).
+/// with the hand-built Once continuation and Feed.
 @MainActor
 final class SpeechSession {
     /// What is listened to: one thing said to the app (a question, a

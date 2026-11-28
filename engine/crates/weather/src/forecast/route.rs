@@ -210,6 +210,15 @@ pub fn vfr_not_recommended_reasons(
             _ if report.get("ceiling_unknown") == Some(&Value::Bool(true)) => {
                 reasons.push(format!("{ident} currently reporting a ceiling of unknown height"));
             }
+            // With no category (the visibility missing, so none can be
+            // settled), a ceiling the report does give under the basic VFR
+            // minimum still warrants it: 91.155(c), no VFR "beneath the
+            // ceiling when the ceiling is less than 1,000 feet".
+            None => {
+                if let Some(c) = num(report, "ceiling_ft").filter(|c| *c < min_ceiling_ft) {
+                    reasons.push(format!("{ident} currently reporting a {} ft ceiling", feet(c)));
+                }
+            }
             _ => {}
         }
     }
@@ -319,7 +328,7 @@ pub fn gairmets_along_route(advisories: &[Value], path: &[(f64, f64)], start: f6
 /// (lat, lon) points each with its longitude beside the one before, the
 /// first beside `reference` (geo::lon_near): a path or an area drawn across
 /// the antimeridian read as one shape the short way round, on the plane of
-/// degrees path_meets_polygon tests on (the edge-places audit's S10). Points
+/// degrees path_meets_polygon tests on. Points
 /// nowhere near 180 are as they were.
 fn beside(mut points: Vec<(f64, f64)>, reference: f64) -> Vec<(f64, f64)> {
     let mut before = reference;

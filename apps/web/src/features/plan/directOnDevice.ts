@@ -12,8 +12,7 @@ import { clearProblem, noConnection, raiseProblem } from "../../lib/problems";
  * asked -- in the air, most of a flight. The planner re-plans a Direct To
  * as a new route from the present position (planAddress's directToPatch),
  * and with no connection its course and nav log never came: the old
- * magenta line stayed under a "Direct to X" strip, a route half changed
- * (the offline audit's gap 3).
+ * magenta line stayed under a "Direct to X" strip, a route half changed.
  *
  * Here the direct leg, from where the airplane is to the point, is the
  * engine's navlog_leg -- the great-circle true course and distance

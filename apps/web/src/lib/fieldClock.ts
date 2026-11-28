@@ -6,6 +6,8 @@
  * the engine having no clock of its own. Read with the platform's own
  * time-zone data (Intl), one formatter a zone, made the first time.
  */
+import { formatIn } from "./format";
+
 export interface FieldClock {
   year: number;
   month: number;
@@ -20,20 +22,19 @@ export interface FieldClock {
 }
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const formats = new Map<string, Intl.DateTimeFormat | null>();
+const WALL = {
+  hourCycle: "h23",
+  weekday: "short",
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+} as const;
 
-function formatOf(timeZone: string): Intl.DateTimeFormat | null {
-  if (!formats.has(timeZone)) {
-    try {
-      const options = { timeZone, hourCycle: "h23", weekday: "short", year: "numeric", month: "numeric", day: "numeric" } as const;
-      formats.set(timeZone, new Intl.DateTimeFormat("en-US", { ...options, hour: "numeric", minute: "numeric" }));
-    } catch {
-      // A zone this browser does not know: no clock, the hours said as not known.
-      formats.set(timeZone, null);
-    }
-  }
-  return formats.get(timeZone) ?? null;
-}
+/** The zone's formatter; null for a zone this browser does not know: no
+ *  clock, the hours said as not known. */
+const formatOf = (timeZone: string) => formatIn(timeZone, WALL);
 
 function wall(format: Intl.DateTimeFormat, at: Date) {
   const parts = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));

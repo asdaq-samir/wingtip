@@ -33,13 +33,13 @@ import time
 import xml.etree.ElementTree as ET
 
 import requests
-import wingtip_native
 from cachetools import LRUCache
-from wingtip import outside, weather_store
+from wingtip import outside, ratelimit, weather_store
 
 # The site turns away a bare python-requests User-Agent, as the FAA's
 # others do (wingtip.faa_data).
 from wingtip.config import FAA_HEADERS as HEADERS
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +54,9 @@ _DETAILS: LRUCache = LRUCache(maxsize=1024)
 #: The pause between two detail files asked of tfr.faa.gov, s: the site is
 #: asked one file at a time, and only for a TFR new or changed.
 DETAIL_PAUSE_S = 0.5
+#: The detail files' turns, DETAIL_PAUSE_S apart (wingtip.ratelimit): the
+#: first asked at once, where each slept the pause first.
+_DETAILS_GATE = ratelimit.Gate(gap_s=DETAIL_PAUSE_S)
 #: The detail's members, as parse_detail gives them: what a stored TFR
 #: carries over to the next fetch when its modification is the same.
 DETAIL_KEYS = (
@@ -65,6 +68,11 @@ DETAIL_KEYS = (
     "floor_ref",
     "ceiling_ft",
     "ceiling_ref",
+    # An area's floor or ceiling given AGL beside another's MSL, so which
+    # is lowest (highest) depends on the ground under it (tfr_detail_read):
+    # lost on the next fetch when left out of here.
+    "floor_varies",
+    "ceiling_varies",
     "instructions",
     "text",
     "facility",
@@ -87,7 +95,7 @@ def parse_detail(xml_bytes: bytes) -> dict:
     the engine (wingtip_engine::tfr); a file that is not XML raises
     ElementTree's ParseError."""
     try:
-        got = json.loads(wingtip_native.call("tfr_detail_read", json.dumps({"text": xml_bytes.decode("utf-8-sig")})))
+        got = engine("tfr_detail_read", text=xml_bytes.decode("utf-8-sig"))
     except (UnicodeDecodeError, ValueError) as e:
         raise ET.ParseError(str(e)) from e
     if got is None:
@@ -107,7 +115,7 @@ def _detail(notam_id: str, modified: str) -> dict:
     hit = _DETAILS.get(key)
     if hit is not None:
         return hit
-    time.sleep(DETAIL_PAUSE_S)
+    _DETAILS_GATE.turn(time.monotonic, time.sleep)
     try:
         resp = outside.get(DETAIL_URL.format(notam_id.replace("/", "_")), headers=HEADERS, timeout=20)
         resp.raise_for_status()
@@ -145,7 +153,8 @@ def tfrs(features: list) -> list:
             {
                 "notam_id": notam_id,
                 "title": props.get("TITLE"),
-                "kind": (props.get("LEGAL") or "").title() or None,
+                # "SECURITY" as "Security" (the engine's title_case).
+                "kind": engine("title_case", text=props.get("LEGAL") or "") or None,
                 "state": props.get("STATE"),
                 "modified": props.get("LAST_MODIFICATION_DATETIME") or "",
                 "polygons": [],
@@ -165,12 +174,12 @@ def tfrs(features: list) -> list:
 def _keep_stored_details() -> None:
     """The details the stored list already holds, by NOTAM and
     modification, taken as read: a restart asks tfr.faa.gov again only for
-    what has changed since. One stored before the instructions were kept
-    is read again, once."""
+    what has changed since. One stored before the instructions, or the
+    floors and ceilings that vary by area, were kept is read again, once."""
     record = weather_store.read("tfrs")
     for t in record.data if record else []:
         key = (t.get("notam_id"), t.get("modified"))
-        if key[0] and key[1] is not None and key not in _DETAILS and "instructions" in t:
+        if key[0] and key[1] is not None and key not in _DETAILS and "instructions" in t and "floor_varies" in t:
             _DETAILS[key] = {k: t[k] for k in DETAIL_KEYS if k in t}
 
 

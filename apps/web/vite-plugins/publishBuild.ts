@@ -17,6 +17,9 @@ import type { Plugin } from "vite";
 // PUBLISHED lists each build's files and when it was replaced. The service
 // worker's precache is this build's files alone, since STAGING holds
 // nothing else. Unset (the image's build, CI), vite writes dist as usual.
+// The whole publish is synchronous, so a rebuild the watch starts can
+// neither empty STAGING under it nor publish over it, and nothing async
+// (the compression plugin, off under the watch) still reads STAGING after.
 export const publishDir = process.env.VITE_PUBLISH_DIR;
 
 export const STAGING = ".dist-next";
@@ -46,8 +49,15 @@ function publishBuild(staging: string, served: string, now = Date.now()) {
   // The first build into a directory without a ledger: whatever is there
   // is the build this one replaces.
   let builds: Published = existsSync(ledger) ? JSON.parse(readFileSync(ledger, "utf8")) : [{ files: filesUnder(served) }];
+  const staged = new Set(files);
   for (const file of files) {
     mkdirSync(dirname(join(served, file)), { recursive: true });
+    // The watch makes no .br or .gz (vite.config.ts), so one an older,
+    // compressed build left beside an unhashed file (index.html, sw.js)
+    // would be what the gateway's EncodedResourceResolver sends: it goes.
+    for (const encoded of [`${file}.br`, `${file}.gz`]) {
+      if (!staged.has(encoded)) rmSync(join(served, encoded), { force: true });
+    }
     renameSync(join(staging, file), join(served, file));
   }
   for (const build of builds) build.replacedAt ??= now;

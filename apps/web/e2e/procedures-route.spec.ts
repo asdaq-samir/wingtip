@@ -2,7 +2,8 @@ import { test, expect } from "@playwright/test";
 import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
-import { LIST, DRAWN } from "./procedureStubs";
+import { LIST, DRAWN, toggleFixes, unfoldProcedure } from "./procedureStubs";
+import { hold } from "./pacing";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -40,7 +41,7 @@ test.describe("on the owner's phone's width, to a finger", () => {
     // Touched and held, no lift: closed.
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
-    await page.waitForTimeout(400);
+    await hold(page, 400);
     await expect(page.getByTestId("procedure-menu")).toHaveCount(0);
     // Lifted where it was touched: a tap, open.
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
@@ -66,11 +67,11 @@ test.describe("on the owner's phone's width, to a finger", () => {
     const box = sideDrawer(page).getByTestId("route-box");
     await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
     // Turned from the grouped box, the route wraps over its lines (the
-    // owner, 2026-11-22: "Route box should be as tall as the grouped box,
-    // same shape"): the field past KRFD ends on KRFD's own line, not one
+    // owner, 2026-11-22; as tall as its lines since canvas A, 2026-11-23):
+    // the field past KRFD ends on KRFD's own line, not one
     // of its own under it.
     const end = (await box.getByTestId("route-type").boundingBox())!;
-    const last = (await box.getByRole("group", { name: "Destination KRFD" }).boundingBox())!;
+    const last = (await box.getByRole("button", { name: "Destination KRFD" }).boundingBox())!;
     expect(end.y + end.height).toBeLessThanOrEqual(last.y + last.height + 4);
   });
 });
@@ -115,26 +116,35 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await openTab(page, "Nav Log");
   await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  // A procedure picked, its fixes on the route's line before the field's, its head row the button to pick another (the owner's option D, 2026-11-21).
+  // A procedure picked, its fixes on the route's line before the field's, its head row folds them, its round button picks another.
+  // Folded to its pill on the field's line, unfolded by a tap (the owner, 2026-11-23).
+  await unfoldProcedure(kdlh, "approach");
   const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
-  await expect(approach).toContainText("ILS · RWY 09", { timeout: slow(20000) });
+  await expect(approach.getByTestId("procedure-name").locator(":scope > span").first()).toHaveText(/\bILS\b/, { timeout: slow(20000) });
   await expect(kdlh.getByTestId("procedure-rows").getByTestId("fix-branch-row").first()).toBeVisible();
-  await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
+  // Its menu folds its fixes away and back (the owner, 2026-11-25: "do we
+  // need the chevrons?"), its pill with none.
+  await toggleFixes(approach);
+  await expect(approach.getByTestId("fix-branch-row")).toHaveCount(0);
+  await toggleFixes(approach);
+  await expect(approach.getByTestId("fix-branch-row").first()).toBeVisible();
+  await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   const menu = page.getByTestId("procedure-menu");
   await expect(menu.getByTestId("procedure-menu-direct")).toContainText("As Charted");
   await menu.getByTestId("procedure-menu-direct").click();
   // The procedure's own fixes, the missed approach's and the runway's not.
-  await expect(menu.getByTestId("procedure-menu-direct-fix")).toHaveText(["As Charted", "DLH", "OFOFO", "FAKER"]);
-  await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "FAKER" }).click();
+  await expect(page.getByTestId("procedure-menu-direct-fix")).toHaveText(["As Charted", "DLH", "OFOFO", "FAKER"]);
+  await page.getByTestId("procedure-menu-direct-fix").filter({ hasText: "FAKER" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:)FAKER(&|$)/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
   await openRoute(page);
+  await unfoldProcedure(kdlh, "approach");
   await expect(approach.getByTestId("fix-branch-row").filter({ hasText: "FAKER" })).toContainText("direct to");
-  // Back as charted, from the procedure's head row.
-  await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
+  // Back as charted, from its pill.
+  await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   await menu.getByTestId("procedure-menu-direct").click();
-  await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "As Charted" }).click();
+  await page.getByTestId("procedure-menu-direct-fix").filter({ hasText: "As Charted" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
 });
 
@@ -156,15 +166,25 @@ test("a procedure picked has its fixes on the route's line before its field's, a
       return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
     },
   );
+  // auth.setup starts every test with the fields open (wingtip.fieldsOpen);
+  // here the field's line starts folded, as a pilot's does.
+  await page.addInitScript(() => localStorage.removeItem("wingtip.fieldsOpen"));
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   await openTab(page, "Nav Log");
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
+  // Out of sight with the field's runways till its line is opened (the
+  // owner, 2026-11-23: "Keep the pill hidden like runway").
+  await expect(kdlh.locator("[data-testid=procedure-rows]")).toHaveCount(0);
+  await unfoldProcedure(kdlh, "approach");
   const box = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
-  await expect(box.getByTestId("procedure-name")).toHaveText("ILS · RWY 09", { timeout: slow(20000) });
-  // Shown, no pill to tap (the owner, 2026-11-21): its kind and field over
-  // its name, then a row a fix; no branch of FixBranch's on the timeline.
-  await expect(box).toContainText("Approach · KDLH");
+  await expect(box.getByTestId("procedure-name").locator(":scope > span").first()).toHaveText("ILS");
+  // Unfolded: its name, its kind's chip at the pill's end, a section of KDLH's group under
+  // the field's line (the owner, 2026-11-24: "that airport should be the
+  // heading"), then a row a fix; no branch of FixBranch's on the timeline.
+  await expect(box.locator("[data-testid=procedure-kind][data-kind=approach]")).toHaveText("APCH");
+  const head = (await kdlh.getByTestId("timeline-line").boundingBox())!;
+  expect((await box.boundingBox())!.y).toBeGreaterThan(head.y);
   await expect(box.getByTestId("fix-branch-row").first()).toBeVisible();
   await expect(kdlh.getByTestId("fix-branch")).toHaveCount(0);
   // FAKER's card from the map: direct to it, then as charted again.
@@ -220,7 +240,8 @@ test("the destination's hold is added from its menu, no \"+ HOLD\" chip, and its
   await expect(page).toHaveURL(/[?&]holds=KDLH(%3A|:)270(%3A|:)R(%3A|:)5N(%3A|:)2T(&|$)/);
   await expect(hold).toHaveText("Hold 270° R");
   await expect(hold).toHaveAttribute("data-look", "chip");
-  // Last, after the procedures' chips.
+  // Last, after the procedures' chips, on the Landing card's runway row (the
+  // redesign of 2026-11-25, its runway first).
   const order = await kdlh
     .getByTestId("timeline-chips")
     .locator("[data-testid=procedure-kind], [data-testid=hold-chip]")

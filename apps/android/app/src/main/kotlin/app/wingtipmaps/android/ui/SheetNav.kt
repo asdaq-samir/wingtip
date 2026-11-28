@@ -66,7 +66,7 @@ class SheetNav internal constructor(
 
     /** `page` opened from inside a card or a page, on top of it, so Back
      *  comes back to it. It keeps the sheet's height (the owner's decision,
-     *  2026-11-10, on the audit's SC-1): only a card shown from the search
+     *  2026-11-10): only a card shown from the search
      *  or the map brings the sheet to half, so `onShown` is not told of a
      *  card pushed over another -- but for Emergency, which opens at full
      *  height wherever it is opened from. */

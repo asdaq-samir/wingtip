@@ -8,7 +8,7 @@ export const PILOT_CACHE = "pilot-own";
 
 /** That cache emptied: it is one pilot's, on a phone another may pick up.
  *  Logging out, deleting the account and a session the server no longer
- *  knows all do it (the security audit's L8, 2026-11-10). */
+ *  knows all do it. */
 export function forgetPilotCache(): void {
   if ("caches" in globalThis) void caches.delete(PILOT_CACHE).catch(() => undefined);
 }
@@ -16,8 +16,7 @@ export function forgetPilotCache(): void {
 /** The service worker's caches of the planner's answers whose addresses
  *  carry a point -- Nearest, the airspace at a place, what is ahead of the
  *  airplane (vite.config.ts, planner-now and planner-api) -- which on a
- *  shared device are a record of where the last pilot was (the prelaunch
- *  audit's P4). */
+ *  shared device are a record of where the last pilot was. */
 export const PLANNER_CACHES = ["planner-now", "planner-api"] as const;
 
 /** Those caches emptied as a pilot signs out (the owner, 2026-11-21: "I
@@ -33,8 +32,7 @@ export function forgetPlannerAnswers(): void {
  *  forgotten, which the worker's network-first answer would otherwise show
  *  the next start with no signal. Where a pilot's copy was there to
  *  forget, so someone had been signed in, the planner's answers asked at
- *  their points go too, as at Log Out (the deep security review of
- *  2026-11-21: a session that lapsed kept them); a page that was never
+ *  their points go too, as at Log Out (a session that lapsed kept them); a page that was never
  *  signed in keeps its own, for flying offline. */
 export async function signedInPilot(): Promise<Pilot | null> {
   const pilot = await api.me();

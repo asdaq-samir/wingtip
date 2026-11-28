@@ -26,7 +26,7 @@ export default function ProfileCard({
    *  cruise clears the ground (ProfileLine). The Brief's line of the plan
    *  (where from and to, the airplane, the altitude, when) is not said
    *  again under it: it said the cruise twice and the card scrolled over
-   *  it under the pinned head (the UI audit's B2, 2026-11-17). */
+   *  it under the pinned head. */
   sub?: ReactNode;
   /** The flight rules, VFR or IFR, a segmented control at the top of the
    *  card's content, with no label of its own (the owner's "don't need the

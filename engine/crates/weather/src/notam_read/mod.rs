@@ -25,6 +25,7 @@
 //! stays the word it was, and a NOTAM in neither form is its words alone.
 
 mod body;
+pub mod card;
 mod four;
 #[cfg(test)]
 mod tests;
@@ -307,9 +308,8 @@ pub fn read(text: &str, idents: &[String]) -> NotamRead {
     r
 }
 
-/// `notam_read`: `{"text", "idents"?}` to `{"form", "number", "location",
-/// "keyword", "heading", "title", "what", "where", "words", "starts", "ends", "estimated",
-/// "permanent"}`.
+/// `notam_read`: `{"text", "idents"?}` to `{"form", "number", "location", "keyword", "heading",
+/// "title", "what", "where", "words", "starts", "ends", "estimated", "permanent"}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     if name != "notam_read" {
         return Err(format!("{name}: not a rule of notam_read"));

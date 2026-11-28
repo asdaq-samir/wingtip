@@ -76,7 +76,7 @@ class MapSheetState internal constructor(internal val sheet: SheetState) {
 /** Whether the sheet a card is drawn in is at its full height, where its
  *  bar is Material's large flexible one, or lower (half), where it is the
  *  small bar, title and actions on one row (the owner's decision,
- *  2026-11-10, on the audit's H-1). True wherever there is no such sheet:
+ *  2026-11-10). True wherever there is no such sheet:
  *  a tablet's pane, the fold's lower half. */
 val LocalSheetFull = compositionLocalOf { true }
 

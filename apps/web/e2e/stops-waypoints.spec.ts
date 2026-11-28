@@ -3,6 +3,7 @@ import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer
 import { stopsAre } from "./stopsParam";
 import { drawnMarks, markWith } from "./marks";
 import { pickAirplane } from "./startState";
+import { watchFor, steady } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -25,10 +26,11 @@ test("a stop may be a VFR waypoint, offered after the airports as it is typed an
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  // The route box's arrows are in its field (typeRoute), not the timeline.
+  // The route box's pills are in its field (typeRoute), not the timeline.
   await typeRoute(page);
 
-  await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
+  await sideDrawer(page).getByTestId("route-dest").click();
+  await page.getByTestId("pill-menu-add-before").click();
   await page.getByTestId("search-airports").fill("VPBNG");
   const waypoint = page.getByTestId("search-waypoint").filter({ hasText: "VPBNG" }).first();
   await expect(waypoint).toBeVisible({ timeout: slow(10000) });
@@ -71,45 +73,44 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
   // the waypoints' marks -- the wheel over C81, a level at a time.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await expect.poll(markWith(page, "route-marks", "C81"), { timeout: slow(30000) }).not.toBeNull();
-  const departure = (await markWith(page, "route-marks", "C81")())!;
-  // C81 dragged to the middle of the map first: the route's fit leaves it
-  // near the screen's foot, and VPBNG, 4 nm south-west, was zoomed in to
-  // past it, under the bottom edge (2026-11-03).
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   const middle = { x: map.x + map.width / 2, y: map.y + map.height / 2 };
-  await page.mouse.move(departure.x, departure.y);
-  await page.mouse.down();
-  await page.mouse.move(middle.x, middle.y, { steps: 12 });
-  await page.mouse.up();
-  await mapStill(page);
   // A level at a time until it is drawn, from 10 as the GPS waypoints
   // are, and on the screen: further in, 4 nm off C81 is off the map.
   const inSight = async () =>
     (await waypointMarks(page)).filter(
       (w) => w.x > map.x + 20 && w.x < map.x + map.width - 20 && w.y > map.y + 20 && w.y < map.y + map.height - 20,
     );
-  // Round the pointer, put on C81 each time (the map coasts on after the
-  // drag): MapLibre zooms a wheel's step by its size, up to a level a turn,
-  // and steps of 60 left the map at 7, short of the waypoints' 10.
   const seen = async () => (await inSight()).some((w) => w.ident === "VPBNG");
-  for (let i = 0; i < 8 && !(await seen()); i++) {
-    const at = (await markWith(page, "route-marks", "C81")()) ?? middle;
-    await page.mouse.move(at.x, at.y);
-    await page.mouse.wheel(0, -1000);
+  // From C81 again until it holds: the route fitted anew as the plan's
+  // stream brings its points in takes the map back out to the route, and
+  // on CI's runner that came after the zoom in, leaving no waypoint in
+  // sight (PR #591's run).
+  await expect(async () => {
+    // C81 dragged to the middle of the map first: the route's fit leaves it
+    // near the screen's foot, and VPBNG, 4 nm south-west, was zoomed in to
+    // past it, under the bottom edge (2026-11-03).
+    const departure = (await markWith(page, "route-marks", "C81")()) ?? middle;
+    await page.mouse.move(departure.x, departure.y);
+    await page.mouse.down();
+    await page.mouse.move(middle.x, middle.y, { steps: 12 });
+    await page.mouse.up();
     await mapStill(page);
-  }
-  // The waypoint drawn, its magenta triangle and ident (WaypointsLayer).
-  await expect.poll(async () => (await inSight()).map((w) => w.ident), { timeout: slow(20000) }).toContain("VPBNG");
+    // Round the pointer, put on C81 each time (the map coasts on after the
+    // drag): MapLibre zooms a wheel's step by its size, up to a level a turn,
+    // and steps of 60 left the map at 7, short of the waypoints' 10.
+    for (let i = 0; i < 8 && !(await seen()); i++) {
+      const at = (await markWith(page, "route-marks", "C81")()) ?? middle;
+      await page.mouse.move(at.x, at.y);
+      await page.mouse.wheel(0, -1000);
+      await mapStill(page);
+    }
+    // The waypoint drawn, its magenta triangle and ident (WaypointsLayer).
+    await expect.poll(async () => (await inSight()).map((w) => w.ident), { timeout: slow(5000) }).toContain("VPBNG");
+  }).toPass({ timeout: slow(60_000) });
   // Once the map has stopped: a tap as the zoom eases in landed where the
   // mark had been.
-  let was = "";
-  await expect(async () => {
-    const now = JSON.stringify(await waypointMarks(page));
-    const still = now === was;
-    was = now;
-    await page.waitForTimeout(300);
-    expect(still).toBe(true);
-  }).toPass({ timeout: slow(10_000) });
+  await steady(() => waypointMarks(page));
   // Tapped again until its card is up: on CI's runner the plan's stream
   // finishing could move the map under the first tap.
   const add = page.getByTestId("waypoint-add-stop");
@@ -139,7 +140,8 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
   await mapStill(page);
   const pane = () => page.evaluate(() => document.querySelector<HTMLElement>("[data-testid=gl-map]")!.dataset.center);
   const before = await pane();
-  await page.waitForTimeout(2000);
+  // It crept slowly: only a window of time shows it does not.
+  await watchFor(page, 2000);
   expect(await pane()).toBe(before);
   await add.click();
   await expect(page).toHaveURL(/[?&]stops=VPBNG/);

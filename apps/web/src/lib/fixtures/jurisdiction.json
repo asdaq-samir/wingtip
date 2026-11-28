@@ -1,5 +1,5 @@
 {
-  "_note": "Whose rules a point and a route are under (14 CFR 1.1, 91.1(a) and (b), 91.703(a); decision 0053): the engine's jurisdiction_of and route_jurisdiction, from Natural Earth's 1:50m outlines. The fields' places are their airport reference points. Held by engine/facade/tests/jurisdiction.rs and the web's lib/jurisdiction.test.ts.",
+  "_note": "Whose rules a point and a route are under (14 CFR 1.1, 91.1(a) and (b), 91.703(a); decision 0053): the engine's jurisdiction_of and route_jurisdiction, from Natural Earth's 1:50m outlines. The fields' places are their airport reference points. Held by engine/facade/tests/jurisdiction.rs; the planner asks the rule with the course (app.route_borders).",
   "points": [
     {
       "why": "Toronto Pearson, CYYZ",
@@ -76,19 +76,61 @@
   ],
   "routes": [
     {
+      "why": "The owner's KUGN, KBUF, KPIT: every field in the US, the leg to Buffalo across southern Ontario, said on that leg and named by it",
+      "points": [
+        {
+          "lat": 42.4222,
+          "lon": -87.8679,
+          "name": "KUGN"
+        },
+        {
+          "lat": 42.9405,
+          "lon": -78.7322,
+          "name": "KBUF"
+        },
+        {
+          "lat": 40.4915,
+          "lon": -80.2329,
+          "name": "KPIT"
+        }
+      ],
+      "codes": [
+        "US",
+        "US",
+        "US"
+      ],
+      "legs": [
+        [
+          "CA"
+        ],
+        []
+      ],
+      "outside": [
+        "CA"
+      ],
+      "caution": "Part of the route is in Canada (Ontario): Canadian rules not checked — figures use US rules",
+      "legCautions": [
+        "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules",
+        null
+      ]
+    },
+    {
       "why": "C81 to Thunder Bay by Duluth: the last leg and its end in Canada",
       "points": [
         {
           "lat": 42.3246,
-          "lon": -88.0741
+          "lon": -88.0741,
+          "name": "C81"
         },
         {
           "lat": 46.842,
-          "lon": -92.1936
+          "lon": -92.1936,
+          "name": "KDLH"
         },
         {
           "lat": 48.3719,
-          "lon": -89.3239
+          "lon": -89.3239,
+          "name": "CYQT"
         }
       ],
       "codes": [
@@ -105,18 +147,24 @@
       "outside": [
         "CA"
       ],
-      "caution": "Canada: rules not checked — figures use US rules"
+      "caution": "Part of the route is in Canada (Ontario): Canadian rules not checked — figures use US rules",
+      "legCautions": [
+        null,
+        null
+      ]
     },
     {
       "why": "Detroit City to Cleveland's Burke Lakefront: both ends in the US, the leg over Ontario and Lake Erie's Canadian half",
       "points": [
         {
           "lat": 42.4092,
-          "lon": -83.0099
+          "lon": -83.0099,
+          "name": "KDET"
         },
         {
           "lat": 41.5175,
-          "lon": -81.6833
+          "lon": -81.6833,
+          "name": "KBKL"
         }
       ],
       "codes": [
@@ -131,18 +179,23 @@
       "outside": [
         "CA"
       ],
-      "caution": "Canada: rules not checked — figures use US rules"
+      "caution": "Part of the route is in Canada (Ontario): Canadian rules not checked — figures use US rules",
+      "legCautions": [
+        "The leg to KBKL crosses Canada (Ontario): Canadian rules not checked — figures use US rules"
+      ]
     },
     {
       "why": "C81 to Duluth: all in the US, no warning",
       "points": [
         {
           "lat": 42.3246,
-          "lon": -88.0741
+          "lon": -88.0741,
+          "name": "C81"
         },
         {
           "lat": 46.842,
-          "lon": -92.1936
+          "lon": -92.1936,
+          "name": "KDLH"
         }
       ],
       "codes": [
@@ -153,7 +206,10 @@
         []
       ],
       "outside": [],
-      "caution": null
+      "caution": null,
+      "legCautions": [
+        null
+      ]
     }
   ]
 }

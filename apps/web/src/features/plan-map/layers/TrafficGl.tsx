@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
+import type { Map as MlMap } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { api } from "../../../lib/api/client";
@@ -10,7 +10,7 @@ import { TRAFFIC_COLOURS } from "../../../lib/map/marks/icons";
 import { CHART } from "../../../lib/tokens";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePastFlight } from "../../plan";
-import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../../../lib/traffic";
+import { carryS, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../../../lib/traffic";
 import { trafficCredit } from "../../../components/dataSources";
 import { reported, useTracking, type Report } from "../../../lib/map/position/tracking";
 import { EMPTY, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
@@ -19,33 +19,46 @@ import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { useMapCredit } from "../../../lib/map/gl/creditStore";
 import { appZoomOf, glZoom } from "../../../lib/map/gl/glStyle";
 import { cameraOf } from "../../../lib/map/gl/camera";
+import { CAMERA_MS } from "../../../lib/map/gl/cameraRules";
 import { useTerrainView } from "../terrain/useTerrainView";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "./trafficMarks";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
+import { sendTraffic, trafficFrameMs } from "./trafficSend";
 import { pickOnMap } from "../../../lib/map/mapPick";
 
 /** Asked every five seconds, each airplane carried on
  *  between answers a frame at a time (more often closer in), blended over
- *  a second onto where the next answer puts it; heights from zoom 9 and
- *  call signs from 10, in the app's levels. */
+ *  a second, or two frames where they are slower, onto where the next
+ *  answer puts it; heights from zoom 9 and
+ *  call signs from 10, in the app's levels.
+ *
+ *  A frame sends the map's worker only the airplanes that changed
+ *  (trafficSend), and comes once a second at the chart's scales, where an
+ *  airplane at 120 kt moves a pixel or two in it, and up to four a second
+ *  only zoomed in close (trafficFrameMs; ten a second
+ *  from zoom 10 was measured as work for nothing). An airplane
+ *  followed keeps ten a second: the camera's follow eases linearly between frames,
+ *  so a mark stepped once a second would slide back on the screen and jump. */
 const EVERY_MS = 5000;
-const FRAME_MS = 100;
-const frameMs = (zoom: number) => Math.min(1000, FRAME_MS * 2 ** Math.max(0, 10 - Math.round(zoom)));
 const BLEND_MS = 1000;
 const HEIGHT_ZOOM = 9;
 const CALLSIGN_ZOOM = 10;
 const PROBLEM = "traffic";
-const STALE_MS = 30_000;
 const POINTS = "traffic";
 const TRENDS = "traffic-trends";
 const IDS = { marks: "traffic-marks", tags: "traffic-tags", trends: "traffic-trend-lines" };
-const SOURCES = { [POINTS]: { type: "geojson" as const, data: EMPTY }, [TRENDS]: { type: "geojson" as const, data: EMPTY } };
+// Keyed by hex (promoteId), so a frame sends only what changed (trafficSend).
+const SOURCES = {
+  [POINTS]: { type: "geojson" as const, data: EMPTY, promoteId: "hex" },
+  [TRENDS]: { type: "geojson" as const, data: EMPTY, promoteId: "hex" },
+};
 const LAYERS = trafficLayers(IDS, { points: POINTS, trends: TRENDS });
 
 interface Target {
   plane: TrafficAircraft;
   at: number;
-  shift: { lat: number; lon: number; from: number } | null;
+  /** The gap blended away from `from` over `ms`. */
+  shift: { lat: number; lon: number; from: number; ms: number } | null;
   /** Where it is drawn now, carried on (null until it is first drawn). */
   pos: { lat: number; lon: number } | null;
   /** How it looks, from its report, own ship's height and the map's zoom. */
@@ -87,8 +100,9 @@ function viewOf(map: ReturnType<typeof useGlMap>["map"]) {
 function Traffic({ geo }: { geo: Geo }) {
   const { map } = useGlMap();
   // Own ship's height alone, to the nearest 10 ft, so the traffic is not
-  // drawn again at every fix (the in-flight audit; the owner's Q4,
-  // 2026-11-21): a GPS height wanders by tens of feet from fix to fix,
+  // drawn again at every fix (the owner's Q4,
+  // 2026-11-21):
+  // a GPS height wanders by tens of feet from fix to fix,
   // so 10 ft changes no real answer of the engine's 1,000 ft "near own
   // height" rule (traffic_marks), which still decides.
   const ownFt = useOwnShip((s) => (s.enabled && s.fix?.altitudeFt != null ? Math.round(s.fix.altitudeFt / 10) * 10 : null));
@@ -156,7 +170,7 @@ function Traffic({ geo }: { geo: Geo }) {
 
   const [answer, setAnswer] = useState<{ data: NonNullable<typeof data>; at: number } | null>(null);
   if (data && !isPlaceholderData && answer?.at !== dataUpdatedAt) setAnswer({ data, at: dataUpdatedAt });
-  const gone = isError && (!answer || errorUpdatedAt - answer.at > STALE_MS);
+  const gone = isError && (!answer || errorUpdatedAt - answer.at > carryS() * 1000);
   useEffect(() => {
     if (gone) raiseProblem({ id: PROBLEM, title: "Traffic is not available right now." });
     else clearProblem(PROBLEM);
@@ -189,16 +203,20 @@ function Traffic({ geo }: { geo: Geo }) {
       }
       if (at <= held.at) continue;
       const now = Date.now();
-      // Blended over a second from where it is drawn onto where the new
-      // report carries it, not jumped.
+      // Blended from where it is drawn onto where the new report carries
+      // it, not jumped: over a second, or two frames where a frame is a
+      // second (the chart's scales), where the whole gap went in one frame
+      // and the mark hopped 1 to 3 px.
       const should = carriedOn(geo, plane, (now - at) / 1000);
-      held.shift = held.pos ? { lat: held.pos.lat - should.lat, lon: held.pos.lon - should.lon, from: now } : null;
+      const { hex: tracked, follow: following } = useTracking.getState();
+      const ms = Math.max(BLEND_MS, 2 * trafficFrameMs(appZoomOf(map.getZoom()), !!tracked && following));
+      held.shift = held.pos ? { lat: held.pos.lat - should.lat, lon: held.pos.lon - should.lon, from: now, ms } : null;
       held.plane = plane;
       held.at = at;
     }
     for (const hex of targets.current.keys()) if (!seen.has(hex)) targets.current.delete(hex);
     useTracking.setState({ seen: reports });
-  }, [geo, merged]);
+  }, [geo, map, merged]);
 
   useEffect(() => {
     const heights = view.zoom >= HEIGHT_ZOOM,
@@ -224,7 +242,7 @@ function Traffic({ geo }: { geo: Geo }) {
   // The airplane tracked, followed: brought into sight as its first report
   // comes if it is out of sight, a pick that keeps the tracking's follow on; the follow's steps
   // (drawTargets) wait behind it (the camera's owner), where its jump
-  // every frame stopped this flight 124 ms in (the flicker audit's FL-7).
+  // every frame stopped this flight 124 ms in.
   const heard = useTracking((s) => !!s.hex && s.latest?.plane.hex === s.hex);
   useEffect(() => {
     if (!hex || !follow) return;
@@ -236,7 +254,7 @@ function Traffic({ geo }: { geo: Geo }) {
     cameraOf(map).pick([latest.plane.lon, latest.plane.lat], {
       onlyIfHidden: true,
       zoom: Math.max(map.getZoom(), glZoom(9)),
-      duration: 800,
+      duration: CAMERA_MS,
       keeps: "track",
     });
   }, [map, hex, follow, heard]);
@@ -247,7 +265,8 @@ function Traffic({ geo }: { geo: Geo }) {
   useEffect(() => {
     let timer = 0;
     const step = () => {
-      timer = document.hidden ? 0 : window.setTimeout(step, frameMs(appZoomOf(map.getZoom())));
+      const { hex: tracked, follow: following } = useTracking.getState();
+      timer = document.hidden ? 0 : window.setTimeout(step, trafficFrameMs(appZoomOf(map.getZoom()), !!tracked && following));
       if (!map.isZooming()) drawTargets(geo, map, targets.current);
     };
     const back = () => {
@@ -265,7 +284,7 @@ function Traffic({ geo }: { geo: Geo }) {
 
 /** Each airplane carried on to now, in sight only, and the layers' data
  *  set again (Traffic's step, a frame at a time, more often closer in);
- *  those older than CARRY_S let go. */
+ *  those older than carryS() let go. */
 function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
   const now = Date.now();
   const b = map.getBounds();
@@ -273,10 +292,11 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
     dLon = (b.getEast() - b.getWest()) / 4;
   const { hex: tracked } = useTracking.getState();
   const points: GeoJSON.Feature<GeoJSON.Point, TrafficMarkProps>[] = [];
-  const trends: GeoJSON.Feature<GeoJSON.LineString>[] = [];
+  const trends: GeoJSON.Feature<GeoJSON.LineString, { hex: string; colour: string }>[] = [];
+  const carry = carryS();
   for (const [hex, target] of targets) {
     const age = (now - target.at) / 1000;
-    if (age > CARRY_S) {
+    if (age > carry) {
       targets.delete(hex);
       continue;
     }
@@ -284,7 +304,7 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
     if (!look) continue;
     let shift = { lat: 0, lon: 0 };
     if (target.shift) {
-      const left = 1 - (now - target.shift.from) / BLEND_MS;
+      const left = 1 - (now - target.shift.from) / target.shift.ms;
       if (left <= 0) target.shift = null;
       else shift = { lat: target.shift.lat * left, lon: target.shift.lon * left };
     }
@@ -321,12 +341,12 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
             [ahead.lon + shift.lon, ahead.lat + shift.lat],
           ],
         },
-        properties: { colour },
+        properties: { hex, colour },
       });
     }
   }
-  setIfNew(map, POINTS, points);
-  setIfNew(map, TRENDS, trends);
+  sendTraffic(map, POINTS, points);
+  sendTraffic(map, TRENDS, trends);
   const { follow } = useTracking.getState();
   const replaying = usePastFlight.getState().hex === tracked;
   const target = tracked && follow && !replaying ? targets.get(tracked) : undefined;
@@ -340,18 +360,4 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
 function ownFix() {
   const ship = useOwnShip.getState();
   return ship.enabled ? ship.fix : null;
-}
-
-/** What each source was last sent, as JSON: a frame with nothing moved
- *  (none in sight, or every one on the ground and still) sends nothing to
- *  the map's worker, where each setData is indexed again from nothing. By
- *  the source itself, so one made again (a new style) is sent afresh. */
-const lastSent = new WeakMap<GeoJSONSource, string>();
-function setIfNew(map: MlMap, id: string, features: GeoJSON.Feature[]) {
-  const source = map.getSource<GeoJSONSource>(id);
-  if (!source) return;
-  const json = JSON.stringify(features);
-  if (lastSent.get(source) === json) return;
-  lastSent.set(source, json);
-  source.setData({ type: "FeatureCollection", features });
 }

@@ -1,13 +1,9 @@
 name: Native iOS
 
-# The native app (apps/ios/, docs/NATIVE.md): the engine's framework, the
-# Xcode project XcodeGen makes from apps/ios/project.yml, and its tests on a
-# simulator (docs/CI.md, "The tiers"). ci.yml calls this on a pull request
-# that touches the app, the build and its unit tests alone (`unit_only`), so
-# "CI passed" waits for it (#499 merged with a phone app not compiling when
-# its build ran beside CI). On its own: main's pushes, the unit tests and
-# the CardSmokeTests UI smoke on the iPhone and the iPad after merge, then
-# TestFlight; claude/native-* pushes; and every night the whole suite (`full`).
+# The native app (apps/ios/, docs/NATIVE.md) built once and tested on a simulator a leg (docs/CI.md, "The tiers").
+# ci.yml calls this on a pull request that touches the app, the build and its unit tests alone (`unit_only`), so
+# "CI passed" waits for it (#499). On its own: main's pushes, the unit tests and the UI smoke on the iPhone and
+# the iPad after merge, then TestFlight; claude/native-* pushes; and every night the whole suite (`full`).
 #
 # Actions are pinned as in ci.yml (its opening comment says why).
 on:
@@ -41,7 +37,7 @@ on:
       - scripts/ci/content-mtimes.py
       - scripts/build/ios-strings.sh
       - scripts/build/licences.sh
-      - scripts/ci/ios_test.sh
+      - scripts/ci/ios_*
       - .github/workflows/native-ios.yml
   workflow_dispatch:
     inputs:
@@ -70,17 +66,24 @@ jobs:
   test:
     # GitHub's xcode-27 image, the one hosted image with .tool-versions'
     # Xcode 27.2 (actions/runner-images, images/macos/xcode-27-arm64-Readme.md).
-    runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
-    # A pull request runs the iPhone; main's push the iPad too (the primary device,
-    # decision 0058), a wave the iPad's whole suite in four legs; the night iPhone Duo
-    # too, each its own runner (three on one ran over 80 minutes, #572).
-    name: ${{ matrix.device == 'iPhone' && 'test' || format('test ({0})', matrix.device) }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.MAC_RUNNER || 'xcode-27' }}
+    # A pull request runs the iPhone, building it itself; main's push the iPad too (decision 0058),
+    # a wave the iPad's suite in four legs, the night iPhone Duo too, each on its own runner. There the
+    # build leg builds once and every device boots and waits for it (scripts/ci/ios_products.py): one
+    # leg building and testing ran past main's 25 minutes (run 45171956202; CI audit 2026-11-23, H5).
+    name: ${{ matrix.device == 'build' && 'build' || matrix.device == 'iPhone' && 'test' || format('test ({0})', matrix.device) }}
     strategy:
       fail-fast: false
       matrix:
-        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["iPhone", "iPad", "iPhone Duo"]' || inputs.unit_only && '["iPhone"]' || github.workflow == 'Validate wave' && '["iPhone", "iPad 1/4", "iPad 2/4", "iPad 3/4", "iPad 4/4"]' || '["iPhone", "iPad"]') }}
+        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["build", "iPhone", "iPad", "iPhone Duo"]' || inputs.unit_only && '["iPhone"]' || github.workflow == 'Validate wave' && '["build", "iPhone", "iPad 1/4", "iPad 2/4", "iPad 3/4", "iPad 4/4"]' || '["build", "iPhone", "iPad"]') }}
     # A pull request's set is a few minutes; a wave's quarter of the iPad's suite some thirty with its build, a night's device thirty.
     timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || contains(matrix.device, '/') && 45 || 25 }}
+    # actions: read, for the other legs to find the iPhone's build.
+    permissions:
+      actions: read
+      contents: read
+    env:
+      BUILDS: ${{ matrix.device == 'build' || inputs.unit_only == true }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -90,55 +93,50 @@ jobs:
       - name: The Xcode .tool-versions names
         run: scripts/ci/select-xcode.sh
       - name: The Swift's layout
+        if: env.BUILDS == 'true'
         run: scripts/dev/format.sh --check swift
-      # The Mac mini's runner keeps rustup in ~/.cargo/bin, off its PATH.
-      - name: rustup on the PATH
-        run: '[ -d "$HOME/.cargo/bin" ] && echo "$HOME/.cargo/bin" >> "$GITHUB_PATH" || true'
       # The engine changes far less than the app, so cached by its own files:
       # the simulator's slice alone, all a test links (testflight builds its
       # own; three slices took 342 s, run 44932668280). Saved at once.
       - name: The engine, as last built
+        if: env.BUILDS == 'true'
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/ios/Frameworks/WingtipEngine
           key: engine-ios-sim-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+      # The Mac mini's runner keeps rustup in ~/.cargo/bin, off its PATH.
       - name: The engine, for the app
-        if: steps.engine.outputs.cache-hit != 'true'
+        if: env.BUILDS == 'true' && steps.engine.outputs.cache-hit != 'true'
         env:
           WINGTIP_ENGINE_SLICES: simulator
-        run: echo "::notice title=Cache miss::engine-ios" && engine/bindings/ffi/build-xcframework.sh
+        run: echo "::notice title=Cache miss::engine-ios" && PATH="$HOME/.cargo/bin:$PATH" engine/bindings/ffi/build-xcframework.sh
       - name: The engine, kept
-        if: steps.engine.outputs.cache-hit != 'true'
+        if: env.BUILDS == 'true' && steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/ios/Frameworks/WingtipEngine
           key: engine-ios-sim-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
-      - name: The Xcode project, from project.yml
+      # The project, then DerivedData as main's last build left it. xcodebuild compares file times and a checkout
+      # stamps every file anew, so each input is stamped from its content (content-mtimes.py) and XCBuild ignores
+      # the new inodes. Written from main and the nights only (a pull request's would crowd the 10 GB of cache).
+      - name: The Xcode project, its inputs stamped by content
+        if: env.BUILDS == 'true'
         run: |
-          # The Mac mini's runner has xcodegen already, and no Homebrew.
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate --spec apps/ios/project.yml --project apps/ios
-      # DerivedData as main's last build left it: the SDK's precompiled
-      # modules and every object whose inputs are unchanged. xcodebuild
-      # compares file times, and a checkout stamps every file anew, so each
-      # input is stamped from its content first (scripts/ci/content-mtimes.py)
-      # and XCBuild told to ignore the new inodes a checkout and a restore
-      # give. Written from main and the nights only: a pull request's would
-      # crowd the repository's 10 GB of cache.
-      - name: Inputs stamped by content
-        run: |
           defaults write com.apple.dt.XCBuild IgnoreFileSystemDeviceInodeChanges -bool YES
           python3 scripts/ci/content-mtimes.py apps/ios apps/web/src/lib/fixtures apps/web/src/lib/acs.json \
             services/planner/tests_wingtip/fixtures/native/phone
       - name: DerivedData, as last built
+        if: env.BUILDS == 'true'
         id: derived
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ${{ runner.temp }}/derived
           key: ios-derived-v1-${{ hashFiles('.tool-versions', 'apps/ios/project.yml') }}-${{ github.sha }}
           restore-keys: ios-derived-v1-${{ hashFiles('.tool-versions', 'apps/ios/project.yml') }}-
-      - if: steps.derived.outputs.cache-matched-key == ''
+      - if: env.BUILDS == 'true' && steps.derived.outputs.cache-matched-key == ''
         run: echo "::notice title=Cache miss::ios-derived-data"
       # This leg's device, the newest the runner's Xcode has (an iPad a Pro
       # where there is one), by its id, picked as on the Mac; LEG for ios_test.sh.
@@ -146,31 +144,48 @@ jobs:
         id: sim
         env:
           DEVICE: ${{ matrix.device }}
-        run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "${DEVICE%% [0-9]*}")" >> "$GITHUB_OUTPUT" && echo "LEG=$DEVICE" >> "$GITHUB_ENV"
-      # Built, then the string catalog's check, then the tests, so a stale
-      # catalog fails before they run. scripts/ci/ios_test.sh picks them: a
-      # pull request's unit tests, main's push's CardSmokeTests too (the one
-      # UI smoke), the night's whole suite.
+        run: |
+          d=${DEVICE/#build/iPhone}
+          echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "${d%% [0-9]*}")" >> "$GITHUB_OUTPUT" && echo "LEG=$DEVICE" >> "$GITHUB_ENV"
+      # Built, then the string catalog's check, then the tests (ios_test.sh picks them), so a stale catalog fails first.
       - name: Built for the simulator
+        if: env.BUILDS == 'true'
         env:
           SIM: ${{ steps.sim.outputs.id }}
         run: scripts/ci/ios_test.sh build
-      # The string catalog holds every word the Swift says: the build above
-      # extracted them (SWIFT_EMIT_LOC_STRINGS), and xcodebuild, unlike
-      # Xcode's editor, never writes them back, so a change that adds or
-      # drops a string must commit the catalog scripts/build/ios-strings.sh
-      # syncs. After the build, since it reads the build's .stringsdata.
+      # Every word the Swift says, which the build extracted (SWIFT_EMIT_LOC_STRINGS) and xcodebuild never writes
+      # back: a change that adds or drops one commits the catalog scripts/build/ios-strings.sh syncs.
       - name: The string catalog is what the Swift says
+        if: env.BUILDS == 'true'
         run: scripts/build/ios-strings.sh --check --derived-data "$RUNNER_TEMP/derived"
       # Settings.bundle's acknowledgements, LicensePlist's from this build's packages (docs/legal/credits.md).
       - name: The acknowledgements are the packages' licences
+        if: env.BUILDS == 'true'
         run: scripts/build/licences.sh ios --check "$RUNNER_TEMP/derived/SourcePackages"
+      # The build, for the device legs (three days: a leg run again alone still finds it).
+      - if: env.BUILDS == 'true' && env.UNIT_ONLY != 'true'
+        run: python3 scripts/ci/ios_products.py pack
+      - if: env.BUILDS == 'true' && env.UNIT_ONLY != 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: ios-products
+          path: ${{ runner.temp }}/ios-products.tar
+          compression-level: 1
+          overwrite: true
+          retention-days: 3
+      - name: The iPhone's build, once it is there
+        if: env.BUILDS != 'true'
+        env:
+          SIM: ${{ steps.sim.outputs.id }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/ios_products.py fetch
       - name: Tested on the simulator
+        if: matrix.device != 'build'
         env:
           SIM: ${{ steps.sim.outputs.id }}
         run: scripts/ci/ios_test.sh test
       - name: DerivedData, kept
-        if: always() && matrix.device == 'iPhone' && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+        if: always() && env.BUILDS == 'true' && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         continue-on-error: true
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
@@ -179,31 +194,14 @@ jobs:
             !${{ runner.temp }}/derived/Logs
           key: ${{ steps.derived.outputs.cache-primary-key }}
       - name: Each device's first screen
-        # At night, for a reader: what the device shows on launch (an iPad
-        # its search too), a picture, not a check.
-        if: env.FULL == 'true'
+        if: env.FULL == 'true' && matrix.device != 'build'
         continue-on-error: true
         env:
           SIM: ${{ steps.sim.outputs.id }}
-          NAME: ${{ matrix.device }}
-        run: |
-          app="$RUNNER_TEMP/derived/Build/Products/Debug-iphonesimulator/Wingtip.app"
-          name=$(echo "$NAME" | tr 'A-Z ' 'a-z-')
-          mkdir -p "$RUNNER_TEMP/screens"
-          xcrun simctl boot "$SIM" 2>/dev/null || true
-          xcrun simctl bootstatus "$SIM" -b > /dev/null
-          xcrun simctl install "$SIM" "$app"
-          xcrun simctl privacy "$SIM" grant location "$WINGTIP_BUNDLE_ID" || true
-          xcrun simctl launch "$SIM" "$WINGTIP_BUNDLE_ID"
-          sleep 25
-          xcrun simctl io "$SIM" screenshot "$RUNNER_TEMP/screens/$name.png"
-          [ "$name" = ipad ] || exit 0
-          xcrun simctl terminate "$SIM" "$WINGTIP_BUNDLE_ID" || true
-          xcrun simctl launch "$SIM" "$WINGTIP_BUNDLE_ID" -screen airport
-          sleep 15
-          xcrun simctl io "$SIM" screenshot "$RUNNER_TEMP/screens/ipad-search.png"
+          DEVICE: ${{ matrix.device }}
+        run: scripts/ci/ios_screens.sh
       - name: The screens
-        if: always() && env.FULL == 'true'
+        if: always() && env.FULL == 'true' && matrix.device != 'build'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: native-ios-screens-${{ strategy.job-index }}
@@ -228,7 +226,7 @@ jobs:
     # This workflow's own push to main (or a run by hand there), once the
     # App Store Connect key is set; never a call from CI, nor a night.
     if: github.workflow == 'Native iOS' && github.ref == 'refs/heads/main' && github.event_name != 'schedule' && vars.APP_STORE_KEY_ID != ''
-    runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.MAC_RUNNER || 'xcode-27' }}
     timeout-minutes: 45
     env:
       TEAM: ${{ vars.APPLE_TEAM_ID }}

@@ -52,7 +52,7 @@ export default function DepartureWindowStrip() {
         // Each tile the hour's own shape -- its hour's line, its mark and
         // the night's row -- in the strip's own room round it (py-1), so the
         // hours come in where their shapes were and the Brief under them
-        // does not move (the flicker audit's FL-21).
+        // does not move.
         <div className="flex gap-2 py-1" aria-busy="true" data-testid="departure-window-pending">
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="flex w-12 shrink-0 flex-col items-center gap-0.5 rounded-xl py-1.5" aria-hidden="true">
@@ -127,7 +127,10 @@ export default function DepartureWindowStrip() {
             </Carousel>
           </ToggleGroup>
           {m.selected && (
-            <div className="flex flex-col gap-1 rounded-xl bg-muted/60 px-3.5 py-2.5" data-testid="departure-window-detail">
+            // Plain words under the strip, no box of their own (the owner,
+            // 2026-11-25: "a simple briefing with pages"): a grey box read
+            // as one more thing to tap.
+            <div className="flex flex-col gap-1 px-4" data-testid="departure-window-detail">
               <div className={cn("flex items-center gap-2 font-medium", TEXT.row)}>
                 <FindingIcon finding={HOUR_FINDING[m.selected.verdict]} className="size-5" />
                 <span className={FINDING_TONE[HOUR_FINDING[m.selected.verdict]]}>

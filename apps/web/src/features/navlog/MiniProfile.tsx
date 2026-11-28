@@ -35,8 +35,8 @@ const HILLS = "polygon(0 72%, 10% 52%, 22% 64%, 36% 34%, 50% 58%, 63% 42%, 77% 6
  * The side view while its ground is fetched, the card's height as the
  * chart will be: shadcn's Skeleton in the ground's and the climb's shapes,
  * and the miles' row under them, where it was an empty white box with the
- * Dry run over it (the design review, 2026-10-28, the owner's "I want
- * all"). Said once to a screen reader; the shapes are not.
+ * Dry run over it (the owner, 2026-10-28: "I want all").
+ * Said once to a screen reader; the shapes are not.
  */
 function ProfileSkeleton({ look }: { look: string }) {
   return (
@@ -94,7 +94,7 @@ export default memo(function MiniProfile({
    *  picked the legs have no top of climb, the line runs field to field,
    *  and its highest point is the destination's elevation, not the cruise
    *  -- the tag read "FL-022" on a plan at FL-145 and the ground went red
-   *  against it (the UI audit's A1, 2026-11-17). */
+   *  against it. */
   cruise?: number | null;
   /** Its height in feet, the Profile card's slider's scale (sideViewTop). */
   top?: number | null;
@@ -124,8 +124,8 @@ export default memo(function MiniProfile({
   // The miles flown by patterns and procedures past the chart's line,
   // which the strip's distance (the totals' `procedure_nm`) and the nav
   // log's rows count and the ground under the line cannot: put into the
-  // axis's end, so it reads the strip's own figure (the FPL audit's A5,
-  // 2026-11-08) in the strip's own words, "1,334 nm", where it read
+  // axis's end, so it reads the strip's own figure
+  // in the strip's own words, "1,334 nm", where it read
   // "1317 nm + 17.2 pattern" (the owner's list, 2026-11-17: one distance
   // format everywhere). The patterns are flown at the ends, so the line's
   // end is still the landing.
@@ -180,7 +180,7 @@ export default memo(function MiniProfile({
             <linearGradient id={tintId} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={H}>
               {/* The theme's red, not the chart's: the chart's #d70015 at
                   55% on the night's navy card was a murky maroon the ground
-                  read through (the UI audit's B11); the theme's is a step
+                  read through; the theme's is a step
                   lighter at night (tokens.json theme.dark.destructive). */}
               <stop offset={tintOffset(tint?.red_from_ft)} style={{ stopColor: "var(--destructive)" }} data-tint="red" />
               <stop offset={tintOffset(tint?.red_from_ft)} stopColor={CHART.caution} data-tint="red-end" />
@@ -308,7 +308,7 @@ export default memo(function MiniProfile({
             data-testid="mini-profile-cruise"
           >
             {/* The owner's FL-055, as the altitude field and the wheel write it
-              (lib/format flightLevel; the FPL audit's A7); a reader hears the
+              (lib/format flightLevel); a reader hears the
               feet in the chart's own label. */}
             {flightLevel(preview ?? cruise)}
           </span>
@@ -328,8 +328,7 @@ export default memo(function MiniProfile({
   );
   // A picture, named; but a group where the Profile card's altitude slider
   // is laid on it (`wheelSlot`): an image holds no control, and the slider
-  // in one was axe's nested-interactive (WCAG 4.1.2; the iOS audit's
-  // "altitude on the profile").
+  // in one was axe's nested-interactive (WCAG 4.1.2).
   const box = (
     <div role={wheelSlot ? "group" : "img"} data-testid="mini-profile" aria-label={label} className={look}>
       {chart}

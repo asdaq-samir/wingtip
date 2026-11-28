@@ -1,12 +1,13 @@
 /**
  * The camera owner's rules (camera.ts), apart from any map so a unit test
  * can hold them: which intent wins the camera, how long a follow's ease
- * runs, and how a pick travels. The flicker audit of 2026-11-14 (cause D)
- * found eight movers each calling the camera with only partial checks of
+ * runs, and how a pick travels. Eight movers were found each calling the camera with only partial checks of
  * the others, so a follow cut a flight short (FL-7), a route's fit was
  * overridden 2 ms after own ship's ease (FL-22) and the dry run restarted
  * its ease at every fix (FL-13).
  */
+
+import { MOTION } from "../../tokens";
 
 /** What a move is for. The pilot's own hand is heard, never asked. */
 export type Intent = "hand" | "pick" | "fit" | Follow;
@@ -42,8 +43,17 @@ export function verdict(running: Intent | null, ask: Intent): "go" | "wait" {
   return running && rank(running) > rank(ask) ? "wait" : "go";
 }
 
-/** A follow's first ease, before there is an interval to match, ms. */
-const FOLLOW_FIRST_MS = 500;
+/** A follow's first ease, before there is an interval to match, ms: the
+ *  dry run's fix step (a quarter second), so a scrub's first step lands as
+ *  its next comes rather than half a second behind the finger (the motion
+ *  changes the owner took, 2026-11-27: "Do it all"). */
+const FOLLOW_FIRST_MS = 250;
+
+/** A pick's or a fit's move on the map, ms, on the camera's own ease:
+ *  near enough at once that the map answers the tap, long enough to see
+ *  where it went. 600 to 800 ms had the map still moving after the card
+ *  was up. */
+export const CAMERA_MS = 400;
 /** The shortest and longest a follow's ease runs, ms: a frame-rate stream
  *  is not eased shorter than this, and a GPS gone quiet for a while is not
  *  crept towards over many seconds. */
@@ -66,6 +76,28 @@ export function followMs(sinceLastMs: number | null): number {
  *  start and a stop at each one. */
 export const linear = (t: number) => t;
 
+/** A dry run's scrub's first step after the press (camera's `glide`): the
+ *  press may land miles along the course, so the map eases there on a
+ *  page's time (motion.page), fast first and settling, rather than jump. */
+export const SCRUB_GLIDE = { duration: MOTION.page * 1000, easing: (t: number) => 1 - (1 - t) ** 3 };
+
+/** A frame at 60 Hz, ms: a glide with less left than this is over. */
+const FRAME_MS = 16;
+
+/**
+ * How a dry run's scrubbed step eases, if it does, and when its glide
+ * ends, `glideEnds` and `now` on performance.now's clock: the press's step
+ * ("glide") on SCRUB_GLIDE; a later step while that glide is under way
+ * aims it again at the finger's latest point for the time it has left,
+ * so the next move carries it on rather than cutting it off; null once it
+ * is over, when each move jumps with the finger.
+ */
+export function scrubGlide(jump: boolean | "glide", glideEnds: number, now: number) {
+  if (jump === "glide") return { ends: now + SCRUB_GLIDE.duration, timing: SCRUB_GLIDE };
+  const left = glideEnds - now;
+  return jump && left > FRAME_MS ? { ends: glideEnds, timing: { duration: left, easing: SCRUB_GLIDE.easing } } : null;
+}
+
 /** How many screens away a pick is still eased to, not flown. */
 const EASE_SCREENS = 3;
 
@@ -87,8 +119,7 @@ export const FOLLOW_LEAST_PX = 1;
 /** The step under which own ship's real-GPS follow jumps once a fix
  *  rather than easing, px. A linear ease redraws the whole map every
  *  frame, 60 a second, to move the chart a pixel or two at cruise (at
- *  120 kt about 0.5 px/s at zoom 9, 2 px/s at zoom 11: the in-flight
- *  audit, 2026-11-21), which is battery for nothing; a step this small
+ *  120 kt about 0.5 px/s at zoom 9, 2 px/s at zoom 11), which is battery for nothing; a step this small
  *  looks the same jumped. The owner took it (Q1, 2026-11-21). */
 export const FOLLOW_JUMP_UNDER_PX = 8;
 

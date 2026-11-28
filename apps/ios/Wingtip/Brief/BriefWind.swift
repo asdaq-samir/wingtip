@@ -1,7 +1,6 @@
 import Foundation
 
-/// The Brief's wind aloft for the route (the web's glance, the Brief
-/// audit's finding 11): the strongest headwind over every leg, the
+/// The Brief's wind aloft for the route (the web's glance): the strongest headwind over every leg, the
 /// engine's `route_headwind`, where the first stretch's wind said nothing
 /// of a later leg flown into a strong one. The component is the wind
 /// triangle's along each leg's true course (FAA-H-8083-25C ch. 16; the

@@ -26,7 +26,7 @@ import tempfile
 from pathlib import Path
 
 from wingtip import airmen, outside
-from wingtip.registry import HEADERS
+from wingtip.config import REGISTRY_HEADERS
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ def refresh(force: bool = False, today: dt.date | None = None) -> str | None:
         name = url.rsplit("/", 1)[1]
         if name == built and not force and airmen.store_path().exists():
             return None
-        resp = outside.get(url, headers=HEADERS, timeout=DOWNLOAD_TIMEOUT_S, stream=True)
+        resp = outside.get(url, headers=REGISTRY_HEADERS, timeout=DOWNLOAD_TIMEOUT_S, stream=True)
         if resp.status_code == 404:
             continue
         resp.raise_for_status()

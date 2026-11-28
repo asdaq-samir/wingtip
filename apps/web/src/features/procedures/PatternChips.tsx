@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
-import { ChevronRight, Wind } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { CollapsibleContent } from "../../components/ui/collapsible";
@@ -8,9 +8,10 @@ import type { Runway } from "../../lib/api/types";
 import { landingRunway, runwayNumber, type RunwayEnd, type WindPick, type Landing, type ProcedureAirport } from "../plan";
 import { trafficPattern } from "../../lib/trafficPattern";
 import type { EndFit } from "./runwayFit";
-import { setRunwayLine, useOpenRunwayLines } from "./useProceduresRoute";
+import { setRunwayLine, useOpenRunwayLines } from "./fieldsOpen";
 import { CHIP } from "./routeListStyle";
 import { Chips, NONE, TRAY_BODY } from "./RunwayChips";
+import { endChoice, runwayEnds } from "./runwayChoice";
 
 /** Where each runway line's pull-downs stood at its last drawing, by the
  *  line's key, and whether it was open: for them to glide from there as it
@@ -66,10 +67,7 @@ export function PatternChips({
   landing: Landing | null;
   onPick: (end: string) => void;
 }) {
-  const ends = (a.runways ?? [])
-    .filter((r) => !r.closed)
-    .flatMap((r) => (r.runway_ends ?? []).filter((e) => e.heading_true_deg != null).map((e) => ({ runway: r, end: e })))
-    .sort((x, y) => x.end.ident.localeCompare(y.end.ident));
+  const ends = runwayEnds(a);
   const into = wind && !wind.calm ? wind.ident : null;
   // With an approach, the chip is the runway landed on: the approach's
   // own, straight in, or another only where the plate publishes circling
@@ -87,33 +85,7 @@ export function PatternChips({
   const key = `${a.ident}:${label ?? ""}`;
   const open = useOpenRunwayLines((s) => s.open.includes(key));
   const setOpen = (next: boolean) => setRunwayLine(key, next);
-  const chip = (runway: Runway, end: RunwayEnd) => {
-    const id = runwayNumber(end.ident);
-    const windward = into === id;
-    // Too short in red, a crosswind past the demonstrated or a length
-    // inside the margin in amber: a ring, the chip not grown.
-    const fitted = fitOf(runway, end);
-    const ring = fitted?.short
-      ? "ring-2 ring-destructive"
-      : fitted && (fitted.crosswindOver || fitted.close)
-        ? "ring-2 ring-caution"
-        : undefined;
-    const said = fitted?.short ? ", too short today" : fitted?.close ? ", little to spare in length" : "";
-    const words = `Runway ${id}${windward ? ", into the wind" : ""}${fitted?.crosswindOver ? `, crosswind ${fitted.crosswindKt} knots, past the airplane's demonstrated` : ""}${said}`;
-    const fit = fitted?.short ? "short" : fitted?.crosswindOver ? "crosswind" : fitted?.close ? "close" : undefined;
-    return {
-      id,
-      ring,
-      words,
-      fit,
-      face: (
-        <>
-          {windward && <Wind className="size-4" strokeWidth={2.2} aria-hidden />}
-          {id}
-        </>
-      ),
-    };
-  };
+  const chip = (runway: Runway, end: RunwayEnd) => endChoice(runway, end, into, fitOf);
   const picked = chosen !== null ? ends.find((e) => runwayNumber(e.end.ident) === chosen) : undefined;
   // The pull-downs after the runways ("+ Arrival", "+ Approach") glide to
   // where the line puts them as it opens and folds, as the runways slide
@@ -148,7 +120,7 @@ export function PatternChips({
     // gliding in from there they ran the panel sideways past its edge for
     // the glide's 300 ms -- the nav log 434 px wide in a 385 px drawer as
     // the runway picked into the wind folded the line (checkpoints.spec,
-    // CI 2026-10-28), the iOS audit's "no sideways scroll in a panel".
+    // CI 2026-10-28): no sideways scroll in a panel.
     const room = Math.max(0, base.getBoundingClientRect().width - box.getBoundingClientRect().width - x);
     const from = Math.min(was.x - x, room);
     if (Math.abs(from) < 1) return;
@@ -157,7 +129,7 @@ export function PatternChips({
     // Laid out from there before the transition back: a call, as the
     // minifier drops a bare read of offsetWidth.
     box.getBoundingClientRect();
-    box.style.transition = "transform 300ms ease-out";
+    box.style.transition = "transform var(--motion-page) var(--motion-sheet-ease)";
     box.style.transform = "";
   });
   if (shown === "folded" && picked) {
@@ -165,11 +137,10 @@ export function PatternChips({
     return (
       // The pull-downs under the tray where there is no room beside it:
       // a field with an arrival and an approach to add ran the nav log
-      // 41 points past a phone's width (the iOS audit's "no sideways
-      // scroll in a panel"). Laid out in the tray's own row (`contents`,
+      // 41 points past a phone's width. Laid out in the tray's own row (`contents`,
       // RunwayTray's `folded`), so where they wrap they start at the line's
-      // leading edge, under "Land RWY", not under the runway's chip (the
-      // HIG review, 2026-11-21; the owner took it). Open, they slide with
+      // leading edge, under "Land RWY", not under the runway's chip (the owner took it).
+      // Open, they slide with
       // the runways, as before.
       <div ref={line} className="contents" data-testid="procedure-patterns">
         {/* Still the group's choice to a screen reader, picked: the same
@@ -185,9 +156,11 @@ export function PatternChips({
           // to the pull-downs beside it (the iOS rule's gap-3), so the
           // runway's area, 3 past the tray, and a pull-down's, 6 round it,
           // do not cross: at 8 KDEN's runway lost 3 of its probes to
-          // "+ ARR" (the HIG review, 2026-11-21). A margin, so a pull-down
+          // "+ ARR". A margin, so a pull-down
           // wrapped under it starts at the line's edge.
-          className={cn(TRAY_BODY, "mr-3 rounded-l-none")}
+          // It comes in from its end as the open line comes from its head,
+          // the group and not the chip, whose own transition is its colour.
+          className={cn(TRAY_BODY, "mr-3 rounded-l-none appear-slide [--appear-from:0.75rem_0]")}
         >
           <ToggleGroupItem
             variant="glass"
@@ -200,13 +173,8 @@ export function PatternChips({
             // Its area from the tray's head to the tray's own right edge, the
             // 3 of padding past the chip: sized to its own 44 across, it
             // stopped at the chip and the tray's 44-point square, 47 across,
-            // lost its two corners there above and below (the iOS audit's
-            // P1, on KDLH's folded runway, 2026-11-06), over index.css's rule.
-            className={cn(
-              CHIP,
-              "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-3 motion-safe:duration-300",
-              c.ring,
-            )}
+            // lost its two corners there above and below, over index.css's rule.
+            className={cn(CHIP, "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px]", c.ring)}
             aria-label={`${c.words}${note ? `, ${note}` : ""}, picked: tap for the other runways`}
             data-testid="procedure-pattern"
             data-folded=""
@@ -232,7 +200,7 @@ export function PatternChips({
     <div ref={line} className="flex min-w-0 flex-1 flex-wrap items-center gap-2" data-testid="procedure-patterns">
       {a.runways === null || !ends.length ? (
         <>
-          {/* The runways' chips in outline while they come (the style audit, 2026-10-26), their words for a screen
+          {/* The runways' chips in outline while they come, their words for a screen
               reader; none for a field with none to give. The pull-downs wrap under them, never cut to "+ A…". */}
           {a.runways === null && (
             <span role="status" className={cn("flex items-center gap-2", TRAY_BODY)}>
@@ -272,11 +240,7 @@ export function PatternChips({
               flushStart
               tray
               trailingRef={after}
-              enter={
-                chosen !== null
-                  ? "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-6 motion-safe:duration-300"
-                  : undefined
-              }
+              enter={chosen !== null ? "appear-slide [--appear-from:-0.75rem_0]" : undefined}
             >
               {ends.map(({ runway, end }) => {
                 const c = chip(runway, end);

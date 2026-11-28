@@ -1,0 +1,61 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A name the FAA writes in capitals, written as a name is, where faa_words' sentence case and place_name do not fit: a registrant's (kind person, the default: each word capitalised, a company's form such as LLC, Inc's INC as Inc, and a word with figures kept; the aircraft registry's MASTER and DEREG), a maker's (maker: its initials kept too, IAE, CFM; ACFTREF), a facility's (facility: its RCO or TWR kept; NASR's frequencies) or a street address (street: its compass points NE and ordinals 1st as written; NASR's contacts, the Census geocoder). From text, or each of texts as a list (a null row answers \"\"). A name's spelling, no aviation rule.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NameCaseInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "texts": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": "A long list's rows in one call; where given, text is not read."
+        },
+        "kind": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "person",
+            "maker",
+            "facility",
+            "street",
+            null
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "NameCaseAnswer",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

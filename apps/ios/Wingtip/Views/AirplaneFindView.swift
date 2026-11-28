@@ -9,8 +9,6 @@ struct KeptAirplane: Codable, Hashable, Sendable, Identifiable {
     var type: String?
     var id: String { hex }
 
-    static let key = "aircraftFavorites"
-
     /// Its callsign, else its registration, else its address.
     static func name(_ plane: TrafficAircraft) -> String { plane.callsign ?? plane.registration ?? plane.hex.uppercased() }
 }

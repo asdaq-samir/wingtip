@@ -12,7 +12,7 @@
 //!
 //! Where icing is possible but the freezing level is not known, the
 //! flight's altitudes cannot be held to it: `gonogo_icing_unchecked` says
-//! so, rather than nothing (the aviation audit's AV-7).
+//! so, rather than nothing.
 
 use super::calls::{truth, In};
 use crate::figures::words::{feet, js_num};

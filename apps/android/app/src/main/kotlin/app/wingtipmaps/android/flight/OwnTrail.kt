@@ -66,9 +66,10 @@ class OwnTrail(
     /** A fix taken: whether the airplane is at flying speed, by the
      *  engine's rule, and so whether the phone keeps its position with
      *  the screen off (OwnShip's service); and the point kept where it
-     *  is far or late enough from the last. */
-    fun took(fix: OwnShip.Fix): Boolean {
-        val isFlying = underway(fix.groundspeedKt)
+     *  is far or late enough from the last. `known` is the engine's answer
+     *  already asked for this fix (OwnShip), its failure kept as flying. */
+    fun took(fix: OwnShip.Fix, known: Result<Boolean>? = null): Boolean {
+        val isFlying = known?.getOrDefault(true) ?: underway(fix.groundspeedKt)
         flying = isFlying
         if (!isFlying) return false
         val point = PathPoint(t = fix.atMs / 1000.0, lat = fix.lat, lon = fix.lon, altFt = fix.altitudeFt)

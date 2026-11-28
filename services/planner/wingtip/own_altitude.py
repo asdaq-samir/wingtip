@@ -17,7 +17,7 @@ A point flown more than once (out to a VOR and back over it, a round trip
 through a fix) has an altitude of its own at each visit: "VPBNG@2:4500"
 is the second time the route is at VPBNG, its visit (visits), where a
 bare "VPBNG:4500" is every visit, as the parameter was before it was
-kept by visit (the web audit's WEB-2, 2026-11-14). A visit's own comes
+kept by visit. A visit's own comes
 before the bare one. Counted by visit, not by the point's place in the
 route: the planner adds an airway's fixes to the route, and a stop added
 before the point would move every place after it.

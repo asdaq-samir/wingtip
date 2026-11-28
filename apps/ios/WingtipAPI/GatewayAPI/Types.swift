@@ -952,8 +952,14 @@ extension APIProtocol {
     }
     /// - Remark: HTTP `GET /api/logbook/currency`.
     /// - Remark: Generated from `#/paths//api/logbook/currency/get(currency)`.
-    public func currency(headers: Operations.Currency.Input.Headers = .init()) async throws -> Operations.Currency.Output {
-        try await currency(Operations.Currency.Input(headers: headers))
+    public func currency(
+        query: Operations.Currency.Input.Query = .init(),
+        headers: Operations.Currency.Input.Headers = .init()
+    ) async throws -> Operations.Currency.Output {
+        try await currency(Operations.Currency.Input(
+            query: query,
+            headers: headers
+        ))
     }
     /// - Remark: HTTP `PUT /api/logbook/currency`.
     /// - Remark: Generated from `#/paths//api/logbook/currency/put(setCurrencyDates)`.

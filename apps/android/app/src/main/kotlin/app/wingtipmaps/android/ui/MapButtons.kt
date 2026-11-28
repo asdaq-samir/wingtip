@@ -67,7 +67,7 @@ enum class OwnShipMode { OFF, READING, FOLLOWING }
  * with the position button first and 3D last (`threeD`), as there is no
  * sheet's left column to hold it. Each state of
  * the position button has its own shape as well as its colour, never the
- * colour alone (the UI audit's #12): off is the outlined arrow on the
+ * colour alone: off is the outlined arrow on the
  * tonal button; reading is the filled arrow there; following is the
  * filled arrow on the filled, checked toggle in the tint -- the
  * concept table's `near_me` (docs/design/icons.md), and TalkBack says

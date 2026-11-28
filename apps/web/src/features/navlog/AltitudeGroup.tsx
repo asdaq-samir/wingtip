@@ -49,6 +49,7 @@ export default function AltitudeGroup({
   disabled = false,
   rules = "vfr",
   profile,
+  unreachable = false,
 }: {
   nav: NavLogAltitude | null;
   legs: Leg[];
@@ -70,6 +71,9 @@ export default function AltitudeGroup({
   /** The Profile's button at the pill's end, after the figures
    *  (ProfilePillButton): what it opens and its caution's mark. */
   profile?: PillProfile;
+  /** The planner could not be reached (usePlan's `unreachable`): the last
+   *  altitude shown stays, not FL-___, till the route is planned again. */
+  unreachable?: boolean;
 }) {
   const engineReady = useEngineReady();
   const cruise = cruiseOf(nav, legs);
@@ -89,7 +93,14 @@ export default function AltitudeGroup({
   // feet MSL still, as VoiceOver says them (`said`). Typed, three figures
   // of hundreds of feet as written, at the owner's ask ("when altitude is
   // entered it should only hold 3 digits"), or feet in four or five.
-  const flying = commanded ?? cruise;
+  const planned = commanded ?? cruise;
+  // The altitude last shown, kept through a re-plan the planner could not
+  // answer: a restart blanked the pilot's FL-115 to FL-___ (the owner's
+  // screenshot, 2026-11-23). Set during render, React's way of keeping a
+  // value from the render before.
+  const [lastShown, setLastShown] = useState<number | null>(null);
+  if (planned !== null && planned !== lastShown) setLastShown(planned);
+  const flying = planned ?? (unreachable ? lastShown : null);
   const shown = typed ?? (problem || flying === null ? "" : flightLevel(flying).slice(3));
   const fly = () => {
     if (typed === null) return;
@@ -167,8 +178,8 @@ export default function AltitudeGroup({
         // Its after the field's own 44-point band, centred as the field's
         // is (PILL_FIELD's), no further: so a tap just above or below "FL-" is the
         // field's, as a tap on it is (the addon focuses the field), where
-        // the three figures' field alone was 31 wide, the head round it
-        // (the iOS audit's P1, "altitude-input" 31×44); over the head under
+        // the three figures' field alone was 31 wide, the head round it;
+        // over the head under
         // it (z-10), as the field is, where the band's foot reaches it.
         <InputGroupAddon
           className={cn(
@@ -218,8 +229,7 @@ export default function AltitudeGroup({
           }
         }}
         // Its figures taken whole as it is tapped, as iOS selects a field
-        // whose value is replaced, so three figures typed replace them (the
-        // FPL audit's A6, 2026-11-08). After the tap's own caret, a frame
+        // whose value is replaced, so three figures typed replace them. After the tap's own caret, a frame
         // on, which would put it back.
         onFocus={(e) => {
           const input = e.currentTarget;

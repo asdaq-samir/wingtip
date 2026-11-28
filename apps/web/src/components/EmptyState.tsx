@@ -28,7 +28,7 @@ export default function EmptyState({
         <EmptyMedia variant="icon" className="mb-1 size-12 rounded-xl text-tint [&_svg:not([class*='size-'])]:size-6">
           {icon}
         </EmptyMedia>
-        <EmptyTitle className={cn("font-semibold tracking-tight", TEXT.heading)}>{title}</EmptyTitle>
+        <EmptyTitle className={cn("font-semibold", TEXT.heading)}>{title}</EmptyTitle>
         {children && <EmptyDescription className={TEXT.prose}>{children}</EmptyDescription>}
       </EmptyHeader>
       {action && <EmptyContent>{action}</EmptyContent>}

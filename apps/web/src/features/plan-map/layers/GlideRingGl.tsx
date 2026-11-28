@@ -16,7 +16,7 @@ const SOURCE = "glide-ring";
 
 /** The last nearest field's elevation the planner gave, and where the
  *  field is: kept in this browser, so the ring stays with no
- *  connection (the offline audit's gap 5), as iOS keeps its own
+ *  connection, as iOS keeps its own
  *  (InFlight.swift). */
 type KeptField = { lat: number; lon: number; field_ft: number };
 const keptField = () => keptStore<KeptField | null>("wingtip.glide-field", null);
@@ -52,7 +52,7 @@ export function GlideRingGl() {
   const ratio = useGlideRatio();
   // Off (its default), in an emergency or with no glide ratio, nothing
   // here reads the fix: the ring was drawn again at every GPS fix for
-  // nothing while it was off (the waste audit of 2026-11-21, item 13).
+  // nothing while it was off.
   return on && !emergency && ratio != null ? <GlideRing ratio={ratio} /> : null;
 }
 

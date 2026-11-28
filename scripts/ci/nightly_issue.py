@@ -14,8 +14,9 @@ when this workflow's section changed. A green run on a workflow with no
 open issue writes nothing. Agents close the issue once every section is
 green.
 
-Env: GH_TOKEN, GH_REPO, WORKFLOW, EVENT (schedule or push; schedule if
-unset), CONCLUSION, RUN_ID, RUN_URL.
+Env: GH_TOKEN, GH_REPO, WORKFLOW, EVENT (schedule, push, or
+workflow_dispatch for the night on claude/integration; schedule if unset),
+CONCLUSION, RUN_ID, RUN_URL.
 
   python3 scripts/ci/nightly_issue.py [--dry-run]
 """
@@ -29,10 +30,16 @@ import re
 import subprocess
 import sys
 
-TITLES = {"schedule": "Nightly CI failed", "push": "Main CI failed (after merge)"}
+# The night on the open claude/integration (night_integration.sh) comes as workflow_dispatch, an issue of its own.
+TITLES = {
+    "schedule": "Nightly CI failed",
+    "push": "Main CI failed (after merge)",
+    "workflow_dispatch": "Nightly CI failed (claude/integration)",
+}
 WHAT = {
     "schedule": "A scheduled run failed (docs/CI.md, \"Rules\": a red nightly comes first).",
     "push": "A run on main after a merge failed: tier 2, which no pull request waits for (docs/CI.md, \"The tiers\").",
+    "workflow_dispatch": "The night's run on the open wave's claude/integration failed: fix it there before the wave merges.",
 }
 LABEL = "ready"
 

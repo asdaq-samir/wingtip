@@ -52,8 +52,7 @@ public class PaperworkClient {
      * Each airplane's, in order, in one round trip: its recorded
      * inspections and checks, the ELT battery's marked date, and the
      * owner's items with a day or hours ({@code kept}, by airplane id).
-     * One ask an airplane was 1 + A calls a pilot in the daily reminders
-     * (waste-server audit C).
+     * One ask an airplane was 1 + A calls a pilot in the daily reminders.
      *
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
@@ -79,7 +78,7 @@ public class PaperworkClient {
     public static PlannerInspectionsAsk askOf(Aircraft a, List<AircraftDueItem> kept) {
         PlannerInspectionsAsk ask = new PlannerInspectionsAsk()
                 .tailNumber(a.getTailNumber())
-                .forHire(a.isForHire())
+                .forHire(a.getForHire())
                 .annualOn(a.getAnnualOn())
                 .eltOn(a.getEltInspectedOn())
                 .eltBatteryDueOn(a.getEltBatteryDueOn())

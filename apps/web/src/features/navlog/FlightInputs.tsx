@@ -79,7 +79,7 @@ export default function FlightInputs({
   // a Cessna 172").
   // The tail last asked for: a registry's answer for any other is late,
   // the pilot having picked again meanwhile, and is dropped -- it put back
-  // the airplane picked before (the pill audit, 2026-11-18).
+  // the airplane picked before.
   const latest = useRef<string | null>(null);
   const take = (tail: string) => {
     if (!engineReady || !N_NUMBER.test(tail) || tail === tailNow) return;
@@ -101,7 +101,7 @@ export default function FlightInputs({
   };
   // What is typed, taken: on Enter (the keyboard's Done) only. Leaving
   // the field lets go of it instead -- taken there, "N4" half typed over
-  // N12345 became the airplane (the pill audit, 2026-11-18) -- and a
+  // N12345 became the airplane -- and a
   // suggestion picked is its own pick.
   const commit = () => {
     const tail = (typed ?? "").trim().toUpperCase();
@@ -185,8 +185,7 @@ export default function FlightInputs({
           // label of a value, here none) would empty what is half typed.
           if (details.reason !== "input-change") return;
           // An N typed first ("N12", as a pilot writes it) is that N, not
-          // a second one: it read "N-N12", which no list matched (the UI
-          // audit's B4, 2026-11-17).
+          // a second one: it read "N-N12", which no list matched.
           const letters = next
             .toUpperCase()
             .replace(/^N-?/, "")
@@ -257,17 +256,22 @@ export default function FlightInputs({
           </InputGroupAddon>
           {/* Its ⓘ after the number (the owner, 2026-11-20: "can N number
               show an info button"): the airplane's card, the one any
-              N-number opens (lib/airplane/profileStore); with none picked,
+              N-number opens (lib/airplane/profileStore), on its Figures
+              (the owner's design, 2026-11-26); with none picked,
               the field, as a tap on the pill asks for one. */}
           <InputGroupAddon align="inline-end" className={PILL_END_ADDON}>
             <InputGroupButton
               size="icon-xs"
               className={PILL_END}
               aria-label="Airplane info"
-              onClick={() => (tailNow ? openAirplaneProfile(tailNow) : field.current?.focus())}
+              onClick={() => (tailNow ? openAirplaneProfile(tailNow, null, true) : field.current?.focus())}
               data-testid="aircraft-info"
             >
-              <ICON.info aria-hidden="true" />
+              {/* Filled, iOS's info.circle.fill (the owner, 2026-11-26): the
+                  disc the look's tint, as every tappable glyph beside it is,
+                  its "i" cut out in the sheet's colour, at least 4.2:1 on
+                  the pill and 5:1 on the disc in every look. */}
+              <ICON.info aria-hidden="true" className="[&_circle]:fill-tint [&_circle]:stroke-tint [&_path]:stroke-(--sheet)" />
             </InputGroupButton>
           </InputGroupAddon>
         </ComboboxInput>

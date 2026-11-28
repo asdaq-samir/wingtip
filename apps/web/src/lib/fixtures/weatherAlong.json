@@ -75,9 +75,9 @@
   {"levels": {"3000": {"wind_dir_true_deg": 350, "wind_speed_kt": 10}, "6000": {"wind_dir_true_deg": 30, "wind_speed_kt": 30}},
    "altitude_ft": 4500, "wind": {"wind_dir_true_deg": 10.0, "wind_speed_kt": 20.0}},
   {"levels": {"3000": {"wind_dir_true_deg": null, "wind_speed_kt": 3}, "6000": {"wind_dir_true_deg": 270, "wind_speed_kt": 25}},
-   "altitude_ft": 3000, "wind": {"wind_dir_true_deg": 270, "wind_speed_kt": 25}},
+   "altitude_ft": 3000, "wind": {"wind_dir_true_deg": 270, "wind_speed_kt": 0}},
   {"levels": {"3000": {"wind_dir_true_deg": null, "wind_speed_kt": 3}},
-   "altitude_ft": 3000, "wind": null}
+   "altitude_ft": 3000, "wind": {"wind_dir_true_deg": 0, "wind_speed_kt": 0}}
  ],
  "forecastHour": [
   {"hours_ahead": null, "period": "06"},

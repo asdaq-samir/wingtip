@@ -95,7 +95,10 @@ export function describeError(err: unknown, fallback = "request failed"): string
   const firstLine = err instanceof Error ? err.message.split("\n")[0] : undefined;
   // An answer with no words of its own but HTTP's reason ("Not Found",
   // "Bad Gateway"), which the Brief printed raw ("Words unavailable: Not
-  // Found", the UI audit, 2026-11-09): said as what it means to a pilot.
+  // Found"): said as what it means to a pilot.
+  // The gateway's own 404 while the planner restarts, which named its path.
+  if (err instanceof ApiError && err.status === 404 && plannerUnreachable(err))
+    return "The planner isn't answering. Try again in a moment.";
   if (err instanceof ApiError && firstLine && BARE_REASON.test(firstLine)) {
     return err.status === 404 ? "Not available yet" : err.status >= 500 ? "The planner is not answering; try again in a moment" : fallback;
   }
@@ -109,11 +112,38 @@ const BARE_REASON =
 
 /** Whether the planner could not find a point of the route: its 404,
  *  which names the ident in quotes ("No airport goes by 'KZZZ'."). The
- *  route box says it on that point's pill, not the map's problem line
- *  (the FPL audit's A2): the pilot typed it, the system is not down. */
+ *  route box says it on that point's pill, not the map's problem line:
+ * the pilot typed it, the system is not down.
+ *  A 404 that names nothing is not the planner's answer but the way's:
+ *  the gateway's "no such planner endpoint" while the planner restarts
+ *  and its document is not in, or a proxy's bare "Not Found" -- which
+ *  the route box said as "A point of the route is not an airport or
+ *  waypoint we know" (the owner's screenshot, 2026-11-23). */
 export function isUnknownPlace(err: unknown): boolean {
-  return err instanceof ApiError && err.status === 404;
+  return err instanceof ApiError && err.status === 404 && /'[^']+'/.test(err.message);
 }
+
+/** The gateway's 404 for a path no planner document it holds marks
+ *  (PlannerProxyController): the planner's paths not yet read again as
+ *  it restarts. */
+const NO_SUCH_ENDPOINT = /^no such planner endpoint/i;
+
+/**
+ * Whether the planner could not be reached at all -- the request dropped,
+ * the gateway's 502, 503 or 504 while it restarts, or the gateway not yet
+ * knowing its paths -- as against an answer that says no. Asked again by
+ * itself (lib/queryRetry, lib/queryClientCore) until it is back, and said
+ * as that, never as the pilot's mistake.
+ */
+export function plannerUnreachable(err: unknown): boolean {
+  if (isDropped(err)) return true;
+  if (!(err instanceof ApiError)) return false;
+  if (err.status === 502 || err.status === 503 || err.status === 504) return true;
+  return err.status === 404 && NO_SUCH_ENDPOINT.test(err.message);
+}
+
+/** What the pilot reads while the planner cannot be reached. */
+export const PLANNER_UNREACHABLE = "The planner could not be reached. Trying again by itself.";
 
 /** The ident an unknown place's 404 names, if it names one. */
 export function unknownPlaceOf(err: unknown): string | null {

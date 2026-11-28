@@ -57,6 +57,9 @@ final class Emergency {
     /// engine's ranking order is kept.
     func visibility(_ ident: String) -> String? {
         let metar = answer?.fields.first { $0.ident == ident }?.metar
+        // TODO(services): the planner's EmergencyMetar sends no
+        // visibility_minus yet, so an "M1/4SM" here still reads "1/4 sm";
+        // pass `minus:` once it does.
         return AirportWords.miles(metar?.visibilitySm, plus: metar?.visibilityPlus).map { "Visibility \($0)" }
     }
 
@@ -97,7 +100,7 @@ final class Emergency {
             } catch {
                 guard !Task.isCancelled else { return }
                 do {
-                    if let kept = try Self.deviceFields(fix: fix, aircraft: aircraft, glideRatio: glideRatio, pins: pins) {
+                    if let kept = try await Self.deviceFields(fix: fix, aircraft: aircraft, glideRatio: glideRatio, pins: pins) {
                         answer = kept
                         from = .device
                         askedKey = key
@@ -132,8 +135,10 @@ final class Emergency {
     /// planner sends an own airplane's), with no best-glide speed or wind,
     /// so the engine works the reach in still air only where it can; none
     /// with no airplane picked or no ratio, and the nearest come first.
-    /// Nil where no pack is kept round the airplane.
-    static func deviceFields(fix: OwnShip.Fix, aircraft: String?, glideRatio: Double?, pins: PackFields.Pins) throws -> APIEmergencyFields? {
+    /// Nil where no pack is kept round the airplane. Off the main thread,
+    /// as the emergency's sheet is up: the box is widened read by read.
+    @concurrent
+    nonisolated static func deviceFields(fix: OwnShip.Fix, aircraft: String?, glideRatio: Double?, pins: PackFields.Pins) async throws -> APIEmergencyFields? {
         let at = fix.coordinate
         guard let kept = try PackFields.ranked(lat: at.latitude, lon: at.longitude, altitudeFt: fix.altitudeFt, speedKt: fix.groundspeedKt,
                                                limit: 12, pins: pins), !kept.pins.isEmpty else { return nil }
@@ -168,7 +173,8 @@ final class Emergency {
     /// diversion drill's "diversion"), the airplane's figures as the
     /// planner sent them (none: the glide is not guessed). The planner's
     /// members are the engine's, in its snake case.
-    static func bestFields(_ answer: APIEmergencyFields, fix: OwnShip.Fix, variationDeg: Double?, mode: String = "glide") throws -> Ranked {
+    static func bestFields(_ answer: APIEmergencyFields, fix: OwnShip.Fix, variationDeg: Double?, mode: String = "glide",
+                           drill: Bool? = nil) throws -> Ranked {
         let snake = Planner.snakeEncoder
         return try Engine.bestFields(
             mode: mode,
@@ -177,7 +183,7 @@ final class Emergency {
             wind: try answer.wind.map { try Engine.recoded($0, encoder: snake) },
             variationDeg: variationDeg,
             airplane: try answer.airplane.map { try Engine.recoded($0, encoder: snake) },
-            fields: try answer.fields.map { try Engine.recoded($0, encoder: snake) })
+            fields: try answer.fields.map { try Engine.recoded($0, encoder: snake) }, drill: drill)
     }
 
     /// The section of the emergency checklist asked, "Engine failure in
@@ -196,12 +202,12 @@ final class Emergency {
         return "\(Int(nearest.distanceNm.rounded())) nm \(AirportWords.compassPoint(nearest.bearingDeg + 180)) of \(nearest.name)"
     }
 
-    /// The airplane's track, magnetic: the true less an easterly variation
-    /// ("east is least", FAA-H-8083-25C, chapter 16).
+    /// The airplane's track, magnetic: the engine's magnetic_of, the true
+    /// less an easterly variation ("east is least", FAA-H-8083-25C,
+    /// chapter 16). None where either is unknown.
     static func magnetic(_ trueDeg: Double?, variationDeg: Double?) -> Double? {
         guard let trueDeg, let variationDeg else { return nil }
-        let deg = (trueDeg - variationDeg).truncatingRemainder(dividingBy: 360)
-        return deg < 0 ? deg + 360 : deg
+        return try? Engine.magneticOf(trueDeg: trueDeg, variationDeg: variationDeg)
     }
 
     /// The call, filled from what the screen knows; a part not known is

@@ -15,7 +15,7 @@ const pages = (page: Page) => sideDrawer(page).getByTestId("sheet-pages");
 export const toggle = (page: Page) => page.getByTestId("sheet-page-toggle");
 
 /** The page `at` up: on Search the toggle offering FPL, by name, a button
- *  never pressed; on FPL no toggle. */
+ *  a plain button, no toggle's state; on FPL no toggle. */
 export async function expectPage(page: Page, at: 0 | 1) {
   await expect(pages(page)).toHaveAttribute("data-page", String(at));
   if (at === 1) {
@@ -27,7 +27,7 @@ export async function expectPage(page: Page, at: 0 | 1) {
   // (And none while the search is in use: its Cancel is in the toggle's place.)
   if (await toggle(page).isVisible()) {
     await expect(toggle(page)).toHaveAccessibleName("FPL, show flight plan");
-    await expect(toggle(page)).toHaveAttribute("aria-pressed", "false");
+    await expect(toggle(page)).not.toHaveAttribute("aria-pressed");
   }
 }
 

@@ -5,7 +5,7 @@ import { routeProfileQuery } from "../../lib/queryClient";
 
 /**
  * What the flight path reads in the air, kept with the route's answers
- * (keepRouteAnswers), which missed both (the offline audit's gap 6):
+ * (keepRouteAnswers), which missed both:
  *
  * - the route from the side (/api/route-profile): the ground under it and
  *   the Class B, C and D it passes through, which FPL's side view, the dry

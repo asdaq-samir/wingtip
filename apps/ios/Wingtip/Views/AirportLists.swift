@@ -153,6 +153,7 @@ struct NearestRow: View {
         let bearing = field.bearingDeg.truncatingRemainder(dividingBy: 360)
         HStack(spacing: WingtipSpace.md) {
             Circle().strokeBorder(Color(uiColor: FlightCategory.mark(field.flightCategory)), lineWidth: 2.5).frame(width: 12, height: 12)
+                .categoryCased()
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 HStack(spacing: WingtipSpace.sm) {
                     Text(field.ident).font(.headline)

@@ -33,8 +33,7 @@ export default function ReplayCameraGl() {
     // Drawn in the frame after the replay's clock or the camera
     // changes, and each frame only while an orbit turns by itself:
     // a paused replay ran a frame loop for nothing, writing the same
-    // camera name on the map at every one (the waste audit of 2026-11-21,
-    // item 14).
+    // camera name on the map at every one.
     const step = (now: number) => {
       frame = 0;
       const cam = useReplayCamera.getState();

@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_airspace::navaid_kinds::call",
+  "description": "The navaid kinds by NASR's NAV_BASE NAV_TYPE, one copy for every reader: `vor`, the navaids the sectional draws as a VOR (the VOR's hexagon, the VOR/DME's in its box and the VORTAC's; FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Radio Aids to Navigation), and `navaid`, every kind a route may fly over, in the order one is kept over another of the same ident (not the VOR test facilities, VOT, the fan markers or a marine beacon, which no route flies to).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavaidKindsInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "NavaidKinds",
+      "type": "object",
+      "properties": {
+        "vor": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The VORs, VORTAC first."
+        },
+        "navaid": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Every kind a route flies over, the likelier to fly to first."
+        }
+      },
+      "required": ["vor", "navaid"]
+    }
+  },
+  "required": ["input", "answer"],
+  "additionalProperties": false
+}

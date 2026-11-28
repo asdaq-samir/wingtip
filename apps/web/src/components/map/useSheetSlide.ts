@@ -46,10 +46,13 @@ export function useSheetSlide(map: GlMap | null, insetsRef: RefObject<MapInsets>
     let settling = false;
     let after = 0;
     let last = -1;
+    // The map's foot, read once a slide starts, not every frame: it changes
+    // only as the window does, and read each frame after the sheet's own
+    // writes it forced a layout.
+    let bottom = 0;
     const step = () => {
       frame = 0;
       if (!sheet) return stop();
-      const bottom = map.getContainer().getBoundingClientRect().bottom;
       const cover = Math.round(Math.min(sheet.most, Math.max(sheet.least, bottom - sheet.node.getBoundingClientRect().top)));
       if (cover !== last && cameraOf(map).slide({ ...padOf(insetsRef.current), bottom: cover })) last = cover;
       if (!swiping && !settling && --after < 0) return stop();
@@ -57,6 +60,7 @@ export function useSheetSlide(map: GlMap | null, insetsRef: RefObject<MapInsets>
       map.triggerRepaint();
     };
     const start = () => {
+      if (!active.current) bottom = map.getContainer().getBoundingClientRect().bottom;
       active.current = true;
       if (!frame) frame = requestAnimationFrame(step);
     };

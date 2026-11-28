@@ -22,12 +22,17 @@
  * features/pilot/debrief takes each leg): within 30 nm of it the error is a few feet
  * in a mile.
  *
- * Worked out by the shared engine (engine/crates/route/src/approach/debrief.rs,
- * through lib/engine), the very code the phones ask with no signal: the
- * tolerances, their sources (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175)
- * and the findings' words live there. Only the shapes the page reads are
+ * Worked out by the shared engine (engine/crates/route/src/approach/debrief.rs),
+ * the very code the phones ask with no signal: the tolerances, their
+ * sources (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) and the findings'
+ * words live there. Finding the approach and its transition is asked of
+ * the planner (POST /api/approach/debriefs), so the WebAssembly every
+ * phone downloads leaves it out; the pilot's minimums, typed as they go,
+ * are asked of the web's own engine. Only the shapes the page reads are
  * made here.
  */
+import { queryOptions } from "@tanstack/react-query";
+import { api } from "../lib/api/client";
 import type { ProcedureDrawing } from "../lib/api/types";
 import type { ApproachDebrief as Debriefed, ApproachFinding } from "../lib/engine/contract";
 import { callEngine, type EngineAnswer } from "../lib/engine/engine";
@@ -161,8 +166,11 @@ export function findApproaches(
   points: TrackPoint[],
   picked: string | null = null,
   minimumsFt: number | null = null,
-): ApproachDebrief[] {
-  return callEngine("approach_find", { drawings, points: enginePoints(points), picked, minimums_ft: minimumsFt }).map(shaped);
+): Promise<ApproachDebrief[]> {
+  if (!drawings.length) return Promise.resolve([]);
+  return api
+    .approachDebriefs({ drawings, points: enginePoints(points), picked, minimums_ft: minimumsFt })
+    .then((found) => found.map(shaped));
 }
 
 /**
@@ -170,13 +178,13 @@ export function findApproaches(
  * fix of it before the final passed, and the closest to it on the way; the
  * debrief from vectors (`vectors`) where none was flown.
  */
-export function withTransition(
+async function withTransition(
   vectors: ApproachDebrief,
   drawings: ProcedureDrawing[],
   points: TrackPoint[],
   minimumsFt: number | null = null,
-): ApproachDebrief {
-  const best = callEngine("approach_transition", {
+): Promise<ApproachDebrief> {
+  const best = await api.approachTransition({
     faf_at: vectors.fafAt,
     passed: vectors.wayIn.passed,
     drawings,
@@ -185,3 +193,25 @@ export function withTransition(
   });
   return best ? { ...shaped(best), alsoFits: vectors.alsoFits } : vectors;
 }
+
+/** A track, in a query's key: once read it does not change, so its ends
+ *  and length name it rather than every point. */
+const trackKey = (points: TrackPoint[]) => [points.length, points[0]?.t ?? null, points.at(-1)?.t ?? null];
+/** Drawings, in a query's key, by what each is. */
+const drawingsKey = (drawings: ProcedureDrawing[]) => drawings.map((d) => `${d.airport}:${d.id}:${d.transition ?? ""}:${d.cycle}`);
+
+/** findApproaches over one field's drawings, kept for the page's life. */
+export const approachesQuery = (drawings: ProcedureDrawing[], points: TrackPoint[], picked: string | null) =>
+  queryOptions({
+    queryKey: ["approach-debriefs", drawingsKey(drawings), trackKey(points), picked],
+    queryFn: () => findApproaches(drawings, points, picked),
+    staleTime: Infinity,
+  });
+
+/** withTransition for an approach found, kept for the page's life. */
+export const transitionQuery = (vectors: ApproachDebrief, drawings: ProcedureDrawing[], points: TrackPoint[]) =>
+  queryOptions({
+    queryKey: ["approach-transition", vectors.airport, vectors.id, vectors.fafAt, drawingsKey(drawings), trackKey(points)],
+    queryFn: () => withTransition(vectors, drawings, points),
+    staleTime: Infinity,
+  });

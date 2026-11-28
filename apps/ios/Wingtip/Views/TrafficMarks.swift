@@ -28,20 +28,30 @@ final class TrafficAnnotation: NSObject, MKAnnotation {
 /// A chevron on the airplane's track, amber within 1,000 ft of own ship's
 /// height and cyan otherwise (the web app's TRAFFIC_COLOURS), with its
 /// height under it as TCAS writes it and its callsign beside.
-final class TrafficMarkView: MKAnnotationView {
+final class TrafficMarkView: MKAnnotationView, NightWords {
     static let reuse = "traffic"
     private let chevron = UIImageView(image: UIImage(systemName: "location.north.fill"))
-    private let label = UILabel()
+    private let label = NightWordLabel()
+    /// The chevron's amber or cyan and the chart's brightness, its tint
+    /// the one dimmed by the other.
+    private var ink = NightPalette.trafficFar, brightness: CGFloat = 1
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         frame = CGRect(x: 0, y: 0, width: 64, height: 34)
         chevron.frame = CGRect(x: 23, y: 0, width: 18, height: 18)
         chevron.contentMode = .scaleAspectFit
+        // A dark edge round the chevron, the course's own edge colour, so
+        // the near traffic's amber, a collision hazard, stands off the
+        // chart's paper by day and by night, as the obstacles' ring does.
+        chevron.layer.shadowColor = WingtipColor.Chart.routeEdge.cgColor
+        chevron.layer.shadowOffset = .zero
+        chevron.layer.shadowRadius = 1
+        chevron.layer.shadowOpacity = 1
         label.frame = CGRect(x: 0, y: 18, width: 64, height: 14)
         label.font = UIFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
         label.textAlignment = .center
-        label.textColor = .label
+        label.ink = .label
         label.haloFollowing(self)
         addSubview(chevron)
         addSubview(label)
@@ -57,7 +67,8 @@ final class TrafficMarkView: MKAnnotationView {
 
     func show(_ mark: TrafficAnnotation) {
         let drawn = mark.drawn
-        chevron.tintColor = drawn?.near == true ? NightPalette.trafficNear : NightPalette.trafficFar
+        ink = drawn?.near == true ? NightPalette.trafficNear : NightPalette.trafficFar
+        paint()
         chevron.transform = CGAffineTransform(rotationAngle: CGFloat((mark.plane.trackDeg ?? 0) * .pi / 180))
         label.text = drawn?.label ?? ""
         // Its height against own ship in words, and "near" said where the
@@ -66,4 +77,16 @@ final class TrafficMarkView: MKAnnotationView {
         let against = mark.ownFt.flatMap { own in mark.plane.altitudeFt.map { ", " + FlightWords.against($0 - own) } } ?? ""
         accessibilityLabel = "\(mark.title ?? "Airplane")\(height)\(against)\(drawn?.near == true ? ", near" : "")"
     }
+
+    /// At night the chevron is dimmed by its colour, its dark edge kept
+    /// whole (the obstacles' option A): the near amber about 3.2:1 on the
+    /// edge at the default Dimmer, where faded by its alpha with the edge
+    /// it was about 1.3 to 1.8:1 on the paper.
+    func dim(_ brightness: CGFloat) {
+        self.brightness = brightness
+        paint()
+        label.brightness = brightness
+    }
+
+    private func paint() { chevron.tintColor = OverlayDim.colour(ink, brightness: brightness) }
 }

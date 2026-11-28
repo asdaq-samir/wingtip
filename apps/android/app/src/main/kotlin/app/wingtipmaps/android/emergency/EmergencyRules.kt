@@ -49,7 +49,7 @@ interface EmergencyRules {
     fun mayday(facts: MaydayFacts, data: EmergencyFields?): Result<EngineContract.MaydayCallAnswer>
     fun checklistSection(titles: List<String>): Int?
     /** The pilot's own checklist read by the engine; a failure where it
-     *  could not be, said on the card (the audit's AND-4). */
+     *  could not be, said on the card. */
     fun sections(text: String): Result<List<ChecklistSection>>
     fun compassWord(bearingDeg: Double): String?
 

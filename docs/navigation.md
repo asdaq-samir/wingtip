@@ -144,7 +144,7 @@ alike (the owner, 2026-11-09). Two kinds, one address:
 - **Plain:** `/app/plan?open=shared&dep=KMSN&dest=KOSH&stops=KJVL&altitude_ft=3500&depart=2026-11-10T15:00:00Z&type=C172&rules=vfr`,
   the plan in the link itself, which stores nothing on a server and opens
   signed out. `tail=` only where the pilot ticks Include N-number;
-  `tanks=` where the pilot set the fuel on a gauge (the iPhone and Android
+  `tanks=` where a link carries its own fuel in the tanks (the iPhone and Android
   write and read it through the generated link keys, `LinkKey.tanks` and
   `LinkKey.TANKS`, and Use This Plan sets it on the receiver's gauges;
   the web's `lib/sharedFlight` neither writes nor reads it yet). Sent from

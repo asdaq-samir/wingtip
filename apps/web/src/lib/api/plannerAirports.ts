@@ -23,7 +23,7 @@ import type {
  *  so a day's copy in the browser of an older shape is not read as this
  *  one: 2, each field's place after its size (2026-10-22); 3, the closed
  *  fields' labels beside the rows (2026-11-13, decision 0043); 4, each
- *  private, military or joint-use field's use (the private-fields audit);
+ *  private, military or joint-use field's use;
  *  5, each place to a ten-thousandth of a degree, not a hundredth, as the
  *  map is brought to it (features/fpl/vm/useMapPins). */
 const INDEX_VERSION = 5;
@@ -86,9 +86,9 @@ export const plannerAirports = {
   /** DEP/DEST's own autocomplete -- airports whose ident or name
    *  starts with `q`. Empty `q` short-circuits server-side to `[]`, so
    *  this is safe to call on every keystroke including the first. */
-  airportSearch: (q: string, fixes = false, near = "") =>
+  airportSearch: (q: string, fixes = false, near = "", signal?: AbortSignal) =>
     planner
-      .GET("/api/airports/search", { params: { query: { q, fixes: fixes || undefined, near: near || undefined } } })
+      .GET("/api/airports/search", { params: { query: { q, fixes: fixes || undefined, near: near || undefined } }, signal })
       .then(data<AirportSearch>)
       .then((r) => r.airports),
 

@@ -59,9 +59,9 @@ def webp_tiles(tiles, workers: int = 0) -> list:
     return [(z, x, y, n, lambda: next(stream)) for (z, x, y, _, _), n in zip(ordered, lengths)]
 
 
-def _write(kind: ChartKind, cycle: str, scale: int, tiles, workers: int = 0) -> int:
+def _write(kind: ChartKind, cycle: str, scale: int, tiles, workers: int = 0, root: Path | None = None) -> int:
     return tile_archive.write(
-        archive_path(kind.key, cycle, scale),
+        archive_path(kind.key, cycle, scale, root),
         webp_tiles(tiles, workers),
         archive_metadata(kind, cycle, scale),
         tile_type=tile_archive.TileType.WEBP,
@@ -161,21 +161,31 @@ def pack_complete(cycle: str, kinds: tuple = tuple(KINDS), workers: int | None =
     return packed
 
 
-def transcode(cycle: str, kinds: tuple = tuple(KINDS), workers: int | None = None) -> dict:
+def transcode(cycle: str, kinds: tuple = tuple(KINDS), workers: int | None = None, out: Path | None = None) -> dict:
     """Every archive of `cycle` packed before the WebP (its header's tile
     type PNG) written again as lossless WebP, the same pixels: the
     one-off conversion of a cycle on disk (the charts job's `transcode`),
     with no tile drawn again, so no revision is bumped -- a browser that
-    kept a PNG under a tile's address keeps the same picture. It needs
-    free space for the largest archive again beside it. Returns {archive
-    name: tiles}."""
+    kept a PNG under a tile's address keeps the same picture. In place it
+    needs free space for the largest archive again beside it. With `out`,
+    each is written under out/<cycle>/ instead and the served one is left
+    alone, to be moved over it later; one already there as WebP is not
+    written again, so a stopped run resumes. Returns {archive name:
+    tiles}."""
     done = {}
     for key in kinds:
         for scale in chart_grid.TILE_SCALES:
             archive = tile_archive.on_disk(archive_path(key, cycle, scale))
             if archive is None or archive.header["tile_type"] == tile_archive.TileType.WEBP:
                 continue
-            count = _write(KINDS[key], cycle, scale, list(archive.tiles()), workers or _pack_workers())
+            staged = out and tile_archive.on_disk(archive_path(key, cycle, scale, out))
+            if staged and staged.header["tile_type"] == tile_archive.TileType.WEBP:
+                continue
+            if out:
+                (out / cycle).mkdir(parents=True, exist_ok=True)
+            count = _write(KINDS[key], cycle, scale, list(archive.tiles()), workers or _pack_workers(), out)
             done[tile_archive.archive_name(key, scale)] = count
-            log.info("%s %s: %d tiles written again as WebP", cycle, tile_archive.archive_name(key, scale), count)
+            log.info(
+                "%s %s: %d tiles written again as WebP under %s", cycle, tile_archive.archive_name(key, scale), count, out or "the cache"
+            )
     return done

@@ -5,11 +5,19 @@ import { datisQuery, itwsLines, liveWhen, programLine, rvrQuery, saaWords, zulu 
 import { briefVerdict, type VerdictInput } from "./verdict";
 
 const quiet: VerdictInput = {
-  weather: { pending: false, failed: null, vfrNotRecommended: [], underMinimums: [], hazards: [], unchecked: [], worst: "3,500 ft · 6 sm" },
-  airspace: { pending: false, unchecked: false, inForce: [], near: 0, specialUse: [] },
+  weather: {
+    pending: false,
+    failed: null,
+    vfr_not_recommended: [],
+    under_minimums: [],
+    hazards: [],
+    unchecked: [],
+    worst: "3,500 ft · 6 sm",
+  },
+  airspace: { pending: false, unchecked: false, in_force: [], near: 0, special_use: [] },
   altitude: { pending: false, problem: null, cautions: [], flown: "FL055 · Lowest" },
-  fuel: { pending: false, marginGal: 12.4, requiredGal: 27.6, reserveMin: 30 },
-  runways: { pending: false, worked: true, short: [], crosswind: [], beyond: [], unchecked: [] },
+  fuel: { pending: false, margin_gal: 12.4, required_gal: 27.6, reserve_min: 30 },
+  runways: { pending: false, worked: true, short: [], crosswind: [], beyond: [], tailwind: [], close: [], unchecked: [] },
   balance: { pending: false, worked: true, problems: [], takeoff: "2,407 lb at 41.2 in" },
   risk: { level: "low", line: "Low · 2 points" },
 };
@@ -46,7 +54,7 @@ describe("what SWIM says now", () => {
   it("says an ITWS alert with its airport and the Go / No-Go cautions on it, saying its source", () => {
     const lines = itwsLines([microburst]);
     expect(lines).toEqual(["ATL: Runway 27L arrival microburst alert 40 kt, 3 mile final to runway"]);
-    const item = finding({ ...quiet, weather: { ...quiet.weather, terminalAlerts: lines } }, "weather");
+    const item = finding({ ...quiet, weather: { ...quiet.weather, terminal_alerts: lines } }, "weather");
     expect(item).toMatchObject({ finding: "caution", detail: `${lines[0]} (FAA ITWS, now)` });
   });
 
@@ -54,9 +62,9 @@ describe("what SWIM says now", () => {
     expect(zulu(AT_2130)).toBe("2130Z");
     expect(programLine(groundStop)).toBe("Ground stop at EWR until 2130Z, delays average 45 min");
     expect(programLine({ ...groundStop, restriction: true, program: null })).toBeNull();
-    const flowPrograms = [programLine(groundStop)!];
-    expect(finding({ ...quiet, weather: { ...quiet.weather, flowPrograms } }, "weather").finding).toBe("ok");
-    expect(finding({ ...quiet, weather: { ...quiet.weather, flowPrograms, ifr: true } }, "weather").detail).toBe(
+    const flow_programs = [programLine(groundStop)!];
+    expect(finding({ ...quiet, weather: { ...quiet.weather, flow_programs } }, "weather").finding).toBe("ok");
+    expect(finding({ ...quiet, weather: { ...quiet.weather, flow_programs, ifr: true } }, "weather").detail).toBe(
       "Ground stop at EWR until 2130Z, delays average 45 min (FAA Command Center)",
     );
   });
@@ -71,7 +79,7 @@ describe("what SWIM says now", () => {
     expect(liveWhen("by-notam", undefined, before)).toBe("by-notam");
     expect(saaWords(active)).toBe("Active now until 2130Z (FAA SFDPS)");
     expect(
-      finding({ ...quiet, airspace: { ...quiet.airspace, specialUse: [{ name: "R-4401A", when: "active-now" }] } }, "airspace").detail,
+      finding({ ...quiet, airspace: { ...quiet.airspace, special_use: [{ name: "R-4401A", when: "active-now" }] } }, "airspace").detail,
     ).toBe("R-4401A active now (FAA SFDPS)");
   });
 });

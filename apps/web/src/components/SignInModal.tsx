@@ -87,7 +87,7 @@ export default function SignInModal({
   const emailId = useId();
   // On a phone a sheet from the navigation bar's edge, the bottom unless
   // the pilot moved it, as iOS asks to sign in, in the floating sheet's
-  // look, at the owner's pick of the sheets audit (D3, 2026-10-17); wider,
+  // look, at the owner's pick (2026-10-17); wider,
   // the dialog in the middle (SheetDialog).
   return (
     <SheetDialog
@@ -110,7 +110,7 @@ export default function SignInModal({
           <Button
             variant="link"
             data-testid="sign-in"
-            className={cn("relative h-auto p-0 font-bold tracking-tight text-tint hit-y-2 after:inset-x-0", TEXT.hero)}
+            className={cn("relative h-auto p-0 font-bold text-tint hit-y-2 after:inset-x-0", TEXT.hero)}
           >
             Sign In
           </Button>
@@ -187,7 +187,7 @@ export default function SignInModal({
                 }}
               />
               {/* Its word on it, where a grey envelope alone read as nothing
-                to tap (the UI audit, 2026-11-09); a spinner in place of
+                to tap; a spinner in place of
                 the envelope while the link is on its way. */}
               <Button
                 type="submit"

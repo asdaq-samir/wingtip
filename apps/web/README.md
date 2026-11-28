@@ -109,7 +109,9 @@ a second or two and served at once, with no restart. Each build is
 written whole into `apps/web/.dist-next` and only then renamed into
 `dist`, index.html last (`VITE_PUBLISH_DIR`, `vite.config.ts`), so a page
 loading mid-build gets the old build or the new one, never half of one;
-the replaced builds' chunks stay an hour for pages already open. Both can live in
+the replaced builds' chunks stay a day for pages already open. The watch
+makes no `.br` or `.gz` (the compression plugin raced the publish and
+failed every rebuild after); the gateway gzips on the fly instead. Both can live in
 `.env` (`COMPOSE_PROFILES=web-dev` for the profile), as on the owner's
 Mac; for once:
 
@@ -350,7 +352,10 @@ sheet under it.
 inline styles are colours computed from data (a rating, a flight
 category, a score) and CSS custom properties. What the map draws in
 WebGL is styled in its layers' MapLibre paint properties
-(`lib/map/gl/glStyle.ts`, `glOverlays.ts`), not in CSS.
+(`lib/map/gl/glStyle.ts`, `glOverlays.ts`), not in CSS; the overlay
+tiles' layers are `design/map-style.json`'s, generated into
+`lib/generated/overlayLayers.ts` (and Android's `OverlayStyle`) by
+`scripts/build/map-style.sh`.
 
 ## Maps
 
@@ -385,7 +390,7 @@ PMTiles archive the planner builds once a cycle
 (`wingtip.vector_tiles`) and serves in byte ranges
 (`/api/overlay-tiles/{name}.pmtiles`), read by protomaps' `pmtiles`
 library (`lib/map/sources/overlayTiles.ts`). They are in the map's first style
-(`glOverlays.ts`), so they load per tile with the chart, with nothing
+(`glOverlays.ts`, its layers `design/map-style.json`'s), so they load per tile with the chart, with nothing
 asked of the planner for the view and no wait on the engine; what
 changes over them (the fields the settings hide, the route's own
 fields, each field's weather, from `/api/airports/in-view`'s reporting

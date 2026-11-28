@@ -16,7 +16,6 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlin.math.roundToLong
 
 /**
  * The map's hazard colouring, ForeFlight's Hazard Advisor on the chart
@@ -32,9 +31,10 @@ object Hazard {
     /** The Map card's Terrain Hazards, the engine's `setting`. */
     enum class Setting(val key: String, val label: String) { OFF("off", "Off"), ON("on", "On"), FLIGHT("flight", "In Flight") }
 
-    /** The GPS height the colours are drawn from moves in steps of this,
-     *  ft, so a height wandering a few feet does not paint the map again
-     *  at every fix while level (the web's STEP_FT). */
+    /** The engine steps the GPS height down to this, ft (hazard_view's
+     *  50 ft round-down, the warning's side), so a height wandering a few
+     *  feet gives the same answer; the app asks again only once the step
+     *  changes (repaintKey). */
     const val STEP_FT = 50.0
 
     /** The app's zoom from which the obstacles are asked and ringed, where
@@ -43,13 +43,19 @@ object Hazard {
 
     typealias View = EngineContract.HazardViewAnswer
 
-    fun stepped(ft: Double?): Double? = ft?.let { (it / STEP_FT).roundToLong() * STEP_FT }
-
-    /** The engine's question: the setting, own ship's speed and height (to
-     *  STEP_FT), the plan's cruise, the pilot's clearance (null, the
-     *  engine's default) and any obstacle tops to level. */
+    /** The engine's question: the setting, own ship's speed and height as
+     *  the GPS reads them (the engine steps it down), the plan's cruise, the
+     *  pilot's clearance (null, the engine's default) and any obstacle tops
+     *  to level. */
     fun input(setting: Setting, fix: OwnShip.Fix?, plannedFt: Double?, clearanceFt: Double?, topsFt: List<Double>? = null) =
-        EngineContract.HazardViewInput(setting.key, fix?.groundspeedKt, stepped(fix?.altitudeFt), plannedFt, clearanceFt, topsFt)
+        EngineContract.HazardViewInput(setting.key, fix?.groundspeedKt, fix?.altitudeFt, plannedFt, clearanceFt, topsFt)
+
+    /** What tells two questions apart for a repaint: the question with the
+     *  GPS height as its whole step's number, not a height, so a fix a few
+     *  feet off within the engine's step paints nothing again. Only a key:
+     *  the height asked with is the GPS's own. */
+    fun repaintKey(input: EngineContract.HazardViewInput): EngineContract.HazardViewInput =
+        input.copy(gpsAltitudeFt = input.gpsAltitudeFt?.let { floor(it / STEP_FT) })
 
     /** The engine's answer, or null where it gave none (Engine.rule has
      *  logged why); `rule` stands in for the engine in a JVM test. */

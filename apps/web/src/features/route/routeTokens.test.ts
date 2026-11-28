@@ -1,16 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TokenFieldValue } from "react-aria-components";
-import {
-  caretBefore,
-  endedWords,
-  removedPoint,
-  routeValue,
-  samePoints,
-  takeTyped,
-  tokensOf,
-  typedOf,
-  type RouteValue,
-} from "./routeTokens";
+import { caretBefore, endedWords, removedPoint, routeValue, takeTyped, tokensOf, typedOf, type RouteValue } from "./routeTokens";
 
 /** A value with text typed in at a segment's place, the caret after it. */
 function typing(value: RouteValue, index: number, text: string): RouteValue {
@@ -119,11 +109,6 @@ describe("the points the field took out", () => {
     expect(removedPoint(["KDLH", "KMSP", "KMDW"], ["KMSP", "KDLH"])).toBeNull();
     expect(removedPoint(["KDLH", "KMSP", "KMDW"], ["KDLH"])).toBeNull();
     expect(removedPoint(["KDLH", "KMDW"], ["KDLH", "KMSP", "KMDW"])).toBeNull();
-  });
-
-  it("compares two lists of points in order", () => {
-    expect(samePoints(["KDLH", "KMDW"], ["KDLH", "KMDW"])).toBe(true);
-    expect(samePoints(["KDLH", "KMDW"], ["KMDW", "KDLH"])).toBe(false);
   });
 
   it("reads a value the field built itself", () => {

@@ -201,7 +201,7 @@ def terrarium_m(rgb: np.ndarray) -> np.ndarray:
     m. Read as heights they were the ground grid's 102 cells of 32,000 ft
     (the clip of +107,503 ft) over the Everglades, the Navajo Nation and
     some ninety more places, each with a lowest of -30,000 ft (2026-11-02:
-    tile 11/565/876's pixels round 26.41 N, 80.45 W alternate between the
+    tile 11/565/876's pixels near 26.41 N, 80.45 W alternate between the
     two). No ground on earth is within a kilometre of either end."""
     heights = rgb[:, :, 0] * 256 + rgb[:, :, 1] + rgb[:, :, 2] / 256 - 32768
     void = (heights <= -32767) | (heights >= 32767)

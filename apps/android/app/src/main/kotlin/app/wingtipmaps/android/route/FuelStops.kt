@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.route
 
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.api.generated.FuelStopSuggestion
 import app.wingtipmaps.android.plan.PlanTanks
 
 /** The stops Add Fuel Stops would put in, every flight's (PlanTanks.withFuelStops). */
@@ -30,10 +31,12 @@ val Plan.State.noFuelStop: List<NoFuelStop>
  * flight is short or after three plans more (claude/fuel-engine's
  * fuel_rounds), so the stops come back already checked and the phone
  * makes no rounds of its own. Undone from its Snackbar as an added stop is.
+ * `only`, one flight's: the route box's folded pill for that flight.
  */
-fun Plan.addFuelStops() {
+fun Plan.addFuelStops(only: FuelStopSuggestion? = null) {
     val now = state.value
-    val (stops, added) = now.fuelStopsToAdd ?: return
+    // One flight's alone from its pill in the route box, else every flight's.
+    val (stops, added) = (if (only == null) now.fuelStopsToAdd else PlanTanks.withFuelStops(now.dep, now.stops, listOf(only))) ?: return
     undoable(RouteUndo.Kind.ADDED, added.first())
     PlanTanks.addedFuelStops(added)
     plan(now.dep, now.dest, stops)

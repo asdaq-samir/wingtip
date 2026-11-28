@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api } from "./api/client";
+import type { Flying } from "./airplaneKind";
 
 /* The pilot's own records, kept by the gateway, and the airplanes' book
  * figures: one set of options each for all their readers (queryClient's
@@ -48,8 +49,11 @@ export const aircraftProfilesQuery = queryOptions({
   staleTime: Infinity,
 });
 
-/** The pilot's currency from the logbook: fresh for a minute. */
-export const currencyQuery = queryOptions({ queryKey: ["currency"], queryFn: () => api.logbook.currency(), staleTime: 60_000 });
+/** The pilot's currency from the logbook, judged for the airplane to be
+ *  flown where it is known (lib/useCurrency): fresh for a minute. Kept
+ *  under "currency" with it, so a change to the logbook asks each again. */
+export const currencyQuery = (flying: Flying | null) =>
+  queryOptions({ queryKey: ["currency", flying], queryFn: () => api.logbook.currency(flying), staleTime: 60_000 });
 
 /** What falls due for the pilot and their airplanes (the Logbook's Coming
  *  up): fresh for a minute. */

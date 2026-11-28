@@ -1,7 +1,20 @@
 import { test, expect, type Locator } from "@playwright/test";
-import { chartZoom, frontSheet, grabberTo, openPanel, openProfile, pressDryRunStart, settle, settled, sideDrawer, slow } from "./helpers";
+import {
+  chartZoom,
+  frontSheet,
+  grabberTo,
+  openPanel,
+  openProfile,
+  pressDryRunStart,
+  settle,
+  settled,
+  sideDrawer,
+  sheetFoot,
+  slow,
+} from "./helpers";
 import { pickAirplane } from "./startState";
 import { middleOfFront, shipAt } from "./ownShipProbes";
+import { steady } from "./pacing";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -133,10 +146,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openProfile(page);
-  const start = sideDrawer(page).getByTestId("dry-run-start");
-  await expect(start).toBeEnabled({ timeout: slow(60_000) });
-  const line = sideDrawer(page).getByTestId("flight-line");
+  const line = sheetFoot(page).getByTestId("flight-line");
   // Each figure's name as shown: TripFigures' dt also holds the words a
   // screen reader hears ("To KDLH"), hidden from sight (sr-only), and a
   // name that explains itself is a button (Explain), not a hidden span.
@@ -152,28 +162,21 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   // (TripFigures' SHORT; the owner, 2026-11-22: "Show the labels even for
   // thin strip"), and on the ground the leg's magnetic Course where the
   // Track is once the airplane flies (TripFigures' legCourseDeg).
-  const planned = await names(line);
-  expect(planned).toEqual(["Dest", "Dist", "ETE", "Crs"]);
+  await expect.poll(() => names(line), { timeout: slow(60_000) }).toEqual(["Dest", "Dist", "ETE", "Crs"]);
   // The figures once the plan has settled: the runways picked into the
   // wind as the route comes in plan it again with their patterns flown
   // (with_procedures), a few miles more.
-  // Read from the page, not as drawn: FPL's strip is under the Profile's
-  // card, out of sight (SheetParts' cardsUp), where innerText reads nothing.
+  // Read before the Profile's card opens: FPL's foot bar is put away under
+  // a card (MapPanel's footBarUp).
   const distNow = async () => ((await line.locator("dd").nth(1).textContent()) ?? "").replace(/,/g, "");
-  await expect
-    .poll(
-      async () => {
-        const was = await distNow();
-        await page.waitForTimeout(1500);
-        return was === (await distNow());
-      },
-      { timeout: slow(30_000) },
-    )
-    .toBe(true);
+  await steady(distNow, { gap: 1500, timeout: slow(30_000) });
   const plannedNm = parseFloat(await distNow());
+  await openProfile(page);
+  const start = sideDrawer(page).getByTestId("dry-run-start");
+  await expect(start).toBeEnabled({ timeout: slow(60_000) });
 
   await pressDryRunStart(page, start);
-  const figures = sideDrawer(page).getByTestId("dry-run-figures");
+  const figures = sheetFoot(page).getByTestId("dry-run-figures");
   // The same figures from where the airplane is, flying: its Track.
   await expect.poll(async () => (await names(figures)).slice(0, 3)).toEqual(["Distance", "ETE", "Track"]);
   await expect(figures.getByTestId("navlog-to")).toHaveCount(0);

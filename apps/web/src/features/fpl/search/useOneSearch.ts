@@ -3,7 +3,7 @@ import { tailTyped } from "../../../lib/aircraftChoice";
 import { riseToSee } from "../../plan";
 import { usePreferences } from "../../../lib/preferences";
 import { useRadioActions } from "../../../lib/atcRadio";
-import { useSearchPick } from "../../../lib/oneSearch";
+import { pickInUse, useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
 import { pickRefusal } from "../../../lib/pickRefusal";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
@@ -16,10 +16,17 @@ import type { PlanSlices } from "../vm/planSlices";
 import { useSearchAirplanes, type AirplaneHit } from "./searchAirplanes";
 import { doHits } from "./searchDoes";
 import { useSearchAskFocus } from "./useSearchAskFocus";
+import { usePrefetchHighlighted } from "./usePrefetchHighlighted";
+import { useSearchQuery } from "./searchQuery";
+import { useAirportSearch } from "../../../lib/useAirportSearch";
+import { ACTION } from "../../../lib/generated/cardActions";
+
+/** A top hit's quick action: its label, what it does, its test id. */
+type QuickAction = { label: string; run: () => void; testId: string };
 
 /**
  * The one search's view model (the one-search design, 2026-11-09) over the
- * planner's: what is typed (the planner's query, so Home, a Favorite and a
+ * planner's: what is typed (searchQuery, so Home, a Favorite and a
  * picker's airport ask through the same field) and its results: Airports,
  * Waypoints and navaids, Airplanes, and Do (Direct To, the screens by name,
  * "Ask:"). Each pick opens a card, a profile or a screen that works the
@@ -31,8 +38,13 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   const { changeAircraft } = vm.plan;
   const { place, selectPlace, selectFlight, listAway } = vm.cards;
   const { flyHere } = vm.map;
-  const { query, setQuery, search, pickPlace, picking, setPicking, pickAirplane } = vm.search;
+  const { pickPlace, picking, setPicking, pickAirplane } = vm.search;
+  const query = useSearchQuery((s) => s.query);
+  const setQuery = useSearchQuery((s) => s.setQuery);
   const typed = query.trim();
+  // Its airports and, with them, the waypoints and navaids (its Waypoints
+  // and Navaids group), asked while it is the place up.
+  const search = useAirportSearch(query, vm.view.view === "search", true);
   // Asked for an airplane to keep (an Add of the pilot's Airplane or a
   // Favorite): airplanes alone, the one picked kept rather than opened.
   const airplaneAsk = picking === "mine" || picking === "airplane";
@@ -41,11 +53,13 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   const sent = useSearchResults((s) => s.sent);
   const [direct, setDirect] = useState(false);
   // A picker's ask: airports only (the waypoints too for a stop), its pick.
-  const { pick, from: pickFrom } = usePickScope(vm.view.view); // pickIdent: its airport, picked or typed
+  const { pick: asked, from: pickFrom } = usePickScope(vm.view.view); // pickIdent: its airport, picked or typed
+  const [focused, setFocused] = useState(false);
+  // A waiting ask (the first flight's) takes no tap until the field is used.
+  const pick = pickInUse(asked, focused || typed.length > 0);
   // Read while a picker asks too, for the closed fields it refuses (pickIdent).
   const index = useAirportIndex(true, typed.length > 0 || !!pick);
   const [problem, setProblem] = useState<string | null>(null);
-  const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
 
   // An N-number is the engine's to tell (tailTyped): none until it is there.
@@ -54,7 +68,12 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   const airplanes = useSearchAirplanes({
     typed,
     tail,
-    enabled: !direct && !pick,
+    // Not while a picker asks for an airport (Add a Stop, Change), but
+    // while the first flight's destination waits for one (`waiting`): an
+    // N-number typed there found nothing (the owner's iPhone, 2026-11-26,
+    // N606FR from the main sheet with no route), and an airplane is never
+    // the destination it asks for.
+    enabled: !direct && (!pick || !!pick.waiting),
     airplaneAsk,
     pickAirplane,
     changeAircraft,
@@ -64,6 +83,9 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   });
 
   const airports = useMemo(() => (airplaneAsk ? [] : search.rows.filter((r) => r.kind !== "fix")), [airplaneAsk, search.rows]);
+  const airportIdents = useMemo(() => airports.map((r) => r.ident), [airports]);
+  // The lit row's card asked ahead of its pick (the Autocomplete's onItemHighlighted).
+  const highlighted = usePrefetchHighlighted(airportIdents);
   const noFixes = direct || airplaneAsk || (!!pick && !pick.fixes);
   const waypoints = useMemo(() => (noFixes ? [] : search.rows.filter((r) => r.kind === "fix")), [noFixes, search.rows]);
 
@@ -154,12 +176,12 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   };
   // Those that apply: Fly Here unless it is the destination, Depart From unless the departure --
   // one, a single wide pill, where only one does (Apple's "Directions"); none for a closed field (0043).
-  const quick = (r: AirportSearchRow) =>
+  const quick = (r: AirportSearchRow): QuickAction[] =>
     [
-      r.ident !== vm.route.planned.dest && !r.closed && { label: "Fly Here", run: () => flyTo(r), testId: "search-top-fly-here" },
+      r.ident !== vm.route.planned.dest && !r.closed && { label: ACTION.flyHere.label, run: () => flyTo(r), testId: "search-top-fly-here" },
       r.ident !== vm.route.planned.dep &&
-        !r.closed && { label: "Depart From", run: () => departFromHit(r), testId: "search-top-depart-from" },
-    ].filter((a): a is { label: string; run: () => void; testId: string } => !!a);
+        !r.closed && { label: ACTION.departFrom.label, run: () => departFromHit(r), testId: "search-top-depart-from" },
+    ].filter((a) => a !== false);
   const flyAirplane = (hit: AirplaneHit) => {
     if (!hit.fly) return;
     done();
@@ -219,10 +241,12 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
     // The field's words, shown short and said whole.
     ...searchWords(direct, pick, picking),
     answered: search.answered,
+    airportsAnswered: search.airportsAnswered,
     airports,
     waypoints,
     airplanes,
     does,
+    highlighted,
     setTyped: (text: string) => {
       // Typed over, a search sent is let go: the suggestions again.
       if (sent && text !== sent.query) useSearchResults.getState().clear();

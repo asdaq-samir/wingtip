@@ -4,7 +4,7 @@ import { cn } from "cn";
 // shadcn's Input as it is: the browser's own clear on a search field, its
 // own Return. AutoFill off unless a field says otherwise: most of the
 // app's fields are figures and idents, which Safari's AutoFill would offer
-// a contact for (the iOS audit's P19). And its return key says Done, as
+// a contact for. And its return key says Done, as
 // an iOS text field's names its key (HIG, "Text fields"), unless a field
 // names its own (Search, Next): a bare "return" was P19's finding on the
 // Checkride's and the practice pages' fields. Its words 14 only with a

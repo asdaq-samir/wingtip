@@ -1,7 +1,7 @@
 import { useFlying } from "../mapChrome";
 
 /**
- * Requests on a weak link in flight (the offline audit's gap 8): a phone
+ * Requests on a weak link in flight: a phone
  * at one bar often leaves a request hanging rather than failing it.
  *
  * - A read in flying mode carries FLYING_HEADER, and the service worker

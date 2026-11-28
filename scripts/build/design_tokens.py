@@ -24,9 +24,11 @@ import design_tokens_stock as stock
 import design_tokens_system as system
 import design_tokens_typography as typography
 import design_tokens_zoom as zoom
-from design_tokens_webtype import fixed, rem, size_css, web_class, web_value
+from design_tokens_webtype import fixed, rem, resolve_space, size_css, web_class, web_value
 from design_tokens_colour import hex6, rgba
 from design_tokens_formats import gen_formats
+from design_tokens_looks import css_block, sun_and_contrast, swatch_ts
+from emit import write_or_check
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "design" / "tokens.json"
@@ -89,16 +91,16 @@ def theme_group(tree, *path):
 
 
 def schemes(tree):
-    """Each scheme's colours as the web's cascade resolves them: the theme
-    under its look, the night over the day, every var() followed. The
-    phones take these whole."""
+    """Each scheme's colours as the web's cascade resolves them: the theme under its look, the night over the day, every var()
+    followed; sunlightNight is Increase Contrast at night, sunlight's lift on the night's grounds. The phones take these whole."""
     light = theme_group(tree, "color", "theme", "light")
     dark = theme_group(tree, "color", "theme", "dark")
-    sun = theme_group(tree, "color", "theme", "sunlight")
+    night = [light, dark, theme_group(tree, "color", "material", "wingtip", "dark")]
     layers = {
         "light": [light, theme_group(tree, "color", "material", "wingtip", "light")],
-        "dark": [light, dark, theme_group(tree, "color", "material", "wingtip", "dark")],
-        "sunlight": [light, sun],
+        "dark": night,
+        "sunlight": [light, theme_group(tree, "color", "theme", "sunlight")],
+        "sunlightNight": [*night, theme_group(tree, "color", "theme", "sunlight-night")],
         "cockpitLight": [light, theme_group(tree, "color", "look", "cockpit", "light")],
         "cockpitDark": [light, dark, theme_group(tree, "color", "look", "cockpit", "dark")],
         "inkLight": [
@@ -158,13 +160,6 @@ def flat_colours(tree, group):
 # ---------------------------------------------------------------- web
 
 
-def css_block(selector, decls):
-    lines = ["%s {" % selector]
-    lines += ["  --%s: %s;" % (k, v) for k, v in decls]
-    lines.append("}")
-    return "\n".join(lines)
-
-
 def font_stack(tree, path):
     return ", ".join(f if f in ("sans-serif", "serif", "monospace", "system-ui") else "'%s'" % f for f in lookup(tree, path)["$value"])
 
@@ -215,15 +210,14 @@ def gen_css(tree):
         ),
         css_block(':root[data-brand="cockpit"]:not(.dark)', decls("color", "look", "cockpit", "light")),
         css_block(':root.dark[data-brand="cockpit"]', decls("color", "look", "cockpit", "dark")),
-        "/* Chart ink, not in sunlight, whose own tokens win. */\n" + css_block(':root[data-brand="ink"]', ink_all),
-        css_block(':root[data-brand="ink"]:not(.dark):not([data-chart-light="bright"])', decls("color", "look", "ink", "light")),
-        css_block(':root.dark[data-brand="ink"]:not([data-chart-light="bright"])', decls("color", "look", "ink", "dark")),
+        "/* Chart ink; sunlight's blocks, after every look's, win. */\n" + css_block(':root[data-brand="ink"]', ink_all),
+        css_block(':root[data-brand="ink"]:not(.dark)', decls("color", "look", "ink", "light")),
+        css_block(':root.dark[data-brand="ink"]', decls("color", "look", "ink", "dark")),
         "/* Native: shadcn's stock theme and Tailwind's stock corners, shadows and type, but in sunlight. */\n"
         + css_block(':root[data-brand="native"]', stock.css(tree)),
-        css_block(':root[data-brand="native"]:not(.dark):not([data-chart-light="bright"])', decls(*NATIVE_WEB, "light")),
-        css_block(':root.dark[data-brand="native"]:not([data-chart-light="bright"])', decls(*NATIVE_WEB, "dark")),
-        "/* Sunlight, over day, night and every look. */\n"
-        + css_block(':root[data-chart-light="bright"],\n:root.dark[data-chart-light="bright"]', decls("color", "theme", "sunlight")),
+        css_block(':root[data-brand="native"]:not(.dark)', decls(*NATIVE_WEB, "light")),
+        css_block(':root.dark[data-brand="native"]', decls(*NATIVE_WEB, "dark")),
+        *sun_and_contrast(decls),
     ]
     return "\n\n".join(blocks) + "\n"
 
@@ -262,6 +256,7 @@ def gen_ts(tree):
         "/** A field with no report: unknown, not fine. */\nexport const CATEGORY_UNKNOWN = %s;"
         % q(hex6(flat_colours(tree, "color.category")["unknown"])),
         "/** Wingtip's mark. */\nexport const BRAND = %s;" % ts_obj(brand),
+        swatch_ts(tree, theme_group, lookup, ALIAS, NATIVE_WEB, ts_obj),
         *["export const %s = %s;" % (g.upper(), ts_obj(d)) for g, d in shared.items()],
         "/** Chart ink's own inks by day (index.css's --ink-*), for where the stylesheet is not loaded. */\nexport const INK = %s;"
         % ts_obj(ink),
@@ -297,22 +292,14 @@ IOS_STYLES = {
     "title3": ".title3",
     "headline": ".headline",
     "body": ".body",
+    "callout": ".callout",
     "subheadline": ".subheadline",
     "footnote": ".footnote",
     "caption": ".caption",
     "caption2": ".caption2",
 }
-UIKIT_STYLES = {
-    "title": ".title1",
-    "title2": ".title2",
-    "title3": ".title3",
-    "headline": ".headline",
-    "body": ".body",
-    "subheadline": ".subheadline",
-    "footnote": ".footnote",
-    "caption": ".caption1",
-    "caption2": ".caption2",
-}
+# UIKit's names are SwiftUI's but for two.
+UIKIT_STYLES = {**IOS_STYLES, "title": ".title1", "caption": ".caption1"}
 WEIGHTS = {400: "regular", 500: "medium", 600: "semibold", 700: "bold"}
 
 # The size each iOS text style has at the default (Large) text size: a role
@@ -320,7 +307,7 @@ WEIGHTS = {400: "regular", 500: "medium", 600: "semibold", 700: "bold"}
 # with it (UIFontMetrics), so both follow Dynamic Type.
 # fmt: off
 IOS_DEFAULT_SIZE = {"title": 28, "title2": 22, "title3": 20, "headline": 17, "body": 17,
-                    "subheadline": 15, "footnote": 13, "caption": 12, "caption2": 11}
+                    "callout": 16, "subheadline": 15, "footnote": 13, "caption": 12, "caption2": 11}
 # fmt: on
 
 
@@ -435,12 +422,12 @@ def gen_kotlin(tree, sch):
         "",
         "package app.wingtipmaps.android.design.generated",
         "",
-        *haptic.KOTLIN_IMPORTS,
         "import androidx.compose.animation.core.CubicBezierEasing",
         "import androidx.compose.material3.ColorScheme",
         "import androidx.compose.material3.Typography",
         "import androidx.compose.runtime.Immutable",
         "import androidx.compose.ui.graphics.Color",
+        "import androidx.compose.ui.hapticfeedback.HapticFeedbackType",
         "import androidx.compose.ui.text.TextStyle",
         "import androidx.compose.ui.text.font.FontFamily",
         "import androidx.compose.ui.text.font.FontWeight",
@@ -517,34 +504,16 @@ def gen_kotlin(tree, sch):
 
 
 def main():
-    check = "--check" in sys.argv[1:]
-    tree = json.loads(SOURCE.read_text())
-    sch = schemes(tree)
+    tree = resolve_space(json.loads(SOURCE.read_text()))
     outputs = {
         WEB_CSS: gen_css(tree),
         WEB_TS: gen_ts(tree),
-        IOS_SWIFT: gen_swift(tree, sch),
-        ANDROID_KT: gen_kotlin(tree, sch),
+        IOS_SWIFT: gen_swift(tree, schemes(tree)),
+        ANDROID_KT: gen_kotlin(tree, schemes(tree)),
         FORMATS: gen_formats(tokens(tree["format"]), camel, BANNER),
         **zoom.outputs(tree, ROOT, BANNER),
     }
-    stale = []
-    for path, text in outputs.items():
-        old = path.read_text() if path.exists() else None
-        if old == text:
-            continue
-        if check:
-            stale.append(path.relative_to(ROOT))
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(text)
-            print("wrote %s" % path.relative_to(ROOT))
-    if stale:
-        print("design tokens out of date -- run scripts/build/design-tokens.sh and commit:", file=sys.stderr)
-        for p in stale:
-            print("  %s" % p, file=sys.stderr)
-        return 1
-    return 0
+    return write_or_check(outputs, ROOT, "design/tokens.json", "scripts/build/design-tokens.sh")
 
 
 if __name__ == "__main__":

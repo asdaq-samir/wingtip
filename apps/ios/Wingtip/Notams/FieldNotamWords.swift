@@ -18,39 +18,67 @@ enum FieldNotamWords {
         return String(notam.id.dropFirst(own.count + 1))
     }
 
-    /// A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of it.
+    /// A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of
+    /// it, with whether its areas' floors or ceilings are given some AGL and
+    /// some MSL (floor_varies, ceiling_varies), so its card says they vary
+    /// rather than the smaller raw figure as the floor.
     nonisolated static func readTfr(_ notam: APIRankedNotam) throws -> EngineContract.TfrReadAnswer {
         let t = notam.tfr
         return try Engine.tfrRead(kind: t?.kind, rule: t?.rule, title: t?.title, floorFt: t?.floorFt, floorRef: t?.floorRef,
-                                  ceilingFt: t?.ceilingFt, ceilingRef: t?.ceilingRef, overField: t?.overField,
+                                  ceilingFt: t?.ceilingFt, ceilingRef: t?.ceilingRef, floorVaries: t?.floorVaries, ceilingVaries: t?.ceilingVaries,
+                                  overField: t?.overField,
                                   field: t?.field.map { .init(lat: $0.lat, lon: $0.lon) }, edge: t?.edge.map { .init(lat: $0.lat, lon: $0.lon) })
+    }
+
+    /// One of the planner's readings of a NOTAM (app.notam_reading: the
+    /// engine's notam_read, notam_card, notam_subject and notam_affects,
+    /// asked there once with the field's own card, as the web reads them)
+    /// in the engine's own shape; nil where it sent none or it does not read.
+    nonisolated static func planner<Out: Decodable>(_ payload: (some Encodable)?) -> Out? {
+        guard let payload else { return nil }
+        return try? Engine.recoded(payload)
+    }
+
+    /// Whether each NOTAM of a list runs until the charts are updated
+    /// (notam_card's until_charts: PERM with an EST end or none, JO 7930.2
+    /// 4-2-1): the planner's card where it sent one (a field's list), else
+    /// the engine asked here for a route's list, which comes without cards,
+    /// worked out once for the list, off the main actor. A NOTAM neither
+    /// could read, or a TFR, has no entry: its row then never says a firm
+    /// end (NotamRows.when).
+    @concurrent
+    nonisolated static func untilCharts(_ notams: [APIRankedNotam]) async -> [String: Bool] {
+        var out: [String: Bool] = [:]
+        for notam in notams where notam.kind != "tfr" {
+            let card: EngineContract.NotamCardAnswer? = planner(notam.card) ?? (try? Engine.notamCard(text: notam.raw, ends: notam.ends))
+            if let card { out[notam.id] = card.untilCharts }
+        }
+        return out
     }
 
     /// A TFR from tfr.faa.gov's list read by the engine (tfr_read), for
     /// its card (TfrCard): its altitudes and where, and the rule it is
-    /// under; nil where the engine cannot read it.
+    /// under; nil where the engine cannot read it. TODO(services): the
+    /// planner's list (Tfr) sends no floor_varies or ceiling_varies yet,
+    /// only a field's TfrFacts do; pass them here once it does.
     static func readTfr(_ tfr: APITfr) -> EngineContract.TfrReadAnswer? {
         try? Engine.tfrRead(kind: tfr.kind, rule: tfr.rule, floorFt: tfr.floorFt, floorRef: tfr.floorRef,
                             ceilingFt: tfr.ceilingFt, ceilingRef: tfr.ceilingRef)
     }
 
-    /// What each NOTAM in force addresses on the card, as the engine reads
-    /// it (notam_subject: JO 7930.2's keywords and conditions matched to the
-    /// card's own runways, lights, approaches and frequencies). One not yet
-    /// in force has none: it is in the list, marked Inactive (the owner,
-    /// 2026-11-11: "If notam is not active, no need to put a caution badge
-    /// on the thing").
-    static func marks(_ notams: [APIRankedNotam], idents: [String], place: AirportPlace?) -> NotamMarks {
+    /// What each NOTAM in force addresses on the card, as the planner sends
+    /// it read (its `subject`, the engine's notam_subject: JO 7930.2's
+    /// keywords and conditions matched to the card's own runways, lights,
+    /// approaches and frequencies, in /api/airport's order, as the web's
+    /// notamMarks reads it). One not yet in force has none: it is in the
+    /// list, marked Inactive (the owner, 2026-11-11: "If notam is not
+    /// active, no need to put a caution badge on the thing").
+    static func marks(_ notams: [APIRankedNotam], place: AirportPlace?) -> NotamMarks {
         let approaches = (place?.procedures ?? []).filter { $0.kind == "IAP" }
-        let runways = (place?.runways ?? []).map { $0.ends ?? "" }
-        let lights = (place?.lights ?? []).map { EngineContract.NotamSubjectInputLightsItem(code: $0.code, name: $0.name, runways: $0.runways) }
-        let frequencies = (place?.frequencies ?? []).map { EngineContract.NotamSubjectInputFrequenciesItem(type: $0.type, mhz: $0.frequencyMhz) }
         var marks = NotamMarks()
         for notam in notams where notam.inForce != false {
-            guard let badges = try? Engine.notamSubject(text: notam.raw, tfr: notam.kind == "tfr", idents: idents, runways: runways,
-                                                        lights: lights, approaches: approaches.map(\.name), frequencies: frequencies).badges
-            else { continue }
-            for badge in badges {
+            guard let subject: EngineContract.NotamSubjectAnswer = planner(notam.subject) else { continue }
+            for badge in subject.badges {
                 let i = badge.index ?? -1
                 switch badge.on {
                 case "field": marks.field = add(marks.field, badge, notam)
@@ -79,22 +107,44 @@ enum FieldNotamWords {
         return prior
     }
 
-    /// One labelled line of a NOTAM's times: "Since", "Starts", "Ends", "Duration".
+    /// One labelled line of a NOTAM's times: "Since", "Starts", "Ends",
+    /// "Duration"; `soon` how long until it ("in 18d"), which the line
+    /// drops where it would not fit on one line (NotamTimeLinesView).
     struct TimeLine: Equatable {
         let label: String
         let value: String
+        var soon: String?
     }
 
-    /// "11/10 06:00": month/day and the 24-hour clock in the device's own
-    /// time, as a pilot writes it on a kneeboard, the zone not named (the
-    /// owner, 2026-11-11: "No need to mention time zone, just say local").
-    static func corner(_ at: Date, local: Bool, in zone: TimeZone = .current) -> String {
+    /// "05/27/26 13:43 CDT": month/day, the year only where `year`, and
+    /// the 24-hour clock in the field's own time with its zone's short
+    /// name (the owner, 2026-11-23: "no need to say the word local or Z
+    /// time. Just say the time zone like CST for O'Hare"); "05/27 18:43
+    /// UTC" where the field's zone is not known, never the device's own
+    /// time called the field's. `clock` false says the day alone.
+    static func when(_ at: Date, zone: TimeZone?, year: Bool, clock: Bool = true) -> String {
+        let tz = zone ?? .gmt
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = zone
-        let style = Date.VerbatimFormatStyle(
-            format: "\(month: .twoDigits)/\(day: .twoDigits) \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits)",
-            locale: Locale(identifier: "en_US_POSIX"), timeZone: zone, calendar: calendar)
-        return at.formatted(style) + (local ? " local" : "")
+        calendar.timeZone = tz
+        let locale = Locale(identifier: "en_US")
+        let day = year
+            ? Date.VerbatimFormatStyle(format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .twoDigits)", locale: locale, timeZone: tz, calendar: calendar)
+            : Date.VerbatimFormatStyle(format: "\(month: .twoDigits)/\(day: .twoDigits)", locale: locale, timeZone: tz, calendar: calendar)
+        guard clock else { return at.formatted(day) }
+        let time = Date.VerbatimFormatStyle(format: "\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits)",
+                                            locale: locale, timeZone: tz, calendar: calendar)
+        return "\(at.formatted(day)) \(at.formatted(time)) \(zone.map { Format.zoneName($0, at: at) } ?? "UTC")"
+    }
+
+    /// Whether a NOTAM's times say their year: where either end is not
+    /// this year's (the owner, 2026-11-23, FDC 6/3373's end two years on),
+    /// the years counted in the zone the dates are shown in (`when`), so a
+    /// date near New Year is never shown without the year it needs.
+    static func withYear(_ dates: [Date?], now: Date, zone: TimeZone? = nil) -> Bool {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone ?? .gmt
+        let thisYear = calendar.component(.year, from: now)
+        return dates.contains { $0.map { calendar.component(.year, from: $0) != thisYear } ?? false }
     }
 
     /// How long, as ForeFlight writes it: "5m" under an hour, "5h05m" under
@@ -113,28 +163,36 @@ enum FieldNotamWords {
         return (try? Date(text, strategy: .iso8601)) ?? (try? Date(text + "Z", strategy: .iso8601))
     }
 
-    /// A NOTAM's times on lines of their own, labelled, in the device's own
-    /// time with "local" once, as ForeFlight's NOTAM list gives them (the
-    /// owner's screenshots, 2026-11-11): one in force "Since" its start and
-    /// "Ends" with how long is left ("(in 18d)"); one to come "Starts" with
-    /// how soon, "Ends", and how long it lasts. An estimated end "(est.)",
-    /// PERM "Permanent" (JO 7930.2 4-2-1). The times are the planner's,
-    /// else the NOTAM's own as the engine read them.
-    static func timeLines(_ notam: APIRankedNotam, read: EngineContract.NotamReadAnswer?, now: Date = .now,
-                          in zone: TimeZone = .current) -> [TimeLine] {
+    /// A NOTAM's times, a line each, on its row and on its own card alike
+    /// (the web's one timeLines), in the field's own time with its zone
+    /// (`when`), as ForeFlight's NOTAM list gives them (the owner's
+    /// screenshots, 2026-11-11): one in force "Since" its start and "Ends"
+    /// with how long is left; one to come "Starts" with how soon, "Ends",
+    /// and how long it lasts. An EST end is said as its time alone (the
+    /// owner, 2026-11-23: "no need for the word estimated"). Where the
+    /// engine's notam_card says it runs until the charts are updated
+    /// (`untilCharts`: PERM with an EST end or none, JO 7930.2 4-2-1), its
+    /// end is "Permanent" (the owner, 2026-11-23: "For a permanent, just say
+    /// permanent"), as is a PERM end. The times are the planner's, else the
+    /// NOTAM's own as the engine read them.
+    static func timeLines(_ notam: APIRankedNotam, read: EngineContract.NotamReadAnswer?, untilCharts: Bool, zone: TimeZone?,
+                          now: Date = .now) -> [TimeLine] {
         let starts = date(notam.starts ?? read?.starts), ends = date(notam.ends ?? read?.ends)
         let active = notam.inForce != false
-        func soon(_ at: Date) -> String { at > now ? " (in \(span(at.timeIntervalSince(now))))" : "" }
+        let year = withYear([starts, ends], now: now, zone: zone)
+        func soon(_ at: Date) -> String? { at > now ? "in \(span(at.timeIntervalSince(now)))" : nil }
         var lines: [TimeLine] = []
         if let starts {
-            lines.append(TimeLine(label: active ? "Since" : "Starts", value: corner(starts, local: ends == nil, in: zone) + (active ? "" : soon(starts))))
+            lines.append(TimeLine(label: active ? "Since" : "Starts", value: when(starts, zone: zone, year: year), soon: active ? nil : soon(starts)))
         }
-        if let ends {
-            lines.append(TimeLine(label: "Ends", value: corner(ends, local: true, in: zone) + (read?.estimated == true ? " (est.)" : "") + soon(ends)))
-        } else if read?.permanent == true {
+        if untilCharts || (ends == nil && read?.permanent == true) {
             lines.append(TimeLine(label: "Ends", value: "Permanent"))
+        } else if let ends {
+            lines.append(TimeLine(label: "Ends", value: when(ends, zone: zone, year: year), soon: soon(ends)))
         }
-        if !active, let starts, let ends { lines.append(TimeLine(label: "Duration", value: span(ends.timeIntervalSince(starts)))) }
+        if !active, !untilCharts, let starts, let ends {
+            lines.append(TimeLine(label: "Duration", value: span(ends.timeIntervalSince(starts))))
+        }
         return lines
     }
 }

@@ -78,13 +78,17 @@
              activity: the map keeps its tiles, camera and layers rather
              than loading again at each step of a drag, and the screen's
              state is kept as it is (Android's Tier 3 Config_Changes; the
-             app has no size-qualified resources to reload). -->
+             app has no size-qualified resources to reload). So is the
+             night turning (uiMode): Appearance picked in the app
+             (setApplicationNightMode) or the phone's dark changing redraws
+             Compose in the new theme, not a restarted activity that drops
+             the map and the open card. -->
         <activity
             android:name=".MainActivity"
             android:theme="@style/Theme.WingtipMaps.Starting"
             android:exported="true"
             android:launchMode="singleTask"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

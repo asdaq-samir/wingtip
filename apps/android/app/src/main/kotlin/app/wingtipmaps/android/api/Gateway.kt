@@ -19,6 +19,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
+import okhttp3.CookieJar
 import okhttp3.FormBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -110,7 +111,7 @@ object Gateway {
             // the protocol's own policy, so an answer marked no-store is
             // never kept.
             .cache(Cache(File(app.cacheDir, "answers"), 256L shl 20))
-            // A whole call's limit (the offline audit's gap 8): on the one
+            // A whole call's limit: on the one
             // bar of a weak link in the air a read fails in seconds into
             // what is kept, not OkHttp's no limit at all. A write gets
             // WRITE_TIMEOUT_S (`call`); a stream or a download `streaming`.
@@ -129,6 +130,19 @@ object Gateway {
      *  which may carry a scanned page or a track, on WRITE_TIMEOUT_S. */
     val api: GatewayApi by lazy { NetworkModule.gateway(client) }
     val writes: GatewayApi by lazy { NetworkModule.gateway(client.newBuilder().callTimeout(WRITE_TIMEOUT_S, TimeUnit.SECONDS).build()) }
+
+    /** The same calls without the pilot's cookies, for the app's own
+     *  reports (DiagnosticsReporter): the gateway would read the session's
+     *  cookie as the pilot's, and a report is no one's. */
+    val anonymous: GatewayApi by lazy {
+        NetworkModule.gateway(client.newBuilder().cookieJar(CookieJar.NO_COOKIES).callTimeout(WRITE_TIMEOUT_S, TimeUnit.SECONDS).build())
+    }
+
+    /** The calls whose answer is kept whole, as sent, rather than read into
+     *  a model (`streaming`'s limit): the account's export is the pilot's
+     *  file, every key the gateway wrote kept, which a model read and
+     *  written again would drop where this build has not met it. */
+    val files: GatewayFiles by lazy { NetworkModule.gatewayFiles(streaming) }
 
     private const val CSRF = "X-XSRF-TOKEN"
     private const val TIME_ZONE = "X-Time-Zone"

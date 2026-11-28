@@ -50,12 +50,14 @@ public class SharePreviewController {
     private final FlightShareService shares;
     private final ResourceLoader resources;
     private final String staticLocation;
+    private final String publicBaseUrl;
 
     public SharePreviewController(FlightShareService shares, ResourceLoader resources, AppProperties app) {
         String staticLocation = app.staticLocation();
         this.shares = shares;
         this.resources = resources;
         this.staticLocation = staticLocation;
+        this.publicBaseUrl = app.publicBaseUrl();
     }
 
     /** What the preview says: its title, its line and its picture. */
@@ -89,7 +91,7 @@ public class SharePreviewController {
         Optional<Preview> preview = !"shared".equals(open)
                 ? Optional.empty()
                 : share != null
-                        ? shares.shared(share).map(f -> ofSaved(f, FlightShareController.origin(), share))
+                        ? shares.shared(share).map(f -> ofSaved(f, FlightShareController.origin(publicBaseUrl), share))
                         : ofPlain(dep, dest, stops, altitudeFt, type, rules);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())

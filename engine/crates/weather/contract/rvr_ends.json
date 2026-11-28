@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_weather::datis_kept::call",
+  "description": "When a runway's RVR reading heard at a time stops being the runway's: ten minutes after it was heard. AIM 7-1-13 has RVR 'updated approximately once every minute', so a reading not followed in ten is one the system or the feed stopped sending; a design bound that errs toward no RVR, the pilot then taking the visibility (14 CFR 91.175(h)(1)).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RvrEndsInput",
+      "type": "object",
+      "properties": {
+        "heard": {
+          "type": "number",
+          "description": "When it was heard, Unix seconds."
+        }
+      },
+      "required": [
+        "heard"
+      ]
+    },
+    "answer": {
+      "title": "RvrEndsAnswer",
+      "type": "object",
+      "properties": {
+        "ends": {
+          "type": "number",
+          "description": "When it is no longer the runway's RVR, Unix seconds."
+        }
+      },
+      "required": [
+        "ends"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

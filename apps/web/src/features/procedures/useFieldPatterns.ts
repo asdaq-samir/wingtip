@@ -48,8 +48,8 @@ export function useFieldPatterns({
     // screenshot: KSTL was listed as a departure).
     const route = [planned.dep, ...planned.stops, planned.dest];
     // A round trip names a field twice: left from as its Departure and
-    // landed at as its Destination, a step each in FPL's list (the audit's
-    // finding: it was listed once, as "Arrive", with no departure). A stop
+    // landed at as its Destination, a step each in FPL's list (it was listed once, as "Arrive", with no departure).
+    // A stop
     // that is the departure or the destination again is listed once.
     const fields = route
       .map((ident, i) => ({

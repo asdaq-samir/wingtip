@@ -23,9 +23,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import re
 import shutil
+import sys
 from pathlib import Path
 
 SITE = Path(__file__).resolve().parent
@@ -33,27 +33,14 @@ REPO = SITE.parent.parent
 TOKENS = REPO / "design" / "tokens.json"
 WEB_PUBLIC = REPO / "apps" / "web" / "public"
 
+# A colour read as the design tokens' generator reads it (OKLab to sRGB,
+# Björn Ottosson's matrices, the CSS Color 4 ones), so the site's colours
+# are the apps' to the bit and the maths has one copy.
+sys.path.insert(0, str(REPO / "scripts" / "build"))
+from design_tokens_colour import rgba  # noqa: E402
+
 # The web app's legal pages, each one a page of the site at its own path.
 LEGAL = {"privacy": "Privacy policy", "terms": "Terms of use", "support": "Support"}
-
-
-def _lin_to_srgb(c: float) -> float:
-    c = max(0.0, min(1.0, c))
-    return 12.92 * c if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
-
-
-def oklch_to_rgb(lightness: float, chroma: float, hue: float) -> tuple[int, int, int]:
-    """Björn Ottosson's OKLab to linear sRGB (the CSS Color 4 matrices),
-    then the sRGB transfer curve; out-of-gamut channels are clipped."""
-    a = chroma * math.cos(math.radians(hue))
-    b = chroma * math.sin(math.radians(hue))
-    l_ = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3
-    m_ = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3
-    s_ = (lightness - 0.0894841775 * a - 1.2914855480 * b) ** 3
-    r = 4.0767416621 * l_ - 3.3077115913 * m_ + 0.2309699292 * s_
-    g = -1.2684380046 * l_ + 2.6097574011 * m_ - 0.3413193965 * s_
-    bl = -0.0041960863 * l_ - 0.7034186147 * m_ + 1.7076147010 * s_
-    return tuple(round(_lin_to_srgb(v) * 255) for v in (r, g, bl))  # type: ignore[return-value]
 
 
 OKLCH = re.compile(r"oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:/\s*([\d.]+)%)?\s*\)")
@@ -65,7 +52,7 @@ def css_colour(value: str) -> str:
     m = OKLCH.fullmatch(value.strip())
     if not m:
         return value
-    r, g, b = oklch_to_rgb(float(m[1]), float(m[2]), float(m[3]))
+    r, g, b = rgba(value)[:3]
     if m[4] is not None:
         return f"rgb({r} {g} {b} / {m[4]}%)"
     return f"#{r:02x}{g:02x}{b:02x}"

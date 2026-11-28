@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.plates
 
+import app.wingtipmaps.android.api.PlannerPaths
 import app.wingtipmaps.android.api.generated.PlateGeoreference
 import app.wingtipmaps.android.api.generated.PlateOverlay
 import kotlinx.serialization.Serializable
@@ -54,8 +55,7 @@ data class PlacedPlate(
                 )
             }
             if (!corners.all { it.lat.isFinite() && it.lon.isFinite() }) return null
-            val path = if (page != null) "approach-plate-page" else "approach-plate"
-            val picture = "/api/$path/${overlay.cycle}/${pick.ident}/${pick.procedure}.png"
+            val picture = PlannerPaths.plate(page != null, overlay.cycle, pick.ident, pick.procedure)
             return PlacedPlate(pick, overlay.name, overlay.cycle, picture, corners, page?.georeference)
         }
 

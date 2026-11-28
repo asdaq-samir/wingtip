@@ -16,6 +16,7 @@ import type { AltitudeChoice } from "./api/types";
 import { pointOf } from "./airspace";
 import { SCREEN_LINK } from "./navigation/generated/screens";
 import type { LatLon } from "./geo";
+import type { FlightRules } from "./prefs/lookTypes";
 
 /**
  * The planner's address, key by key, read and written through nuqs (the
@@ -62,8 +63,8 @@ const navaidAt = createParser<NavaidAt>({
 export const navaidLink = (n: NavaidAt, origin = "") => `${origin}${SCREEN_LINK.path}?navaid=${encodeURIComponent(navaidAt.serialize(n))}`;
 
 /** A chart mark's card in the address (`mark`), every card reached by a
- *  link (the owner's rule on easy navigation; the selection audit,
- *  2026-11-18): a low enroute chart's fix, a VFR waypoint, or a Class B, C
+ *  link (the owner's rule on easy navigation):
+ *  a low enroute chart's fix, a VFR waypoint, or a Class B, C
  *  or D volume by its number in the cycle's overlay tiles, each with where
  *  it is (a volume's, where it was tapped), as one ident names fixes in
  *  more than one place. "fix:BXCMB@42.1234,-88.2345". */
@@ -139,8 +140,8 @@ const addressParsers = {
   cross: parseAsString,
   ground: parseAsString,
   holds: parseAsString,
-  // The fuel in the tanks as the airplane leaves a field, where the pilot
-  // set it on FPL's gauge (lib/identSchema's tanksOf): none named, full.
+  // The fuel in the tanks as the airplane leaves a field, as a shared
+  // plan carries it (lib/identSchema's tanksOf): none named, full.
   tanks: parseAsString,
   // The departure time (an ISO instant; none is about now), and a local
   // flight's time aloft.
@@ -175,6 +176,13 @@ const addressParsers = {
   navaid: navaidAt,
   // A fix's, a VFR waypoint's or an airspace volume's card (markAt).
   mark: markAt,
+  // VFR or IFR as a saved flight was filed (its picks' `rules`, the
+  // gateway's SaveFlightRequest.PICK, either case): read once into the
+  // app's own rules setting and taken off (usePlanRoute).
+  rules: createParser({
+    parse: (v) => (/^(vfr|ifr)$/i.test(v) ? (v.toLowerCase() as FlightRules) : null),
+    serialize: (v: FlightRules) => v,
+  }),
   // A document open in the reader and where in it (features/documents'
   // docPlace: "aim@7-1-5", "phak@p42", "own:<id>"); checked there.
   doc: parseAsString,
@@ -236,13 +244,13 @@ export const addressParams = (address: Partial<Address>) => new URLSearchParams(
 export const ENDS_KEYS = ["dep", "dest"] as const satisfies readonly (keyof AddressParsers)[];
 const ROUTE_KEYS = [...ENDS_KEYS, "stops"] as const satisfies readonly (keyof AddressParsers)[];
 
-/** What the pilot picked for a flight beyond its route: the altitude flown
- *  (a pilot's own, the wheel's, or a plan), the runways (and which were
- *  picked into the wind, `auto`), procedures and crossing altitudes, the
- *  times on the ground, the holds, the Class B avoided and its detour and
- *  the IFR alternate. A saved flight (the gateway's SaveFlightRequest.PICK,
- *  the same keys) and a recent route keep them (lib/flightLink). */
-export const PICK_KEYS = [
+/** What the pilot picked for a flight beyond its route that the address
+ *  keeps as the plan: the altitude flown (a pilot's own, the wheel's, or a
+ *  plan), the runways (and which were picked into the wind, `auto`),
+ *  procedures and crossing altitudes, the times on the ground, the holds,
+ *  the Class B avoided and its detour, the IFR alternate, the fuel stops
+ *  and the fuel on board. */
+const PLAN_PICK_KEYS = [
   "altitude_ft",
   "altitude_nearest",
   "altitude_choice",
@@ -254,7 +262,16 @@ export const PICK_KEYS = [
   "ground",
   "holds",
   "alternate",
+  "fuel",
+  "tanks",
 ] as const satisfies readonly (keyof AddressParsers)[];
+
+/** Those picks and the flight's rules, VFR or IFR, which the app keeps as
+ *  its own setting rather than in the plan. A saved flight (the gateway's
+ *  SaveFlightRequest.PICK, the same keys, as the connector saves them too)
+ *  and a recent route keep them (lib/flightLink), so a flight reopens with
+ *  its fuel stops, its fuel on board and its rules. */
+export const PICK_KEYS = [...PLAN_PICK_KEYS, "rules"] as const satisfies readonly (keyof AddressParsers)[];
 
 /** The keys that are the plan, for undo and redo (hooks/planHistory): the
  *  route, a Direct to and the route before it, the fuel stops, the picks
@@ -264,8 +281,6 @@ export const PLAN_KEYS = [
   ...ROUTE_KEYS,
   "direct",
   "was",
-  "fuel",
-  ...PICK_KEYS,
+  ...PLAN_PICK_KEYS,
   "altitudes",
-  "tanks",
 ] as const satisfies readonly (keyof AddressParsers)[];

@@ -2,6 +2,7 @@ package app.wingtipmaps.android.airplane
 
 import app.wingtipmaps.android.api.generated.gateway.AircraftDto
 import app.wingtipmaps.android.api.generated.gateway.AircraftRequest
+import app.wingtipmaps.android.api.generated.gateway.AirplaneKind
 import app.wingtipmaps.android.api.generated.gateway.InspectionsDto
 import app.wingtipmaps.android.api.generated.gateway.OwnFigures
 import kotlinx.coroutines.test.runTest
@@ -38,7 +39,7 @@ class OwnAirplanesTest {
         }
 
         fun dto(id: Long, r: AircraftRequest) = AircraftDto(
-            createdAt = "2026-11-09", cruiseTasKt = r.cruiseTasKt, fuelBurnGph = r.fuelBurnGph, dueItems = emptyList(),
+            createdAt = "2026-11-09", kind = AirplaneKind(), cruiseTasKt = r.cruiseTasKt, fuelBurnGph = r.fuelBurnGph, dueItems = emptyList(),
             figures = r.figures ?: OwnFigures(), id = id, inspections = InspectionsDto(forHire = false), openSquawks = emptyList(),
             tailNumber = r.tailNumber, typeDesignator = r.typeDesignator, cruisePowerPct = r.cruisePowerPct, usableFuelGal = r.usableFuelGal,
         )

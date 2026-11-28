@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,9 +37,12 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
+import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.design.LoadingRow
+import app.wingtipmaps.android.design.generated.CardAction
+import app.wingtipmaps.android.design.generated.CardKind
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
@@ -81,7 +83,7 @@ import kotlinx.coroutines.flow.map
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, model: AirportModel = hiltViewModel(), flight: FlightModel = hiltViewModel()) {
+fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, asStop: Boolean = false, model: AirportModel = hiltViewModel(), flight: FlightModel = hiltViewModel()) {
     val context = LocalContext.current
     val state by model.state.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
@@ -121,7 +123,12 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     if (shown != null && place != null) {
         BackHandler { opened = null }
         val pages = shown.map { n -> said?.firstOrNull { it.notam.id == n.id } ?: FieldNotams.say(n, place.ident) }
-        NotamPage(pages, place.ident, CardExit(back = { opened = null }, close = exit.close))
+        // What the field is to the planned flight, for each NOTAM's chip: its departure, a stop, destination or IFR alternate filed.
+        val filed by PlanAlternate.filed.collectAsStateWithLifecycle()
+        val roles = remember(place.ident, planState.dep, planState.stops, planState.dest, planState.rules, filed) {
+            planRoles(FieldNotams.identsOf(place.ident), planState.dep, planState.stops, planState.dest, PlanAlternate.of(planState.rules, planState.dest, filed))
+        }
+        NotamPage(pages, place.ident, CardExit(back = { opened = null }, close = exit.close), name = place.name, zone = state.notams?.timeZone, roles = roles)
         return
     }
     val open: (List<RankedNotam>) -> Unit = { opened = it }
@@ -166,9 +173,9 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
                 if (words.closed != null || words.use != null) item(key = "use") { FieldUseLines(words, Modifier.padding(horizontal = WingtipSpace.Lg)) }
                 facts?.let { f -> item(key = "facts") { FactsRow(f) } }
                 // The four actions in the card under its head, in sight at half
-                // as Maps' place sheet has them (the audit's AND-1): docked at
+                // as Maps' place sheet has them: docked at
                 // the foot of the full-height layout they sat below the window.
-                item(key = "actions") { ActionPills(place, facts, actions, onDone = onDone) }
+                item(key = "actions") { ActionPills(place, facts, actions, asStop, onDone = onDone) }
                 // The field's own report in one line under the actions.
                 item(key = "weather-line") { AirportWeatherLine(place.metar, Modifier.padding(horizontal = WingtipSpace.Lg)) }
                 airportSection(AirportSection.entries[section], place, state, view)
@@ -233,31 +240,45 @@ private fun FactsRow(f: AirportFacts) {
     }
 }
 
+/** The airport row's kind (design/card-actions.json): opened while a stop
+ *  is asked for, Add Stop's; where Add Stop cannot be used, Address in its
+ *  place. */
+internal fun airportKind(asStop: Boolean, stopOff: Boolean): CardKind = when {
+    asStop -> CardKind.AIRPORT_AS_STOP
+    stopOff -> CardKind.AIRPORT_STOP_OFF
+    else -> CardKind.AIRPORT
+}
+
 /**
- * The actions under the card's head, in sight at half, in
- * Material 3 Expressive's button group, four and no more as the web's
- * (the owner, 2026-11-11: "fly here, add stop, call and address ... no
- * need for other buttons", then "replace address button with favorite"):
+ * The actions under the card's head, in sight at half, in Material 3
+ * Expressive's button group, its kind's four as the web's CARD_ACTIONS:
  * Fly Here filled with its time (none without an airplane, decision
- * 0011); Add as Stop where the route can take it; Call, greyed where the
- * FAA lists no telephone; and Favorite, the star a toggle, where the head
- * had it. Every action keeps its word (Google's research found actions
- * harder to use without labels); what does not fit the width goes into
- * the group's own overflow menu, never a smaller button.
+ * 0011), Add Stop, Call, greyed where the FAA lists no telephone, and
+ * Favorite, the star a toggle. Opened while a stop is asked for
+ * (`asStop`), Add Stop is first and filled, no Fly Here, and Address last.
+ * Where Add Stop cannot be used, Address is last in its place, not a
+ * greyed tile (the owner, 2026-11-20; the web's PlaceActions). Every
+ * action keeps its word; what does not fit the width goes into the
+ * group's own overflow menu, never a smaller button.
  */
 @Composable
-private fun ActionPills(place: AirportPlace, facts: AirportFacts?, actions: RouteActions, onDone: () -> Unit) {
-    val flyHere = facts?.minutes?.let { stringResource(R.string.fly_here_in, Format.duration(it)) } ?: stringResource(R.string.action_fly_here)
-    val addStop = stringResource(CardAction.ADD_STOP.label)
-    val call = stringResource(CardAction.CALL.label)
-    val favorite = stringResource(R.string.action_favorite)
+private fun ActionPills(place: AirportPlace, facts: AirportFacts?, actions: RouteActions, asStop: Boolean, onDone: () -> Unit) {
+    val kind = airportKind(asStop, stopOff = !actions.canAirport(CardAction.ADD_STOP, place))
     val (starred, toggle) = rememberFavorite(place)
-    val items = buildList {
-        // Greyed for a field NASR lists as closed: never offered to land (decision 0043).
-        add(GroupAction(flyHere, CardAction.FLY_HERE.icon, filled = true, enabled = actions.canAirport(CardAction.FLY_HERE, place)) { actions.airport(CardAction.FLY_HERE, place); onDone() })
-        if (actions.canAirport(CardAction.ADD_STOP, place)) add(GroupAction(addStop, CardAction.ADD_STOP.icon) { actions.airport(CardAction.ADD_STOP, place); onDone() })
-        add(GroupAction(call, CardAction.CALL.icon, enabled = actions.canAirport(CardAction.CALL, place)) { actions.airport(CardAction.CALL, place) })
-        add(GroupAction(favorite, if (starred) Icons.Filled.Star else Icons.Outlined.StarOutline, checked = starred, onClick = toggle))
+    val items = kind.actions.map { action ->
+        val first = action == kind.actions.first()
+        when (action) {
+            CardAction.FAVORITE -> GroupAction(stringResource(action.label), if (starred) Icons.Filled.Star else action.icon, checked = starred, onClick = toggle)
+            // Greyed for a field NASR lists as closed: never offered to land (decision 0043).
+            CardAction.FLY_HERE -> GroupAction(
+                facts?.minutes?.let { stringResource(R.string.fly_here_in, Format.duration(it)) } ?: stringResource(action.label),
+                action.icon, filled = first, enabled = actions.canAirport(action, place),
+            ) { actions.airport(action, place); onDone() }
+            else -> GroupAction(stringResource(action.label), action.icon, filled = first, enabled = actions.canAirport(action, place)) {
+                actions.airport(action, place)
+                if (action == CardAction.ADD_STOP) onDone()
+            }
+        }
     }
     CardButtonGroup(items, Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
 }

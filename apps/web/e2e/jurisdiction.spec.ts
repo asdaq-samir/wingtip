@@ -4,10 +4,11 @@ import { pickAirplane } from "./startState";
 
 /**
  * A route through Canada (the owner's pick of 2026-11-21, decision 0053):
- * every figure is worked out by the FAA's rules, so where the route leaves
- * the United States the timeline's row and the nav log say "Canada: rules
- * not checked — figures use US rules", and the Brief says it once among
- * its findings. Warn, never limit: the route is planned as any other.
+ * every figure is worked out by the FAA's rules, so where a leg crosses
+ * Canada the nav log says, on that leg, "The leg to KBUF
+ * crosses Canada (Ontario): Canadian rules not checked — figures use US
+ * rules", never as the US field's at its end, and the Brief says it once
+ * among its findings. Warn, never limit: the route is planned as any other.
  */
 
 test.beforeEach(({ page }) => pickAirplane(page));
@@ -18,7 +19,9 @@ test.afterEach(async ({ page }) => {
 // An iPhone 16 Pro, touch.
 test.use({ viewport: { width: 402, height: 874 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
 
-const WORDS = "Canada: rules not checked — figures use US rules";
+const RULES = "Canadian rules not checked — figures use US rules";
+const LEG = `The leg to KBUF crosses Canada (Ontario): ${RULES}`;
+const ROUTE = `Part of the route is in Canada (Ontario): ${RULES}`;
 
 // Detroit to Buffalo: both ends US fields the planner knows, the great
 // circle between them across southern Ontario. Thunder Bay (CYQT) is in no
@@ -31,19 +34,20 @@ test("a route from Detroit to Buffalo across Ontario is planned and warned of wh
   await settle(page);
   // Planned as any route: its figures come.
   await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
-  // The destination's row of the timeline, under its name.
-  const caution = sideDrawer(page).getByTestId("timeline-caution");
-  await expect(caution.last()).toHaveText(WORDS);
-  // The nav log: once, before the first row in Canada, never on every row.
+  // Not in FPL's timeline, where room is short (the owner, 2026-11-23;
+  // decision 0053): the nav log and the Brief say it.
+  await expect(sideDrawer(page).getByTestId("timeline-leg-caution")).toHaveCount(0);
+  await expect(sideDrawer(page).getByTestId("timeline-caution")).toHaveCount(0);
+  // The nav log: once, on the leg after the departure's row, never on every row.
   await openNavLog(page);
   const log = navLogSheet(page).getByTestId("navlog-list");
   await expect(log.getByTestId("navlog-jurisdiction")).toHaveCount(1);
-  await expect(log.getByTestId("navlog-jurisdiction")).toHaveText(WORDS);
+  await expect(log.getByTestId("navlog-jurisdiction")).toHaveText(LEG);
   await page.keyboard.press("Escape");
   // The Brief: one line among its findings, a caution, not a stop.
   await openBrief(page);
   const line = sideDrawer(page).getByTestId("brief-glance").getByTestId("brief-line-jurisdiction");
   await expect(line).toHaveCount(1, { timeout: slow(30_000) });
   await expect(line).toHaveAttribute("data-finding", "caution");
-  await expect(line.getByTestId("brief-line-words")).toHaveText(WORDS);
+  await expect(line.getByTestId("brief-line-words")).toHaveText(ROUTE);
 });

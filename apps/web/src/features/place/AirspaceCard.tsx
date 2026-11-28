@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Ban, Cloud, Gauge, KeyRound, Radio, ShieldAlert } from "lucide-react";
-import { ACTION, CARD_ACTIONS } from "../../lib/cardActions";
+import { ACTION, CARD_ACTIONS } from "../../lib/generated/cardActions";
 import { cn } from "cn";
 import { PillSection } from "../../components/Favorites";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -15,7 +15,7 @@ import { TEXT } from "../../lib/text";
 import { CardHead } from "../../components/CardHead";
 import { SheetCard } from "../../components/SheetCard";
 import { useCardSize } from "../../lib/sheetCards";
-import { CardAction } from "../../components/CardAction";
+import { CardAction, CardActionRow } from "../../components/CardAction";
 import { RowBadge } from "../../components/RowBadge";
 import { BADGE } from "../../lib/rowBadges";
 import { FINDING_TONE } from "../../lib/findings";
@@ -156,12 +156,12 @@ export default function AirspaceCard({
   const ground = data?.ground_ft ?? null;
   const named = data?.point ?? null;
   // A held point's actions, the point card's set in its order
-  // (lib/cardActions): Direct To first, filled, as every card's is.
+  // (design/card-actions.json): Direct To first, filled, as every card's is.
   const handlers = { directTo: onDirect, addToRoute: onAdd, holdHere: onHold };
   const testIds = { directTo: "point-direct", addToRoute: "point-add", holdHere: "point-hold" };
   // Held from the first frame while the point is asked about: the tiles,
   // not to be pressed till it is named, and its name's line, as both came
-  // in over the bands once it answered (the flicker audit's FL-11).
+  // in over the bands once it answered.
   const naming = !!named || isLoading;
   const actions = naming
     ? CARD_ACTIONS.point.map((name) => ({ ...ACTION[name], go: handlers[name], testId: testIds[name] })).filter((a) => a.go)
@@ -172,10 +172,9 @@ export default function AirspaceCard({
       <CardHead
         // The point itself as the card's name, its name off the nearest
         // fix where it has one: the sheet's own title already says
-        // Airspace, and the card said it again under it (the UI audit,
-        // 2026-11-09). Where it is and the ground there the line under the
-        // name, in sight at the pill too (the card rule's 10; the selection
-        // audit, 2026-11-18: it scrolled away with the body); the fix's own
+        // Airspace, and the card said it again under it. Where it is and the ground there the line under the
+        // name, in sight at the pill too (the card rule's 10; it scrolled away with the body);
+        // the fix's own
         // name under the head.
         name={named?.ident ?? "Dropped Pin"}
         nameTestId="airspace-name"
@@ -204,7 +203,7 @@ export default function AirspaceCard({
       {/* The point into the route, as Maps' dropped pin's card offers its
           directions: the first the tint's, the others its wash. */}
       {naming && actions.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 pt-3" data-testid="point-actions">
+        <CardActionRow columns={3} testId="point-actions">
           {/* The cards' own tiles (CardAction), as a VOR's and an airport's. */}
           {actions.map((a, i) => (
             <CardAction
@@ -217,7 +216,7 @@ export default function AirspaceCard({
               testId={a.testId}
             />
           ))}
-        </div>
+        </CardActionRow>
       )}
 
       {/* The layers under the head at every size, from the ground up: at

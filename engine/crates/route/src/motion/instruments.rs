@@ -21,6 +21,7 @@ pub use super::glide::{glide_ring, GlideRing, RING_POINTS};
 use super::{glide, num, opt};
 use crate::geo::{bearing_deg, destination, distance_nm, py_mod};
 use crate::json::{self, Value};
+use wingtip_core::wmm::magnetic_of;
 
 /// Within this of the course line the airplane is flying the route, and
 /// its figures count down from where it is; farther off it is going
@@ -122,13 +123,6 @@ pub fn variation(lat: f64, lon: f64, now_s: f64) -> f64 {
     wingtip_core::wmm::declination(lat, lon, decimal)
 }
 
-/// A true direction as magnetic: east variation taken off, west added
-/// ("east is least, west is best", FAA Pilot's Handbook of Aeronautical
-/// Knowledge, FAA-H-8083-25C, ch. 16, Variation).
-pub fn magnetic(true_deg: f64, variation_deg: f64) -> f64 {
-    py_mod(true_deg - variation_deg, 360.0)
-}
-
 /// One waypoint ahead: its miles and bearing from the airplane (direct to
 /// the next; along the route past it for the destination), the time at
 /// the groundspeed now and the arrival, and the fuel the plan leaves.
@@ -219,7 +213,7 @@ pub fn in_flight(fix: Fix, line: &[(f64, f64)], points: &[Point], legs: &[Leg], 
             name: p.name.clone(),
             distance_nm: nm,
             bearing_deg: bearing,
-            bearing_mag_deg: variation_deg.map(|v| magnetic(bearing, v)),
+            bearing_mag_deg: variation_deg.map(|v| magnetic_of(bearing, v)),
             ete_min,
             eta_s,
             fuel_left_gal: fuel_at(places[k].unwrap_or(total)),
@@ -238,7 +232,7 @@ pub fn in_flight(fix: Fix, line: &[(f64, f64)], points: &[Point], legs: &[Leg], 
             name: p.name.clone(),
             distance_nm: nm,
             bearing_deg: bearing,
-            bearing_mag_deg: variation_deg.map(|v| magnetic(bearing, v)),
+            bearing_mag_deg: variation_deg.map(|v| magnetic_of(bearing, v)),
             ete_min,
             eta_s,
             fuel_left_gal: fuel_at(places[last].unwrap_or(total)),
@@ -251,8 +245,8 @@ pub fn in_flight(fix: Fix, line: &[(f64, f64)], points: &[Point], legs: &[Leg], 
         off_nm: here.off_nm,
         left_of_line: here.left,
         desired_track_deg: desired,
-        desired_track_mag_deg: variation_deg.map(|v| magnetic(desired, v)),
-        track_mag_deg: fix.track_deg.zip(variation_deg).map(|(t, v)| magnetic(t, v)),
+        desired_track_mag_deg: variation_deg.map(|v| magnetic_of(desired, v)),
+        track_mag_deg: fix.track_deg.zip(variation_deg).map(|(t, v)| magnetic_of(t, v)),
         track_error_deg,
         variation_deg,
         burnt_gal: burnt(legs, here.along_nm),

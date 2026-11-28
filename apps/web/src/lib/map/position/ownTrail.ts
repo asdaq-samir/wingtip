@@ -29,8 +29,7 @@ function kept(): PathPoint[] {
   const last = Array.isArray(held) ? held.at(-1) : undefined;
   if (held && last && Date.now() - last.t < NEW_FLIGHT_MS) return held;
   // A path past its flight is not shown, so not kept either: it was a
-  // record of where the airplane went, kept in the browser for good (the
-  // prelaunch audit's P5).
+  // record of where the airplane went, kept in the browser for good.
   if (held) keptPath.setState({ value: null });
   return [];
 }

@@ -1,6 +1,7 @@
 package app.wingtipmaps.android
 
 import android.app.assist.AssistContent
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -27,7 +28,10 @@ import app.wingtipmaps.android.route.redoEdit
 import app.wingtipmaps.android.route.undoEdit
 import app.wingtipmaps.android.share.FileProblem
 import app.wingtipmaps.android.share.FlightFiles
+import app.wingtipmaps.android.ui.Appearance
+import app.wingtipmaps.android.ui.AppearancePreference
 import app.wingtipmaps.android.ui.FileTaker
+import app.wingtipmaps.android.ui.NightMode
 import app.wingtipmaps.android.ui.RootScreen
 import app.wingtipmaps.android.ui.WingtipTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -56,6 +60,12 @@ class MainActivity : ComponentActivity(), FileTaker {
     /** Why a file handed to the app was not taken, until it is read. */
     private val problem = MutableStateFlow<String?>(null)
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(newBase)
+        // The app's Light or Dark in the window's theme before Android 12 (NightMode.override).
+        NightMode.override(newBase)?.let(::applyOverrideConfiguration)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // The launch's splash screen, the same from Android 8 on (the
         // manifest's Theme.WingtipMaps.Starting), gone as the first frame draws.
@@ -64,6 +74,9 @@ class MainActivity : ComponentActivity(), FileTaker {
         // core's WindowCompat, its own enableEdgeToEdge deprecated).
         WindowCompat.enableEdgeToEdge(window)
         super.onCreate(savedInstanceState)
+        // The app's own Light or Dark to the system, so the next launch's
+        // window is in it (NightMode, Android 12 and later).
+        NightMode.apply(this, AppearancePreference.flow(this).value ?: Appearance.SYSTEM)
         setContent {
             WingtipTheme {
                 RootScreen(pending = pending, onHandled = { pending.value = null }, onLink = { pending.value = it })

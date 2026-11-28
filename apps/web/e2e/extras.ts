@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 /** The parked features' switches (src/lib/extras, Settings' Extras), each off by default. */
-type Extra = "atcCopilot" | "otherAirplanes" | "modelWeather" | "threeD" | "trainingTools";
+type Extra = "atcCopilot" | "modelWeather" | "threeD" | "trainingTools";
 
 /**
  * The parked features a spec exercises turned on before the page loads, as

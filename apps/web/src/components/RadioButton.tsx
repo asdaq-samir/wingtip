@@ -16,8 +16,7 @@ let listening: typeof import("../lib/atcListening") | null = null;
 const load = () => import("../lib/atcListening").then((m) => (listening = m));
 
 /** The listening code could not be fetched (offline): the pill says so in
- *  place, not listening, where a tap did nothing and said nothing (the web
- *  audit's WEB-35). */
+ *  place, not listening, where a tap did nothing and said nothing. */
 const unloaded = () =>
   useAtcRadio.setState({
     pill: { listening: false, text: "", error: "Comms assist could not be loaded. Check your connection and try again." },

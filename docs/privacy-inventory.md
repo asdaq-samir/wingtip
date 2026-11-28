@@ -248,23 +248,26 @@ longer than it takes to answer the request.
 | Google, Apple | Their own sign-in, when a pilot uses it | Their own |
 | FAA, NOAA (aviationweather.gov) | Chart and data downloads, weather for airports | None: the server asks, not the device |
 | eCFR (ecfr.gov, the Office of the Federal Register) | The documents library's CFR parts, fetched once a day (`wingtip/library.py`) | None: the server asks, not the device |
-| adsb.lol | For the traffic on the map, the middle of a region: a 0.5 degree cell, 2 degrees zoomed out (`traffic/adsb_lol.py`); for an airplane a pilot opens, its transponder's address (its trace); for its route, its callsign (`traffic/routes.py`, `vrs-standing-data.adsb.lol`); the followed airplanes' addresses, asked by ingest every half minute (`traffic/watched.py`: its globe's recent trace first, then its API by the address, with the operator's `ADSBLOL_API_KEY`, which ingest is given); and a registration, callsign or address a pilot types in Find (`/api/traffic/find`; the FAA record's `/api/traffic/registered` asks no one, the registry being on the planner's disk), which may be their own N-number | None of the pilot's beyond what they type: the server asks, not the device; the device's position itself is not sent |
+| adsb.lol | For the traffic on the map, the middle of a region: a 0.5 degree cell, 2 degrees zoomed out (`traffic/adsb_lol.py`); for an airplane a pilot opens, its transponder's address (its trace, `traffic/globe.py`); for its route, its callsign (`traffic/routes.py`, `vrs-standing-data.adsb.lol`); the followed airplanes' addresses, asked by ingest every half minute (`traffic/watched.py`: its globe's recent trace first, then its API by the address, with the operator's `ADSBLOL_API_KEY`, which ingest is given); and a registration, callsign or address a pilot types in Find (`/api/traffic/find`; the FAA record's `/api/traffic/registered` asks no one, the registry being on the planner's disk), which may be their own N-number | None of the pilot's beyond what they type: the server asks, not the device; the device's position itself is not sent |
 | ADS-B Exchange (adsbexchange.com, through RapidAPI) | The same asks where adsb.lol turns one away or is down: a region's middle (`traffic/view.py`), a searched registration, callsign or address (`traffic/lookup.py`), and the address of an airplane whose card is open (`traffic/watched.py`; the background rounds leave its paid month alone); the request carries the operator's RapidAPI key | As adsb.lol |
 | Iowa State University's IEM (mesonet.agron.iastate.edu) | The radar loop's map tiles in view, asked by the device (web, iPhone, Android) from the address templates the planner gives (`wingtip/weather_loop.py`) | The device's internet address and the part of the map in view, as any map tile; no account |
 | NOAA nowCOAST (nowcoast.noaa.gov) | The satellite loop's tiles in view, asked by the device the same way | As IEM |
-| Planespotters (api.planespotters.net, t.plnspttrs.net) | The web app, when a traffic card opens: that airplane's transponder address, to show its photo (`features/traffic/planePhoto.ts`), from the browser | The browser's internet address and the address of the airplane looked at; no account |
+| Planespotters (api.planespotters.net, t.plnspttrs.net) | Two ways, for an airplane's photo. The web's traffic card asks from the browser: that airplane's transponder address (`features/traffic/planePhoto.ts`). The airplane card asks the planner (`/api/airplanes/{n_number}/photo`), which asks Planespotters from the server with the airplane's address and registration, its User-Agent naming the operator's contact (`PLANESPOTTERS_CONTACT`, `wingtip/aircraft_photo.py`), and keeps the answer a day in the live store; either way the device fetches the photo itself from the URLs returned | The browser's way: the browser's internet address and the address of the airplane looked at. The planner's way: the airplane's address and registration only, never the pilot's internet address. No account either way |
 | USGS (epqs.nationalmap.gov) | Sample points along a route, for the ground's height where the terrain tiles have none (`wingtip/elevation_sources.py`), from the server | None: points on a route, no account |
 | USGS (basemap.nationalmap.gov) | On the web, with its imagery overlay on; on Android, by itself once the map is zoomed close in past the chart's own detail (`map/CloseMap.kt`, since b5b72427e): the map's tiles in view, asked by the device | None: the tiles' coordinates, as any web map's |
 | Google (tile.googleapis.com) | On the web only, with a Google overlay on: a session and the map's tiles in view, asked by the browser with the planner's key. The Android app asks Google for no map tile (its close-in imagery is the USGS's since b5b72427e, and the store-review audit of 2026-11-21 took its unused Maps key out of the manifest) | None of the pilot's: the device's internet address, the tiles' coordinates and the view, as any Google map's; Google's own terms and privacy policy apply to the request |
 | US Census Bureau (geocoding.geo.census.gov) | A street address typed in Nearest's field, to place it; its gazetteer of towns is downloaded once | The address typed, from the server, not the device; kept in the planner's memory for an hour so the same address is not asked twice (`geocode.py`), never written to disk or a log (a failure logs the error's kind only), and a place picked is in the page address (`nearName`, `nearAt`) |
-| Amazon Web Services | Hosting all of the above (us-east-1) | As above |
+| Amazon Web Services | Hosting all of the above (the stack's Region, us-east-2 on the owner's account; CloudFront's certificate in us-east-1, decision 0064) | As above |
 
 ## Not done
 
 - **No tracking**, in Apple's sense: no advertising, no analytics SDK, no
   data broker, nothing joined with others' data. App Store Connect:
   "Data Not Used to Track You".
-- **No analytics**: no count of what a pilot uses is kept. The month's
+- **No analytics tied to anyone**: the only counts kept are counts per day
+  of each kind of request, not tied to any pilot or device (below, "The
+  planner counts its own calls"; the owner took the product audit's
+  recommendation, 2026-11-23). No SDK sends them anywhere. The month's
   count of each Claude-written feature went with those features
   (2026-11-12, decision 0041).
 - **No purchases**: the app is free and sells nothing (decision 0022);
@@ -368,12 +371,25 @@ on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
   the pilot's position while the map follows the airplane. Dropped a
   minute after the last ask (`LOOKED_S`), so ingest reads the FAA's radar
   only where someone is looking.
-- **Followed airplanes** (`followed`): an airplane whose card any pilot
-  opens is followed (another airplane's Follow, past flights and history
+- **Followed airplanes** (`followed`): an airplane whose card a signed-in
+  pilot opens is followed (another airplane's Follow, past flights and history
   are parked in the apps, off unless Settings › Extras › Other Airplanes
   is on; the pilot's own keep them), its ICAO address and when its card was last opened;
   dropped 30 days after that (`FOLLOW_KEEP_S`). Opening its card again
-  starts the 30 days again.
+  starts the 30 days again. A card opened with nobody signed in follows
+  nothing; one no source has heard a day after it was followed is dropped
+  (`FOLLOW_UNHEARD_S`), and at most 20 by one pilot, their own oldest
+  going first (`FOLLOW_EACH`), and at most 500 in all (`FOLLOW_MOST`), past
+  which the largest share loses its oldest first, so neither one account
+  nor a group of them can push out a pilot who follows fewer. Which pilot
+  opened a card is not kept: each follow is counted in a share named by a
+  short keyed hash of the pilot's id (`share_of`, HMAC-SHA-256 with
+  `FOLLOW_SHARE_KEY`), never the id, and not one that can be worked out
+  from a guessed id. The key is never kept in the live store beside the
+  shares: production's comes from the stack's `FollowShareKeySecret` in
+  Secrets Manager, and the planner does not start without it; the
+  development stack makes one at random into the planner's own secrets
+  volume (`FOLLOW_SHARE_KEY_FILE`).
 - **Other airplanes' tracks** (`points`): a followed airplane's public
   ADS-B and radar positions, recorded from adsb.lol, ADS-B Exchange
   (while a card is open) and the FAA's radar, card open or not, so its card can show its
@@ -381,13 +397,25 @@ on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
   not the airplane is heard again. No pilot or account is stored with
   them; a pilot who opens their own airplane's card has its public
   flights recorded the same way.
+- **Sources' answers about an airplane** (`answers`): Planespotters.net's
+  photo of an airplane (by its address and registration) kept a day, the
+  terms' most, and a flight number's route kept six hours, an absence
+  too, so a restart asks again for none. Neither names who asked.
 
 The planner counts its own calls, for the owner's status page
 (`app.route_metrics`, Prometheus's client): for each route its template
 (`/api/airport/{ident}`, never the address asked), the method, the
 status, and how long it took, in memory from its start, gone when it
 restarts; served at `/metrics` on its own port, which the gateway does
-not forward. No point, ident, query or pilot is in them. The status page
+not forward. No point, ident, query or pilot is in them. The same counts,
+without the times, are kept per UTC day on the planner's disk
+(`app.usage_days`, `data/raw/usage/usage.sqlite`, 90 days): a day's row is
+the day, the route's template, the method, the status and how many calls,
+nothing else. Each finished day is served at `/api/usage/daily`, on the
+stack's own network only, for the gateway's nightly rollup into Postgres
+(`UsageRollup`, 04:20 UTC, into `usage_days`: the same five fields, kept
+as the owner's totals), so the totals outlive a server replaced: counts per day of each kind of
+request, not tied to any pilot or device. The status page
 reads the apps' faults and speed figures by build from the rows above
 (`AppHealthController`), keeping nothing more.
 

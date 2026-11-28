@@ -10,9 +10,12 @@ from sim_flight import feed
 from test_gdl90 import frames, unframe
 from test_state import line
 
+#: Own ship as the flight scripts name it.
+ME = feed.Identity(0xF0F0F0, "N1SIM")
+
 
 def test_a_state_becomes_one_datagram_a_second(tmp_path):
-    f = feed.Feed(tmp_path)
+    f = feed.Feed(tmp_path, ME)
     assert f.take(line(), 100.0) is not None
     assert f.take(line(seq=4), 100.5) is None  # within the second: kept, not sent
     assert f.take(line(seq=5), 101.0) is not None
@@ -24,7 +27,7 @@ def test_a_state_becomes_one_datagram_a_second(tmp_path):
 
 
 def test_the_datagram_is_heartbeat_ownship_geometric_altitude_then_each_target(tmp_path):
-    f = feed.Feed(tmp_path, feed.Identity(0xF0F0F0, "N1SIM"))
+    f = feed.Feed(tmp_path, ME)
     traffic = [{"hex": "a4f001", "callsign": "N4SIM", "lat": 43.2, "lon": -89.2, "alt_m": 1828.8, "gs_mps": 56.0, "track_deg": 270}]
     out = f.take(line(on_ground=False, traffic=traffic), 0.0)
     f.close()
@@ -39,7 +42,7 @@ def test_the_datagram_is_heartbeat_ownship_geometric_altitude_then_each_target(t
 
 
 def test_what_is_not_a_state_line_is_counted_and_kept(tmp_path):
-    f = feed.Feed(tmp_path)
+    f = feed.Feed(tmp_path, ME)
     assert f.take(b"hello", 0.0) is None
     f.close()
     assert f.refused == 1
@@ -47,7 +50,7 @@ def test_what_is_not_a_state_line_is_counted_and_kept(tmp_path):
 
 
 def test_the_latest_state_and_the_scenario_are_served(tmp_path):
-    f = feed.Feed(tmp_path)
+    f = feed.Feed(tmp_path, ME)
     f.take(line(phase="enroute"), 0.0)
     server = ThreadingHTTPServer(("127.0.0.1", 0), feed._handler(f, {"name": "test"}))
     threading.Thread(target=server.serve_forever, daemon=True).start()

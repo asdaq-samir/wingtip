@@ -61,7 +61,11 @@ function synthetic(event: TouchEvent, viewport: HTMLElement) {
  * away -- and drawing the cards' content in the Drawer's own tree would
  * cost them their callers' providers (the map's, a card's close). No Base UI issue for it was
  * found (a web search, 2026-11-10); one is to be filed at
- * github.com/mui/base-ui/issues, and this goes once the Drawer takes them. It reads nothing of React's own: it
+ * github.com/mui/base-ui/issues (drafted for the owner, with a mouse or
+ * trackpad drag on content, which the Drawer ignores, so a narrow iPad
+ * window with a trackpad moves the sheet by its grabber alone), and
+ * this goes once the Drawer takes them. Touches only: a pointer drag on
+ * content the Drawer does not take, so handing it one would do nothing. It reads nothing of React's own: it
  * stood on the element's internal props key (__reactProps$…), which a
  * React update could rename.
  */

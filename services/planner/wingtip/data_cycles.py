@@ -22,7 +22,9 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-import wingtip_native
+
+from . import utc
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +55,7 @@ def cycle(kind: str, effective: date | None = None, on: date | datetime | None =
     (now, to the minute: before 0901Z on a changeover day the old edition is
     still the one in force, from 0901Z the new one)."""
     asked = {"kind": kind, "effective": effective.isoformat() if effective else None, "on": _on(on)}
-    return json.loads(wingtip_native.call("data_cycle", json.dumps(asked)))
+    return engine("data_cycle", **asked)
 
 
 def start_on(kind: str, on: date | datetime | None = None) -> date:
@@ -65,7 +67,7 @@ def began_at(kind: str, on: date | datetime | None = None) -> float:
     """When the edition in force at `on` (now) took over, Unix seconds: one
     cycle before the engine's `next_at`."""
     answer = cycle(kind, None, on)
-    takes_over = datetime.fromisoformat(answer["next_at"].replace("Z", "+00:00"))
+    takes_over = utc.parse(answer["next_at"])
     return (takes_over - timedelta(days=answer["cycle_days"])).timestamp()
 
 
@@ -257,7 +259,7 @@ def held() -> list[dict]:
     would otherwise call the old edition in force for ten minutes after."""
     if _HELD["entries"] is None or time.time() >= _HELD["until"]:
         entries = status()
-        changes = [datetime.fromisoformat(cycle(k)["next_at"].replace("Z", "+00:00")).timestamp() for k in {e["kind"] for e in entries}]
+        changes = [utc.epoch(cycle(k)["next_at"]) for k in {e["kind"] for e in entries}]
         _HELD.update(entries=entries, until=min([time.time() + HELD_S, *changes]))
     return _HELD["entries"]
 

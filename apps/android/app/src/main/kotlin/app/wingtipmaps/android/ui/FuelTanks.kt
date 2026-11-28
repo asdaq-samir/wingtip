@@ -57,7 +57,7 @@ fun Plan.State.tanks(own: Map<String, Int>): Map<PlanTanks.At, PlanTanks.Tank> {
  * and the destination's on landing, every figure the engine's
  * (PlanTanks). Material's segmented list, a row a field, its determinate
  * linear indicator the share left and the gallons; under the reserve in
- * the error colour, past empty "−12 gal". A field the airplane leaves is
+ * the error colour, past empty "12 gal short". A field the airplane leaves is
  * a tap that sets its fuel (the owner, 2026-11-21: "can we set the fuel
  * tank by tapping on it?"), in the app's modal sheet over the plan.
  */
@@ -151,7 +151,7 @@ private fun FuelSetSheet(ident: String, stop: Boolean, tank: PlanTanks.Tank, onD
             )
             val over = (typed ?: 0) > usable
             Text(
-                if (over) stringResource(R.string.fuel_over, "$usable gal") else if (stop) stringResource(R.string.fuel_lands, PlanTanks.words(tank.gal)) else stringResource(R.string.fuel_start_help),
+                if (over) stringResource(R.string.fuel_over, "$usable gal") else if (stop) if (tank.gal < 0) stringResource(R.string.fuel_lands_short, PlanTanks.words(tank.gal)) else stringResource(R.string.fuel_lands, PlanTanks.words(tank.gal)) else stringResource(R.string.fuel_start_help),
                 color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
             )

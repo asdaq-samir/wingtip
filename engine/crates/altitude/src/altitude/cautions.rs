@@ -7,7 +7,7 @@
 
 use crate::figures::words::grouped;
 use crate::json::Value;
-use wingtip_flight::limits::{oxygen_words, CLASS_A_FLOOR_FT};
+use wingtip_flight::limits::{oxygen_asked, CLASS_A_FLOOR_FT};
 
 fn as_bool(v: &Value) -> Option<bool> {
     match v {
@@ -93,13 +93,14 @@ pub fn floor(segment: &Value, altitude: f64) -> Option<String> {
     Some(format!("{short} ft under the {} ft 14 CFR 91.119(c) asks: {} ft over {what}", grouped(need), grouped(clearance)))
 }
 
-/// What 14 CFR 91.211(a) asks of a flight up to `highest_ft`
-/// (wingtip_flight::limits::oxygen_words). None where the profile carries
-/// oxygen or a pressurised cabin, as the nav log's plans hold
-/// (navlog::plans::OXYGEN_CAP_FT, the same 12,500 ft).
+/// What 14 CFR 91.211 asks of a flight up to `highest_ft` in the
+/// profile's airplane (wingtip_flight::limits::oxygen_asked): (a) where
+/// its cabin is not pressurised and it carries no oxygen, as the nav log's
+/// plans hold (navlog::plans::OXYGEN_CAP_FT, the same 12,500 ft); (b)'s
+/// flight levels where it is pressurised.
 pub fn oxygen(highest_ft: Option<f64>, profile: Option<&Value>) -> Vec<String> {
-    let carried = profile.is_some_and(|p| truthy(p, "supplemental_oxygen") || truthy(p, "pressurized"));
-    highest_ft.filter(|_| !carried).and_then(oxygen_words).map(str::to_owned).into_iter().collect()
+    let has = |key| profile.is_some_and(|p| truthy(p, key));
+    highest_ft.and_then(|ft| oxygen_asked(ft, has("supplemental_oxygen"), has("pressurized"))).map(str::to_owned).into_iter().collect()
 }
 
 /// Prohibited airspace on the way, as a warning: nobody flies in it
@@ -206,8 +207,7 @@ pub fn own_altitude(selection: &Value, legs: &[Value], profile: Option<&Value>) 
             // the legal altitudes either side of the one set, not once per
             // leg with each leg's own height of the rule: six amber lines
             // "Westbound above 3,670 / 3,662 / 3,817 ... ft" pushed the
-            // Profile's graph under the fold (the FPL audit's A8,
-            // 2026-11-08). The words name the rule's own height, 3,000 ft
+            // Profile's graph under the fold. The words name the rule's own height, 3,000 ft
             // above the ground, which each leg's figure is.
             if let (Some(rule_from), Some(east)) = (num(segment, "hemispheric_rule_from_ft"), east) {
                 let base = if east { 1500.0 } else { 500.0 };
@@ -261,6 +261,8 @@ mod tests {
         assert!(oxygen(Some(15000.0), None)[0].ends_with("(14 CFR 91.211(a)(2))"));
         assert!(oxygen(Some(15500.0), None)[0].contains("(3)"));
         assert!(oxygen(Some(15500.0), Some(&v(r#"{"pressurized": true}"#))).is_empty());
+        // 14 CFR 91.211(b)(1)(i): a pressurised cabin above FL250.
+        assert!(oxygen(Some(27000.0), Some(&v(r#"{"pressurized": true}"#)))[0].contains("(b)(1)(i)"));
     }
 
     /// The shared fixture's 91.119 floors (apps/web/src/lib/fixtures/
@@ -290,8 +292,8 @@ mod tests {
     /// 91.159(a)(2): "On a magnetic course of 180 degrees through 359
     /// degrees, any even thousand foot MSL altitude + 500 feet (such as
     /// 4,500, 6,500, or 8,500)", more than 3,000 ft above the surface.
-    /// Legs whose own height of the rule differs (the FPL audit's six
-    /// lines) give one line, naming 4,500 and 6,500 for 5,500 set.
+    /// Legs whose own height of the rule differs
+    /// give one line, naming 4,500 and 6,500 for 5,500 set.
     #[test]
     fn the_hemispheric_rule_is_one_line_naming_the_legal_altitudes() {
         let selection = |east: bool| {

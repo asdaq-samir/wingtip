@@ -3,13 +3,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { SwipeRow } from "./SwipeRow";
 
-// A mouse (hover and a fine pointer) or a finger, and Reduce Motion on so
-// the row's moves are made at once, with no frames to wait on.
+// A mouse (hover and a fine pointer) or a finger (any coarse pointer, as
+// SwipeRow asks), and Reduce Motion on so the row's moves are made at
+// once, with no frames to wait on.
 const as = (mouse: boolean) => {
   window.matchMedia = vi.fn(
     (query: string) =>
       ({
-        matches: query.includes("reduced-motion") || (mouse && query.includes("hover")),
+        matches: query.includes("reduced-motion") || (mouse ? query.includes("hover") : query.includes("coarse")),
         media: query,
         addEventListener: () => {},
         removeEventListener: () => {},

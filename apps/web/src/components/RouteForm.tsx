@@ -16,7 +16,8 @@ interface Props {
 
 // Under 25rem of the panel's top row -- every phone, and the card from
 // `md` up, where the route shares the row with the panel's actions -- the
-// form steps down to iOS's next size, 15, with slimmer padding and
+// form steps down to iOS's next size, 15 on its 20 leading (it kept the
+// row's 22), with slimmer padding and
 // chevrons: at 17 its Load button sat close enough to the next button
 // that their 44-point hit areas overlapped, and the hit areas are the
 // one size that cannot shrink. Past 30rem, room to spare, it widens.
@@ -28,14 +29,14 @@ interface Props {
 // query measures the row inside its padding: 296 points in Slide Over,
 // 351 on an iPhone SE, which keeps its chevrons.)
 const NARROW_PICKER =
-  "min-w-16 px-1.5 @max-[25rem]:min-w-0 @max-[25rem]:px-1 @max-[25rem]:pointer-coarse:text-(length:--type-detail) @max-[25rem]:[&_svg]:size-3.5 @max-[20rem]:[&_svg]:hidden @min-[30rem]:min-w-24 @min-[30rem]:px-2.5";
+  "min-w-16 px-1.5 @max-[25rem]:min-w-0 @max-[25rem]:px-1 @max-[25rem]:pointer-coarse:text-(length:--type-detail) @max-[25rem]:pointer-coarse:leading-[1.25rem] @max-[25rem]:[&_svg]:size-3.5 @max-[20rem]:[&_svg]:hidden @min-[30rem]:min-w-24 @min-[30rem]:px-2.5";
 
 /** DEP → DEST and its Load button, the same on Plan and Label, as one
  *  bordered shadcn `InputGroup`: the page's own primary input, which
  *  earns the visual weight a bordered group carries. Each field is an
  *  `AirportPicker`, the stock combobox: a button that opens a searchable
  *  list of idents and names. (Its group was once a component of its own
- *  with this one caller: the code audit's CODE-44.) */
+ *  with this one caller.) */
 export default function RouteForm({ dep, dest, onDepChange, onDestChange, onSubmit, disabled = false }: Props) {
   const popups = usePopups();
   const load = (
@@ -83,7 +84,7 @@ export default function RouteForm({ dep, dest, onDepChange, onDestChange, onSubm
           className={cn(
             "px-0.5 text-muted-foreground @max-[25rem]:px-0 @min-[30rem]:px-1",
             TEXT.row,
-            "@max-[25rem]:pointer-coarse:text-(length:--type-detail)",
+            "@max-[25rem]:pointer-coarse:text-(length:--type-detail) @max-[25rem]:pointer-coarse:leading-[1.25rem]",
           )}
           aria-hidden="true"
         >

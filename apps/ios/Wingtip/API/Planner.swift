@@ -62,7 +62,7 @@ enum Planner {
     /// nav log's stream, a chart tile, the search -- goes with no byte
     /// before it fails: about ten seconds, not URLSession's sixty, so on
     /// one bar of signal the kept plan, the kept tiles or "no connection"
-    /// shows in seconds (the offline audit's gap 8). It counts time with
+    /// shows in seconds. It counts time with
     /// no data (timeoutIntervalForRequest), so a nav log streaming its
     /// stages is not cut off.
     static let read: TimeInterval = 10

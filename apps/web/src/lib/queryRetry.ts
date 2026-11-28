@@ -1,4 +1,4 @@
-import { ApiError, isDropped } from "./api/client";
+import { ApiError, isDropped, plannerUnreachable } from "./api/client";
 
 /** Whether asking again could answer differently: not for what the
  *  request itself got wrong -- a 4xx, a route with no legal altitude
@@ -6,6 +6,7 @@ import { ApiError, isDropped } from "./api/client";
  *  again; a timeout or a rate limit can pass. */
 export function retryable(error: unknown): boolean {
   if (!(error instanceof ApiError)) return true;
+  if (plannerUnreachable(error)) return true;
   return error.status < 400 || error.status >= 500 || error.status === 408 || error.status === 429;
 }
 
@@ -38,4 +39,17 @@ export function retryOnServerFailure(failures: number, error: unknown): boolean 
 export function retryDelay(failures: number, error: unknown): number {
   if (noAnswer(error)) return failures === 0 ? 1000 : 30_000;
   return Math.min(1000 * 2 ** failures, 30_000);
+}
+
+/** How often a query that failed for want of the planner -- restarting,
+ *  its gateway's 502s -- is asked again once its retries are spent, ms:
+ *  the route plans by itself once the planner is back, where it stayed
+ *  failed until Try again (the owner's screenshot, 2026-11-23). TanStack
+ *  asks only while the page is in sight and the query wanted. */
+const UNREACHABLE_REFETCH_MS = 20_000;
+
+/** lib/queryClientCore's default `refetchInterval`: only a query failed
+ *  for want of the planner is asked again; any other is left as it is. */
+export function refetchWhileUnreachable(query: { state: { status: string; error: unknown } }): number | false {
+  return query.state.status === "error" && plannerUnreachable(query.state.error) ? UNREACHABLE_REFETCH_MS : false;
 }

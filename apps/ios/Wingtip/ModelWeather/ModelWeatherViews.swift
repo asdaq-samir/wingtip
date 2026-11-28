@@ -134,7 +134,7 @@ struct ModelWeatherBar: View {
     }
 
     private var status: String? {
-        // With no connection said so (the offline audit), not as the
+        // With no connection said so, not as the
         // model weather missing nor "Fetching…" for good.
         if model.offline, model.layer == nil { return "Model weather: no connection" }
         if model.failed { return "Model weather isn't available right now" }

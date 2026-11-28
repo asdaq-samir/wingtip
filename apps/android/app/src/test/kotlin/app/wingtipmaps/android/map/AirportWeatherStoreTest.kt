@@ -1,9 +1,7 @@
 package app.wingtipmaps.android.map
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.design.generated.WingtipMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,22 +41,6 @@ class AirportWeatherStoreTest {
         val next = AirportWeatherStore(store, this)
         next.loaded.join()
         assertEquals(AirportWeatherMode.OFF, next.settings.value.mode)
-    }
-
-    @Test
-    fun theOldLookIsBroughtToTheMenu() = runBlocking {
-        val store = PreferenceDataStoreFactory.create(scope = io) { File(dir, "old.preferences_pb") }
-        store.edit {
-            it[stringPreferencesKey("map_wx_mode")] = "halo"
-            it[booleanPreferencesKey("map_wx_wind_arrows")] = false
-        }
-        val kept = AirportWeatherStore(store, this)
-        kept.loaded.join()
-        assertEquals(AirportWeatherMode.CATEGORY, kept.settings.value.mode)
-        assertEquals(AirportWeatherMode.WIND, AirportWeatherMode.migrated("halo", null))
-        assertEquals(AirportWeatherMode.CATEGORY, AirportWeatherMode.migrated("dot", true))
-        assertEquals(AirportWeatherMode.OFF, AirportWeatherMode.migrated("off", true))
-        assertEquals(AirportWeatherMode.STATION, AirportWeatherMode.migrated("station", false))
     }
 
     @Test

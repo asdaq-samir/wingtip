@@ -5,7 +5,7 @@ import { Switch } from "./ui/switch";
 /** A list's on-or-off row, as iOS's Settings has one: its title, an
  *  optional line under it, and the stock switch at its end, whose state
  *  reads at a glance -- where the map's layers had a "Show" pill that
- *  looked the same on and off (the UI audit, 2026-11-09). The title is
+ *  looked the same on and off. The title is
  *  the switch's label. */
 export default function SwitchRow({
   title,

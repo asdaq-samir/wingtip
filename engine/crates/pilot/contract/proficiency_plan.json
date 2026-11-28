@@ -91,6 +91,36 @@
             "null"
           ],
           "description": "How many days before a currency lapses its reminder shows; 30 where null."
+        },
+        "flying": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): \"if the aircraft to be flown is an airplane with a tailwheel\"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.",
+          "properties": {
+            "category": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "14 CFR 61.5 category, \"Airplane\"."
+            },
+            "class": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "14 CFR 61.5 class, \"Single-engine land\"."
+            },
+            "tailwheel": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
         }
       },
       "required": [

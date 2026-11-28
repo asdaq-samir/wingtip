@@ -5,6 +5,10 @@ wingtip.traffic.flights' history and the alerts' status."""
 
 from __future__ import annotations
 
+import threading
+
+from cachetools import TTLCache
+
 from .. import airports, geo
 from ..engine import ask as engine
 
@@ -30,6 +34,26 @@ FIELD_APPROACH_FPM = 200.0
 FIELD_APPROACH_DEG = 30.0
 #: A flight shorter than this, s, is a blip, not a flight.
 LEG_MIN_S = 120
+#: The fields near a flight's end by its position, kept a day: a card's
+#: flights, their next page and the airplane's base name the same ends
+#: again, two nearest-field searches each.
+_NEAR: TTLCache = TTLCache(maxsize=4096, ttl=24 * 3600)
+_NEAR_LOCK = threading.Lock()
+
+
+def _near(lat: float, lon: float) -> list[dict]:
+    """The US's fields nearest a point, then -- none of them near -- the
+    rest of the world's, so a flight abroad is named by its own airports
+    (the owner saw "— → —" for a Vueling A320 on 2026-10-12)."""
+    with _NEAR_LOCK:
+        near = _NEAR.get((lat, lon))
+    if near is None:
+        near = airports.nearest(lat, lon, limit=3)
+        if not near or near[0]["distance_nm"] > FIELD_APPROACH_NM:
+            near = airports.nearest_abroad(lat, lon, limit=3)
+        with _NEAR_LOCK:
+            _NEAR[(lat, lon)] = near
+    return near
 
 
 def _field_at(point: dict, landing: bool) -> dict | None:
@@ -41,13 +65,7 @@ def _field_at(point: dict, landing: bool) -> dict | None:
     rate = point.get("vrate_fpm") or 0.0
     sloping = rate <= -FIELD_APPROACH_FPM if landing else rate >= FIELD_APPROACH_FPM
     track = point.get("track_deg")
-    # The US's fields, then -- none of them near -- the rest of the
-    # world's, so a flight abroad is named by its own airports (the owner
-    # saw "— → —" for a Vueling A320 on 2026-10-12).
-    near = airports.nearest(point["lat"], point["lon"], limit=3)
-    if not near or near[0]["distance_nm"] > FIELD_APPROACH_NM:
-        near = airports.nearest_abroad(point["lat"], point["lon"], limit=3)
-    for field in near:
+    for field in _near(point["lat"], point["lon"]):
         if field["distance_nm"] > FIELD_APPROACH_NM:
             break
         above = None if point["alt_ft"] is None else point["alt_ft"] - (field.get("elevation_ft") or 0.0)

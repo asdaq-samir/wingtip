@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, sideDrawer, slow, openTab, openSection, panelTabs, openBrief, closeCard, inSheet } from "./helpers";
+import { settle, sideDrawer, sheetFoot, slow, openTab, openSection, panelTabs, openBrief, closeCard, inSheet } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -44,7 +44,7 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
   await planned(page);
   const drawer = sideDrawer(page);
   // Marked on the chips' Brief, and in the Brief on En route.
-  await expect(drawer.getByTestId("route-brief")).toHaveAttribute("data-finding", "stop");
+  await expect(sheetFoot(page).getByTestId("route-brief")).toHaveAttribute("data-finding", "stop");
   await openTab(page, "Brief");
   await expect(page.getByTestId("panel-tab-mark-enroute")).toHaveAttribute("data-finding", "stop");
   const weather = drawer.getByTestId("verdict-weather");
@@ -63,6 +63,7 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
     /^Weight & Balance/,
     /^Risk/,
     /^Alternates/,
+    /^NOTAMs/,
   ]);
 
   await weather.click();
@@ -85,10 +86,13 @@ test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a row each, c
   await planned(page);
   const drawer = sideDrawer(page);
   await openTab(page, "Brief");
+  // VFR: the alternatives are a divert from any leg (91.103(a)).
   await expect(drawer.getByTestId("preflight-count")).toHaveText("0 of 10 looked at");
-  // The two the planner does not fetch, where a pilot reads them.
-  await expect(drawer.getByTestId("check-notams")).toHaveAttribute("href", "https://www.1800wxbrief.com");
+  await expect(drawer.getByTestId("check-alternatives")).toContainText("Divert from any leg");
+  // The delays alone leave for the FAA's page; the NOTAMs open this page's own.
   await expect(drawer.getByTestId("check-delays")).toHaveAttribute("href", "https://www.fly.faa.gov");
+  await drawer.getByTestId("check-notams").click();
+  await expect(drawer.locator('[data-tab="preflight"] [data-title="NOTAMs"]')).toBeInViewport();
   // A row opened is a check looked at: the weather's opens En route.
   await drawer.getByTestId("verdict-weather").click();
   await expect(panelTabs(page).getByRole("tab", { name: "En Route", exact: true })).toHaveAttribute("aria-selected", "true");
@@ -99,7 +103,7 @@ test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a row each, c
   await expect(balance).not.toHaveAttribute("data-open");
   await drawer.getByTestId("verdict-balance").click();
   await expect(balance).toHaveAttribute("data-open", "");
-  await expect(drawer.getByTestId("preflight-count")).toHaveText("2 of 10 looked at");
+  await expect(drawer.getByTestId("preflight-count")).toHaveText("3 of 10 looked at");
 });
 
 test("the weather goes place by place, each TAF read for when the flight is there, the pilot reports where they were made", async ({
@@ -193,7 +197,7 @@ test("Depart has the takeoff's runway check: a runway too short is red, on the t
   });
   await planned(page);
   const drawer = sideDrawer(page);
-  await expect(drawer.getByTestId("route-brief")).toHaveAttribute("data-finding", "stop");
+  await expect(sheetFoot(page).getByTestId("route-brief")).toHaveAttribute("data-finding", "stop");
   await openTab(page, "Depart");
   await expect(page.getByTestId("panel-tab-mark-depart")).toHaveAttribute("data-finding", "stop");
   await expect(drawer.getByTestId("tl-flag")).toContainText("Runway Too Short");

@@ -8,6 +8,7 @@ a11y-screens.spec.ts
 a11y.spec.ts
 airplane-lookup.spec.ts
 airplane-mode.spec.ts
+airplane-poh.spec.ts
 airport-diagram.spec.ts
 airport-weather.spec.ts
 airspace-3d.spec.ts
@@ -53,7 +54,6 @@ fpl-head-fields.spec.ts
 fpl-one-layout.spec.ts
 fpl-strip-foot.spec.ts
 frequency-copy.spec.ts
-fuel-gauge.spec.ts
 fuel-stops.spec.ts
 fullscreen.spec.ts
 hazard-legs.spec.ts
@@ -66,7 +66,9 @@ instrument-currency.spec.ts
 ios/audit.spec.ts
 ios/gestures.spec.ts
 ios/menus.spec.ts
+ipad-hig.spec.ts
 ipad-layout.spec.ts
+ipad-motion.spec.ts
 ipad-touch.spec.ts
 jurisdiction.spec.ts
 kneeboard.spec.ts
@@ -76,6 +78,7 @@ logbook-file.spec.ts
 logbook-table.spec.ts
 manifest-screenshots.spec.ts
 manifest.spec.ts
+map-clutter.spec.ts
 map-mic.spec.ts
 map-rotation.spec.ts
 map-selection.spec.ts
@@ -117,6 +120,7 @@ route-half.spec.ts
 route-leg.spec.ts
 route-line.spec.ts
 route-list-asks.spec.ts
+route-pills.spec.ts
 ruler.spec.ts
 runway-advisor.spec.ts
 saved-flight-edit.spec.ts
@@ -127,6 +131,7 @@ sheet-cards-map.spec.ts
 sheet-cards.spec.ts
 sheet-drag-content.spec.ts
 sheet-drag.spec.ts
+sheet-motion.spec.ts
 sheet-size.spec.ts
 sheet-turn.spec.ts
 speed-lab.spec.ts

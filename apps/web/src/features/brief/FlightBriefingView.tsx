@@ -1,26 +1,17 @@
-import KeptAge from "../../components/KeptAge";
-import { memo } from "react";
+import { memo, Suspense } from "react";
 import { cn } from "cn";
 import { CloudOff } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
-import AccordionSection from "../../components/AccordionSection";
 import { TEXT } from "../../lib/text";
-import { AltitudeReasoning } from "../navlog/lazy";
 import type { Course, Leg, NavLogAltitude, Totals } from "../../lib/api/types";
-import { type BriefingState, clockTime, type BriefingPart } from "../plan";
-import { useFlightBriefing } from "./useFlightBriefing";
-import { WEATHER_SOURCE_LABEL } from "./briefingFigures";
-import { TakeoffLandingSection } from "./PreflightSections";
-import AirportSections from "./AirportSectionsPart";
-import WeatherAlongRoute from "./WeatherAlongRoute";
-import AlternateSection from "./AlternateSection";
+import type { BriefingState, BriefingPart } from "../plan";
+import { useBriefingModel } from "./useBriefingModel";
+import { WEATHER_SOURCE_LABEL, briefingPendingMessage } from "./briefingFigures";
 import type { FiledProcedure } from "./flightPlanForm";
 import { Pending } from "./BriefingBits";
-import PreflightPart from "./PreflightPart";
-import EnroutePart from "./EnroutePart";
-import { WORDING } from "../../lib/wording/generated/wording";
+import { BriefingPageChunk } from "./briefPagesChunk";
 
-interface Props {
+export interface BriefingViewProps {
   /** Which of the panel's tabs this is drawn in: its sections only; null,
    *  nothing drawn -- the one kept out of the tabs that `publish`es. */
   part: BriefingPart | null;
@@ -85,166 +76,27 @@ interface Props {
  * The view only: what it shows is worked out, and published, by its view
  * model (useFlightBriefing).
  */
-const NO_STOPS: string[] = [];
-
 // Drawn again only when its plan changes (memo): every tab is one of
 // these, and the page draws again at every row picked in the nav log.
-export default memo(function FlightBriefingView(props: Props) {
-  const { part, nav, legs, dep, dest, stops = NO_STOPS, course = null, totals = null, depart = "", briefing: briefingState } = props;
-  const vm = useFlightBriefing(props);
-  const { briefing, briefingPendingMessage, unchecked, opened, landings, ownCallSign, loaded, ifr, alternateWhere } = vm;
-
-  if (part === null) return null;
-
+// The pages are on a chunk of their own with the Brief's card
+// (briefPagesChunk), drawn only in the card and on paper; a route link
+// draws the publishing instance alone, and loads none of them.
+export default memo(function FlightBriefingView(props: BriefingViewProps) {
+  if (props.publish) return <BriefingPublisher {...props} />;
+  if (props.part === null) return null;
   return (
-    // No header, title or scroller of its own: the planning panel's tabs
-    // (NavLogView) hold the nav log's own and these, one part to a tab --
-    // laid open (SectionsOpen) -- and every part, one after another, for
-    // the printer.
-    <>
-      {briefingState.state === "ready" && briefingState.refreshError && (
-        // The last briefing stays up after a refresh that failed -- say
-        // so, and how old it is, as the map's airport chips do.
-        <p className={cn("border-b py-2 text-caution-ink print:hidden", TEXT.prose)}>
-          Could not refresh the briefing ({briefingState.refreshError}); showing the one fetched at{" "}
-          {clockTime(new Date(briefingState.fetchedAt))}.
-        </p>
-      )}
-
-      {briefingState.state === "ready" && (
-        // The briefing kept on this device, with its age, where it is the
-        // one shown with no signal: the Go / No-Go over Preflight is worked
-        // from it, so its own word there (lib/kept).
-        <KeptAge
-          kind={part === "preflight" ? "go_no_go" : "briefing"}
-          path="/api/planner/briefing"
-          atMs={briefingState.fetchedAt}
-          failed={!!briefingState.refreshError}
-          className="py-2 print:hidden"
-        />
-      )}
-
-      {/* Preflight: the go / no-go first, then what is done before
-          leaving -- the airspace, the risk, the paperwork, the loading. */}
-      {part === "preflight" && <PreflightPart vm={vm} nav={nav} totals={totals} dep={dep} dest={dest} depart={depart} />}
-
-      {/* Depart: only what leaving needs, in the order it is used -- the
-          field's weather, the takeoff, then the field: its radio, its
-          runways and its pattern. */}
-      {part === "depart" && (
-        <>
-          {briefing && course ? (
-            <WeatherAlongRoute
-              briefing={briefing}
-              course={course}
-              legs={legs}
-              departIso={depart || opened}
-              unchecked={unchecked}
-              phase="depart"
-            />
-          ) : (
-            <AccordionSection title="Weather">
-              <Pending>{briefingPendingMessage}</Pending>
-            </AccordionSection>
-          )}
-          <TakeoffLandingSection
-            aircraft={nav?.aircraft}
-            briefing={briefing}
-            course={course}
-            phase="depart"
-            takeoff={loaded?.takeoff.weightLb ?? null}
-            landing={loaded?.landing.weightLb ?? null}
-          />
-          {briefing ? (
-            <AirportSections briefing={briefing} landings={landings} legs={legs} callSign={ownCallSign} phase="depart" />
-          ) : (
-            <AccordionSection title="Airport">
-              <Pending>{briefingPendingMessage}</Pending>
-            </AccordionSection>
-          )}
-        </>
-      )}
-
-      {/* En route's first: the altitude the side view shows. */}
-      {part === "profile" && (
-        // The plan flown, with its time and fuel, then the floor and the
-        // ceiling it was chosen within, each with its reason, and the rest
-        // of how the planner got there -- a row a step, its working folded
-        // under it, the steps the FL chip's popover shows (AltitudeReasoning).
-        // From `nav.altitude_selection`, which arrives with the nav log.
-        <AccordionSection title={WORDING.cruiseAltitude}>
-          {!nav ? (
-            <Pending>Waiting on the nav log&apos;s altitude…</Pending>
-          ) : (
-            <AltitudeReasoning nav={nav} legs={legs} winds={totals?.winds} />
-          )}
-        </AccordionSection>
-      )}
-
-      {/* En route, under the legs and the side view: the weather on the way
-          -- adverse conditions first (AIM 7-1-5), then stretch by stretch,
-          then the winds -- and any stops. */}
-      {part === "enroute" && <EnroutePart vm={vm} course={course} legs={legs} depart={depart} winds={totals?.winds} />}
-
-      {part === "enroute" && stops.length > 0 && (
-        <>
-          <TakeoffLandingSection
-            aircraft={nav?.aircraft}
-            briefing={briefing}
-            course={course}
-            phase="enroute"
-            takeoff={loaded?.takeoff.weightLb ?? null}
-            landing={loaded?.landing.weightLb ?? null}
-          />
-          {briefing ? (
-            <AirportSections briefing={briefing} landings={landings} legs={legs} callSign={ownCallSign} phase="enroute" />
-          ) : (
-            <AccordionSection title="Airport">
-              <Pending>{briefingPendingMessage}</Pending>
-            </AccordionSection>
-          )}
-        </>
-      )}
-
-      {/* Arrive: the destination when the flight gets there -- its
-          weather, the landing, the field -- and under IFR the alternate. */}
-      {part === "arrive" && (
-        <>
-          {briefing && course ? (
-            <WeatherAlongRoute
-              briefing={briefing}
-              course={course}
-              legs={legs}
-              departIso={depart || opened}
-              unchecked={unchecked}
-              phase="arrive"
-            />
-          ) : (
-            <AccordionSection title="Weather">
-              <Pending>{briefingPendingMessage}</Pending>
-            </AccordionSection>
-          )}
-          <TakeoffLandingSection
-            aircraft={nav?.aircraft}
-            briefing={briefing}
-            course={course}
-            phase="arrive"
-            takeoff={loaded?.takeoff.weightLb ?? null}
-            landing={loaded?.landing.weightLb ?? null}
-          />
-          {briefing ? (
-            <AirportSections briefing={briefing} landings={landings} legs={legs} callSign={ownCallSign} phase="arrive" />
-          ) : (
-            <AccordionSection title="Airport">
-              <Pending>{briefingPendingMessage}</Pending>
-            </AccordionSection>
-          )}
-          {ifr && <AlternateSection {...alternateWhere} />}
-        </>
-      )}
-    </>
+    // The part's shape while its chunk comes, as a briefing on its way.
+    <Suspense fallback={<Pending coming>{briefingPendingMessage(props.briefing)}</Pending>}>
+      <BriefingPageChunk {...props} />
+    </Suspense>
   );
 });
+
+/** The one instance that works the briefing out, for every page. */
+function BriefingPublisher(props: BriefingViewProps) {
+  useBriefingModel(props);
+  return null;
+}
 
 /**
  * Which weather sources the briefing could not check, above every

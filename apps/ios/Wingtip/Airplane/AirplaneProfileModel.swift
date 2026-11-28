@@ -49,8 +49,7 @@ final class AirplaneProfileModel {
     /// Its type in words, from the registry: "Piper PA-28-140, 1968".
     var typeLine: String? {
         guard let r = registration else { return nil }
-        let name = [r.manufacturer, r.model].compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " ")
-        return [name.isEmpty ? nil : name, r.year.map(String.init)].compactMap { $0 }.joined(separator: ", ").nonEmpty
+        return [r.shortType, r.year.map(String.init)].compactMap { $0 }.joined(separator: ", ").nonEmpty
     }
 
     /// The profile the planner flies it on, as named to the planner.

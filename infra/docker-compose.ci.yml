@@ -59,12 +59,21 @@ services:
     # Where the image serves the page from (APP_STATIC_LOCATION).
     volumes:
       - ./apps/web/dist:/app/static/app:ro
-  # The weather the planner reads (wingtip.weather_store), fetched live
-  # from aviationweather.gov and NOMADS as the planner itself did before
-  # the weather service was split from it (#535): without it the suite's
-  # planner has no METAR, TAF or winds aloft to read.
+  # The weather the planner reads (wingtip.weather_store): a recorded day
+  # (apps/web/e2e/fixtures/weather, app.replay) of METARs, TAFs, winds
+  # aloft, advisories, PIREPs, GLMP and TFRs, written at the start with its
+  # times moved to now and never fetched, so no spec's answer depends on
+  # the day's weather (docs/CI.md rule 9; brief-glance and pass-times went
+  # red one night each on the day's reports and TFRs alone). The rest (the
+  # radar's and the satellite's times, the model layer) it fetches live.
+  # A new recording: `python -m app.replay record <a live store> <that folder>`.
   weather:
     image: wingtip-weather:ci
+    environment:
+      WEATHER_REPLAY: /workspace/apps/web/e2e/fixtures/weather
+      # The NWS icing grids (app.icing, about 110 MB an hour) are not in the
+      # recording and the icing spec mocks the planner's answer: not fetched.
+      WEATHER_ICING_ON: "0"
     healthcheck:
       start_interval: 1s
   planner:

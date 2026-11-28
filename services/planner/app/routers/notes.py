@@ -12,9 +12,10 @@ from wingtip import checkpoint_notes
 from wingtip import geo
 
 from ..router_basics import load_route
+from ..settings import get_settings
 from ..schemas.notes import CheckpointNote, CheckpointNoteSaved, PilotNotes, PilotNotesForgotten, RouteNote, RouteNotes
 from ..checkpoint_scoring import route_checkpoints
-from ..gateway import gateway
+from ..gateway import PILOT_HEADER, gateway
 
 router = APIRouter()
 
@@ -49,10 +50,9 @@ def _hop_of(r, lat: float, lon: float):
     return min(r.hops, key=lambda hop: abs(geo.cross_track_distance_nm(lat, lon, hop.start, hop.end)))
 
 
-#: Set by the gateway's proxy from the signed-in pilot, and stripped from
-#: anything a browser sent (PlannerProxyController). Absent where nobody
-#: can sign in, which makes an edit the shared note -- one user, locally.
-PILOT_HEADER = "X-Pilot-Id"
+# PILOT_HEADER is absent where nobody can sign in, which makes an edit the
+# shared note -- one user, locally, and only where the stack says it is
+# one (APP_OPEN_WRITES); anywhere else a write without it is refused.
 
 
 # A POST that changes nothing (the route rides in its body), so no CSRF
@@ -100,6 +100,12 @@ def save_checkpoint_note(
     """A pilot's own edit to a checkpoint's identification note: what
     they see at that place from now on. Other pilots keep the shared
     note; where nobody can sign in, this becomes the shared note."""
+    if not x_pilot_id and not get_settings().app_open_writes:
+        # The gateway names the signed-in pilot on every write, and answers
+        # 401 itself where it finds none; a write without one reached the
+        # planner some other way, and would have been everyone's note
+        # (the security review of 2026-11-23, L9).
+        raise HTTPException(401, f"{PILOT_HEADER} names the pilot whose note this is: sign in to change a note")
     if not note.description.strip():
         raise HTTPException(422, "description must not be empty")
     r = load_route(note.departure_ident, note.destination_ident, note.stops)

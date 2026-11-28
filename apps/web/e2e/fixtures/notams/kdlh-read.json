@@ -1,0 +1,557 @@
+{
+ "!DLH 11/042 DLH RWY 09/27 CLSD 2611101200-2611121432": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": false
+   },
+   {
+    "role": "stop",
+    "taken": false
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "DLH",
+   "category": "Runway",
+   "effect": "Runway 09/27 is closed.",
+   "permanent": false,
+   "procedures": [],
+   "title": "Runway 09/27 closed",
+   "until_charts": false
+  },
+  "reading": {
+   "ends": "2026-11-12T14:32:00Z",
+   "estimated": false,
+   "form": "domestic",
+   "heading": "Runway",
+   "keyword": "RWY",
+   "location": "DLH",
+   "number": "11/042",
+   "permanent": false,
+   "starts": "2026-11-10T12:00:00Z",
+   "title": "Runway 09/27",
+   "what": "Runway 09/27 closed",
+   "where": null,
+   "words": "Runway 09/27 closed."
+  },
+  "subject": {
+   "badges": [
+    {
+     "index": 1,
+     "label": "Runway 09/27 closed.",
+     "on": "runway",
+     "severity": "unusable",
+     "word": "Closed"
+    }
+   ]
+  }
+ },
+ "!DLH 11/101 DLH OBST TOWER LGT (ASN 2026-AGL-1) 465000N0921200W (1.2NM SE DLH) 1600FT (210FT AGL) U/S 2611101200-2611202359": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": false
+   },
+   {
+    "role": "stop",
+    "taken": false
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "DLH",
+   "category": "Obstacle",
+   "effect": "Tower light is out of service.",
+   "permanent": false,
+   "procedures": [],
+   "title": "Tower light out of service",
+   "until_charts": false
+  },
+  "reading": {
+   "ends": "2026-11-20T23:59:00Z",
+   "estimated": false,
+   "form": "domestic",
+   "heading": "Obstacle",
+   "keyword": "OBST",
+   "location": "DLH",
+   "number": "11/101",
+   "permanent": false,
+   "starts": "2026-11-10T12:00:00Z",
+   "title": "Obstacle: tower",
+   "what": "Tower light out of service",
+   "where": "1.2 nm southeast of the field, 1,600 ft MSL (210 ft above ground)",
+   "words": "Tower light (ASN 2026-AGL-1) 46\u00b050\u203200\u2033N 92\u00b012\u203200\u2033W (1.2 nm southeast of DLH) 1,600 ft MSL (210 ft above ground) out of service."
+  },
+  "subject": {
+   "badges": []
+  }
+ },
+ "!DLH 11/101 DLH RWY 27 PAPI U/S 2611101200-2611202359EST": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": false
+   },
+   {
+    "role": "stop",
+    "taken": false
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "DLH",
+   "category": "Runway",
+   "effect": "Runway 27 PAPI is out of service.",
+   "permanent": false,
+   "procedures": [],
+   "title": "Runway 27 PAPI out of service",
+   "until_charts": false
+  },
+  "reading": {
+   "ends": "2026-11-20T23:59:00Z",
+   "estimated": true,
+   "form": "domestic",
+   "heading": "Runway",
+   "keyword": "RWY",
+   "location": "DLH",
+   "number": "11/101",
+   "permanent": false,
+   "starts": "2026-11-10T12:00:00Z",
+   "title": "Runway 27 PAPI",
+   "what": "Runway 27 PAPI out of service",
+   "where": null,
+   "words": "Runway 27 PAPI out of service."
+  },
+  "subject": {
+   "badges": [
+    {
+     "index": 1,
+     "label": "Runway 27 PAPI out of service.",
+     "on": "runway",
+     "severity": "caution",
+     "word": "NOTAM"
+    }
+   ]
+  }
+ },
+ "!DLH 11/102 DLH TWY A BTN TWY B AND TWY C CLSD 2611101200-2611202359": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": false
+   },
+   {
+    "role": "stop",
+    "taken": false
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "DLH",
+   "category": "Taxiway",
+   "effect": "Taxiway A is closed between taxiway B and taxiway C.",
+   "permanent": false,
+   "procedures": [],
+   "title": "Taxiway A closed between taxiway B and taxiway C",
+   "until_charts": false
+  },
+  "reading": {
+   "ends": "2026-11-20T23:59:00Z",
+   "estimated": false,
+   "form": "domestic",
+   "heading": "Taxiway",
+   "keyword": "TWY",
+   "location": "DLH",
+   "number": "11/102",
+   "permanent": false,
+   "starts": "2026-11-10T12:00:00Z",
+   "title": "Taxiway A",
+   "what": "Taxiway A closed between taxiway B and taxiway C",
+   "where": null,
+   "words": "Taxiway A between taxiway B and taxiway C closed."
+  },
+  "subject": {
+   "badges": []
+  }
+ },
+ "!DLH 11/103 DLH OBST CRANE (ASN 2026-AGL-1-NRA) 465000N0921200W (1.2NM SE DLH) 1600FT (210FT AGL) FLAGGED AND LGTD 2611101200-2611202359": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": false
+   },
+   {
+    "role": "stop",
+    "taken": false
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "DLH",
+   "category": "Obstacle",
+   "effect": null,
+   "permanent": false,
+   "procedures": [],
+   "title": "Crane",
+   "until_charts": false
+  },
+  "reading": {
+   "ends": "2026-11-20T23:59:00Z",
+   "estimated": false,
+   "form": "domestic",
+   "heading": "Obstacle",
+   "keyword": "OBST",
+   "location": "DLH",
+   "number": "11/103",
+   "permanent": false,
+   "starts": "2026-11-10T12:00:00Z",
+   "title": "Obstacle: crane",
+   "what": "Crane",
+   "where": "1.2 nm southeast of the field, 1,600 ft MSL (210 ft above ground)",
+   "words": "Crane (ASN 2026-AGL-1-NRA) 46\u00b050\u203200\u2033N 92\u00b012\u203200\u2033W (1.2 nm southeast of DLH) 1,600 ft MSL (210 ft above ground) flagged and lighted."
+  },
+  "subject": {
+   "badges": []
+  }
+ },
+ "!DLH 11/104 DLH AD AP 100LL FUEL NOT AVBL 2611101200-2611202359": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": false
+   },
+   {
+    "role": "stop",
+    "taken": false
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "DLH",
+   "category": "Airport",
+   "effect": "100LL fuel is not available.",
+   "permanent": false,
+   "procedures": [],
+   "title": "100LL fuel not available",
+   "until_charts": false
+  },
+  "reading": {
+   "ends": "2026-11-20T23:59:00Z",
+   "estimated": false,
+   "form": "domestic",
+   "heading": "Airport",
+   "keyword": "AD",
+   "location": "DLH",
+   "number": "11/104",
+   "permanent": false,
+   "starts": "2026-11-10T12:00:00Z",
+   "title": "Fuel 100LL",
+   "what": "100LL fuel not available",
+   "where": null,
+   "words": "Airport 100LL fuel not available."
+  },
+  "subject": {
+   "badges": [
+    {
+     "index": null,
+     "label": "Airport 100LL fuel not available.",
+     "on": "fuel",
+     "severity": "caution",
+     "word": "Not available"
+    }
+   ]
+  }
+ },
+ "!DLH 11/105 DLH NAV ILS RWY 09 GP U/S 2611101200-2611202359": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": false
+   },
+   {
+    "role": "stop",
+    "taken": false
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "DLH",
+   "category": "Navaid",
+   "effect": "Glide slope runway 09 is out of service.",
+   "permanent": false,
+   "procedures": [],
+   "title": "Glide slope runway 09 out of service",
+   "until_charts": false
+  },
+  "reading": {
+   "ends": "2026-11-20T23:59:00Z",
+   "estimated": false,
+   "form": "domestic",
+   "heading": "Navaid",
+   "keyword": "NAV",
+   "location": "DLH",
+   "number": "11/105",
+   "permanent": false,
+   "starts": "2026-11-10T12:00:00Z",
+   "title": "Glide slope runway 09",
+   "what": "Glide slope runway 09 out of service",
+   "where": null,
+   "words": "ILS runway 09 glide path out of service."
+  },
+  "subject": {
+   "badges": [
+    {
+     "index": 0,
+     "label": "ILS runway 09 glide path out of service.",
+     "on": "approach",
+     "severity": "caution",
+     "word": "Out of service"
+    },
+    {
+     "index": 2,
+     "label": "ILS runway 09 glide path out of service.",
+     "on": "approach",
+     "severity": "caution",
+     "word": "Out of service"
+    },
+    {
+     "index": 3,
+     "label": "ILS runway 09 glide path out of service.",
+     "on": "approach",
+     "severity": "caution",
+     "word": "Out of service"
+    }
+   ]
+  }
+ },
+ "!DLH 11/150 DLH TWY A BTN RWY 09 AND TWY C CLSD 2611101200-2611202359": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": false
+   },
+   {
+    "role": "stop",
+    "taken": false
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "DLH",
+   "category": "Taxiway",
+   "effect": "Taxiway A is closed between runway 09 and taxiway C.",
+   "permanent": false,
+   "procedures": [],
+   "title": "Taxiway A closed between runway 09 and taxiway C",
+   "until_charts": false
+  },
+  "reading": {
+   "ends": "2026-11-20T23:59:00Z",
+   "estimated": false,
+   "form": "domestic",
+   "heading": "Taxiway",
+   "keyword": "TWY",
+   "location": "DLH",
+   "number": "11/150",
+   "permanent": false,
+   "starts": "2026-11-10T12:00:00Z",
+   "title": "Taxiway A",
+   "what": "Taxiway A closed between runway 09 and taxiway C",
+   "where": null,
+   "words": "Taxiway A between runway 09 and taxiway C closed."
+  },
+  "subject": {
+   "badges": []
+  }
+ },
+ "!FDC 6/2478 ZFW TX..AIRSPACE SAN ANGELO, TX..TEMPORARY FLIGHT RESTRICTIONS. 2611010700-2703140800": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": false
+   },
+   {
+    "role": "stop",
+    "taken": false
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "FDC",
+   "category": "Temporary flight restriction",
+   "effect": null,
+   "permanent": false,
+   "procedures": [],
+   "title": null,
+   "until_charts": false
+  },
+  "reading": {
+   "ends": "2027-03-14T08:00:00Z",
+   "estimated": false,
+   "form": "domestic",
+   "heading": "Temporary flight restriction",
+   "keyword": "AIRSPACE",
+   "location": "ZFW",
+   "number": "6/2478",
+   "permanent": false,
+   "starts": "2026-11-01T07:00:00Z",
+   "title": null,
+   "what": null,
+   "where": null,
+   "words": "San Angelo, TX. Temporary flight restrictions."
+  },
+  "subject": {
+   "badges": [
+    {
+     "index": null,
+     "label": "Temporary flight restriction near the field",
+     "on": "field",
+     "severity": "caution",
+     "word": "TFR"
+    }
+   ]
+  }
+ },
+ "!FDC 6/3373 ARR SID AURORA MUNI, CHICAGO/AURORA, IL. ADELL EIGHT DEPARTURE (RNAV)... BLOKR EIGHT DEPARTURE (RNAV)... CARYN EIGHT DEPARTURE (RNAV)... DARCY EIGHT DEPARTURE (RNAV)... ELANR NINE DEPARTURE (RNAV)... OBENE THREE DEPARTURE (RNAV)... RWY 18/36 PROCEDURES NA. RWY 18/36 PERMANENTLY CLSD. 2605271843-2805271843EST": {
+  "affects": [
+   {
+    "role": "departure",
+    "taken": true
+   },
+   {
+    "role": "stop",
+    "taken": true
+   },
+   {
+    "role": "arrival",
+    "taken": false
+   },
+   {
+    "role": "alternate",
+    "taken": false
+   }
+  ],
+  "card": {
+   "account": "FDC",
+   "category": "Departure procedures",
+   "effect": "Runway 18/36 is permanently closed, so its RNAV departures are not authorized.",
+   "permanent": true,
+   "procedures": [
+    {
+     "departure": true,
+     "name": "ADELL 8",
+     "rnav": true
+    },
+    {
+     "departure": true,
+     "name": "BLOKR 8",
+     "rnav": true
+    },
+    {
+     "departure": true,
+     "name": "CARYN 8",
+     "rnav": true
+    },
+    {
+     "departure": true,
+     "name": "DARCY 8",
+     "rnav": true
+    },
+    {
+     "departure": true,
+     "name": "ELANR 9",
+     "rnav": true
+    },
+    {
+     "departure": true,
+     "name": "OBENE 3",
+     "rnav": true
+    }
+   ],
+   "title": "Runway 18/36 closed",
+   "until_charts": true
+  },
+  "reading": {
+   "ends": "2028-05-27T18:43:00Z",
+   "estimated": true,
+   "form": "domestic",
+   "heading": "SID",
+   "keyword": "SID",
+   "location": "ARR",
+   "number": "6/3373",
+   "permanent": false,
+   "starts": "2026-05-27T18:43:00Z",
+   "title": null,
+   "what": null,
+   "where": null,
+   "words": "Aurora Municipal, Chicago/Aurora, IL. ADELL Eight departure (RNAV)... BLOKR Eight departure (RNAV)... CARYN Eight departure (RNAV)... DARCY Eight departure (RNAV)... ELANR Nine departure (RNAV)... OBENE Three departure (RNAV)... runway 18/36 procedures not authorized. Runway 18/36 permanently closed."
+  },
+  "subject": {
+   "badges": []
+  }
+ }
+}

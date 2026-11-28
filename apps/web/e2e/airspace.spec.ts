@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, grabberTo, settle, slow } from "./helpers";
+import { closeCard, grabberTo, mapLayersOn, mapStill, settle, slow } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
@@ -37,6 +37,10 @@ test(
 test("a right-click on the chart asks what is there, and Close puts the card away", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
+  // Once the right-click's listener is on the map (PickedGl): the page
+  // settled long before it on CI's runner, the chart's tiles slow, and
+  // the right-click went to a canvas with nothing to hear it (PR #591).
+  await mapLayersOn(page);
   const map = page.locator(".maplibregl-map");
   const box = (await map.boundingBox())!;
   await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.3, { button: "right" });
@@ -105,6 +109,9 @@ test("a point held opens its card at its size: the bands and the point's name co
   await installFrameRecorder(page);
   await page.goto("/app/plan");
   await settle(page);
+  // Held once the map is at rest: held while it still flew to the pilot's
+  // place, the click met no card (PR #591's run, passed on its retry).
+  await mapStill(page);
   const box = (await page.locator(".maplibregl-map").first().boundingBox())!;
   // The lowest two bands' rows and the point's name from the first frame:
   // "Fetching the airspace here…" gave way to the bands with the point's

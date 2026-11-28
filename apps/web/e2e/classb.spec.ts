@@ -121,7 +121,8 @@ test("the marker's weather dot is the field's own flight category", async ({ pag
   // IFR is red. A field with no report is grey, deliberately not the
   // green one: "unknown" must not look like "fine".
   await expect.poll(async () => (await chip(page, "KORD"))?.weather.toLowerCase(), { timeout: 15000 }).toBe("#b3261e");
-  expect((await chip(page, "KMSP"))?.weather.toLowerCase()).toBe("#8fa3b0");
+  // The no-report grey, CATEGORY_UNKNOWN (design/tokens.json), 3:1 and more on every surface.
+  expect((await chip(page, "KMSP"))?.weather.toLowerCase()).toBe("#6b7f8c");
 });
 
 test("tapping one opens its card in the panel, with Fly Here, as any airport on the chart does", async ({ page }) => {

@@ -67,19 +67,10 @@ pub(crate) fn rad(deg: f64) -> f64 {
     deg * std::f64::consts::PI / 180.0
 }
 
-/// A member that is a number; None where it is missing or null, as the
-/// web's `?? ` takes either. Anything else is an error.
-pub(crate) fn opt(name: &str, v: &Value, key: &str) -> Result<Option<f64>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-pub(crate) fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
-    opt(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
-}
+// `opt`: a member that is a number, None where it is missing or null, as
+// the web's `??` takes either, anything else an error; `num` one that must
+// be there. Core's readers, one copy for every crate.
+pub(crate) use wingtip_core::ask::{num_in as num, opt_num_in as opt};
 
 /// A member that is true or false; None where missing or null.
 pub(crate) fn opt_bool(name: &str, v: &Value, key: &str) -> Result<Option<bool>, String> {
@@ -103,6 +94,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         "traffic_marks" => traffic::marks_rule(v),
         "traffic_fresh" => traffic::fresh_rule(v),
+        "traffic_figures" => Ok(traffic::figures_json()),
         "own_ship_hex" => traffic::own_ship_hex_rule(v),
         "closest_approach" => traffic::closest_approach_rule(v),
         "airborne_now" => alerts::airborne_now_rule(v),

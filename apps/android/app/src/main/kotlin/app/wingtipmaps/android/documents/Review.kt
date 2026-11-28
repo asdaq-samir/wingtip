@@ -6,6 +6,7 @@ import app.wingtipmaps.android.documents.model.HandbookFigures
 import app.wingtipmaps.android.documents.model.HandbookRead
 import app.wingtipmaps.android.documents.model.LogbookEntryDraft
 import app.wingtipmaps.android.documents.model.LogbookRowCheck
+import app.wingtipmaps.android.logbook.AirplaneKind
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
@@ -94,14 +95,20 @@ object HandbookReview {
  * (14 CFR 61.51(b)(1)(i) asks the date of each flight), so a row without
  * one cannot be confirmed; a confirmed row is the gateway's
  * LogbookEntryRequest, its counts and hours as the engine drew them
- * (the engine writes a count as a number, made whole here).
+ * (the engine writes a count as a number, made whole here), and its
+ * airplane's category, class and gear where the pilot's logbook has said
+ * them for its N-number (`known`); a page gives no full stops, so none.
  */
 object LogbookReview {
     fun canConfirm(row: LogbookRowCheck): Boolean = !row.entry.flownOn.isNullOrBlank()
 
-    fun request(e: LogbookEntryDraft): LogbookEntryRequest? {
+    fun request(e: LogbookEntryDraft, known: (String?) -> AirplaneKind? = { null }): LogbookEntryRequest? {
         val day = e.flownOn?.ifBlank { null } ?: return null
+        val kind = known(e.aircraft)
         return LogbookEntryRequest(
+            category = kind?.category,
+            aircraftClass = kind?.aircraftClass,
+            tailwheel = kind?.tailwheel,
             aircraft = e.aircraft,
             aircraftType = e.aircraftType,
             airHours = e.airHours,

@@ -2,13 +2,12 @@
 
 package app.wingtipmaps.android.design.generated
 
-import android.os.Build
-import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -29,7 +28,7 @@ object WingtipColors {
         /** The route's green a shade deeper over the dimmed chart, so it does not glare. */
         val RouteGreenNight = Color(0xFF3F9A1C)
         const val ROUTE_GREEN_NIGHT_HEX = "#3f9a1c"
-        /** The thin edge round the course's magenta by day (white at 35% over the dimmed chart). */
+        /** The thin edge round the course's magenta, by day and at night: at night it keeps the course 4.7:1 against the dimmed paper (a white edge gave 1.0:1). */
         val RouteEdge = Color(0xFF0B0F0A)
         const val ROUTE_EDGE_HEX = "#0b0f0a"
         /** A VFR waypoint's magenta, the sectional's: the one it draws a field with no tower in. */
@@ -196,8 +195,9 @@ object WingtipColors {
         /** LIFR as a chip's fill under white words: #a371f7 is 3.35:1 under white, this 6.4:1 (WCAG 1.4.3; the UI audit, 2026-11-09). */
         val LifrChip = Color(0xFF7E3FB8)
         const val LIFR_CHIP_HEX = "#7e3fb8"
-        val Unknown = Color(0xFF8FA3B0)
-        const val UNKNOWN_HEX = "#8fa3b0"
+        /** A dot or mark with no report, 3:1 and more on every surface by day and at night (WCAG 1.4.11): 4.2:1 on white, 3.7:1 on the sheet, 3.0:1 on the night's muted, where #8fa3b0 was 2.6:1 on white and 2.3:1 on the sheet (the themes audit, 2026-11-27). Its words are the scheme's category-unknown-ink. */
+        val Unknown = Color(0xFF6B7F8C)
+        const val UNKNOWN_HEX = "#6b7f8c"
     }
     object Brand {
         /** Airspace Magenta, the ring round the mark. */
@@ -552,6 +552,11 @@ class WingtipPalette(
     val accentForeground: Color,
     val destructive: Color,
     val destructiveInk: Color,
+    val categoryVfrInk: Color,
+    val categoryMvfrInk: Color,
+    val categoryIfrInk: Color,
+    val categoryLifrInk: Color,
+    val categoryUnknownInk: Color,
     val border: Color,
     val input: Color,
     val ring: Color,
@@ -610,8 +615,13 @@ object WingtipPalettes {
         accentForeground = Color(0xFF171717),
         destructive = Color(0xFFD20000),
         destructiveInk = Color(0xFFC10007),
+        categoryVfrInk = Color(0xFF15702F),
+        categoryMvfrInk = Color(0xFF1A62D6),
+        categoryIfrInk = Color(0xFFB3261E),
+        categoryLifrInk = Color(0xFF7E3FB8),
+        categoryUnknownInk = Color(0xFF51636F),
         border = Color(0xFFE5E5E5),
-        input = Color(0xFF8F8F8F),
+        input = Color(0xFF808080),
         ring = Color(0xFF0066CC),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
@@ -666,8 +676,13 @@ object WingtipPalettes {
         accentForeground = Color(0xFFEEF3F9),
         destructive = Color(0xFFFF7979),
         destructiveInk = Color(0xFFFF7979),
+        categoryVfrInk = Color(0xFF4AC26B),
+        categoryMvfrInk = Color(0xFF6CB0FF),
+        categoryIfrInk = Color(0xFFFF8A80),
+        categoryLifrInk = Color(0xFFC297FF),
+        categoryUnknownInk = Color(0xFFA9B8C4),
         border = Color(0x1AFFFFFF),
-        input = Color(0x26FFFFFF),
+        input = Color(0xFF808080),
         ring = Color(0xFF57A8FF),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
@@ -722,6 +737,11 @@ object WingtipPalettes {
         accentForeground = Color(0xFF000000),
         destructive = Color(0xFFB3261E),
         destructiveInk = Color(0xFF9C1C15),
+        categoryVfrInk = Color(0xFF15702F),
+        categoryMvfrInk = Color(0xFF1A62D6),
+        categoryIfrInk = Color(0xFFB3261E),
+        categoryLifrInk = Color(0xFF7E3FB8),
+        categoryUnknownInk = Color(0xFF51636F),
         border = Color(0xFF000000),
         input = Color(0xFF333333),
         ring = Color(0xFF0047A0),
@@ -740,6 +760,67 @@ object WingtipPalettes {
         outlineVariant = Color.Unspecified,
         materialPrimary = Color.Unspecified,
         materialOnPrimary = Color.Unspecified,
+        inkMagenta = Color.Unspecified,
+        inkBrown = Color.Unspecified,
+        inkField = Color.Unspecified,
+        primaryContainer = Color.Unspecified,
+        onPrimaryContainer = Color.Unspecified,
+    )
+    val SunlightNight = WingtipPalette(
+        airspaceBlueText = Color(0xFF6FA0E8),
+        airspaceMagentaText = Color(0xFFE884D1),
+        course = Color(0xFFE600E6),
+        background = Color(0xFF0B1422),
+        foreground = Color(0xFFEEF3F9),
+        card = Color(0xFF17283A),
+        cardForeground = Color(0xFFEEF3F9),
+        popover = Color(0xFF1B2E44),
+        popoverForeground = Color(0xFFEEF3F9),
+        primary = Color(0xFF006DDE),
+        primaryForeground = Color(0xFFFAFAFA),
+        tint = Color(0xFF57A8FF),
+        tintShade = Color(0xFF57A8FF),
+        sheet = Color(0xFF0B1422),
+        airspaceBlueInk = Color(0xFF8CB8F2),
+        airspaceMagentaInk = Color(0xFFF0A0CF),
+        procedure = Color(0xFF9D9DF0),
+        caution = Color(0xFFF5B85E),
+        cautionInk = Color(0xFFF9CD8C),
+        cautionWash = Color(0x1FFE9A00),
+        go = Color(0xFF75D7A3),
+        goInk = Color(0xFF9BE3BD),
+        secondary = Color(0xFF20354C),
+        secondaryForeground = Color(0xFFEEF3F9),
+        muted = Color(0xFF20354C),
+        mutedForegroundShade = Color(0xFFCFD9E5),
+        mutedForeground = Color(0xFFCFD9E5),
+        accent = Color(0xFF20354C),
+        accentForeground = Color(0xFFEEF3F9),
+        destructive = Color(0xFFFF7979),
+        destructiveInk = Color(0xFFFF7979),
+        categoryVfrInk = Color(0xFF4AC26B),
+        categoryMvfrInk = Color(0xFF6CB0FF),
+        categoryIfrInk = Color(0xFFFF8A80),
+        categoryLifrInk = Color(0xFFC297FF),
+        categoryUnknownInk = Color(0xFFA9B8C4),
+        border = Color(0x66FFFFFF),
+        input = Color(0xFF9E9E9E),
+        ring = Color(0xFF57A8FF),
+        chart1 = Color(0xFFD4D4D4),
+        chart2 = Color(0xFF737373),
+        chart3 = Color(0xFF525252),
+        chart4 = Color(0xFF404040),
+        chart5 = Color(0xFF262626),
+        surfaceContainerLowest = Color(0xFF0B1422),
+        surfaceContainerLow = Color(0xFF17283A),
+        surfaceContainer = Color(0xFF1B2E44),
+        surfaceContainerHigh = Color(0xFF263D57),
+        surfaceContainerHighest = Color(0xFF2E4866),
+        surfaceVariant = Color(0xFF2E4866),
+        outline = Color(0xFF7F93AB),
+        outlineVariant = Color(0xFF3A5068),
+        materialPrimary = Color(0xFF57A8FF),
+        materialOnPrimary = Color(0xFF0B1422),
         inkMagenta = Color.Unspecified,
         inkBrown = Color.Unspecified,
         inkField = Color.Unspecified,
@@ -778,8 +859,13 @@ object WingtipPalettes {
         accentForeground = Color(0xFF171717),
         destructive = Color(0xFFD20000),
         destructiveInk = Color(0xFFC10007),
+        categoryVfrInk = Color(0xFF15702F),
+        categoryMvfrInk = Color(0xFF1A62D6),
+        categoryIfrInk = Color(0xFFB3261E),
+        categoryLifrInk = Color(0xFF7E3FB8),
+        categoryUnknownInk = Color(0xFF51636F),
         border = Color(0xFFE5E5E5),
-        input = Color(0xFF8F8F8F),
+        input = Color(0xFF808080),
         ring = Color(0xFF00707E),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
@@ -834,8 +920,13 @@ object WingtipPalettes {
         accentForeground = Color(0xFFEEF3F9),
         destructive = Color(0xFFFF7979),
         destructiveInk = Color(0xFFFF7979),
+        categoryVfrInk = Color(0xFF4AC26B),
+        categoryMvfrInk = Color(0xFF6CB0FF),
+        categoryIfrInk = Color(0xFFFF8A80),
+        categoryLifrInk = Color(0xFFC297FF),
+        categoryUnknownInk = Color(0xFFA9B8C4),
         border = Color(0x1AFFFFFF),
-        input = Color(0x26FFFFFF),
+        input = Color(0xFF808080),
         ring = Color(0xFF46D3E6),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
@@ -890,8 +981,13 @@ object WingtipPalettes {
         accentForeground = Color(0xFF1F1A14),
         destructive = Color(0xFFD20000),
         destructiveInk = Color(0xFFC10007),
+        categoryVfrInk = Color(0xFF15702F),
+        categoryMvfrInk = Color(0xFF1A62D6),
+        categoryIfrInk = Color(0xFFB3261E),
+        categoryLifrInk = Color(0xFF7E3FB8),
+        categoryUnknownInk = Color(0xFF51636F),
         border = Color(0xFFE2D8C4),
-        input = Color(0xFF8F8F8F),
+        input = Color(0xFF808080),
         ring = Color(0xFF0066CC),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
@@ -946,8 +1042,13 @@ object WingtipPalettes {
         accentForeground = Color(0xFFEEF1F5),
         destructive = Color(0xFFFF7979),
         destructiveInk = Color(0xFFFF7979),
+        categoryVfrInk = Color(0xFF4AC26B),
+        categoryMvfrInk = Color(0xFF6CB0FF),
+        categoryIfrInk = Color(0xFFFF8A80),
+        categoryLifrInk = Color(0xFFC297FF),
+        categoryUnknownInk = Color(0xFFA9B8C4),
         border = Color(0x1AFFFFFF),
-        input = Color(0x26FFFFFF),
+        input = Color(0xFF808080),
         ring = Color(0xFF5AC8FA),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
@@ -1002,6 +1103,11 @@ object WingtipPalettes {
         accentForeground = Color.Unspecified,
         destructive = Color(0xFFD20000),
         destructiveInk = Color(0xFFC10007),
+        categoryVfrInk = Color(0xFF15702F),
+        categoryMvfrInk = Color(0xFF1A62D6),
+        categoryIfrInk = Color(0xFFB3261E),
+        categoryLifrInk = Color(0xFF7E3FB8),
+        categoryUnknownInk = Color(0xFF51636F),
         border = Color.Unspecified,
         input = Color.Unspecified,
         ring = Color.Unspecified,
@@ -1058,6 +1164,11 @@ object WingtipPalettes {
         accentForeground = Color.Unspecified,
         destructive = Color(0xFFFF7979),
         destructiveInk = Color(0xFFFF7979),
+        categoryVfrInk = Color(0xFF4AC26B),
+        categoryMvfrInk = Color(0xFF6CB0FF),
+        categoryIfrInk = Color(0xFFFF8A80),
+        categoryLifrInk = Color(0xFFC297FF),
+        categoryUnknownInk = Color(0xFFA9B8C4),
         border = Color.Unspecified,
         input = Color.Unspecified,
         ring = Color.Unspecified,
@@ -1121,6 +1232,11 @@ fun nativePalette(scheme: ColorScheme, dark: Boolean): WingtipPalette {
         accentForeground = scheme.onSurface,
         destructive = p.destructive,
         destructiveInk = p.destructiveInk,
+        categoryVfrInk = p.categoryVfrInk,
+        categoryMvfrInk = p.categoryMvfrInk,
+        categoryIfrInk = p.categoryIfrInk,
+        categoryLifrInk = p.categoryLifrInk,
+        categoryUnknownInk = p.categoryUnknownInk,
         border = scheme.outlineVariant,
         input = scheme.outline,
         ring = scheme.primary,
@@ -1154,7 +1270,7 @@ val WingtipTypography = Typography(
     headlineSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 32.sp),
     titleLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 25.sp),
     titleMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 24.sp),
-    bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp),
+    bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp),
     bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
     bodySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp),
     labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp),
@@ -1165,7 +1281,7 @@ val WingtipTypography = Typography(
     headlineSmallEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, lineHeight = 32.sp),
     titleLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 25.sp),
     titleMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp),
-    bodyLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp),
+    bodyLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 22.sp),
     bodyMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
     bodySmallEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
     labelMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp),
@@ -1182,6 +1298,7 @@ object WingtipSpace {
     val Sm = 8.dp
     val Md = 12.dp
     val Lg = 16.dp
+    val Group = 16.dp
     val Xl = 24.dp
     val Xxl = 32.dp
 }
@@ -1209,17 +1326,17 @@ object WingtipMotion {
     const val SKELETON_PULSE_MS = 1500
 }
 
-/** The taps felt on a key action, as View.performHapticFeedback's constants; one
- *  from API 30 has its fallback below that. */
+/** The taps felt on a key action, as Compose's HapticFeedbackType (LocalHapticFeedback),
+ *  which picks the older constant itself where the phone's API is older. */
 object WingtipHaptic {
     /** An altitude set: a wheel's detent, as a picker ticks. */
-    val ALTITUDE: Int get() = if (Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.SEGMENT_FREQUENT_TICK else HapticFeedbackConstants.CLOCK_TICK
+    val ALTITUDE: HapticFeedbackType get() = HapticFeedbackType.SegmentFrequentTick
     /** Direct To or Fly Here taken: the route has changed under the pilot. */
-    val DIRECT_TO: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+    val DIRECT_TO: HapticFeedbackType get() = HapticFeedbackType.Confirm
     /** An alert or a copilot warning shown: felt as well as seen, in a busy cockpit. */
-    val WARNING: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
+    val WARNING: HapticFeedbackType get() = HapticFeedbackType.Reject
     /** The sheet settling at a detent (pill, half, full). */
-    const val DETENT = HapticFeedbackConstants.CONTEXT_CLICK
+    val DETENT: HapticFeedbackType get() = HapticFeedbackType.ContextClick
 }
 
 /** The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees. */
@@ -1238,6 +1355,7 @@ object WingtipMap {
     const val AIRSPACE_FADED = 0.35
     const val AIRSPACE_HELD = 1.8
     const val AIRSPACE_LABEL_FADED = 0.6
+    const val ROUTE_TAG_OFF_ENDS_NM = 2
 }
 
 /** From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1. */
@@ -1276,6 +1394,12 @@ object WingtipMapZoom {
     const val VOR = 8.0
     /** The VFR waypoints and the low enroute chart's fixes. The app's alone: the charts job's tiles hold every fix from its own zooms (overlay_layers). */
     const val FIX = 10.0
+    /** The Class B fields' weather marks at their full size and named from this zoom; farther out, over the whole country, each a small mark with no ident that gives way to the route's own, so only the route's ends and stops are named there (the owner's iPhone screenshot, 2026-11-23). */
+    const val CLASS_B_NAMED = 5.0
+    /** The route's tags beyond its fields and stops, its tops of climb and descent, from this zoom, where a leg is long enough on a phone to read them; farther out the route is its line, its ends and its stops. */
+    const val ROUTE_TAGS = 6.0
+    /** A procedure's fixes' tags and an approach plate's fix tags from this zoom; farther out an approach is a short line by its field, and its words would cover it and the fields round it. */
+    const val PROCEDURE_WORDS = 9.0
 }
 
 /** The map's words (design/tokens.json's map.label): the size scale (px), the halo, and each kind's size, weight and halo. */
@@ -1290,7 +1414,7 @@ object WingtipMapLabel {
     const val SIZE_RUNWAY = 16f
     const val SIZE_PICKED = 17f
     const val HALO = 2f
-    const val HALO_NIGHT = 0.85f
+    const val HALO_NIGHT = 1f
     const val SCALE_MAX = 1.2f
     /** Each light-haloed word's ink after dark, by its day ink (map.label.night-ink). */
     val NIGHT_INK = mapOf("#2465b8" to "#82b4ff", "#c0309f" to "#f28ddc", "#117a35" to "#62d48e", "#1c1a17" to "#eef1f5", "#dc2626" to "#ff8a8a", "#d70015" to "#ff8a8a", "#c2410c" to "#fb9466", "#2563eb" to "#8fb4ff", "#b45309" to "#fbbf24", "#7c3aed" to "#bba1ff", "#78716c" to "#cdc8c3", "#be185d" to "#f58cc4", "#0f766e" to "#4fd1c5", "#57534e" to "#cfcac5", "#9333ea" to "#c99cff")
@@ -1334,6 +1458,47 @@ object WingtipMapLabel {
     val CLUSTER_COUNT = Kind(listOf(0.0 to 14.0), true, Halo.NONE)
     /** Model Weather's pinned value on its white pill. */
     val FLOW_PIN = Kind(listOf(0.0 to 13.0), true, Halo.NONE)
+}
+
+/** The chart's Dimmer and Contrast and the plates' see-through on the map (design/tokens.json's chart-look group). */
+object WingtipChartLook {
+    const val NIGHT_DIM = 0.5f
+    const val DIM_MAX = 0.7f
+    const val CONTRAST_MIN = -0.3f
+    const val CONTRAST_MAX = 0.4f
+    const val STEP = 0.05f
+    const val PLATE_OPACITY = 0.85f
+    const val PLATE_LEAST_OPACITY = 0.1f
+    const val ROUTE_EDGE_NIGHT = 0.9f
+    const val ROUTE_EDGE_DAY = 0.55f
+    const val ROUTE_EDGE_SUNLIGHT = 0.9f
+}
+
+/** The chart's raster paint by look, its contrast and saturation (design/tokens.json's chart-paint group). */
+object WingtipChartPaint {
+    const val DAY_CONTRAST = 0.1f
+    const val DAY_SATURATION = 0.1f
+    const val NIGHT_CONTRAST = 0.13f
+    const val NIGHT_SATURATION = 0f
+    const val SUNLIGHT_CONTRAST = 0.2f
+    const val SUNLIGHT_SATURATION = 0.2f
+}
+
+/** The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group). */
+object WingtipDimmer {
+    const val STATE = "mapDim"
+    const val WORD_STATE = "labelNight"
+    const val WARNING_STATE = "warningDim"
+    const val METADATA = "wingtip:dim"
+    val OPACITY: Map<String, List<String>> = mapOf("line" to listOf("line-opacity"), "circle" to listOf("circle-opacity", "circle-stroke-opacity"), "symbol" to listOf("icon-opacity", "text-opacity"))
+    val COLOUR: Map<String, List<String>> = mapOf("line" to listOf("line-color"), "circle" to listOf("circle-color", "circle-stroke-color"), "symbol" to listOf("text-color", "icon-color"))
+    const val WARNING_UNDER_PAPER = 0.85f
+    const val WORD_GAMMA = 2.2f
+    const val WORD_LEAST = 0.01f
+    const val WORD_FLOOR = 0.75f
+    const val WORD_LIGHT = 0.4460834275041789
+    const val WORD_FLOOR_CONTRAST = 0.13f
+    val NIGHT_WORD: Map<String, String> = mapOf("#2465b8" to "#82b4ff", "#c0309f" to "#f28ddc", "#117a35" to "#5cc685", "#1c1a17" to "#afb1b4", "#dc2626" to "#ff8a8a", "#d70015" to "#ff8a8a", "#c2410c" to "#fb9466", "#2563eb" to "#8db2fc", "#b45309" to "#dfaa20", "#7c3aed" to "#bba1ff", "#78716c" to "#b6b1ad", "#be185d" to "#f58cc4", "#0f766e" to "#4ac4b9", "#57534e" to "#b6b1ad", "#9333ea" to "#c99cff")
 }
 
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */

@@ -99,3 +99,16 @@ fn class_g_at_night_in_the_pattern_below_1200_ft() {
     assert!(!ex(800.0, true, false, Some(2.0)));
     assert!(!vfr::night_pattern_exception(false, 800.0, true, true, Some(2.0)));
 }
+
+#[test]
+fn appendix_d_section_4_bars_solo_students_at_twelve_airports() {
+    // 14 CFR part 91, appendix D, section 4 (eCFR, 2026-11-19): 12 airports.
+    assert_eq!(special_vfr_airports::NO_SOLO_STUDENT.len(), 12);
+    for ident in ["KATL", "bos", "ADW", "KORD", "DFW", "KLAX", "MIA", "EWR", "KJFK", "LGA", "SFO", "DCA"] {
+        assert!(special_vfr_airports::class_b_solo_barred(ident).is_some(), "{ident}");
+    }
+    // In section 3 but not 4, and a Class B satellite: not barred.
+    for ident in ["BWI", "KDEN", "MDW", "SEA", ""] {
+        assert!(special_vfr_airports::class_b_solo_barred(ident).is_none(), "{ident}");
+    }
+}

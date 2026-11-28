@@ -127,15 +127,27 @@ pub struct Runways {
     /// hotter, heavier or a stronger tailwind than it goes -- so the
     /// figures are the table's edge, shorter than the airplane will need.
     pub beyond: Vec<String>,
+    /// Fields whose runway has the wind behind it (AIM 4-3-6c), and fields
+    /// with less than SAFO 19001's 15 per cent to spare: cautions, as
+    /// FPL's runway chips say them (runway::fit).
+    pub tailwind: Vec<String>,
+    pub close: Vec<String>,
     /// Fields whose distances could not be held against the runway: its
     /// length or the field's elevation is not known.
     pub unchecked: Vec<String>,
+    /// Fields with no temperature reported, whose distances were worked
+    /// out on a standard day's: a hot day's are longer.
+    pub standard_day: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Balance {
     pub pending: bool,
     pub worked: bool,
+    /// The airplane has a POH loading but the pilot gave no load: not
+    /// worked, and said so, never balanced at the POH's sample airplane
+    /// as if it were this flight's (14 CFR 91.9(a), 91.103).
+    pub no_load: bool,
     pub problems: Vec<String>,
     pub takeoff: Option<String>,
 }

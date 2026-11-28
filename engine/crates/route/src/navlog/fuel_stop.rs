@@ -62,8 +62,8 @@ pub fn worst_burn_per_nm(legs: &[(f64, Option<f64>)], over_nm: f64) -> Option<f6
 /// 91.167(a)(3)'s already, and the last stretch keeps the fuel on to the
 /// alternate too (91.167(a)(2): the totals' `alternate_gal`, the last
 /// flight's alternate leg's fuel), which the fuel check counts: without it
-/// a flight short only by its alternate was short with no stop offered
-/// (the aviation audit of 2026-11-21, F7.1). Each IFR stop is itself a
+/// a flight short only by its alternate was short with no stop offered.
+/// Each IFR stop is itself a
 /// first point of intended landing (91.167(a)(1)); its own alternate is
 /// not counted (route options' Figures says why).
 pub struct Need {
@@ -92,12 +92,26 @@ pub fn fuel_stop_need(totals: &Obj, legs: &[(f64, Option<f64>)], start: (f64, f6
         return Ok(None);
     }
     let taxi = totals.opt("taxi_gal")?.unwrap_or(0.0);
-    let mut reserve = totals.opt("reserve_gal")?.unwrap_or(0.0);
+    // No reserve sent: the most the rules ask, 45 minutes (night VFR,
+    // 14 CFR 91.151(a)(2); IFR, 91.167(a)(3)) at the flight's own burn,
+    // never none.
+    let given = totals.opt("reserve_gal")?;
+    let mut reserve = match given {
+        Some(r) => r,
+        None if ete > 0.0 => fuel / ete * crate::figures::strip::estimate_reserve_min(),
+        None => 0.0,
+    };
     let straight = distance_nm(start.0, start.1, end.0, end.1);
     let detour = if straight != 0.0 { (distance / straight).max(1.0) } else { 1.0 };
     let stops_needed = (fuel / (usable - taxi - reserve).max(1.0)).ceil();
     let ifr = totals.text("rules") == Some("ifr");
-    if !ifr && !totals.truthy("night") && sun::night_on_the_way(start, end, depart_s, ete + stops_needed * flight::TURNAROUND_MIN) {
+    // A day reserve given for a flight that runs into the night is the
+    // night's (91.151(a)(2)); the 45 minutes above is that already.
+    if given.is_some()
+        && !ifr
+        && !totals.truthy("night")
+        && sun::night_on_the_way(start, end, depart_s, ete + stops_needed * flight::TURNAROUND_MIN)
+    {
         reserve = reserve * flight::reserve_min(false, true) / flight::reserve_min(false, false);
     }
     let per_nm = fuel / distance;
@@ -169,5 +183,17 @@ mod tests {
         // 8 gal on board, 1 gal taxi: 7 to fly, under the 7.5 gal reserve.
         assert!(short_by("vfr", 8.0).on_board_short);
         assert!(!short_by("vfr", 9.0).on_board_short);
+    }
+
+    #[test]
+    fn with_no_reserve_given_it_is_45_minutes_at_the_burn() {
+        // 14 CFR 91.151(a)(2), 91.167(a)(3): 30 gal over 180 min is 10 gal
+        // an hour, so 7.5 gal, never none.
+        let totals = crate::json::parse(
+            r#"{"fuel_margin_gal": -2.0, "usable_fuel_gal": 40.0, "distance_nm": 300.0, "fuel_gal": 30.0, "ete_min": 180.0, "rules": "vfr"}"#,
+        )
+        .unwrap();
+        let obj = Obj::read("t", &totals).unwrap();
+        assert_eq!(fuel_stop_need(&obj, &[], (0.0, 0.0), (0.0, 5.0), 0.0).unwrap().unwrap().reserve_gal, 7.5);
     }
 }

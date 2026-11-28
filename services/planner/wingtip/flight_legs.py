@@ -158,8 +158,7 @@ def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datet
     is because the fuel on board at the start is under its start, taxi and
     reserve already (`on_board`: no field is in its reach) rather than no
     field with fuel being in reach, so the app says why where the fuel
-    stops are offered (warn, never limit; the aviation audit of
-    2026-11-21, F7.6). Under IFR the last flight's search keeps the fuel on
+    stops are offered (warn, never limit). Under IFR the last flight's search keeps the fuel on
     to its alternate (14 CFR 91.167(a)(2)), as its fuel check counts it: a
     flight short only by its alternate had been offered no stop (F7.1).
     Each IFR stop is itself a first point of intended landing

@@ -54,7 +54,7 @@ def once(maxsize: int | None = 128) -> Callable[[Callable[P, R]], Callable[P, R]
 #: The keys being worked on by `one_at_a_time`, each with its lock and how
 #: many hold or wait for it: a key goes when its last asker is done, so this
 #: holds only what is under way (wingtip.publications kept a lock for every
-#: chart page ever asked for: the 2026-11-14 audit's CODE-24).
+#: chart page ever asked for).
 _WORKING: dict[Hashable, tuple[threading.Lock, int]] = {}
 _WORKING_LOCK = threading.Lock()
 

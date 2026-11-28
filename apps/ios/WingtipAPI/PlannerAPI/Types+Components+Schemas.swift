@@ -738,12 +738,16 @@ extension Components {
             public var kit: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/last_action`.
             public var lastAction: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/make_short`.
+            public var makeShort: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/manufacturer`.
             public var manufacturer: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/model`.
             public var model: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/model_code`.
             public var modelCode: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AircraftRegistration/model_short`.
+            public var modelShort: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/mode_s_hex`.
             public var modeSHex: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRegistration/mode_s_octal`.
@@ -793,9 +797,11 @@ extension Components {
             ///   - horsepower:
             ///   - kit:
             ///   - lastAction:
+            ///   - makeShort:
             ///   - manufacturer:
             ///   - model:
             ///   - modelCode:
+            ///   - modelShort:
             ///   - modeSHex:
             ///   - modeSOctal:
             ///   - nNumber:
@@ -829,9 +835,11 @@ extension Components {
                 horsepower: Swift.Int? = nil,
                 kit: Swift.String? = nil,
                 lastAction: Swift.String? = nil,
+                makeShort: Swift.String? = nil,
                 manufacturer: Swift.String? = nil,
                 model: Swift.String? = nil,
                 modelCode: Swift.String? = nil,
+                modelShort: Swift.String? = nil,
                 modeSHex: Swift.String? = nil,
                 modeSOctal: Swift.String? = nil,
                 nNumber: Swift.String,
@@ -865,9 +873,11 @@ extension Components {
                 self.horsepower = horsepower
                 self.kit = kit
                 self.lastAction = lastAction
+                self.makeShort = makeShort
                 self.manufacturer = manufacturer
                 self.model = model
                 self.modelCode = modelCode
+                self.modelShort = modelShort
                 self.modeSHex = modeSHex
                 self.modeSOctal = modeSOctal
                 self.nNumber = nNumber
@@ -902,9 +912,11 @@ extension Components {
                 case horsepower
                 case kit
                 case lastAction = "last_action"
+                case makeShort = "make_short"
                 case manufacturer
                 case model
                 case modelCode = "model_code"
+                case modelShort = "model_short"
                 case modeSHex = "mode_s_hex"
                 case modeSOctal = "mode_s_octal"
                 case nNumber = "n_number"
@@ -1014,6 +1026,10 @@ extension Components {
             public var eltBatteryDueOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirplaneInspections/elt_inspection_good_through`.
             public var eltInspectionGoodThrough: Swift.String?
+            /// The owner's word that the airplane carries anyone for hire or gives flight instruction for hire: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null weighs a due given.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AirplaneInspections/for_hire`.
+            public var forHire: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AirplaneInspections/hours_now`.
             public var hoursNow: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AirplaneInspections/hundred_hour_due_at_hours`.
@@ -1028,6 +1044,7 @@ extension Components {
             ///   - annualGoodThrough:
             ///   - eltBatteryDueOn:
             ///   - eltInspectionGoodThrough:
+            ///   - forHire: The owner's word that the airplane carries anyone for hire or gives flight instruction for hire: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null weighs a due given.
             ///   - hoursNow:
             ///   - hundredHourDueAtHours:
             ///   - staticCheckGoodThrough:
@@ -1036,6 +1053,7 @@ extension Components {
                 annualGoodThrough: Swift.String? = nil,
                 eltBatteryDueOn: Swift.String? = nil,
                 eltInspectionGoodThrough: Swift.String? = nil,
+                forHire: Swift.Bool? = nil,
                 hoursNow: Swift.Double? = nil,
                 hundredHourDueAtHours: Swift.Double? = nil,
                 staticCheckGoodThrough: Swift.String? = nil,
@@ -1044,6 +1062,7 @@ extension Components {
                 self.annualGoodThrough = annualGoodThrough
                 self.eltBatteryDueOn = eltBatteryDueOn
                 self.eltInspectionGoodThrough = eltInspectionGoodThrough
+                self.forHire = forHire
                 self.hoursNow = hoursNow
                 self.hundredHourDueAtHours = hundredHourDueAtHours
                 self.staticCheckGoodThrough = staticCheckGoodThrough
@@ -1053,6 +1072,7 @@ extension Components {
                 case annualGoodThrough = "annual_good_through"
                 case eltBatteryDueOn = "elt_battery_due_on"
                 case eltInspectionGoodThrough = "elt_inspection_good_through"
+                case forHire = "for_hire"
                 case hoursNow = "hours_now"
                 case hundredHourDueAtHours = "hundred_hour_due_at_hours"
                 case staticCheckGoodThrough = "static_check_good_through"
@@ -1195,10 +1215,14 @@ extension Components {
             public var kind: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportEnd/lat`.
             public var lat: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/AirportEnd/leg_caution`.
+            public var legCaution: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportEnd/lon`.
             public var lon: Swift.Double
             /// - Remark: Generated from `#/components/schemas/AirportEnd/name`.
             public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AirportEnd/outside_caution`.
+            public var outsideCaution: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportEnd/pattern_altitude_ft`.
             public var patternAltitudeFt: Swift.Double?
             /// Creates a new `AirportEnd`.
@@ -1209,8 +1233,10 @@ extension Components {
             ///   - ident:
             ///   - kind:
             ///   - lat:
+            ///   - legCaution:
             ///   - lon:
             ///   - name:
+            ///   - outsideCaution:
             ///   - patternAltitudeFt:
             public init(
                 airspaceClass: Swift.String? = nil,
@@ -1218,8 +1244,10 @@ extension Components {
                 ident: Swift.String,
                 kind: Swift.String? = nil,
                 lat: Swift.Double,
+                legCaution: Swift.String? = nil,
                 lon: Swift.Double,
                 name: Swift.String,
+                outsideCaution: Swift.String? = nil,
                 patternAltitudeFt: Swift.Double? = nil
             ) {
                 self.airspaceClass = airspaceClass
@@ -1227,8 +1255,10 @@ extension Components {
                 self.ident = ident
                 self.kind = kind
                 self.lat = lat
+                self.legCaution = legCaution
                 self.lon = lon
                 self.name = name
+                self.outsideCaution = outsideCaution
                 self.patternAltitudeFt = patternAltitudeFt
             }
             public enum CodingKeys: String, CodingKey {
@@ -1237,8 +1267,10 @@ extension Components {
                 case ident
                 case kind
                 case lat
+                case legCaution = "leg_caution"
                 case lon
                 case name
+                case outsideCaution = "outside_caution"
                 case patternAltitudeFt = "pattern_altitude_ft"
             }
         }
@@ -2281,6 +2313,8 @@ extension Components {
             public var approach: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/AlternateCheck/ceiling_ft`.
             public var ceilingFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/AlternateCheck/closed`.
+            public var closed: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AlternateCheck/distance_nm`.
             public var distanceNm: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AlternateCheck/good`.
@@ -2305,6 +2339,7 @@ extension Components {
             ///   - alternateMinimumsUrl:
             ///   - approach:
             ///   - ceilingFt:
+            ///   - closed:
             ///   - distanceNm:
             ///   - good:
             ///   - ident:
@@ -2318,6 +2353,7 @@ extension Components {
                 alternateMinimumsUrl: Swift.String? = nil,
                 approach: Swift.Bool,
                 ceilingFt: Swift.Double? = nil,
+                closed: Swift.Bool? = nil,
                 distanceNm: Swift.Double? = nil,
                 good: Swift.Bool? = nil,
                 ident: Swift.String,
@@ -2331,6 +2367,7 @@ extension Components {
                 self.alternateMinimumsUrl = alternateMinimumsUrl
                 self.approach = approach
                 self.ceilingFt = ceilingFt
+                self.closed = closed
                 self.distanceNm = distanceNm
                 self.good = good
                 self.ident = ident
@@ -2345,6 +2382,7 @@ extension Components {
                 case alternateMinimumsUrl = "alternate_minimums_url"
                 case approach
                 case ceilingFt = "ceiling_ft"
+                case closed
                 case distanceNm = "distance_nm"
                 case good
                 case ident
@@ -3044,6 +3082,45 @@ extension Components {
                 case runway
             }
         }
+        /// A field's approaches as drawn, each from vectors or with the
+        /// transition picked, the track, the approach picked for the flight and
+        /// the pilot's minimums (DA or MDA, ft MSL) where typed.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ApproachFindAsk`.
+        public struct ApproachFindAsk: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ApproachFindAsk/drawings`.
+            public var drawings: [Components.Schemas.ProcedureDrawing]
+            /// - Remark: Generated from `#/components/schemas/ApproachFindAsk/minimums_ft`.
+            public var minimumsFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ApproachFindAsk/picked`.
+            public var picked: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ApproachFindAsk/points`.
+            public var points: [Components.Schemas.TrackPoint]
+            /// Creates a new `ApproachFindAsk`.
+            ///
+            /// - Parameters:
+            ///   - drawings:
+            ///   - minimumsFt:
+            ///   - picked:
+            ///   - points:
+            public init(
+                drawings: [Components.Schemas.ProcedureDrawing],
+                minimumsFt: Swift.Double? = nil,
+                picked: Swift.String? = nil,
+                points: [Components.Schemas.TrackPoint]
+            ) {
+                self.drawings = drawings
+                self.minimumsFt = minimumsFt
+                self.picked = picked
+                self.points = points
+            }
+            public enum CodingKeys: String, CodingKey {
+                case drawings
+                case minimumsFt = "minimums_ft"
+                case picked
+                case points
+            }
+        }
         /// The approach's runway as the CIFP's runway record gives it: its
         /// threshold (`ident` "RW36"), the threshold's elevation (ARINC 424-18
         /// 5.68) and the threshold crossing height (5.67), ft; and its touchdown
@@ -3095,6 +3172,214 @@ extension Components {
                 case tchFt = "tch_ft"
                 case tdzeFt = "tdze_ft"
                 case thresholdFt = "threshold_ft"
+            }
+        }
+        /// The lesson: the briefing (approach_brief), the steps flown fix by
+        /// fix at the ground speed (approach_coaching), each with `way`, the
+        /// procedure's line from the step before's place to its own (the way the
+        /// lesson's airplane flies it), the quiz (approach_quiz) and the side
+        /// view (approach_profile).
+        ///
+        /// - Remark: Generated from `#/components/schemas/ApproachTaught`.
+        public struct ApproachTaught: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/BriefPayload`.
+            public struct BriefPayloadPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `BriefPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/brief`.
+            public typealias BriefPayload = [Components.Schemas.ApproachTaught.BriefPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/brief`.
+            public var brief: Components.Schemas.ApproachTaught.BriefPayload
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/profile`.
+            public struct ProfilePayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `ProfilePayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/profile`.
+            public var profile: Components.Schemas.ApproachTaught.ProfilePayload
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/QuizPayload`.
+            public struct QuizPayloadPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `QuizPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/quiz`.
+            public typealias QuizPayload = [Components.Schemas.ApproachTaught.QuizPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/quiz`.
+            public var quiz: Components.Schemas.ApproachTaught.QuizPayload
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/StepsPayload`.
+            public struct StepsPayloadPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `StepsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/steps`.
+            public typealias StepsPayload = [Components.Schemas.ApproachTaught.StepsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/steps`.
+            public var steps: Components.Schemas.ApproachTaught.StepsPayload
+            /// Creates a new `ApproachTaught`.
+            ///
+            /// - Parameters:
+            ///   - brief:
+            ///   - profile:
+            ///   - quiz:
+            ///   - steps:
+            public init(
+                brief: Components.Schemas.ApproachTaught.BriefPayload,
+                profile: Components.Schemas.ApproachTaught.ProfilePayload,
+                quiz: Components.Schemas.ApproachTaught.QuizPayload,
+                steps: Components.Schemas.ApproachTaught.StepsPayload
+            ) {
+                self.brief = brief
+                self.profile = profile
+                self.quiz = quiz
+                self.steps = steps
+            }
+            public enum CodingKeys: String, CodingKey {
+                case brief
+                case profile
+                case quiz
+                case steps
+            }
+        }
+        /// An approach found from vectors (its final approach fix's time and
+        /// the way-in fixes it passed) and its transitions as drawn, with the
+        /// track: which transition it came in by.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk`.
+        public struct ApproachTransitionAsk: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/drawings`.
+            public var drawings: [Components.Schemas.ProcedureDrawing]
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/faf_at`.
+            public var fafAt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/minimums_ft`.
+            public var minimumsFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/passed`.
+            public var passed: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/points`.
+            public var points: [Components.Schemas.TrackPoint]
+            /// Creates a new `ApproachTransitionAsk`.
+            ///
+            /// - Parameters:
+            ///   - drawings:
+            ///   - fafAt:
+            ///   - minimumsFt:
+            ///   - passed:
+            ///   - points:
+            public init(
+                drawings: [Components.Schemas.ProcedureDrawing],
+                fafAt: Swift.Double,
+                minimumsFt: Swift.Double? = nil,
+                passed: Swift.Int,
+                points: [Components.Schemas.TrackPoint]
+            ) {
+                self.drawings = drawings
+                self.fafAt = fafAt
+                self.minimumsFt = minimumsFt
+                self.passed = passed
+                self.points = points
+            }
+            public enum CodingKeys: String, CodingKey {
+                case drawings
+                case fafAt = "faf_at"
+                case minimumsFt = "minimums_ft"
+                case passed
+                case points
+            }
+        }
+        /// The Brief's one line for the route's borders (app.route_borders):
+        /// the finding alone (`lead`), with what to do (`line`), and its parts.
+        ///
+        /// - Remark: Generated from `#/components/schemas/BorderLine`.
+        public struct BorderLine: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BorderLine/action`.
+            public var action: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BorderLine/cite`.
+            public var cite: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BorderLine/lead`.
+            public var lead: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BorderLine/line`.
+            public var line: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BorderLine/why`.
+            public var why: Swift.String
+            /// Creates a new `BorderLine`.
+            ///
+            /// - Parameters:
+            ///   - action:
+            ///   - cite:
+            ///   - lead:
+            ///   - line:
+            ///   - why:
+            public init(
+                action: Swift.String,
+                cite: Swift.String,
+                lead: Swift.String,
+                line: Swift.String,
+                why: Swift.String
+            ) {
+                self.action = action
+                self.cite = cite
+                self.lead = lead
+                self.line = line
+                self.why = why
+            }
+            public enum CodingKeys: String, CodingKey {
+                case action
+                case cite
+                case lead
+                case line
+                case why
             }
         }
         /// `weather_unavailable` names which of hazards/forecast/metars/tfrs
@@ -4411,6 +4696,10 @@ extension Components {
             public var entries: [Components.Schemas.CoachLogbookEntry]
             /// - Remark: Generated from `#/components/schemas/CoachAsk/flightReviewOn`.
             public var flightReviewOn: Swift.String?
+            /// The airplane to be flown (14 CFR 61.57(a)(1)(ii)); none judges the newest flight's.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CoachAsk/flying`.
+            public var flying: Components.Schemas.Flying?
             /// - Remark: Generated from `#/components/schemas/CoachAsk/held`.
             public var held: [Components.Schemas.CoachEndorsement]?
             /// The pilot's home field, where the sessions' fields are looked for round.
@@ -4433,6 +4722,7 @@ extension Components {
             ///   - debriefs:
             ///   - entries:
             ///   - flightReviewOn:
+            ///   - flying: The airplane to be flown (14 CFR 61.57(a)(1)(ii)); none judges the newest flight's.
             ///   - held:
             ///   - home: The pilot's home field, where the sessions' fields are looked for round.
             ///   - ipcOn:
@@ -4444,6 +4734,7 @@ extension Components {
                 debriefs: [Components.Schemas.CoachDebrief]? = nil,
                 entries: [Components.Schemas.CoachLogbookEntry],
                 flightReviewOn: Swift.String? = nil,
+                flying: Components.Schemas.Flying? = nil,
                 held: [Components.Schemas.CoachEndorsement]? = nil,
                 home: Swift.String? = nil,
                 ipcOn: Swift.String? = nil,
@@ -4455,6 +4746,7 @@ extension Components {
                 self.debriefs = debriefs
                 self.entries = entries
                 self.flightReviewOn = flightReviewOn
+                self.flying = flying
                 self.held = held
                 self.home = home
                 self.ipcOn = ipcOn
@@ -4467,6 +4759,7 @@ extension Components {
                 case debriefs
                 case entries
                 case flightReviewOn
+                case flying
                 case held
                 case home
                 case ipcOn
@@ -4759,6 +5052,10 @@ extension Components {
         public struct CoachLogbookEntry: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/approaches`.
             public var approaches: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/category`.
+            public var category: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/class`.
+            public var airspaceClass: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/crossCountryHours`.
             public var crossCountryHours: Swift.Double?
             /// Every landing, by day or at night (14 CFR 61.57(a)).
@@ -4769,6 +5066,8 @@ extension Components {
             public var dualHours: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/flownOn`.
             public var flownOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/fullStopLandings`.
+            public var fullStopLandings: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/holding`.
             public var holding: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/instrumentHours`.
@@ -4781,6 +5080,8 @@ extension Components {
             public var nightLandings: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/soloHours`.
             public var soloHours: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/tailwheel`.
+            public var tailwheel: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/totalHours`.
             public var totalHours: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/CoachLogbookEntry/tracking`.
@@ -4789,55 +5090,71 @@ extension Components {
             ///
             /// - Parameters:
             ///   - approaches:
+            ///   - category:
+            ///   - airspaceClass:
             ///   - crossCountryHours:
             ///   - dayLandings: Every landing, by day or at night (14 CFR 61.57(a)).
             ///   - dualHours:
             ///   - flownOn:
+            ///   - fullStopLandings:
             ///   - holding:
             ///   - instrumentHours:
             ///   - nightHours:
             ///   - nightLandings: Landings to a full stop at night (61.57(b)).
             ///   - soloHours:
+            ///   - tailwheel:
             ///   - totalHours:
             ///   - tracking:
             public init(
                 approaches: Swift.Int? = nil,
+                category: Swift.String? = nil,
+                airspaceClass: Swift.String? = nil,
                 crossCountryHours: Swift.Double? = nil,
                 dayLandings: Swift.Int? = nil,
                 dualHours: Swift.Double? = nil,
                 flownOn: Swift.String,
+                fullStopLandings: Swift.Int? = nil,
                 holding: Swift.Bool? = nil,
                 instrumentHours: Swift.Double? = nil,
                 nightHours: Swift.Double? = nil,
                 nightLandings: Swift.Int? = nil,
                 soloHours: Swift.Double? = nil,
+                tailwheel: Swift.Bool? = nil,
                 totalHours: Swift.Double? = nil,
                 tracking: Swift.Bool? = nil
             ) {
                 self.approaches = approaches
+                self.category = category
+                self.airspaceClass = airspaceClass
                 self.crossCountryHours = crossCountryHours
                 self.dayLandings = dayLandings
                 self.dualHours = dualHours
                 self.flownOn = flownOn
+                self.fullStopLandings = fullStopLandings
                 self.holding = holding
                 self.instrumentHours = instrumentHours
                 self.nightHours = nightHours
                 self.nightLandings = nightLandings
                 self.soloHours = soloHours
+                self.tailwheel = tailwheel
                 self.totalHours = totalHours
                 self.tracking = tracking
             }
             public enum CodingKeys: String, CodingKey {
                 case approaches
+                case category
+                case airspaceClass = "class"
                 case crossCountryHours
                 case dayLandings
                 case dualHours
                 case flownOn
+                case fullStopLandings
                 case holding
                 case instrumentHours
                 case nightHours
                 case nightLandings
                 case soloHours
+                case tailwheel
                 case totalHours
                 case tracking
             }
@@ -5400,6 +5717,8 @@ extension Components {
         ///
         /// - Remark: Generated from `#/components/schemas/Course`.
         public struct Course: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Course/adiz`.
+            public var adiz: Components.Schemas.BorderLine?
             /// - Remark: Generated from `#/components/schemas/Course/bearing_deg`.
             public var bearingDeg: Swift.Double
             /// - Remark: Generated from `#/components/schemas/Course/chart_cycle`.
@@ -5424,11 +5743,14 @@ extension Components {
             public var maxZoom: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Course/min_zoom`.
             public var minZoom: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Course/outside`.
+            public var outside: Components.Schemas.BorderLine?
             /// - Remark: Generated from `#/components/schemas/Course/stops`.
             public var stops: [Components.Schemas.AirportEnd]?
             /// Creates a new `Course`.
             ///
             /// - Parameters:
+            ///   - adiz:
             ///   - bearingDeg:
             ///   - chartCycle:
             ///   - chartLayers:
@@ -5441,8 +5763,10 @@ extension Components {
             ///   - distanceNm:
             ///   - maxZoom:
             ///   - minZoom:
+            ///   - outside:
             ///   - stops:
             public init(
+                adiz: Components.Schemas.BorderLine? = nil,
                 bearingDeg: Swift.Double,
                 chartCycle: Swift.String,
                 chartLayers: [Components.Schemas.ChartLayer],
@@ -5455,8 +5779,10 @@ extension Components {
                 distanceNm: Swift.Double,
                 maxZoom: Swift.Int,
                 minZoom: Swift.Int,
+                outside: Components.Schemas.BorderLine? = nil,
                 stops: [Components.Schemas.AirportEnd]? = nil
             ) {
+                self.adiz = adiz
                 self.bearingDeg = bearingDeg
                 self.chartCycle = chartCycle
                 self.chartLayers = chartLayers
@@ -5469,9 +5795,11 @@ extension Components {
                 self.distanceNm = distanceNm
                 self.maxZoom = maxZoom
                 self.minZoom = minZoom
+                self.outside = outside
                 self.stops = stops
             }
             public enum CodingKeys: String, CodingKey {
+                case adiz
                 case bearingDeg = "bearing_deg"
                 case chartCycle = "chart_cycle"
                 case chartLayers = "chart_layers"
@@ -5484,6 +5812,7 @@ extension Components {
                 case distanceNm = "distance_nm"
                 case maxZoom = "max_zoom"
                 case minZoom = "min_zoom"
+                case outside
                 case stops
             }
         }
@@ -5498,7 +5827,11 @@ extension Components {
             public var approachesInWindow: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Currency/crossCountryHours`.
             public var crossCountryHours: Swift.Double
-            /// 90 days after the third most recent landing (14 CFR 61.57(a)).
+            /// What the logbook doesn't say, where the pilot would be current by day if it were so: "Can't tell: ...".
+            ///
+            /// - Remark: Generated from `#/components/schemas/Currency/dayPassengersUnknown`.
+            public var dayPassengersUnknown: Swift.String?
+            /// 90 days after the third most recent landing the logbook proves counts for the airplane judged (14 CFR 61.57(a)(1)).
             ///
             /// - Remark: Generated from `#/components/schemas/Currency/dayPassengersUntil`.
             public var dayPassengersUntil: Swift.String?
@@ -5536,10 +5869,30 @@ extension Components {
             public var medicalExpiresOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Currency/nightHours`.
             public var nightHours: Swift.Double
-            /// 90 days after the third most recent night full-stop landing (61.57(b)).
+            /// The same at night (61.57(b)(1)).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Currency/nightPassengersUnknown`.
+            public var nightPassengersUnknown: Swift.String?
+            /// 90 days after the third most recent night full-stop landing the logbook proves counts (61.57(b)(1)).
             ///
             /// - Remark: Generated from `#/components/schemas/Currency/nightPassengersUntil`.
             public var nightPassengersUntil: Swift.String?
+            /// The category and class judged: the airplane to be flown's, else the newest flight's (61.57(a)(1)).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Currency/passengerClass`.
+            public var passengerClass: Swift.String?
+            /// Neither the airplane to be flown nor the newest flight says the class.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Currency/passengerClassUnknown`.
+            public var passengerClassUnknown: Swift.Bool?
+            /// Whether the airplane judged has a tailwheel; null not said, judged as one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Currency/passengerTailwheel`.
+            public var passengerTailwheel: Swift.Bool?
+            /// A tailwheel's own, for a pilot judged in a tricycle who has flown one in the class (61.57(a)(1)(ii)).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Currency/tailwheelPassengersUntil`.
+            public var tailwheelPassengersUntil: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Currency/totalHours`.
             public var totalHours: Swift.Double
             /// - Remark: Generated from `#/components/schemas/Currency/trackingInWindow`.
@@ -5549,7 +5902,8 @@ extension Components {
             /// - Parameters:
             ///   - approachesInWindow: Approaches logged in the 6 calendar months before this one (61.57(c)(1)(i)).
             ///   - crossCountryHours:
-            ///   - dayPassengersUntil: 90 days after the third most recent landing (14 CFR 61.57(a)).
+            ///   - dayPassengersUnknown: What the logbook doesn't say, where the pilot would be current by day if it were so: "Can't tell: ...".
+            ///   - dayPassengersUntil: 90 days after the third most recent landing the logbook proves counts for the airplane judged (14 CFR 61.57(a)(1)).
             ///   - due: What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).
             ///   - flightReviewOn:
             ///   - flightReviewUntil: The end of the 24th calendar month after the flight review's (61.56(c)).
@@ -5562,12 +5916,18 @@ extension Components {
             ///   - landings:
             ///   - medicalExpiresOn:
             ///   - nightHours:
-            ///   - nightPassengersUntil: 90 days after the third most recent night full-stop landing (61.57(b)).
+            ///   - nightPassengersUnknown: The same at night (61.57(b)(1)).
+            ///   - nightPassengersUntil: 90 days after the third most recent night full-stop landing the logbook proves counts (61.57(b)(1)).
+            ///   - passengerClass: The category and class judged: the airplane to be flown's, else the newest flight's (61.57(a)(1)).
+            ///   - passengerClassUnknown: Neither the airplane to be flown nor the newest flight says the class.
+            ///   - passengerTailwheel: Whether the airplane judged has a tailwheel; null not said, judged as one.
+            ///   - tailwheelPassengersUntil: A tailwheel's own, for a pilot judged in a tricycle who has flown one in the class (61.57(a)(1)(ii)).
             ///   - totalHours:
             ///   - trackingInWindow:
             public init(
                 approachesInWindow: Swift.Int,
                 crossCountryHours: Swift.Double,
+                dayPassengersUnknown: Swift.String? = nil,
                 dayPassengersUntil: Swift.String? = nil,
                 due: [Components.Schemas.PaperworkDue],
                 flightReviewOn: Swift.String? = nil,
@@ -5581,12 +5941,18 @@ extension Components {
                 landings: Swift.Int,
                 medicalExpiresOn: Swift.String? = nil,
                 nightHours: Swift.Double,
+                nightPassengersUnknown: Swift.String? = nil,
                 nightPassengersUntil: Swift.String? = nil,
+                passengerClass: Swift.String? = nil,
+                passengerClassUnknown: Swift.Bool? = nil,
+                passengerTailwheel: Swift.Bool? = nil,
+                tailwheelPassengersUntil: Swift.String? = nil,
                 totalHours: Swift.Double,
                 trackingInWindow: Swift.Bool
             ) {
                 self.approachesInWindow = approachesInWindow
                 self.crossCountryHours = crossCountryHours
+                self.dayPassengersUnknown = dayPassengersUnknown
                 self.dayPassengersUntil = dayPassengersUntil
                 self.due = due
                 self.flightReviewOn = flightReviewOn
@@ -5600,13 +5966,19 @@ extension Components {
                 self.landings = landings
                 self.medicalExpiresOn = medicalExpiresOn
                 self.nightHours = nightHours
+                self.nightPassengersUnknown = nightPassengersUnknown
                 self.nightPassengersUntil = nightPassengersUntil
+                self.passengerClass = passengerClass
+                self.passengerClassUnknown = passengerClassUnknown
+                self.passengerTailwheel = passengerTailwheel
+                self.tailwheelPassengersUntil = tailwheelPassengersUntil
                 self.totalHours = totalHours
                 self.trackingInWindow = trackingInWindow
             }
             public enum CodingKeys: String, CodingKey {
                 case approachesInWindow
                 case crossCountryHours
+                case dayPassengersUnknown
                 case dayPassengersUntil
                 case due
                 case flightReviewOn
@@ -5620,13 +5992,18 @@ extension Components {
                 case landings
                 case medicalExpiresOn
                 case nightHours
+                case nightPassengersUnknown
                 case nightPassengersUntil
+                case passengerClass
+                case passengerClassUnknown
+                case passengerTailwheel
+                case tailwheelPassengersUntil
                 case totalHours
                 case trackingInWindow
             }
         }
-        /// The logbook, the dates the pilot gives and the day it is asked for
-        /// (the pilot's own calendar's).
+        /// The logbook, the dates the pilot gives, the airplane to be flown
+        /// where known, and the day it is asked for (the pilot's own calendar's).
         ///
         /// - Remark: Generated from `#/components/schemas/CurrencyAsk`.
         public struct CurrencyAsk: Codable, Hashable, Sendable {
@@ -5634,6 +6011,10 @@ extension Components {
             public var entries: [Components.Schemas.LogbookEntry]
             /// - Remark: Generated from `#/components/schemas/CurrencyAsk/flightReviewOn`.
             public var flightReviewOn: Swift.String?
+            /// The airplane to be flown (61.57(a)(1)(ii)); none judges the newest flight's.
+            ///
+            /// - Remark: Generated from `#/components/schemas/CurrencyAsk/flying`.
+            public var flying: Components.Schemas.Flying?
             /// - Remark: Generated from `#/components/schemas/CurrencyAsk/ipcOn`.
             public var ipcOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/CurrencyAsk/medicalExpiresOn`.
@@ -5645,18 +6026,21 @@ extension Components {
             /// - Parameters:
             ///   - entries:
             ///   - flightReviewOn:
+            ///   - flying: The airplane to be flown (61.57(a)(1)(ii)); none judges the newest flight's.
             ///   - ipcOn:
             ///   - medicalExpiresOn:
             ///   - today:
             public init(
                 entries: [Components.Schemas.LogbookEntry],
                 flightReviewOn: Swift.String? = nil,
+                flying: Components.Schemas.Flying? = nil,
                 ipcOn: Swift.String? = nil,
                 medicalExpiresOn: Swift.String? = nil,
                 today: Swift.String
             ) {
                 self.entries = entries
                 self.flightReviewOn = flightReviewOn
+                self.flying = flying
                 self.ipcOn = ipcOn
                 self.medicalExpiresOn = medicalExpiresOn
                 self.today = today
@@ -5664,6 +6048,7 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case entries
                 case flightReviewOn
+                case flying
                 case ipcOn
                 case medicalExpiresOn
                 case today
@@ -8108,6 +8493,8 @@ extension Components {
             public var speedKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/EmergencyMetar/temp_c`.
             public var tempC: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/EmergencyMetar/visibility_minus`.
+            public var visibilityMinus: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/EmergencyMetar/visibility_plus`.
             public var visibilityPlus: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/EmergencyMetar/visibility_sm`.
@@ -8122,6 +8509,7 @@ extension Components {
             ///   - raw:
             ///   - speedKt:
             ///   - tempC:
+            ///   - visibilityMinus:
             ///   - visibilityPlus:
             ///   - visibilitySm:
             public init(
@@ -8132,6 +8520,7 @@ extension Components {
                 raw: Swift.String? = nil,
                 speedKt: Swift.Double? = nil,
                 tempC: Swift.Double? = nil,
+                visibilityMinus: Swift.Bool? = nil,
                 visibilityPlus: Swift.Bool? = nil,
                 visibilitySm: Swift.Double? = nil
             ) {
@@ -8142,6 +8531,7 @@ extension Components {
                 self.raw = raw
                 self.speedKt = speedKt
                 self.tempC = tempC
+                self.visibilityMinus = visibilityMinus
                 self.visibilityPlus = visibilityPlus
                 self.visibilitySm = visibilitySm
             }
@@ -8153,6 +8543,7 @@ extension Components {
                 case raw
                 case speedKt = "speed_kt"
                 case tempC = "temp_c"
+                case visibilityMinus = "visibility_minus"
                 case visibilityPlus = "visibility_plus"
                 case visibilitySm = "visibility_sm"
             }
@@ -8465,21 +8856,29 @@ extension Components {
             public var flightOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/EndorsementsAsk/held`.
             public var held: [Components.Schemas.HeldEndorsement]
+            /// The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it; none and the checks can't tell.
+            ///
+            /// - Remark: Generated from `#/components/schemas/EndorsementsAsk/makeModel`.
+            public var makeModel: Swift.String?
             /// Creates a new `EndorsementsAsk`.
             ///
             /// - Parameters:
             ///   - flightOn:
             ///   - held:
+            ///   - makeModel: The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it; none and the checks can't tell.
             public init(
                 flightOn: Swift.String? = nil,
-                held: [Components.Schemas.HeldEndorsement]
+                held: [Components.Schemas.HeldEndorsement],
+                makeModel: Swift.String? = nil
             ) {
                 self.flightOn = flightOn
                 self.held = held
+                self.makeModel = makeModel
             }
             public enum CodingKeys: String, CodingKey {
                 case flightOn
                 case held
+                case makeModel
             }
         }
         /// The FAA's reference record of an engine (ENGINE.txt): horsepower for
@@ -9692,6 +10091,43 @@ extension Components {
                 case words
             }
         }
+        /// The airplane to be flown, which 14 CFR 61.57(a)(1)(ii) judges
+        /// passenger currency for: its category and class, and whether it has a
+        /// tailwheel (null: not said, judged as one, the stricter).
+        ///
+        /// - Remark: Generated from `#/components/schemas/Flying`.
+        public struct Flying: Codable, Hashable, Sendable {
+            /// 14 CFR 61.5 category, "Airplane".
+            ///
+            /// - Remark: Generated from `#/components/schemas/Flying/category`.
+            public var category: Swift.String?
+            /// 14 CFR 61.5 class, "Single-engine land".
+            ///
+            /// - Remark: Generated from `#/components/schemas/Flying/class`.
+            public var airspaceClass: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Flying/tailwheel`.
+            public var tailwheel: Swift.Bool?
+            /// Creates a new `Flying`.
+            ///
+            /// - Parameters:
+            ///   - category: 14 CFR 61.5 category, "Airplane".
+            ///   - airspaceClass: 14 CFR 61.5 class, "Single-engine land".
+            ///   - tailwheel:
+            public init(
+                category: Swift.String? = nil,
+                airspaceClass: Swift.String? = nil,
+                tailwheel: Swift.Bool? = nil
+            ) {
+                self.category = category
+                self.airspaceClass = airspaceClass
+                self.tailwheel = tailwheel
+            }
+            public enum CodingKeys: String, CodingKey {
+                case category
+                case airspaceClass = "class"
+                case tailwheel
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/Forecast`.
         public struct Forecast: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/Forecast/ceiling_unknown_at`.
@@ -10881,8 +11317,9 @@ extension Components {
                 case totals
             }
         }
-        /// GET /api/icing/route: the AWC's forecast icing (its GFA's, from CIP
-        /// and FIP; AIM 7-1-4) on each leg at the altitude flown, the worst of it
+        /// GET /api/icing/route: the NWS's current and forecast icing (the CIP
+        /// analysis and the IFI forecast grids the weather service keeps; AIM
+        /// 7-1-4) on each leg at the altitude flown, the worst of it
         /// and the Go / No-Go's line (the engine's icing_forecast_route); the
         /// legs it had no forecast for; the hour the forecast was issued.
         ///
@@ -10928,7 +11365,7 @@ extension Components {
             }
         }
         /// One leg's forecast icing (wingtip.icing_forecast): the worst
-        /// severity at the altitude flown, null where the AWC had no forecast for
+        /// severity at the altitude flown, null where the grids had no forecast for
         /// it; the share of the leg in icing there; the layer icing is in over
         /// the leg at any level; and the time it was read for, the leg's middle.
         ///
@@ -11915,6 +12352,26 @@ extension Components {
         public struct LegProcedure: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/LegProcedure/final_at`.
             public var finalAt: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/LegProcedure/fix_min`.
+            public struct FixMinPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: [String: Swift.Double]
+                /// Creates a new `FixMinPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: [String: Swift.Double] = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/LegProcedure/fix_min`.
+            public var fixMin: Components.Schemas.LegProcedure.FixMinPayload?
             /// - Remark: Generated from `#/components/schemas/LegProcedure/ft`.
             public var ft: [Swift.Double?]
             /// - Remark: Generated from `#/components/schemas/LegProcedure/landing`.
@@ -11937,6 +12394,7 @@ extension Components {
             ///
             /// - Parameters:
             ///   - finalAt:
+            ///   - fixMin:
             ///   - ft:
             ///   - landing:
             ///   - mapAt:
@@ -11948,6 +12406,7 @@ extension Components {
             ///   - path:
             public init(
                 finalAt: Swift.Int? = nil,
+                fixMin: Components.Schemas.LegProcedure.FixMinPayload? = nil,
                 ft: [Swift.Double?],
                 landing: Swift.Bool,
                 mapAt: Swift.Int? = nil,
@@ -11959,6 +12418,7 @@ extension Components {
                 path: [[Swift.Double]]
             ) {
                 self.finalAt = finalAt
+                self.fixMin = fixMin
                 self.ft = ft
                 self.landing = landing
                 self.mapAt = mapAt
@@ -11971,6 +12431,7 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case finalAt = "final_at"
+                case fixMin = "fix_min"
                 case ft
                 case landing
                 case mapAt = "map_at"
@@ -11980,6 +12441,52 @@ extension Components {
                 case moreNm = "more_nm"
                 case nm
                 case path
+            }
+        }
+        /// An approach as drawn (GET /api/airport/{ident}/procedures/{id}),
+        /// the field's radio from its card, the airplane's VREF or landing
+        /// configuration's stall speed where its figures carry either (its
+        /// approach category, 14 CFR 97.3), and the ground speed it is flown at.
+        ///
+        /// - Remark: Generated from `#/components/schemas/LessonAsk`.
+        public struct LessonAsk: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/drawing`.
+            public var drawing: Components.Schemas.ProcedureDrawing
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/frequencies`.
+            public var frequencies: [Components.Schemas.Frequency]?
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/gs_kt`.
+            public var gsKt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/vref_kt`.
+            public var vrefKt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/vso_kt`.
+            public var vsoKt: Swift.Double?
+            /// Creates a new `LessonAsk`.
+            ///
+            /// - Parameters:
+            ///   - drawing:
+            ///   - frequencies:
+            ///   - gsKt:
+            ///   - vrefKt:
+            ///   - vsoKt:
+            public init(
+                drawing: Components.Schemas.ProcedureDrawing,
+                frequencies: [Components.Schemas.Frequency]? = nil,
+                gsKt: Swift.Double,
+                vrefKt: Swift.Double? = nil,
+                vsoKt: Swift.Double? = nil
+            ) {
+                self.drawing = drawing
+                self.frequencies = frequencies
+                self.gsKt = gsKt
+                self.vrefKt = vrefKt
+                self.vsoKt = vsoKt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case drawing
+                case frequencies
+                case gsKt = "gs_kt"
+                case vrefKt = "vref_kt"
+                case vsoKt = "vso_kt"
             }
         }
         /// The shelf in its order.
@@ -12223,8 +12730,8 @@ extension Components {
                 case off
             }
         }
-        /// The weight and balance for the load used: the pilot's, or the
-        /// POH's sample airplane where none was sent.
+        /// The weight and balance for the pilot's own load (null where none
+        /// was sent: it is never balanced at the POH's sample airplane).
         ///
         /// - Remark: Generated from `#/components/schemas/LoadBalance`.
         public struct LoadBalance: Codable, Hashable, Sendable {
@@ -12546,6 +13053,14 @@ extension Components {
         public struct LogbookEntry: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/LogbookEntry/approaches`.
             public var approaches: Swift.Int?
+            /// 14 CFR 61.5 category, "Airplane".
+            ///
+            /// - Remark: Generated from `#/components/schemas/LogbookEntry/category`.
+            public var category: Swift.String?
+            /// 14 CFR 61.5 class, "Single-engine land".
+            ///
+            /// - Remark: Generated from `#/components/schemas/LogbookEntry/class`.
+            public var airspaceClass: Swift.String?
             /// - Remark: Generated from `#/components/schemas/LogbookEntry/crossCountryHours`.
             public var crossCountryHours: Swift.Double?
             /// Every landing, by day or at night (14 CFR 61.57(a)).
@@ -12558,6 +13073,10 @@ extension Components {
             public var dualHours: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/LogbookEntry/flownOn`.
             public var flownOn: Swift.String
+            /// Landings to a full stop, day and night, where logged.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LogbookEntry/fullStopLandings`.
+            public var fullStopLandings: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/LogbookEntry/holding`.
             public var holding: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/LogbookEntry/instrumentHours`.
@@ -12572,6 +13091,10 @@ extension Components {
             public var nightLandings: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/LogbookEntry/soloHours`.
             public var soloHours: Swift.Double?
+            /// A tailwheel airplane (61.57(a)(1)(ii)); null where not said.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LogbookEntry/tailwheel`.
+            public var tailwheel: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/LogbookEntry/totalHours`.
             public var totalHours: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/LogbookEntry/toweredLandings`.
@@ -12582,66 +13105,82 @@ extension Components {
             ///
             /// - Parameters:
             ///   - approaches:
+            ///   - category: 14 CFR 61.5 category, "Airplane".
+            ///   - airspaceClass: 14 CFR 61.5 class, "Single-engine land".
             ///   - crossCountryHours:
             ///   - dayLandings: Every landing, by day or at night (14 CFR 61.57(a)).
             ///   - distanceNm:
             ///   - dualHours:
             ///   - flownOn:
+            ///   - fullStopLandings: Landings to a full stop, day and night, where logged.
             ///   - holding:
             ///   - instrumentHours:
             ///   - longestLegNm:
             ///   - nightHours:
             ///   - nightLandings: Landings to a full stop at night (61.57(b)).
             ///   - soloHours:
+            ///   - tailwheel: A tailwheel airplane (61.57(a)(1)(ii)); null where not said.
             ///   - totalHours:
             ///   - toweredLandings:
             ///   - tracking:
             public init(
                 approaches: Swift.Int? = nil,
+                category: Swift.String? = nil,
+                airspaceClass: Swift.String? = nil,
                 crossCountryHours: Swift.Double? = nil,
                 dayLandings: Swift.Int? = nil,
                 distanceNm: Swift.Double? = nil,
                 dualHours: Swift.Double? = nil,
                 flownOn: Swift.String,
+                fullStopLandings: Swift.Int? = nil,
                 holding: Swift.Bool? = nil,
                 instrumentHours: Swift.Double? = nil,
                 longestLegNm: Swift.Double? = nil,
                 nightHours: Swift.Double? = nil,
                 nightLandings: Swift.Int? = nil,
                 soloHours: Swift.Double? = nil,
+                tailwheel: Swift.Bool? = nil,
                 totalHours: Swift.Double? = nil,
                 toweredLandings: Swift.Int? = nil,
                 tracking: Swift.Bool? = nil
             ) {
                 self.approaches = approaches
+                self.category = category
+                self.airspaceClass = airspaceClass
                 self.crossCountryHours = crossCountryHours
                 self.dayLandings = dayLandings
                 self.distanceNm = distanceNm
                 self.dualHours = dualHours
                 self.flownOn = flownOn
+                self.fullStopLandings = fullStopLandings
                 self.holding = holding
                 self.instrumentHours = instrumentHours
                 self.longestLegNm = longestLegNm
                 self.nightHours = nightHours
                 self.nightLandings = nightLandings
                 self.soloHours = soloHours
+                self.tailwheel = tailwheel
                 self.totalHours = totalHours
                 self.toweredLandings = toweredLandings
                 self.tracking = tracking
             }
             public enum CodingKeys: String, CodingKey {
                 case approaches
+                case category
+                case airspaceClass = "class"
                 case crossCountryHours
                 case dayLandings
                 case distanceNm
                 case dualHours
                 case flownOn
+                case fullStopLandings
                 case holding
                 case instrumentHours
                 case longestLegNm
                 case nightHours
                 case nightLandings
                 case soloHours
+                case tailwheel
                 case totalHours
                 case toweredLandings
                 case tracking
@@ -13009,6 +13548,8 @@ extension Components {
             public var raw: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Metar/temp_c`.
             public var tempC: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/Metar/visibility_minus`.
+            public var visibilityMinus: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Metar/visibility_plus`.
             public var visibilityPlus: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Metar/visibility_sm`.
@@ -13019,6 +13560,8 @@ extension Components {
             public var windGustKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Metar/wind_speed_kt`.
             public var windSpeedKt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/Metar/wind_variable_deg`.
+            public var windVariableDeg: [Swift.Double]?
             /// Creates a new `Metar`.
             ///
             /// - Parameters:
@@ -13030,11 +13573,13 @@ extension Components {
             ///   - observedAt:
             ///   - raw:
             ///   - tempC:
+            ///   - visibilityMinus:
             ///   - visibilityPlus:
             ///   - visibilitySm:
             ///   - windDirTrueDeg:
             ///   - windGustKt:
             ///   - windSpeedKt:
+            ///   - windVariableDeg:
             public init(
                 altimeterInHg: Swift.Double? = nil,
                 ceilingFt: Swift.Double? = nil,
@@ -13044,11 +13589,13 @@ extension Components {
                 observedAt: Swift.String? = nil,
                 raw: Swift.String? = nil,
                 tempC: Swift.Double? = nil,
+                visibilityMinus: Swift.Bool? = nil,
                 visibilityPlus: Swift.Bool? = nil,
                 visibilitySm: Swift.Double? = nil,
                 windDirTrueDeg: Swift.Double? = nil,
                 windGustKt: Swift.Double? = nil,
-                windSpeedKt: Swift.Double? = nil
+                windSpeedKt: Swift.Double? = nil,
+                windVariableDeg: [Swift.Double]? = nil
             ) {
                 self.altimeterInHg = altimeterInHg
                 self.ceilingFt = ceilingFt
@@ -13058,11 +13605,13 @@ extension Components {
                 self.observedAt = observedAt
                 self.raw = raw
                 self.tempC = tempC
+                self.visibilityMinus = visibilityMinus
                 self.visibilityPlus = visibilityPlus
                 self.visibilitySm = visibilitySm
                 self.windDirTrueDeg = windDirTrueDeg
                 self.windGustKt = windGustKt
                 self.windSpeedKt = windSpeedKt
+                self.windVariableDeg = windVariableDeg
             }
             public enum CodingKeys: String, CodingKey {
                 case altimeterInHg = "altimeter_in_hg"
@@ -13073,11 +13622,13 @@ extension Components {
                 case observedAt = "observed_at"
                 case raw
                 case tempC = "temp_c"
+                case visibilityMinus = "visibility_minus"
                 case visibilityPlus = "visibility_plus"
                 case visibilitySm = "visibility_sm"
                 case windDirTrueDeg = "wind_dir_true_deg"
                 case windGustKt = "wind_gust_kt"
                 case windSpeedKt = "wind_speed_kt"
+                case windVariableDeg = "wind_variable_deg"
             }
         }
         /// An approach's missed approach as it is flown, from its missed
@@ -15186,6 +15737,12 @@ extension Components {
         public struct PastFlightPoint: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/PastFlightPoint/alt_ft`.
             public var altFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/PastFlightPoint/alt_held`.
+            public var altHeld: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/PastFlightPoint/gap`.
+            public var gap: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/PastFlightPoint/ground`.
+            public var ground: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/PastFlightPoint/gs_kt`.
             public var gsKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/PastFlightPoint/lat`.
@@ -15198,41 +15755,59 @@ extension Components {
             public var trackDeg: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/PastFlightPoint/vrate_fpm`.
             public var vrateFpm: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/PastFlightPoint/vs_fpm`.
+            public var vsFpm: Swift.Double?
             /// Creates a new `PastFlightPoint`.
             ///
             /// - Parameters:
             ///   - altFt:
+            ///   - altHeld:
+            ///   - gap:
+            ///   - ground:
             ///   - gsKt:
             ///   - lat:
             ///   - lon:
             ///   - t:
             ///   - trackDeg:
             ///   - vrateFpm:
+            ///   - vsFpm:
             public init(
                 altFt: Swift.Double? = nil,
+                altHeld: Swift.Bool? = nil,
+                gap: Swift.Bool? = nil,
+                ground: Swift.Bool? = nil,
                 gsKt: Swift.Double? = nil,
                 lat: Swift.Double,
                 lon: Swift.Double,
                 t: Swift.Double,
                 trackDeg: Swift.Double? = nil,
-                vrateFpm: Swift.Double? = nil
+                vrateFpm: Swift.Double? = nil,
+                vsFpm: Swift.Double? = nil
             ) {
                 self.altFt = altFt
+                self.altHeld = altHeld
+                self.gap = gap
+                self.ground = ground
                 self.gsKt = gsKt
                 self.lat = lat
                 self.lon = lon
                 self.t = t
                 self.trackDeg = trackDeg
                 self.vrateFpm = vrateFpm
+                self.vsFpm = vsFpm
             }
             public enum CodingKeys: String, CodingKey {
                 case altFt = "alt_ft"
+                case altHeld = "alt_held"
+                case gap
+                case ground
                 case gsKt = "gs_kt"
                 case lat
                 case lon
                 case t
                 case trackDeg = "track_deg"
                 case vrateFpm = "vrate_fpm"
+                case vsFpm = "vs_fpm"
             }
         }
         /// One of an airplane's flights of the last days (wingtip.traffic.history):
@@ -15249,13 +15824,15 @@ extension Components {
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/landed`.
             public var landed: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/max_alt_ft`.
-            public var maxAltFt: Swift.Double
+            public var maxAltFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/off`.
             public var off: Swift.Double
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/on`.
             public var on: Swift.Double
             /// - Remark: Generated from `#/components/schemas/PastFlightSummary/origin`.
             public var origin: Components.Schemas.PastFlightField?
+            /// - Remark: Generated from `#/components/schemas/PastFlightSummary/source`.
+            public var source: Swift.String?
             /// Creates a new `PastFlightSummary`.
             ///
             /// - Parameters:
@@ -15267,15 +15844,17 @@ extension Components {
             ///   - off:
             ///   - on:
             ///   - origin:
+            ///   - source:
             public init(
                 destination: Components.Schemas.PastFlightField? = nil,
                 id: Swift.Int,
                 inAir: Swift.Bool,
                 landed: Swift.Bool,
-                maxAltFt: Swift.Double,
+                maxAltFt: Swift.Double? = nil,
                 off: Swift.Double,
                 on: Swift.Double,
-                origin: Components.Schemas.PastFlightField? = nil
+                origin: Components.Schemas.PastFlightField? = nil,
+                source: Swift.String? = nil
             ) {
                 self.destination = destination
                 self.id = id
@@ -15285,6 +15864,7 @@ extension Components {
                 self.off = off
                 self.on = on
                 self.origin = origin
+                self.source = source
             }
             public enum CodingKeys: String, CodingKey {
                 case destination
@@ -15295,6 +15875,7 @@ extension Components {
                 case off
                 case on
                 case origin
+                case source
             }
         }
         /// An airplane's last flights found, ten at most, newest first, from
@@ -17947,6 +18528,48 @@ extension Components {
         ///
         /// - Remark: Generated from `#/components/schemas/RankedNotam`.
         public struct RankedNotam: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/AffectsPayload`.
+            public struct AffectsPayloadPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `AffectsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/affects`.
+            public typealias AffectsPayload = [Components.Schemas.RankedNotam.AffectsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/affects`.
+            public var affects: Components.Schemas.RankedNotam.AffectsPayload?
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/card`.
+            public struct CardPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `CardPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/card`.
+            public var card: Components.Schemas.RankedNotam.CardPayload?
             /// - Remark: Generated from `#/components/schemas/RankedNotam/closed`.
             public var closed: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/RankedNotam/ends`.
@@ -17969,6 +18592,26 @@ extension Components {
             public var rank: Swift.Int
             /// - Remark: Generated from `#/components/schemas/RankedNotam/raw`.
             public var raw: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/reading`.
+            public struct ReadingPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `ReadingPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/reading`.
+            public var reading: Components.Schemas.RankedNotam.ReadingPayload?
             /// - Remark: Generated from `#/components/schemas/RankedNotam/reasons`.
             public var reasons: [Components.Schemas.NotamReason]
             /// - Remark: Generated from `#/components/schemas/RankedNotam/role`.
@@ -17979,6 +18622,26 @@ extension Components {
             public var score: Swift.Int
             /// - Remark: Generated from `#/components/schemas/RankedNotam/starts`.
             public var starts: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/subject`.
+            public struct SubjectPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `SubjectPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/RankedNotam/subject`.
+            public var subject: Components.Schemas.RankedNotam.SubjectPayload?
             /// - Remark: Generated from `#/components/schemas/RankedNotam/tfr`.
             public var tfr: Components.Schemas.TfrFacts?
             /// - Remark: Generated from `#/components/schemas/RankedNotam/tied`.
@@ -17988,6 +18651,8 @@ extension Components {
             /// Creates a new `RankedNotam`.
             ///
             /// - Parameters:
+            ///   - affects:
+            ///   - card:
             ///   - closed:
             ///   - ends:
             ///   - field:
@@ -17999,15 +18664,19 @@ extension Components {
             ///   - lowFt:
             ///   - rank:
             ///   - raw:
+            ///   - reading:
             ///   - reasons:
             ///   - role:
             ///   - runways:
             ///   - score:
             ///   - starts:
+            ///   - subject:
             ///   - tfr:
             ///   - tied:
             ///   - top:
             public init(
+                affects: Components.Schemas.RankedNotam.AffectsPayload? = nil,
+                card: Components.Schemas.RankedNotam.CardPayload? = nil,
                 closed: Swift.Bool,
                 ends: Swift.String? = nil,
                 field: Swift.String? = nil,
@@ -18019,15 +18688,19 @@ extension Components {
                 lowFt: Swift.Double? = nil,
                 rank: Swift.Int,
                 raw: Swift.String,
+                reading: Components.Schemas.RankedNotam.ReadingPayload? = nil,
                 reasons: [Components.Schemas.NotamReason],
                 role: Swift.String? = nil,
                 runways: [Swift.String],
                 score: Swift.Int,
                 starts: Swift.String? = nil,
+                subject: Components.Schemas.RankedNotam.SubjectPayload? = nil,
                 tfr: Components.Schemas.TfrFacts? = nil,
                 tied: Swift.Bool,
                 top: Swift.Bool
             ) {
+                self.affects = affects
+                self.card = card
                 self.closed = closed
                 self.ends = ends
                 self.field = field
@@ -18039,16 +18712,20 @@ extension Components {
                 self.lowFt = lowFt
                 self.rank = rank
                 self.raw = raw
+                self.reading = reading
                 self.reasons = reasons
                 self.role = role
                 self.runways = runways
                 self.score = score
                 self.starts = starts
+                self.subject = subject
                 self.tfr = tfr
                 self.tied = tied
                 self.top = top
             }
             public enum CodingKeys: String, CodingKey {
+                case affects
+                case card
                 case closed
                 case ends
                 case field
@@ -18060,11 +18737,13 @@ extension Components {
                 case lowFt = "low_ft"
                 case rank
                 case raw
+                case reading
                 case reasons
                 case role
                 case runways
                 case score
                 case starts
+                case subject
                 case tfr
                 case tied
                 case top
@@ -19151,6 +19830,8 @@ extension Components {
             public var ceilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/ceiling_ref`.
             public var ceilingRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RouteTfr/ceiling_varies`.
+            public var ceilingVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/crosses`.
             public var crosses: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/RouteTfr/effective`.
@@ -19161,6 +19842,8 @@ extension Components {
             public var floorFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/floor_ref`.
             public var floorRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RouteTfr/floor_varies`.
+            public var floorVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/kind`.
             public var kind: Swift.String?
             /// - Remark: Generated from `#/components/schemas/RouteTfr/notam_id`.
@@ -19182,11 +19865,13 @@ extension Components {
             ///   - alongTrackNm:
             ///   - ceilingFt:
             ///   - ceilingRef:
+            ///   - ceilingVaries:
             ///   - crosses:
             ///   - effective:
             ///   - expires:
             ///   - floorFt:
             ///   - floorRef:
+            ///   - floorVaries:
             ///   - kind:
             ///   - notamId:
             ///   - onRoute:
@@ -19199,11 +19884,13 @@ extension Components {
                 alongTrackNm: Swift.Double,
                 ceilingFt: Swift.Double? = nil,
                 ceilingRef: Swift.String? = nil,
+                ceilingVaries: Swift.Bool? = nil,
                 crosses: Swift.Bool,
                 effective: Swift.String? = nil,
                 expires: Swift.String? = nil,
                 floorFt: Swift.Double? = nil,
                 floorRef: Swift.String? = nil,
+                floorVaries: Swift.Bool? = nil,
                 kind: Swift.String? = nil,
                 notamId: Swift.String,
                 onRoute: Components.Schemas.OnRoute? = nil,
@@ -19216,11 +19903,13 @@ extension Components {
                 self.alongTrackNm = alongTrackNm
                 self.ceilingFt = ceilingFt
                 self.ceilingRef = ceilingRef
+                self.ceilingVaries = ceilingVaries
                 self.crosses = crosses
                 self.effective = effective
                 self.expires = expires
                 self.floorFt = floorFt
                 self.floorRef = floorRef
+                self.floorVaries = floorVaries
                 self.kind = kind
                 self.notamId = notamId
                 self.onRoute = onRoute
@@ -19234,11 +19923,13 @@ extension Components {
                 case alongTrackNm = "along_track_nm"
                 case ceilingFt = "ceiling_ft"
                 case ceilingRef = "ceiling_ref"
+                case ceilingVaries = "ceiling_varies"
                 case crosses
                 case effective
                 case expires
                 case floorFt = "floor_ft"
                 case floorRef = "floor_ref"
+                case floorVaries = "floor_varies"
                 case kind
                 case notamId = "notam_id"
                 case onRoute = "on_route"
@@ -21022,6 +21713,8 @@ extension Components {
             public var ceilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Tfr/ceiling_ref`.
             public var ceilingRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Tfr/ceiling_varies`.
+            public var ceilingVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Tfr/effective`.
             public var effective: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Tfr/expires`.
@@ -21030,6 +21723,8 @@ extension Components {
             public var floorFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Tfr/floor_ref`.
             public var floorRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Tfr/floor_varies`.
+            public var floorVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Tfr/geometry`.
             public struct GeometryPayload: Codable, Hashable, Sendable {
                 /// A container of undocumented properties.
@@ -21067,10 +21762,12 @@ extension Components {
             /// - Parameters:
             ///   - ceilingFt:
             ///   - ceilingRef:
+            ///   - ceilingVaries:
             ///   - effective:
             ///   - expires:
             ///   - floorFt:
             ///   - floorRef:
+            ///   - floorVaries:
             ///   - geometry:
             ///   - kind:
             ///   - notamId:
@@ -21081,10 +21778,12 @@ extension Components {
             public init(
                 ceilingFt: Swift.Double? = nil,
                 ceilingRef: Swift.String? = nil,
+                ceilingVaries: Swift.Bool? = nil,
                 effective: Swift.String? = nil,
                 expires: Swift.String? = nil,
                 floorFt: Swift.Double? = nil,
                 floorRef: Swift.String? = nil,
+                floorVaries: Swift.Bool? = nil,
                 geometry: Components.Schemas.Tfr.GeometryPayload,
                 kind: Swift.String? = nil,
                 notamId: Swift.String,
@@ -21095,10 +21794,12 @@ extension Components {
             ) {
                 self.ceilingFt = ceilingFt
                 self.ceilingRef = ceilingRef
+                self.ceilingVaries = ceilingVaries
                 self.effective = effective
                 self.expires = expires
                 self.floorFt = floorFt
                 self.floorRef = floorRef
+                self.floorVaries = floorVaries
                 self.geometry = geometry
                 self.kind = kind
                 self.notamId = notamId
@@ -21110,10 +21811,12 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case ceilingFt = "ceiling_ft"
                 case ceilingRef = "ceiling_ref"
+                case ceilingVaries = "ceiling_varies"
                 case effective
                 case expires
                 case floorFt = "floor_ft"
                 case floorRef = "floor_ref"
+                case floorVaries = "floor_varies"
                 case geometry
                 case kind
                 case notamId = "notam_id"
@@ -21168,6 +21871,8 @@ extension Components {
             public var ceilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TfrFacts/ceiling_ref`.
             public var ceilingRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TfrFacts/ceiling_varies`.
+            public var ceilingVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/TfrFacts/contact`.
             public var contact: Components.Schemas.TfrContact?
             /// - Remark: Generated from `#/components/schemas/TfrFacts/edge`.
@@ -21180,6 +21885,8 @@ extension Components {
             public var floorFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TfrFacts/floor_ref`.
             public var floorRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TfrFacts/floor_varies`.
+            public var floorVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/TfrFacts/instructions`.
             public var instructions: [Swift.String]?
             /// - Remark: Generated from `#/components/schemas/TfrFacts/kind`.
@@ -21197,12 +21904,14 @@ extension Components {
             /// - Parameters:
             ///   - ceilingFt:
             ///   - ceilingRef:
+            ///   - ceilingVaries:
             ///   - contact:
             ///   - edge:
             ///   - facility:
             ///   - field:
             ///   - floorFt:
             ///   - floorRef:
+            ///   - floorVaries:
             ///   - instructions:
             ///   - kind:
             ///   - overField:
@@ -21212,12 +21921,14 @@ extension Components {
             public init(
                 ceilingFt: Swift.Double? = nil,
                 ceilingRef: Swift.String? = nil,
+                ceilingVaries: Swift.Bool? = nil,
                 contact: Components.Schemas.TfrContact? = nil,
                 edge: Components.Schemas.TfrPoint? = nil,
                 facility: Components.Schemas.TfrContact? = nil,
                 field: Components.Schemas.TfrPoint? = nil,
                 floorFt: Swift.Double? = nil,
                 floorRef: Swift.String? = nil,
+                floorVaries: Swift.Bool? = nil,
                 instructions: [Swift.String]? = nil,
                 kind: Swift.String? = nil,
                 overField: Swift.Bool? = nil,
@@ -21227,12 +21938,14 @@ extension Components {
             ) {
                 self.ceilingFt = ceilingFt
                 self.ceilingRef = ceilingRef
+                self.ceilingVaries = ceilingVaries
                 self.contact = contact
                 self.edge = edge
                 self.facility = facility
                 self.field = field
                 self.floorFt = floorFt
                 self.floorRef = floorRef
+                self.floorVaries = floorVaries
                 self.instructions = instructions
                 self.kind = kind
                 self.overField = overField
@@ -21243,12 +21956,14 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case ceilingFt = "ceiling_ft"
                 case ceilingRef = "ceiling_ref"
+                case ceilingVaries = "ceiling_varies"
                 case contact
                 case edge
                 case facility
                 case field
                 case floorFt = "floor_ft"
                 case floorRef = "floor_ref"
+                case floorVaries = "floor_varies"
                 case instructions
                 case kind
                 case overField = "over_field"
@@ -21267,6 +21982,8 @@ extension Components {
             public var ceilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TfrHere/ceiling_ref`.
             public var ceilingRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TfrHere/ceiling_varies`.
+            public var ceilingVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/TfrHere/effective`.
             public var effective: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TfrHere/expires`.
@@ -21275,6 +21992,8 @@ extension Components {
             public var floorFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/TfrHere/floor_ref`.
             public var floorRef: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TfrHere/floor_varies`.
+            public var floorVaries: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/TfrHere/kind`.
             public var kind: Swift.String?
             /// - Remark: Generated from `#/components/schemas/TfrHere/notam_id`.
@@ -21293,10 +22012,12 @@ extension Components {
             ///   - activeNow:
             ///   - ceilingFt:
             ///   - ceilingRef:
+            ///   - ceilingVaries:
             ///   - effective:
             ///   - expires:
             ///   - floorFt:
             ///   - floorRef:
+            ///   - floorVaries:
             ///   - kind:
             ///   - notamId:
             ///   - purpose:
@@ -21307,10 +22028,12 @@ extension Components {
                 activeNow: Swift.Bool,
                 ceilingFt: Swift.Double? = nil,
                 ceilingRef: Swift.String? = nil,
+                ceilingVaries: Swift.Bool? = nil,
                 effective: Swift.String? = nil,
                 expires: Swift.String? = nil,
                 floorFt: Swift.Double? = nil,
                 floorRef: Swift.String? = nil,
+                floorVaries: Swift.Bool? = nil,
                 kind: Swift.String? = nil,
                 notamId: Swift.String,
                 purpose: Swift.String? = nil,
@@ -21321,10 +22044,12 @@ extension Components {
                 self.activeNow = activeNow
                 self.ceilingFt = ceilingFt
                 self.ceilingRef = ceilingRef
+                self.ceilingVaries = ceilingVaries
                 self.effective = effective
                 self.expires = expires
                 self.floorFt = floorFt
                 self.floorRef = floorRef
+                self.floorVaries = floorVaries
                 self.kind = kind
                 self.notamId = notamId
                 self.purpose = purpose
@@ -21336,10 +22061,12 @@ extension Components {
                 case activeNow = "active_now"
                 case ceilingFt = "ceiling_ft"
                 case ceilingRef = "ceiling_ref"
+                case ceilingVaries = "ceiling_varies"
                 case effective
                 case expires
                 case floorFt = "floor_ft"
                 case floorRef = "floor_ref"
+                case floorVaries = "floor_varies"
                 case kind
                 case notamId = "notam_id"
                 case purpose
@@ -21756,6 +22483,44 @@ extension Components {
                 case winds
             }
         }
+        /// A point of a flown track: when, ms since 1970; GPS altitude, feet
+        /// above sea level, where it has one.
+        ///
+        /// - Remark: Generated from `#/components/schemas/TrackPoint`.
+        public struct TrackPoint: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TrackPoint/alt_ft`.
+            public var altFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/TrackPoint/lat`.
+            public var lat: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TrackPoint/lon`.
+            public var lon: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TrackPoint/t`.
+            public var t: Swift.Double
+            /// Creates a new `TrackPoint`.
+            ///
+            /// - Parameters:
+            ///   - altFt:
+            ///   - lat:
+            ///   - lon:
+            ///   - t:
+            public init(
+                altFt: Swift.Double? = nil,
+                lat: Swift.Double,
+                lon: Swift.Double,
+                t: Swift.Double
+            ) {
+                self.altFt = altFt
+                self.lat = lat
+                self.lon = lon
+                self.t = t
+            }
+            public enum CodingKeys: String, CodingKey {
+                case altFt = "alt_ft"
+                case lat
+                case lon
+                case t
+            }
+        }
         /// The airplanes ADS-B receivers hear near a point, from adsb.lol's
         /// open data, under the Open Database License 1.0, which asks that the
         /// map say so where it draws them.
@@ -22084,6 +22849,66 @@ extension Components {
                 case reading
                 case ready
                 case usable
+            }
+        }
+        /// One route's calls on one finished UTC day (app.usage_days): its
+        /// template and method, the status answered, and how many. Nothing of a
+        /// pilot, a device or an address.
+        ///
+        /// - Remark: Generated from `#/components/schemas/UsageDay`.
+        public struct UsageDay: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UsageDay/calls`.
+            public var calls: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/UsageDay/day`.
+            public var day: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UsageDay/method`.
+            public var method: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UsageDay/route`.
+            public var route: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UsageDay/status`.
+            public var status: Swift.Int
+            /// Creates a new `UsageDay`.
+            ///
+            /// - Parameters:
+            ///   - calls:
+            ///   - day:
+            ///   - method:
+            ///   - route:
+            ///   - status:
+            public init(
+                calls: Swift.Int,
+                day: Swift.String,
+                method: Swift.String,
+                route: Swift.String,
+                status: Swift.Int
+            ) {
+                self.calls = calls
+                self.day = day
+                self.method = method
+                self.route = route
+                self.status = status
+            }
+            public enum CodingKeys: String, CodingKey {
+                case calls
+                case day
+                case method
+                case route
+                case status
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UsageDays`.
+        public struct UsageDays: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UsageDays/days`.
+            public var days: [Components.Schemas.UsageDay]
+            /// Creates a new `UsageDays`.
+            ///
+            /// - Parameters:
+            ///   - days:
+            public init(days: [Components.Schemas.UsageDay]) {
+                self.days = days
+            }
+            public enum CodingKeys: String, CodingKey {
+                case days
             }
         }
         /// Where the airplane is usually based, by the engine's `usual_base`

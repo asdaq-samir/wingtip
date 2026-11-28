@@ -14,7 +14,7 @@ def off_course_nm(start: tuple, end: tuple, lat: float, lon: float) -> float:
     """How far a point is off the straight course from start to end, nm:
     its least distance to the line, read every hundredth of the way."""
     t = np.linspace(0.0, 1.0, 101)
-    # The short way round 180 (geo_boxes): Adak to Shemya is not the world.
+    # The short way over 180 (geo_boxes): Adak to Shemya is not the world.
     end_lon = geo_boxes.lon_near(end[1], start[1])
     lats = start[0] + (end[0] - start[0]) * t
     lons = start[1] + (end_lon - start[1]) * t
@@ -37,7 +37,7 @@ def corridor(dep: str, dest: str, stops: str, day: str) -> tuple[tuple[dict, flo
     Stops list asked again -- each Overture read finishing, the pilot's
     filter changed -- reads only the places, which wingtip.nearby keeps on
     disk per release; it worked the corridor out again on every ask, 1 to
-    3.4 s (the 23 Oct audit; the web audit's WEB-31). `day` is the cache's
+    3.4 s. `day` is the cache's
     key alone."""
     r = load_route(dep, dest, stops)
     flights = [(f.dep_ident, f.start, f.end) for f in r.flights]

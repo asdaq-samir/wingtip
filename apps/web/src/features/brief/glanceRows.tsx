@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { ListRow } from "../../components/GroupedList";
 import FindingIcon from "../../components/FindingIcon";
-import { clockTime, duration, grouped, zoneName } from "../../lib/format";
+import { clockIn, duration, grouped } from "../../lib/format";
+import { airportQuery } from "../../lib/queryClient";
 import { FINDING_TONE, type Finding } from "../../lib/findings";
 import { mhzText } from "../../lib/frequencies";
 import { POSITION_NAME, isPosition } from "../../lib/identSchema";
@@ -13,12 +15,20 @@ import CategoryBadge from "./CategoryBadge";
 import type { BriefGlance, FieldGlance } from "./glance";
 
 const DASH = "—";
-/** Whom a frequency is for, in a word over it: "Campbell traffic" is the
- *  field's CTAF, "Duluth ATIS" its ATIS. */
-const radioLabel = (to: string) => (/traffic$/i.test(to) ? "CTAF" : (to.split(" ").at(-1) ?? to));
+/** Whom a frequency is for, in a word over it: a call on the field's CTAF
+ *  as the engine marks it (radio_script), where the name's "traffic" was
+ *  read for it here; else the station's last word, "Duluth ATIS" its ATIS. */
+const radioLabel = (radio: { to: string; ctaf: boolean }) => (radio.ctaf ? "CTAF" : (radio.to.split(" ").at(-1) ?? radio.to));
 /** A clock time with its zone, "04:17 CST", as the nav log heads its ETAs:
- *  a bare "04:17" on the Depart row read as Z or local (WEB-9). */
-const time = (iso: string | null) => (iso ? `${clockTime(new Date(iso))} ${zoneName(new Date(iso))}` : undefined);
+ *  a bare "04:17" on the Depart row read as Z or local (WEB-9). In the
+ *  field's own zone (the planner's `time_zone`), as FPL's timeline gives
+ *  each point's: Denver's arrival "19:59 MST" there read "19:59 CST" here,
+ *  the same digits an hour apart; this
+ *  device's zone until the field's card is in. */
+function time(iso: string | null, timeZone: string | null | undefined) {
+  const there = iso ? clockIn(new Date(iso), timeZone) : null;
+  return there ? `${there.time} ${there.zone}` : undefined;
+}
 
 /** The route's strongest headwind in a few words: "18 kt", "None" where
  *  it is a tailwind all the way, a dash before the legs are in. */
@@ -30,7 +40,7 @@ const headwindText = (headwind: BriefGlance["enroute"]["headwind"] | undefined) 
 function Stat({ label, value, finding }: { label: string; value: ReactNode; finding?: Finding }) {
   return (
     <span className="flex min-w-0 flex-col">
-      <span className={cn("truncate text-muted-foreground", TEXT.note)}>{label}</span>
+      <span className={cn("break-words text-muted-foreground", TEXT.note)}>{label}</span>
       <span
         className={cn(
           "font-semibold break-words text-foreground tabular-nums",
@@ -57,7 +67,7 @@ function Figures({ children, note }: { children?: ReactNode; note?: ReactNode })
 /** A part's name and the field it is at, bold, with the field's category
  *  and the part's mark where it has something to fix or look at: the row
  *  itself plain, its red or amber in the mark and the figures that make it
- *  alone, the verdict the one wash (the design review, 2026-10-28). Its
+ *  alone, the verdict the one wash. Its
  *  value (`at`: a time, what is left to do) at the line's end, in the
  *  title rather than the row's value, so the figures under it have the
  *  row's whole width, as the mockup's En Route has (option A). */
@@ -104,8 +114,7 @@ export function BeforeRow({ before, airplane, onOpen }: { before?: BriefGlance["
             {/* The fuel over what the flight needs and its reserve (14 CFR
                 91.151(a), 91.167(a): enough fuel to fly to the destination
                 and on for the reserve), named for the reserve it is beyond:
-                "Fuel spare" was no pilot's term (the Brief audit of
-                2026-11-21, finding 10). */}
+                "Fuel spare" was no pilot's term. */}
             <Stat
               label="Beyond Reserve"
               value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH}
@@ -144,6 +153,7 @@ export function FieldRow({
   onOpen: Open;
 }) {
   const here = isPosition(field.ident);
+  const timeZone = useQuery({ ...airportQuery(field.ident), enabled: !here }).data?.time_zone;
   const note =
     [field.runwayFt != null && `${grouped(field.runwayFt)} ft long`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||
     undefined;
@@ -155,7 +165,7 @@ export function FieldRow({
           ident={here ? POSITION_NAME : field.ident}
           category={field.category}
           finding={field.finding}
-          at={time(field.at)}
+          at={time(field.at, timeZone)}
         />
       }
       wide
@@ -171,7 +181,7 @@ export function FieldRow({
                 finding={field.finding === "stop" ? "stop" : undefined}
               />
             )}
-            {field.radio && <Stat label={radioLabel(field.radio.to)} value={mhzText(field.radio.mhz)} />}
+            {field.radio && <Stat label={radioLabel(field.radio)} value={mhzText(field.radio.mhz)} />}
           </Figures>
         ) : undefined
       }
@@ -191,7 +201,7 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
   // "None", no ceiling, only where the forecast along the route was read and
   // gave none (its visibility is in): with no forecast yet, or none to read,
   // it is a dash, as the visibility is -- "None" there read as clear skies
-  // nothing had said (the aviation audit, 2026-11-21).
+  // nothing had said.
   const ceiling = enroute?.ceilingFt != null ? `${grouped(enroute.ceilingFt)} ft` : enroute?.visibilitySm != null ? "None" : DASH;
   return (
     <ListRow

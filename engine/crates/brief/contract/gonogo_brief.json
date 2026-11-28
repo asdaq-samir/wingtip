@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_brief::gonogo::brief::call",
-  "description": "The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the nav log flies over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a); a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).",
+  "description": "The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the flight is planned over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a)), or a pressurised one over FL250 (its 10-minute supply, 91.211(b)(1)(i)) and FL350 (a pilot's mask, (b)(1)(ii)) (a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).",
   "type": "object",
   "properties": {
     "input": {
@@ -9,6 +9,33 @@
       "properties": {
         "verdict": {
           "$ref": "#/definitions/VerdictInput"
+        },
+        "facts": {
+          "$ref": "#/definitions/GonogoFacts"
+        },
+        "risk": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "level": {
+                  "type": "string",
+                  "description": "\"low\", \"caution\" or \"high\"."
+                },
+                "line": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "level",
+                "line"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "With `facts`: the risk assessment's level and line (gonogo_risk, gonogo_risk_line); null before the briefing."
         },
         "alternate": {
           "anyOf": [
@@ -19,7 +46,7 @@
               "type": "null"
             }
           ],
-          "description": "/api/alternate's answer; null while it is awaited or where none was asked."
+          "description": "/api/alternate's answer, or {\"failed\": true} where it failed, {\"pending\": true} while it is awaited; null where none was asked, which under IFR is an alternate not checked (unknown, 14 CFR 91.169(b))."
         },
         "fields": {
           "type": [
@@ -37,9 +64,9 @@
         }
       },
       "required": [
-        "verdict",
         "airplane"
-      ]
+      ],
+      "description": "`verdict`, the sections built (gonogo_input's answer and the risk), or `facts`, gonogo_input's input, which is then built here with `risk` beside it."
     },
     "answer": {
       "title": "GonogoBriefAnswer",

@@ -107,7 +107,16 @@ export default function AircraftAlertMenu({
           />
         }
       />
-      <DropdownMenuContent align="start" className="w-72" data-testid="flight-alert-menu">
+      {/* 18 rem where there is room, no wider than the window less its
+          8-point edges where there is not: the stock cap, Base UI's
+          --available-width, is worked out as the menu opens and stayed 288
+          when the window narrowed under the open menu at Safari's 150% page
+          zoom, so the page scrolled sideways. The window's own width is never stale. */}
+      <DropdownMenuContent
+        align="start"
+        className="w-72 max-w-[min(var(--available-width),calc(100vw-var(--spacing)*4))]"
+        data-testid="flight-alert-menu"
+      >
         <DropdownMenuGroup>
           <DropdownMenuLabel className={cn("font-normal text-muted-foreground", TEXT.note)}>Tell me when {name}…</DropdownMenuLabel>
         </DropdownMenuGroup>

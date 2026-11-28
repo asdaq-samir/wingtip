@@ -39,18 +39,22 @@ export const FLOATING_BAR_ROOM = "@container";
  * 44 points (CLAUDE.md), the items meeting side by side. Picked, pressed
  * or its menu out, the soft lighter pill of iOS 26's tab bar, not a solid
  * fill; the stock parts' own edge, shadow and fill taken off. The picked
- * tab's pill is the ground's own colour, by day and by night, so its word
+ * tab's pill (FLOATING_BAR_PICKED, the stock Tabs' indicator, which slides
+ * from tab to tab) is the ground's own colour, by day and by night, so its word
  * in the tint reads at 4.5:1 or more: the foreground's grey wash took the
- * tint to 4.28 by day and 4.07 by night (the iOS audit's P15, the nightly
- * run of 2026-11-20). A button with its menu out (FPL's More) is drawn so
- * too: on the foreground's wash its "More" read 4.07:1 at night (the HIG
- * review, 2026-11-21).
+ * tint to 4.28 by day and 4.07 by night. A button with its menu out (FPL's More) is drawn so
+ * too: on the foreground's wash its "More" read 4.07:1 at night.
  */
 export const FLOATING_BAR_ITEM = cn(
   "h-auto min-h-12 min-w-0 flex-col justify-center gap-0 rounded-full border-0 px-2 py-0 shadow-none",
-  "hover:bg-foreground/10 active:bg-foreground/10 aria-expanded:bg-background/80 data-active:bg-background/80",
+  "hover:bg-foreground/10 active:bg-foreground/10 aria-expanded:bg-background/80",
   "dark:hover:bg-foreground/15 dark:active:bg-foreground/15 dark:aria-expanded:bg-background/80",
 );
+
+/** The picked tab's pill: the stock Tabs' indicator under the tabs
+ *  (CardTabBar), so the selection slides to the tab picked as iOS 26's
+ *  tab bar's does, where each tab's own fill jumped. */
+export const FLOATING_BAR_PICKED = "rounded-full bg-background/80";
 
 /** The least room under the bar where there is no home indicator. */
 const EDGE = "4px";

@@ -4,7 +4,7 @@
 //! ShortField -- and answers JSON.
 
 use super::circuit::{self, CircuitEnd, CircuitRunway, Pattern, Point};
-use super::performance;
+use super::fit;
 use super::pick;
 use super::wind::{self, Favoured, Nearby, Reported, RunwayWind, WindPick};
 use crate::gonogo::calls::{runway_list, truth, In};
@@ -55,6 +55,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                         dir_true_deg: i.opt_num(n, "dir_true_deg")?,
                         speed_kt: i.opt_num(n, "speed_kt")?,
                         gust_kt: i.opt_num(n, "gust_kt")?,
+                        variable_deg: None,
                     },
                 }),
             };
@@ -110,7 +111,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 .collect();
             Ok(format!("[{}]", each.join(",")))
         })(),
-        "runway_end_fit" => performance::end_fit_rule(i, v),
+        "runway_end_fit" => fit::end_fit_rule(i, v),
         "traffic_pattern" => (|| {
             let r = circuit_runway(i, v)?;
             pattern_json(i, v, circuit::arrival(&r, &i.str(v, "end_ident")?).as_ref())
@@ -218,6 +219,7 @@ pub(super) fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
             dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,
             speed_kt: i.opt_num(m, "wind_speed_kt")?,
             gust_kt: i.opt_num(m, "wind_gust_kt")?,
+            variable_deg: super::wind_variable::variable(i, m)?,
         })),
         _ => Ok(None),
     }

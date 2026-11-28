@@ -173,13 +173,16 @@ nonisolated struct OnDeviceAsk: Sendable {
     static let most = 6
 
     /// `partial` is given the answer so far, its sentences checked as the
-    /// finished one is, while the model writes.
+    /// finished one is, while the model writes. Off the main actor: the
+    /// nearest fields read the cycle packs (PackFields.ranked, through
+    /// EngineWords and the nearestFields tool), as Emergency's do.
+    @concurrent
     func answer(_ question: String, earlier: [AssistantTurn] = [], facts: OnDeviceFacts,
                 partial: @escaping @Sendable (OnDeviceAnswer) -> Void = { _ in }) async -> OnDeviceAnswer {
         if let why = model.unavailableWhy { return engine(question, facts: facts, why: why) }
         // With no figure on the phone for any tool to hand over, every
         // sentence the model wrote would rest on none and be dropped: the
-        // speed audit (2026-11-10) waited 8.3 s for such an answer. The
+        // once waited 8.3 s for such an answer. The
         // engine's words, which say what is missing, come at once instead.
         guard EngineWords.holdsAny(question, facts: facts, pins: pins) else { return engine(question, facts: facts, why: nil) }
         let log = FigureLog()

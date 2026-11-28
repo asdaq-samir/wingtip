@@ -83,8 +83,7 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
                 {...register("fullName")}
                 placeholder="J. J. Jones"
                 maxLength={120}
-                // The return key moves on, the name AutoFill's own (the iOS
-                // audit's P19).
+                // The return key moves on, the name AutoFill's own.
                 autoComplete="name"
                 enterKeyHint="next"
                 className="h-8 w-44 sm:w-56"

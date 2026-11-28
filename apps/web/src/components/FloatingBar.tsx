@@ -46,12 +46,15 @@ export function FloatingBarFace({ icon, badge, label }: { icon: ReactNode; badge
         {icon}
         {badge}
       </span>
-      {/* The tab bar's own role, iOS's Footnote, 13 on its 18 line
-          (TEXT.tabBar, the scale audit's Q3: it drew a note's, and the
-          role said 12): with the glyph at 24 (size.glyph-bar, c23b9baec)
-          the two fit the item's 48 without the 16 line the 28-point glyph
-          needed, which the iOS audit's P3 found off the type scale. */}
-      <span className={cn("font-normal whitespace-nowrap", TEXT.tabBar)}>{label}</span>
+      {/* 11 on 13, medium, as iOS 26's tab bar sets its words under a
+          24-point glyph (size.glyph-bar): the glyph some 5 clear above
+          and the words below in the item's 48, and set apart from the
+          figure strip's 13-point names over the bar (the owner,
+          2026-11-26, on the tabs' proportions), where they were the
+          tab bar's Footnote role, 13 on 18 (TEXT.tabBar, which the
+          phones still draw until they follow). The caption role's size,
+          at a medium weight rather than its own bold. */}
+      <span className={cn("font-medium whitespace-nowrap", TEXT.caption)}>{label}</span>
     </>
   );
 }

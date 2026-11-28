@@ -29,16 +29,13 @@ international ones too.
 from __future__ import annotations
 
 import html
-import json
 import re
 import sqlite3
 import threading
 import time
-from datetime import datetime, timezone
 
-import wingtip_native
 
-from . import stores
+from . import stores, utc
 from .config import Settings, get_settings
 from .engine import ask as engine
 
@@ -121,14 +118,14 @@ def _upgrade(db: sqlite3.Connection) -> None:
     FAA's feed puts inside its XML ("O&apos;HARE"), which notam_read took for
     someone's own words; the engine's reader now decodes them (from_fns),
     and those kept are decoded here."""
-    version = db.execute("PRAGMA user_version").fetchone()[0]
+    version = stores.user_version(db)
     if version >= STORE_VERSION:
         return
     if version < 1:
         _keep_by_place(db)
     for key, raw, text in db.execute("SELECT id, raw, text FROM notams WHERE raw LIKE '%&%' OR text LIKE '%&%'").fetchall():
         db.execute("UPDATE notams SET raw = ?, text = ? WHERE id = ?", (html.unescape(raw or ""), html.unescape(text or ""), key))
-    db.execute(f"PRAGMA user_version = {STORE_VERSION}")
+    stores.stamp(db, STORE_VERSION)
     db.commit()
 
 
@@ -167,7 +164,7 @@ def reset() -> None:
 
 def _stamp(now: float) -> str:
     """A moment as the store's times are written, to compare with them."""
-    return datetime.fromtimestamp(int(now), timezone.utc).isoformat().replace("+00:00", "Z")
+    return utc.iso(now)
 
 
 def notams(xml: str) -> list[dict]:
@@ -179,7 +176,7 @@ def notams(xml: str) -> list[dict]:
     its domestic place and number, else its place and ICAO number. Read by
     the engine (notam.rs, `notams_fns`), as a phone reads one; none where
     the message is not XML."""
-    return json.loads(wingtip_native.call("notams_fns", json.dumps({"text": xml})))
+    return engine("notams_fns", text=xml)
 
 
 def _ours(notam: dict) -> bool:

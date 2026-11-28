@@ -31,8 +31,7 @@ export function PerformancePanel() {
     // A tab stop of its own: while the status is still coming the region
     // scrolls but holds nothing to focus, and a keyboard could not scroll
     // it (WCAG 2.1.1; axe's scrollable-region-focusable).
-    // At iOS's 16 from the panel's side, as every sheet's groups are (the
-    // iOS audit's P18 read "Model comparison" 12 in).
+    // At iOS's 16 from the panel's side, as every sheet's groups are.
     // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- a scroller is what a keyboard needs to reach
     <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-6" data-testid="perf-panel" tabIndex={0}>
       <PerformanceTab status={status} failed={isError} />

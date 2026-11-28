@@ -5,6 +5,7 @@ search takes between the map's requests."""
 from unittest.mock import patch
 
 import pytest
+import requests
 
 from wingtip import registry, traffic
 from wingtip.traffic import adsb_lol
@@ -26,7 +27,9 @@ def test_an_airplane_is_found_by_its_callsign_registration_or_address(clock):
     with patch("requests.get", side_effect=get):
         (ual,) = traffic.find("ual 2088")
         assert ual["callsign"] == "UAL2088" and ual["squawk"] == "3324" and ual["emergency"] is None
+        clock.now += adsb_lol.MIN_GAP_S
         assert [a["hex"] for a in traffic.find("N174HA")] == ["a128b9"]
+        clock.now += adsb_lol.MIN_GAP_S
         assert [a["hex"] for a in traffic.find("A128B9")] == ["a128b9"]
     assert [u.rsplit("/", 2)[-2:] for u in asked] == [
         ["callsign", "UAL2088"],
@@ -43,7 +46,7 @@ def test_an_airplane_named_by_its_address_or_n_number_is_found_from_its_recent_t
     stand_in(monkeypatch, "_wall", lambda: 1791800120.0)
     monkeypatch.setattr(registry, "lookup", lambda **kw: {"n_number": "N174HA", "mode_s_hex": "A128B9"})
     # Behind a refusal's back-off, where the API would not be asked at all.
-    adsb_lol._STATE["blocked_until"] = clock.now + 60
+    adsb_lol._LOL.hold(60, clock.now)
     get, asked = _routed({"trace_recent_a128b9": _status(200, RECENT)})
     with patch("requests.get", side_effect=get):
         (plane,) = traffic.find("N174HA")
@@ -73,14 +76,51 @@ def test_an_airplane_whose_recent_trace_has_it_down_or_gone_is_not_in_the_air(cl
     assert len(asked) == 1
 
 
-def test_a_search_takes_its_turn_between_requests(clock):
+def test_a_search_takes_its_turn_between_requests_and_its_second_way_goes_in_the_same_turn(clock):
     get, asked = _routed({"/point/": _answer([]), "/callsign/": _answer([]), "/reg/": _answer([])})
     asked_at = []
     with patch("requests.get", side_effect=lambda url, **kw: (asked_at.append(clock.now), get(url))[1]):
         traffic.near(42.3, -88.1, 25)
-        # A callsign with nothing, then the same as a registration: each five seconds after the one before.
+        clock.now += adsb_lol.MIN_GAP_S - adsb_lol.SEARCH_WAIT_S / 2
+        # A callsign with nothing, five seconds after the region; then the same as a registration
+        # at once, in its turn: its own turn, five more on, is further off than a search waits.
         assert traffic.find("FOO123") == []
-    assert asked_at == [1000.0, 1005.0, 1010.0]
+    assert asked_at == [1000.0, 1005.0, 1005.0]
+    assert [u.rsplit("/", 2)[-2] for u in asked[1:]] == ["callsign", "reg"]
+
+
+def test_a_foreign_registration_typed_without_its_dash_is_found_by_registration(clock):
+    """Round 4's audit: "GABCD", which no airline's callsign pattern reads,
+    found nothing as a callsign, and its registration's try came a gap
+    later, past a search's wait, so it was never asked."""
+    briton = {**CESSNA, "hex": "406abc", "flight": "", "r": "G-ABCD", "t": "PA28"}
+    get, asked = _routed({"/callsign/GABCD": _answer([]), "/reg/GABCD": _answer([briton])})
+    with patch("requests.get", side_effect=get):
+        (found,) = traffic.find("g abcd")
+    assert found["hex"] == "406abc" and found["registration"] == "G-ABCD"
+    assert asked == ["https://api.adsb.lol/v2/callsign/GABCD", "https://api.adsb.lol/v2/reg/GABCD"]
+
+
+def test_a_search_that_times_out_holds_adsb_lol_for_no_one(clock):
+    """A search's 3 s timeout held the whole source for BACKOFF_S, the
+    map's regions with it (round 4's audit); a refusal still does."""
+
+    def slow(url, **kwargs):
+        if "/callsign/" in url:
+            raise requests.Timeout("read timed out")
+        return _answer([CESSNA])
+
+    with patch("requests.get", side_effect=slow), pytest.raises(traffic.TrafficUnavailable):
+        traffic.find("UAL2088")
+    assert not adsb_lol._LOL.held(clock.now)
+    clock.now += adsb_lol.MIN_GAP_S
+    with patch("requests.get", side_effect=slow) as get:
+        assert [a["hex"] for a in traffic.near(42.3, -88.1, 25)["aircraft"]] == ["a128b9"]
+    assert get.call_count == 1
+    clock.now += adsb_lol.MIN_GAP_S
+    with patch("requests.get", return_value=_status(429)), pytest.raises(traffic.TrafficUnavailable):
+        traffic.find("DAL1")
+    assert adsb_lol._LOL.held(clock.now + adsb_lol.BACKOFF_S - 1)
 
 
 def test_an_airplane_heard_about_a_region_is_found_there_at_once(clock):
@@ -107,32 +147,36 @@ def test_a_search_goes_ahead_of_the_regions_turns(clock):
 
     with patch("requests.get", side_effect=timed):
         traffic.near(42.3, -88.1, 25)
-        clock.now += 1
+        clock.now += adsb_lol.MIN_GAP_S - adsb_lol.SEARCH_WAIT_S / 2
         assert traffic.find("FOO123") == []
         # A region with nothing of its own takes the turn after the search's.
         traffic.near(45.0, -93.0, 25)
-    assert asked_at == [(1000.0, "point"), (1005.0, "callsign"), (1010.0, "reg"), (1015.0, "point")]
+    assert asked_at == [(1000.0, "point"), (1005.0, "callsign"), (1005.0, "reg"), (1010.0, "point")]
 
 
-def test_a_region_whose_turn_a_search_took_gives_way(clock, monkeypatch):
+def test_a_search_adsb_lol_cannot_take_now_is_answered_from_the_faas_radar(clock, monkeypatch):
+    from wingtip.traffic import lookup
+
+    adsb_lol._LOL.hold(60, clock.now)
+    monkeypatch.setattr(lookup, "_heard_elsewhere_now", lambda hex_id: {**CESSNA, "hex": hex_id} if hex_id == "a128b9" else None)
+    with patch("requests.get", side_effect=lambda url, **kw: _status(503)):
+        found, credit = traffic.find_credited("a128b9")
+        assert [a["hex"] for a in found] == ["a128b9"] and credit == lookup.RADAR_SOURCE
+        with pytest.raises(traffic.TrafficUnavailable):
+            traffic.find("abcdef")
+
+
+def test_a_region_whose_turn_a_search_took_waits_for_the_next(clock):
+    """The gate gives a turn once: the search's, a gap after the first region's, and the next region's a gap after that."""
     with patch("requests.get", return_value=_answer([CESSNA])):
         traffic.near(42.3, -88.1, 25)
     asked_at = []
-    sleeps = []
-
-    def sleep(seconds):
-        # While the region waits for its turn, a search takes one a second after it.
-        if not sleeps:
-            adsb_lol._STATE["search_at"] = clock.now + seconds + 1
-        sleeps.append(seconds)
-        clock.sleep(seconds)
-
-    stand_in(monkeypatch, "_sleep", sleep)
     with patch("requests.get", side_effect=lambda *a, **kw: (asked_at.append(clock.now), _answer([]))[1]):
-        clock.now += 1
-        # Another region, with no answer to give: it waits for a turn after the search's.
+        clock.now += 4
+        traffic.find("FOO123")
         traffic.near(45.0, -93.0, 25)
-    assert asked_at == [1011.0]
+    # The search's two ways in its one turn, then the region's a gap after.
+    assert asked_at[0] == 1005.0 and asked_at[-1] == 1010.0 and set(asked_at) == {1005.0, 1010.0}
 
 
 def test_a_search_answer_is_given_again_for_a_few_seconds(clock):
@@ -145,3 +189,12 @@ def test_a_search_answer_is_given_again_for_a_few_seconds(clock):
         clock.now += traffic.FOUND_TTL_S
         traffic.find("UAL2088")
         assert get.call_count == 2
+
+
+def test_a_search_whose_turn_is_more_than_a_gap_off_is_answered_at_once(clock):
+    # Behind a back-off seven seconds long, where it slept those seven seconds in the request: the
+    # route then answers with the FAA's record, unchecked (/api/traffic/find).
+    adsb_lol._LOL.hold(7, clock.now)
+    with patch("requests.get") as get, pytest.raises(traffic.TrafficUnavailable):
+        traffic.find("FOO123")
+    assert get.call_count == 0 and clock.now == 1000.0

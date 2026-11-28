@@ -77,7 +77,7 @@ class PlanTanksTest {
     @Test
     fun theGaugesWords() {
         assertEquals("23 gal", PlanTanks.words(23.9))
-        assertEquals("−12 gal", PlanTanks.words(-11.2))
+        assertEquals("12 gal short", PlanTanks.words(-11.2))
     }
 
     @Test

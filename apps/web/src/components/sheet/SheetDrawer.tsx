@@ -1,9 +1,11 @@
-import { useEffect, type ComponentProps, type ReactNode } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
-import { SETTLE_MS } from "./insets";
+import { SETTLE_MS, SHEET_SLIDE } from "./insets";
 import { sheetTopRef } from "./sheetTopSlot";
+import { cardFeetHost } from "./cardFeet";
+import { watchSheetMotion } from "./sheetMotion";
 import { SheetViewport } from "./SheetViewport";
 
 /** The Drawer's keyboard inset, 0 or a keyboard's height. */
@@ -25,10 +27,15 @@ export const UNDER_INDICATOR =
  * sheet"): the card is the one sheet in sight, as Apple Maps'. Hidden
  * too once faded, so it is out of a finger's, the keyboard's and a screen
  * reader's way: visibility holds visible to a transition's end and turns
- * visible at its start, so it never cuts the fade.
+ * visible at its start, so it never cuts the fade. On the card's own time
+ * and curve, not the demo's 300 ms: the two ran on two clocks, and as a
+ * card went away the search was back whole while the card was still a
+ * third in sight. Back in on the card's shorter time going (cardMotion's AWAY).
+ * Its fade kept under Reduce Motion (index.css's give-way), as iOS keeps a
+ * fade where it drops a move.
  */
 const GIVE_WAY =
-  "transition-[opacity,visibility] duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] motion-reduce:transition-none group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0";
+  "give-way transition-[opacity,visibility] duration-(--motion-page) ease-(--motion-drawer-ease) group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0 group-data-nested-drawer-open/sheet:duration-(--motion-drawer)";
 
 /**
  * The phone's sheet itself, Base UI's stock Drawer (MapPanel's, the owner
@@ -56,6 +63,7 @@ export function SheetDrawer({
   grabber,
   topSlot,
   cards,
+  foot,
   children,
 }: {
   fromBottom: boolean;
@@ -79,8 +87,26 @@ export function SheetDrawer({
   topSlot: boolean;
   /** The cards over it (CardStack), outside the clip of its corners, so a card can stand higher than it. */
   cards: ReactNode;
+  /** FPL's foot bar (sheet/FootBar): beside the popup, not in it, so the
+   *  sheet slides behind it and it stays still at the screen's foot. */
+  foot?: ReactNode;
   children: ReactNode;
 }) {
+  // The popup watched for whether it is moving (sheet/sheetMotion).
+  const [popupNode, setPopupNode] = useState<HTMLElement | null>(null);
+  useEffect(() => (popupNode ? watchSheetMotion(popupNode) : undefined), [popupNode]);
+  const relayed = useCallback(
+    (node: HTMLElement | null) => {
+      popupRef(node);
+      setPopupNode(node);
+    },
+    [popupRef],
+  );
+  const { shown, letGo } = useSnapFirst(snapPoint, snapped);
+  // The stock Drawer's own gaps, left to it, not drawn by hand (decision
+  // 0016): a sheet caught as it settles jumps to where it was going, it
+  // has no rubber band below the pill, and the 17 px before a swipe starts
+  // is never caught up. Drafted as Base UI issues for the owner to file.
   return (
     <Drawer.Root
       open
@@ -90,8 +116,8 @@ export function SheetDrawer({
       snapPoints={snapPoints}
       // One size per swipe however fast, the Drawer's own option for it (the owner, 2026-11-11).
       snapToSequentialPoints
-      snapPoint={snapPoint}
-      onSnapPointChange={snapped}
+      snapPoint={shown}
+      onSnapPointChange={letGo}
       // Never closed. Its Escape, with no card over it (the card's own
       // drawer takes that), lowers it; taken, so a device's Back
       // (lib/backNavigation) goes no further.
@@ -114,7 +140,7 @@ export function SheetDrawer({
           >
             <Drawer.Popup
               {...popup}
-              ref={popupRef}
+              ref={relayed}
               // The Drawer's own word on a finger's drag, its or a card's on it.
               render={(own, state) => <Told swiping={state.swiping || state.nestedDrawerSwiping} {...own} />}
               initialFocus={false}
@@ -134,12 +160,17 @@ export function SheetDrawer({
                 // under a finger, and not before its first measure (it would
                 // slide in from its full height as the page opens).
                 "[transform:translateY(calc(var(--drawer-snap-point-offset)_+_var(--drawer-swipe-movement-y)))]",
-                // Copied for what is inside it (SheetParts, CardStack): Base UI's own do not inherit.
-                "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)] [--sheet-base:var(--drawer-snap-point-offset)]",
-                // Its ground, edge and shadow fade on the same time as a card comes and goes.
-                ready &&
-                  "transition-[transform,background-color,box-shadow,backdrop-filter] duration-(--motion-drawer) ease-(--motion-drawer-ease)",
-                "data-swiping:transition-none motion-reduce:transition-none",
+                // Its snap offset copied for what is inside it (the cards,
+                // CardStack; a card's room, ProfileCard): Base UI's own does
+                // not inherit. It changes once a let-go, never with a finger.
+                "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-base:var(--drawer-snap-point-offset)]",
+                // Its transform alone eased: its ground, edge and shadow go
+                // at once under a card, which covers them as it comes and
+                // goes, where easing them repainted the largest box on the
+                // screen for 450 ms as a card mounted. Kept under Reduce Motion (SHEET_SLIDE).
+                ready && "transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease)",
+                SHEET_SLIDE,
+                "data-swiping:transition-none",
                 fromBottom ? cn("bottom-0", UNDER_INDICATOR) : "top-0",
                 look,
                 // A card up (Base UI's own data-nested-drawer-open): the card
@@ -175,6 +206,12 @@ export function SheetDrawer({
               <div className={cn("relative flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]", GIVE_WAY)}>{children}</div>
               {cards}
             </Drawer.Popup>
+            {/* Beside the popup, outside its slide: still at the viewport's
+                foot, over the home indicator and on the keyboard as the
+                sheet is (sheet/FootBar). */}
+            {foot}
+            {/* And the cards' tab bars, each in its card's slot (sheet/CardFoot). */}
+            {fromBottom && <div ref={cardFeetHost} className="contents" />}
           </SheetViewport>
         </Drawer.Portal>
       </Drawer.VirtualKeyboardProvider>
@@ -219,4 +256,49 @@ function Told({ swiping, ...own }: ComponentProps<"div"> & { swiping: boolean })
   }, [swiping]);
   const risen = usePanelDragging((d) => d.dragging);
   return <div {...own} data-risen={risen ? "" : undefined} />;
+}
+
+type Snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => void;
+
+/**
+ * A drag let go, the sheet's slide begun before the page hears of it: the
+ * snap point the finger picked held here at once, a render of the Drawer
+ * alone, and the page told (`snapped`, MapPanel's letGo, whose new size
+ * re-renders the whole workspace) once the slide's first frame is drawn
+ * (a frame, then a task), as a transition: told within the let-go, that
+ * render held the sheet still for 164 ms at 4x CPU. The pick is held
+ * only while the page's own snap point is the one it had when picked, so
+ * the page's answer rules as soon as it comes; let go past the pill (no
+ * snap point) the page is told at once, as it refuses the close there.
+ */
+function useSnapFirst(snapPoint: Drawer.Root.SnapPoint, snapped: Snapped) {
+  const [chosen, choose] = useState<{ point: Drawer.Root.SnapPoint; from: Drawer.Root.SnapPoint } | null>(null);
+  const later = useRef({ frame: 0, task: 0 });
+  useEffect(() => {
+    const pending = later.current;
+    return () => {
+      cancelAnimationFrame(pending.frame);
+      clearTimeout(pending.task);
+    };
+  }, []);
+  const letGo: Snapped = (point, details) => {
+    if (point === null) return snapped(point, details);
+    cancelAnimationFrame(later.current.frame);
+    clearTimeout(later.current.task);
+    choose({ point, from: snapPoint });
+    later.current.frame = requestAnimationFrame(() => {
+      later.current.task = window.setTimeout(() => {
+        // In a transition, so React yields while it draws the page anew and
+        // what follows the slide on the main thread (the map's room, the
+        // body's cut) keeps its frames; the pick let go in the same commit
+        // as the page's answer, so the sheet never shows the old size.
+        startTransition(() => {
+          snapped(point, details);
+          choose(null);
+        });
+      }, 0);
+    });
+  };
+  const shown = chosen && chosen.from === snapPoint ? chosen.point : snapPoint;
+  return { shown, letGo };
 }

@@ -1,5 +1,6 @@
 import { test, expect, devices, type Page } from "@playwright/test";
 import { airportMarks, drawn, mapStill, openMapSettings, settle, slow } from "../helpers";
+import { hold } from "../pacing";
 
 /**
  * The map under a finger, as on an iPhone: what is drawn on the chart
@@ -70,7 +71,7 @@ test("the imagery over the chart comes in under a finger's pan, before it lifts"
   await touch("touchStart", [[at.x, at.y]]);
   for (let i = 1; i <= 20; i++) {
     await touch("touchMove", [[at.x - i * 12, at.y]]);
-    await page.waitForTimeout(30);
+    await hold(page, 30);
   }
   // Still held: the imagery asked for where the chart has come into sight.
   // On a phone the map once asked for it only after the pan had ended.
@@ -126,7 +127,7 @@ test("a pinch brings in the airports of each level it passes, before the fingers
       [at.x - 30 - i * 6, at.y],
       [at.x + 30 + i * 6, at.y],
     ]);
-    await page.waitForTimeout(30);
+    await hold(page, 30);
   }
   // A pinch, not a ruler.
   await expect(page.getByTestId("map-ruler")).toHaveCount(0);
@@ -158,7 +159,7 @@ test("a pinch is left where the fingers leave it, as ForeFlight's is, between th
       [at.x - 30 - i * 1.1, at.y],
       [at.x + 30 + i * 1.1, at.y],
     ]);
-    await page.waitForTimeout(30);
+    await hold(page, 30);
   }
   await touch("touchEnd", []);
   await mapStill(page);
@@ -200,7 +201,7 @@ test("a pinch draws the course line again at its own width as it zooms, not scal
       [at.x - 30 - i * 3, at.y],
       [at.x + 30 + i * 3, at.y],
     ]);
-    await page.waitForTimeout(30);
+    await hold(page, 30);
     seen.push(await scale());
   }
   // Still held: the line drawn again as the fingers zoom it, scaled a
@@ -246,7 +247,7 @@ test("a pinch out fills the chart's edges with tiles before the fingers lift, un
     .poll(
       async () => {
         const was = asked;
-        await page.waitForTimeout(500);
+        await hold(page, 500);
         return asked === was;
       },
       { timeout: slow(10_000) },
@@ -268,9 +269,55 @@ test("a pinch out fills the chart's edges with tiles before the fingers lift, un
       [at.x - 90 + i * 5, at.y],
       [at.x + 90 - i * 5, at.y],
     ]);
-    await page.waitForTimeout(100);
+    await hold(page, 100);
   }
-  // Still held: the edges it bared asked for already.
-  await expect.poll(() => asked, { timeout: slow(5_000) }).toBeGreaterThan(before);
+  // Still held: every chart tile the view now needs is in, the edges it
+  // bared filled. Counted by the tiles, not the requests: where the bared
+  // edges' tiles were in already (MapLibre keeps the tiles just out of
+  // sight), it asks for none and nothing is wrong, where a count of
+  // requests read that as a failure (the night of 2026-11-27, the iPad
+  // mini: 48 asked against 48). A tile still missing as the fingers stop
+  // is one it has to ask for.
+  const missing = await bareTiles(page);
+  await expect.poll(() => bareTiles(page), { timeout: slow(5_000) }).toBe(0);
+  if (missing > 0) expect(asked, `${missing} tiles were missing as the fingers stopped`).toBeGreaterThan(before);
   await touch("touchEnd", []);
 });
+
+/** How many of the tiles the view needs, on each chart in use, are not in
+ *  yet: MapLibre's own covering tiles for each chart source (its tile size
+ *  and levels), each looked up among the source's tiles; -1 with no chart
+ *  drawn at all. */
+function bareTiles(page: Page) {
+  return page.evaluate(() => {
+    type Id = { key: string };
+    type Source = {
+      tiles?: string[];
+      tileSize: number;
+      minzoom: number;
+      maxzoom: number;
+      roundZoom?: boolean;
+      hasTile?: (id: Id) => boolean;
+    };
+    type Manager = { used: boolean; getSource(): Source; getTileByID(key: string): { state: string } | undefined };
+    type GlMap = {
+      style: { tileManagers: Record<string, Manager> };
+      coveringTiles(o: { tileSize: number; minzoom: number; maxzoom: number; roundZoom?: boolean }): Id[];
+    };
+    const map = (window as unknown as { __wingtipMaps: GlMap[] }).__wingtipMaps.at(-1)!;
+    let charts = 0;
+    let bare = 0;
+    for (const manager of Object.values(map.style.tileManagers)) {
+      const source = manager.getSource();
+      if (!manager.used || !source.tiles?.some((url) => url.includes("/api/planner/chart-tile/"))) continue;
+      charts += 1;
+      const { tileSize, minzoom, maxzoom, roundZoom } = source;
+      for (const id of map.coveringTiles({ tileSize, minzoom, maxzoom, roundZoom })) {
+        // Past the chart's own bounds there is no tile to have.
+        if (source.hasTile && !source.hasTile(id)) continue;
+        if (manager.getTileByID(id.key)?.state !== "loaded") bare += 1;
+      }
+    }
+    return charts > 0 ? bare : -1;
+  });
+}

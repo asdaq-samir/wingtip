@@ -9,9 +9,11 @@ import { useAddressKey } from "../../../lib/address";
 import { SheetCard } from "../../../components/SheetCard";
 import { TfrCard, TfrGone } from "../TfrCard";
 import { TFR_RED, inForce } from "../tfrMarks";
-import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
+import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
+import { useGlFadeIn } from "../../../lib/map/gl/glFadeIn";
 import { TAP, labelHalo, labelInk, labelText } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
+import { DIM_WARNING } from "../../../lib/map/gl/mapDim";
 import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
 
 const SOURCE = "tfrs";
@@ -39,9 +41,20 @@ const FILL_LATER: FillLayerSpecification = {
   paint: { "fill-color": TFR_RED, "fill-opacity": 0.06 },
 };
 const LAYERS = [FILL, FILL_LATER];
+/** The edges dimmed at night by their colour as a warning (mapDim's
+ *  DIM_WARNING; the owner, 2026-11-27, "Dim by colour"): the red under
+ *  the paper's own light, so it holds 3:1 over the paper at the default
+ *  Dimmer across the whole Contrast range (3.10:1 at -30%, 3.67:1 at the
+ *  night's own; times the chart's brightness alone it was 2.57:1 at -30%;
+ *  see-through, 1.27:1). The numbers are
+ *  words, lit by their night ink on their dark halo (labelInk). A
+ *  restriction a pilot must know of (14 CFR 91.103) stays plain on the
+ *  dimmed chart. */
+const metadata = DIM_WARNING;
 const LINE: LineLayerSpecification = {
   id: "tfrs-line",
   type: "line",
+  metadata,
   source: SOURCE,
   filter: ["get", "active"],
   layout: { "line-join": "round" },
@@ -50,6 +63,7 @@ const LINE: LineLayerSpecification = {
 const LINE_LATER: LineLayerSpecification = {
   id: "tfrs-line-later",
   type: "line",
+  metadata,
   source: SOURCE,
   filter: ["!", ["get", "active"]],
   paint: { "line-color": TFR_RED, "line-width": 2, "line-dasharray": [3, 2.5] },
@@ -59,6 +73,7 @@ const LINE_LATER: LineLayerSpecification = {
 const LABEL: SymbolLayerSpecification = {
   id: "tfrs-label",
   type: "symbol",
+  metadata,
   source: SOURCE,
   layout: { "symbol-placement": "line", "symbol-spacing": 320, "text-field": ["get", "id"], ...labelText("hazard"), "text-max-angle": 30 },
   paint: { "text-color": labelInk(TFR_RED), ...labelHalo("hazard") },
@@ -69,21 +84,24 @@ const ALL = [...LAYERS, LINE, LINE_LATER, LABEL];
  *  one whose card is open (the owner, 2026-11-18: an area picked lights
  *  its edge, as the Brief's hover does): its edge again, wide, in the
  *  selection's yellow over its red, drawn where its feature state says it
- *  is hovered or picked. */
+ *  is hovered or picked. Hidden by its colour, its opacity a constant: an
+ *  opacity by feature times the Dimmer's global state laid the TFRs'
+ *  source out again at every step of the Dimmer (MapLibre relays a
+ *  data-driven paint whose global state changes). */
 const HOVER: LineLayerSpecification = {
   id: "tfr-hover-line",
   type: "line",
   source: SOURCE,
   layout: { "line-join": "round" },
   paint: {
-    "line-color": CHART.selected,
-    "line-width": 5,
-    "line-opacity": [
+    "line-color": [
       "case",
       ["any", ["boolean", ["feature-state", "hover"], false], ["boolean", ["feature-state", "picked"], false]],
-      0.9,
-      0,
+      CHART.selected,
+      "transparent",
     ],
+    "line-width": 5,
+    "line-opacity": 0.9,
   },
 };
 const DRAWN = [...ALL, HOVER];

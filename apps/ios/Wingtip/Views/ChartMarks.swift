@@ -214,7 +214,8 @@ final nonisolated class SpecialUseRenderer: MKPolylineRenderer {
         guard line.pointCount >= 2 else { return }
         let points = line.points()
         let band = Self.band / zoomScale, step = Self.tickEvery / zoomScale
-        context.setStrokeColor(ink.withAlphaComponent(0.7).cgColor)
+        // The line's own colour, so the night's dim reaches the ticks too (OverlayDim).
+        context.setStrokeColor((strokeColor ?? ink).withAlphaComponent(0.7).cgColor)
         context.setLineWidth(1.5 / zoomScale)
         for i in 0..<(line.pointCount - 1) {
             let a = point(for: points[i]), b = point(for: points[i + 1])
@@ -246,7 +247,7 @@ final class FixAnnotation: NSObject, MKAnnotation {
 
 /// A fix: the four-point star in the airspace blue, its ident in the
 /// chart's ink on a white halo (Android's nav|fix, the web's FIX_BLUE).
-final class FixMarkView: MKAnnotationView {
+final class FixMarkView: MKAnnotationView, NightWords {
     static let reuse = "fix"
     private static let star: UIImage = UIGraphicsImageRenderer(size: CGSize(width: 12, height: 12)).image { context in
         let cg = context.cgContext
@@ -258,14 +259,14 @@ final class FixMarkView: MKAnnotationView {
         cg.fillPath()
     }
     private let mark = UIImageView(image: FixMarkView.star)
-    private let identLabel = UILabel()
+    private let identLabel = NightWordLabel()
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         identLabel.font = UIFont.systemFont(ofSize: WingtipMapLabel.sizeSmall, weight: .semibold)
         // The chart's ink by day; after dark a light ink on the night's
         // halo, never dark words on a white glow (MapLabelLook, rules.md §13.6).
-        identLabel.textColor = MapLabelLook.ink(WingtipColor.Chart.fixInk)
+        identLabel.ink = MapLabelLook.ink(WingtipColor.Chart.fixInk)
         identLabel.haloFollowing(self)
         addSubview(mark)
         addSubview(identLabel)
@@ -295,5 +296,10 @@ final class FixMarkView: MKAnnotationView {
         // The star's middle on the fix.
         centerOffset = CGPoint(x: frame.width / 2 - 6, y: 0)
         accessibilityLabel = "Fix \(fix.fix.ident)"
+    }
+
+    func dim(_ brightness: CGFloat) {
+        mark.alpha = brightness
+        identLabel.brightness = brightness
     }
 }

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeProfile, grabberTo, inSheet, openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
+import { closeProfile, grabberTo, inSheet, openPanel, openProfile, pressDryRunStart, settle, sideDrawer, sheetFoot, slow } from "./helpers";
 import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
 import { shipAt } from "./ownShipProbes";
@@ -24,7 +24,7 @@ test("the profile is a card from its button beside the AI brief's, no swipe at t
   // The Nav Log in the floating bar at the sheet's foot (FplTabBar; the
   // owner, 2026-11-16), the Profile at the altitude pill's end (the owner,
   // 2026-11-20).
-  await expect(panel.getByTestId("fpl-actions").getByTestId("route-navlog")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("fpl-actions").getByTestId("route-navlog")).toBeVisible();
   await expect(panel.getByTestId("altitude-group").getByTestId("route-profile")).toBeVisible();
   const card = await openProfile(page);
   // Named Profile, by how much the cruise clears the ground the short line
@@ -66,7 +66,7 @@ test("the dry run is the Profile card's: closed, the run is put away and FPL's f
   await closeProfile(page);
   await expect(panel.getByTestId("dry-run")).toHaveCount(0);
   await expect(page.locator("[data-own-ship]")).toHaveCount(0);
-  await expect(panel.getByTestId("flight-line")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
 });
 
 test("with an approach picked, the dry run flies it into the field: out to its first fix and down its final", async ({ page }) => {

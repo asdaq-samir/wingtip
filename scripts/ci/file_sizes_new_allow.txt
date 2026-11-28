@@ -3,13 +3,12 @@
 # target): "<path> <lines>", each at its size then. None is added; a file
 # leaves once it is within 300 (`python3 scripts/ci/file_sizes.py --write`).
 
-apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/flow/ModelWeatherLayer.kt 333
-engine/crates/procedures/src/occurrence.rs 340
+engine/crates/procedures/src/occurrence.rs 338
 engine/crates/route/src/approach/scene.rs 332
 engine/crates/route/src/approach/tags.rs 316
 engine/crates/route/src/motion/sim.rs 366
 engine/crates/weather/src/aviation_grids.rs 356
-engine/crates/weather/src/notam_read/body.rs 362
+engine/crates/weather/src/notam_read/body.rs 361
 engine/crates/weather/src/notam_read/mod.rs 347
 engine/crates/weather/src/notam_subject/mod.rs 346
-services/weather/app/flow_grid.py 376
+services/weather/app/flow_grid.py 375

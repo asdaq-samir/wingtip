@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { drawn, findAirplane, grabberTo, mapStill, settle, slow, trafficOnMap } from "./helpers";
 import { sky } from "./cardEntries";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { hold, watchFor } from "./pacing";
 
 /**
  * The traffic about the map (TrafficGl's symbol layers, read through
@@ -125,7 +126,7 @@ test("off, as it is unless shown, nothing is asked and nothing drawn", async ({ 
   const asks = await showTraffic(page, false);
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  await page.waitForTimeout(2000);
+  await watchFor(page, 2000);
   expect(asks).toHaveLength(0);
   expect(await drawn(page, "traffic-marks")).toHaveLength(0);
   // No small print on the map at all (MapCredits).
@@ -165,7 +166,7 @@ test("the traffic is asked about wherever the map is panned, own ship or not, an
   await page.mouse.move(map.x + map.width / 2, map.y + map.height / 4);
   for (let i = 0; i < 4; i++) {
     await page.mouse.wheel(0, 400);
-    await page.waitForTimeout(400);
+    await hold(page, 400);
   }
   await expect.poll(() => Number(last().get("radius")), { timeout: slow(15_000) }).toBeGreaterThan(60);
 });
@@ -220,9 +221,9 @@ test("an airplane's card opens at its size: where it left and its record come in
     async () => {
       // Clicked: the project has no touch screen, and a tap() threw there.
       await row.click();
-      await expect(page.getByTestId("flight-card")).toBeVisible();
+      await expect(page.getByTestId("airplane-profile")).toBeVisible();
     },
-    { card: "flight-card", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01, settleMs: 2500 },
+    { card: "airplane-profile", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01, settleMs: 2500 },
   );
 });
 
@@ -265,9 +266,9 @@ test("an airplane tapped on the map is tracked with at most one move, never a mo
     page,
     async () => {
       await page.mouse.click(box.x + Number(mark.x), box.y + Number(mark.y));
-      await expect(page.getByTestId("flight-card")).toBeVisible();
+      await expect(page.getByTestId("airplane-profile")).toBeVisible();
     },
-    { card: "flight-card", maxMoves: 1, settleMs: 2500 },
+    { card: "airplane-profile", maxMoves: 1, settleMs: 2500 },
   );
   // Tracked and followed all the while.
   await expect(page).toHaveURL(/[?&]flight=a1/);

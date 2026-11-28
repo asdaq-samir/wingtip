@@ -61,6 +61,7 @@ import math
 import numpy as np
 from PIL import Image
 from wingtip.engine import ask
+from wingtip.grid_index import grid_cells
 from wingtip.units import K_AT_0C, M_PER_FT, M_PER_SM, MS_TO_KT
 
 from . import nomads
@@ -209,11 +210,9 @@ def _earth_relative(u: np.ndarray, v: np.ndarray, lons: np.ndarray) -> tuple[np.
 
 
 def _cells(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
-    """Each point's cell on the output grid, row * COLS + col; -1 outside."""
-    rows = np.rint((NORTH - lats) / STEP_DEG).astype(np.int64)
-    cols = np.rint((lons - WEST) / STEP_DEG).astype(np.int64)
-    inside = (rows >= 0) & (rows < ROWS) & (cols >= 0) & (cols < COLS)
-    return np.where(inside, rows * COLS + cols, -1)
+    """Each point's cell on the output grid, row * COLS + col with row 0
+    the north; -1 outside."""
+    return grid_cells(lats, lons, {"north": NORTH, "west": WEST, "step_deg": STEP_DEG, "rows": ROWS, "cols": COLS})
 
 
 def on_grid(values: dict[str, np.ndarray], where: tuple[np.ndarray, np.ndarray], hrrr: bool = False) -> dict[str, np.ndarray]:

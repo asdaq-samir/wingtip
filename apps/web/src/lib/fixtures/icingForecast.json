@@ -1,5 +1,5 @@
 {
-  "_note": "Forecast icing on an IFR route (#216), the engine's icing_forecast_route (engine/crates/brief/src/icing_forecast.rs): each leg's AWC icing cross-section, values level-fastest (values[level + column * data_levels]), 0 none, 1 trace, 2 light, 3 moderate, 4 heavy, negative none forecast; sfc_hgt the ground in metres. The answers are worked by hand from the rule: the levels either side of the altitude flown, the worse of them; a level under the ground is not read; any icing at the altitude, trace or worse, is the Go / No-Go's line (AIM 7-1-19). engine/facade/tests/icing_forecast.rs asks the engine each case; the planner asks the same name.",
+  "_note": "Forecast icing on an IFR route (#216), the engine's icing_forecast_route (engine/crates/brief/src/icing_forecast.rs): each leg's icing section (the NWS CIP and IFI grids), values level-fastest (values[level + column * data_levels]), 0 none, 1 trace, 2 light, 3 moderate, 4 severe, negative none forecast; sfc_hgt the ground in metres. The answers are worked by hand from the rule: the levels either side of the altitude flown, the worse of them; a level under the ground is not read; any icing at the altitude, trace or worse, is the Go / No-Go's line (AIM 7-1-19). A leg may send the stored hours near it (`hours`, the nearest first) in place of one section, merged each point the worst, the share the nearest's own; `hours` holds icing_forecast_hours' cases, which pick them. engine/facade/tests/icing_forecast.rs asks the engine each case; the planner asks the same name.",
   "levels_ft": [3000, 4000, 5000, 6000],
   "routes": [
     {
@@ -56,10 +56,400 @@
         "unchecked": [1],
         "line": null
       }
+    },
+    {
+      "about": "Hours merged (the owner, 2026-11-27, \"Grids, worst of nearby hours\"): moderate at 4,000 ft from the hour beside the nearest, each point the worst of the two, an hour not read left out; the share the nearest hour's own, a quarter, not the merged three quarters",
+      "legs": [
+        {
+          "altitude_ft": 4000,
+          "valid_s": 1794200400,
+          "hours": [
+            {
+              "width": 4,
+              "data_levels": 4,
+              "values": [
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "sfc_hgt": [
+                200,
+                200,
+                200,
+                200
+              ]
+            },
+            {
+              "width": 4,
+              "data_levels": 4,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                3,
+                0,
+                0,
+                0,
+                3,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            null
+          ]
+        }
+      ],
+      "answer": {
+        "legs": [
+          {
+            "index": 0,
+            "altitude_ft": 4000,
+            "severity": "moderate",
+            "share": 0.25,
+            "layer": {
+              "bottom_ft": 4000,
+              "top_ft": 4000
+            },
+            "valid_s": 1794200400
+          }
+        ],
+        "worst": {
+          "severity": "moderate",
+          "altitudes_ft": [
+            4000
+          ],
+          "legs": [
+            0
+          ]
+        },
+        "unchecked": [],
+        "line": "Forecast icing, moderate, at 4,000 ft on leg 1"
+      }
+    },
+    {
+      "about": "Hours merged: icing only the hour beside the nearest has takes the merged share, half the leg, as a share of none beside a severity is no answer; a leg with no hour near it, or its nearest hour not read, unchecked",
+      "legs": [
+        {
+          "altitude_ft": 4000,
+          "valid_s": 1794200400,
+          "hours": [
+            {
+              "width": 4,
+              "data_levels": 4,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "sfc_hgt": [
+                200,
+                200,
+                200,
+                200
+              ]
+            },
+            {
+              "width": 4,
+              "data_levels": 4,
+              "values": [
+                0,
+                2,
+                0,
+                0,
+                0,
+                2,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "altitude_ft": 4000,
+          "valid_s": 1794200400,
+          "hours": []
+        },
+        {
+          "altitude_ft": 4000,
+          "valid_s": 1794200400,
+          "hours": [
+            null,
+            {
+              "width": 4,
+              "data_levels": 4,
+              "values": [
+                0,
+                4,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ],
+      "answer": {
+        "legs": [
+          {
+            "index": 0,
+            "altitude_ft": 4000,
+            "severity": "light",
+            "share": 0.5,
+            "layer": {
+              "bottom_ft": 4000,
+              "top_ft": 4000
+            },
+            "valid_s": 1794200400
+          },
+          {
+            "index": 1,
+            "altitude_ft": 4000,
+            "severity": null,
+            "share": null,
+            "layer": null,
+            "valid_s": 1794200400
+          },
+          {
+            "index": 2,
+            "altitude_ft": 4000,
+            "severity": null,
+            "share": null,
+            "layer": null,
+            "valid_s": 1794200400
+          }
+        ],
+        "worst": {
+          "severity": "light",
+          "altitudes_ft": [
+            4000
+          ],
+          "legs": [
+            0
+          ]
+        },
+        "unchecked": [
+          1,
+          2
+        ],
+        "line": "Forecast icing, light, at 4,000 ft on leg 1"
+      }
+    },
+    {
+      "about": "Hours merged: the nearest hour's icing on one column in 201 is icing of its own, though its share rounds to none: its share stands, not the merged quarter (the count of iced columns decides, not the rounded share)",
+      "legs": [
+        {"altitude_ft": 4000, "valid_s": 1794200400, "hours": [
+          {"width": 201, "data_levels": 4, "values": [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+          {"width": 201, "data_levels": 4, "values": [0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}]}
+      ],
+      "answer": {
+        "legs": [
+          {
+            "index": 0,
+            "altitude_ft": 4000,
+            "severity": "moderate",
+            "share": 0,
+            "layer": {
+              "bottom_ft": 4000,
+              "top_ft": 4000
+            },
+            "valid_s": 1794200400
+          }
+        ],
+        "worst": {
+          "severity": "moderate",
+          "altitudes_ft": [
+            4000
+          ],
+          "legs": [
+            0
+          ]
+        },
+        "unchecked": [],
+        "line": "Forecast icing, moderate, at 4,000 ft on leg 1"
+      }
     }
   ],
   "refused": [
     {"about": "values that do not fill the section", "legs": [{"altitude_ft": 4000, "section": {"width": 2, "data_levels": 4, "values": [0, 0, 0]}}]},
-    {"about": "a section with other levels than levels_ft", "legs": [{"altitude_ft": 4000, "section": {"width": 1, "data_levels": 3, "values": [0, 0, 0]}}]}
+    {"about": "a section with other levels than levels_ft", "legs": [{"altitude_ft": 4000, "section": {"width": 1, "data_levels": 3, "values": [0, 0, 0]}}]},
+    {
+      "about": "A leg's hours of different widths",
+      "legs": [
+        {
+          "altitude_ft": 4000,
+          "hours": [
+            {
+              "width": 2,
+              "data_levels": 4,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "sfc_hgt": [
+                200,
+                200
+              ]
+            },
+            {
+              "width": 3,
+              "data_levels": 4,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "sfc_hgt": [
+                200,
+                200,
+                200
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "hours": [
+    {
+      "about": "The nearest hour first, the CIP's where the IFI's same hour is as near; then every other within an hour (15Z, 50 minutes off), not 13Z, 70 minutes off",
+      "input": {
+        "hours": [
+          {
+            "valid_s": 1794200400,
+            "source": "ifi"
+          },
+          {
+            "valid_s": 1794204000,
+            "source": "ifi"
+          },
+          {
+            "valid_s": 1794204000,
+            "source": "cip"
+          },
+          {
+            "valid_s": 1794207600,
+            "source": "ifi"
+          }
+        ],
+        "middles_s": [
+          1794204600,
+          1794204000
+        ]
+      },
+      "answer": {
+        "legs": [
+          [
+            2,
+            1,
+            3
+          ],
+          [
+            2,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "about": "Half an hour past the last hour still read off it, a second more not; half an hour before the first read off it, a second more or ten hours before not",
+      "input": {
+        "hours": [
+          {
+            "valid_s": 1794200400,
+            "source": "ifi"
+          },
+          {
+            "valid_s": 1794204000,
+            "source": "ifi"
+          }
+        ],
+        "middles_s": [
+          1794205800,
+          1794205801,
+          1794198600,
+          1794198599,
+          1794164400
+        ]
+      },
+      "answer": {
+        "legs": [
+          [
+            1
+          ],
+          [],
+          [
+            0
+          ],
+          [],
+          []
+        ]
+      }
+    }
   ]
 }

@@ -35,7 +35,10 @@ async function plannerDown(page: Page, detail = "planner service unreachable") {
 
 /** The planner's progress line held up: the course never answers. */
 async function holdCourse(page: Page) {
-  await page.route("**/api/planner/course**", () => new Promise<void>(() => undefined));
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/course"),
+    () => new Promise<void>(() => undefined),
+  );
 }
 
 test.afterEach(async ({ page }) => {
@@ -103,11 +106,15 @@ test("it offers a way out, the way out works, and the line goes with the problem
 test("two different failures are two problems, counted on the line and listed on a tap", async ({ page }) => {
   // Deduplication is by message, so genuinely different problems must
   // still each get said. Only the identical ones collapse.
-  await page.route("**/api/planner/course**", (route: Route) =>
-    route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail: "planner service unreachable" }) }),
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/course"),
+    (route: Route) =>
+      route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail: "planner service unreachable" }) }),
   );
-  await page.route("**/api/planner/aircraft-profiles**", (route: Route) =>
-    route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "the aircraft store is offline" }) }),
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/aircraft-profiles"),
+    (route: Route) =>
+      route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "the aircraft store is offline" }) }),
   );
   await page.goto(PLAN);
 
@@ -127,8 +134,10 @@ test("a problem goes with the route it was about", async ({ page }) => {
   // With no close of its own, a problem left behind by a route since
   // closed stayed on the map. A failure of the planner's own, not a
   // place it does not know (a 404, the route box's: below).
-  await page.route("**/api/planner/course**", (route: Route) =>
-    route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "the course store is offline" }) }),
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/course"),
+    (route: Route) =>
+      route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "the course store is offline" }) }),
   );
   await page.goto(PLAN);
   await expect
@@ -155,7 +164,14 @@ test("an ident the planner does not know is said on its pill, not the map's line
   await typeRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
-  await expect(page.getByTestId("route-dest").locator("[aria-invalid=true]")).toHaveCount(1);
+  // Red in place, its menu saying why (RoutePill).
+  await expect(page.getByTestId("route-dest")).toHaveAttribute("aria-invalid", "true");
+  // The field's pills below the half sheet's edge under the timeline and
+  // its words: brought into sight, as a finger would.
+  await inSheet(page, page.getByTestId("route-dest"));
+  await page.getByTestId("route-dest").click();
+  await expect(page.getByTestId("pill-menu-note")).toContainText("KZZZ isn't an airport or waypoint we know");
+  await page.keyboard.press("Escape");
   await expect(banner(page)).toHaveCount(0);
   // The figures' To says it too, in red with its mark, the pill's face at
   // rest; nothing to brief, as nothing to log (the UI audit's B8, 2026-11-17).

@@ -1,202 +1,156 @@
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import AirportPicker from "../../components/AirportPicker";
-import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "../../components/ui/context-menu";
+import { Button } from "../../components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { isPosition, pointName } from "../../lib/identSchema";
-import type { AirspaceClass } from "../../lib/preferences";
-import { useAirspace } from "../../lib/useAirspace";
-import { airportMarkSvg } from "../../lib/map/marks/airportMark";
-import { colourOf } from "../../lib/map/marks/flightCategory";
 import { feet, flightLevel } from "../../lib/format";
+import { airportQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import { PointMenuItems } from "./PointControls";
-import { CONTEXT_MENU, useAfterMenu } from "./pointMenu";
+import { DROPDOWN, useAfterMenu } from "./pointMenu";
 import type { PointAltitude } from "./PointAltitudeDialog";
-import { holdGuard } from "./holdGuard";
-import { CHART } from "../../lib/tokens";
 
-/** One point of the route: its ident in its airspace's look, a tap to
- *  change it (the picker), and a drag to move it. Taken out from its own
- *  menu, as iOS takes things out -- a press and hold on a phone, a
- *  right-click with a mouse, Enter on its token selected in the box -- or
- *  Delete with it focused, or Backspace after it in the box: a cross on
- *  every pill was a row of targets crowded between them, at the pilot's
- *  ask. Any of them, the ends too (routeEdit's withoutPoint). */
+/** What a pill's menu does at its point (RouteToken gives each). */
+export interface PillActions {
+  /** Another point in its place, by the one search. */
+  onChange?: () => void;
+  /** The one search asked for a point before it, or after it. */
+  onInsertBefore?: () => void;
+  onInsertAfter?: () => void;
+  onShowOnMap?: () => void;
+  /** Its Procedures, of a kind: the field's departures where the route
+   *  leaves it, else its approaches (or arrivals where it has none). */
+  onProcedures?: (kind: "approach" | "arrival" | "departure") => void;
+  /** Its card: an airport's, never a waypoint's. */
+  onInfo?: () => void;
+  direct: boolean;
+  onDirect?: () => void;
+  onAltitude: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onRemove: () => void;
+}
+
+/**
+ * One point of the route, as ForeFlight's route editor draws it (the
+ * owner's screenshot, 2026-11-23): its ident in a plain filled pill, a
+ * tap on it its menu -- the stock DropdownMenu, the same items as FPL's
+ * timeline's "⋯" (PointMenuItems): Info, Insert Before and After, Show on
+ * Map, Procedures, Change, Direct To, the altitude, Move, Remove (whose
+ * Undo is the plan's toast). What is wrong there is on the pill itself: a
+ * point not known or a field NASR lists closed in red, with "Closed" in
+ * its name (decision 0043), and a caution a "!" at its top right, each
+ * said in words at its menu's head.
+ */
 export default function RoutePill({
-  onStep,
-  canStep,
-  last,
   ident,
   waypoint,
   index,
   role,
   stopNumber,
-  airspaceOf,
-  metarColourOf,
   altitude,
-  onChange,
-  onEditAltitude,
-  onRemove,
-  onOpen,
-  direct,
-  onDirect,
-  unknown = false,
+  unknown = null,
+  cautions = NO_CAUTIONS,
+  actions,
 }: {
-  /** It, a place earlier (-1) or later (1): its menu's Move Up and Down. */
-  onStep: (by: -1 | 1) => void;
-  /** Whether a step that way leaves every point where it may go. */
-  canStep: (by: -1 | 1) => boolean;
-  last: boolean;
   ident: string;
   waypoint: boolean;
   index: number;
   role: "dep" | "stop" | "dest";
   stopNumber: number;
-  /** Not a place the planner knows: in red, and invalid to a reader. */
-  unknown?: boolean;
-  airspaceOf: (ident: string) => AirspaceClass | undefined;
-  metarColourOf: (ident: string) => string | undefined;
+  /** Not a place the planner knows, and why: in red, invalid to a reader. */
+  unknown?: string | null;
+  /** The plan's cautions at it: the altitude's, a flight short of fuel. */
+  cautions?: string[];
   altitude: PointAltitude;
-  onChange: (ident: string) => void;
-  onEditAltitude: () => void;
-  onRemove: () => void;
-  /** A tap's, where it opens the airport's card (RouteBox's onOpenAirport). */
-  onOpen?: () => void;
-  direct: boolean;
-  onDirect?: () => void;
+  actions: PillActions;
 }) {
-  // The search, out from the menu's Change where a tap opens the card --
-  // once the menu has closed, the focus left to the search, or it took the
-  // focus from the search as it opened, which closed it (useAfterMenu).
-  const [changing, setChanging] = useState(false);
   const { later, finalFocus } = useAfterMenu();
-  // The finger that held it open lifted: not a tap on the pill (holdGuard).
-  const [guard] = useState(holdGuard);
-  // A finger's hold opens its menu by the stock ContextMenu's own long
-  // press, as a right click does. Not dragged: its place changes by the
-  // menu's Move Up and Down here, or by a drag in FPL's list (RouteGrid).
-  // An airport as the sectional draws its airspace, as its Favorites tile
-  // is (lib/useAirspace): Class B and C solid blue and magenta, D and E
-  // dashed; G, and one not known yet, the sheet's own pill. A waypoint in
-  // the sectional's magenta letters, where it carried a diamond that cost
-  // a third pill its place on a phone's line.
-  // Its METAR's flight category in the middle, as the chart's and
-  // Nearest's marks have it (metarColourOf, PlanWorkspace's); grey without
-  // one. It was a setting, airspace or weather, until the owner's split
-  // (2026-10-27) found it did no more than this dot: the ring says the
-  // airspace either way.
-  // The class the course came with, else the airport's card asked for.
-  const known = airspaceOf(ident);
-  // Not for a present position, which has no card to ask for (it was
-  // asked for, and the planner answered 404, at every Fly Here).
-  const space = useAirspace({ ident, name: ident, airspace: known }, !waypoint && !known && !isPosition(ident));
-  const spaceClass = known ?? (space.name.startsWith("Class ") ? (space.name.slice(6) as AirspaceClass) : null);
-  // A word of the route's title (the owner's yes to the polish pass,
-  // 2026-10-26: "the route box becomes a bold title"), led by the field's
-  // own mark as the chart and Nearest draw it -- its airspace's ring, and
-  // its METAR's colour in the middle where the setting asks for the
-  // weather -- or a waypoint's magenta diamond. A present position, none.
-  const mark = isPosition(ident) ? null : waypoint ? (
-    <span aria-hidden="true" className="ml-0.5 size-2 shrink-0 rotate-45 rounded-[1px]" style={{ backgroundColor: CHART.waypoint }} />
-  ) : (
-    // 14 at a 16 px root, in rem as the pill, its ident and the waypoint's
-    // diamond are, so the mark keeps its share of the pill at a larger
-    // text size (it was 14 px at every size: the scale audit, 2026-11-21).
-    <span
-      aria-hidden="true"
-      className="block size-3.5 shrink-0"
-      dangerouslySetInnerHTML={{
-        __html: airportMarkSvg(spaceClass, metarColourOf(ident) ?? colourOf(null), null, "block size-full overflow-visible"),
-      }}
-    />
-  );
-  // The fields' own names, as the two fields were: "Departure", "Stop 1".
+  const field = !waypoint && !isPosition(ident) && !unknown;
+  // Its card, shared with the timeline's (RouteTimeline asks the same):
+  // whether NASR lists it closed, the engine's field_status as the planner
+  // labels it (decision 0043; never a status code compared here), and which
+  // of the FAA's charts it has, for Procedures.
+  const card = useQuery({ ...airportQuery(ident), enabled: field, staleTime: 10 * 60_000 }).data;
+  const closed = field ? (card?.closed ?? null) : null;
+  // Procedures where the FAA publishes one of the kind the route flies
+  // there (the d-TPP's codes: DP a departure, IAP an approach, STR an
+  // arrival): a departure where the route leaves it, else an approach, or
+  // an arrival at a field with no approach.
+  const charts = new Set((card?.procedures ?? []).map((c) => c.kind));
+  const kind =
+    role === "dep" ? (charts.has("DP") ? "departure" : null) : charts.has("IAP") ? "approach" : charts.has("STR") ? "arrival" : null;
+  const red = !!unknown || !!closed;
+  const notes = [
+    ...(unknown ? [{ text: unknown, tone: "error" as const }] : []),
+    ...(closed ? [{ text: `${closed}. Pick another field.`, tone: "error" as const }] : []),
+    ...cautions.map((text) => ({ text, tone: "caution" as const })),
+  ];
+  // The fields' own names, as the two fields were: "Departure", "Stop 1",
+  // then what is wrong, so a reader hears it with the point.
   const label = role === "dep" ? "Departure" : role === "dest" ? "Destination" : `Stop ${stopNumber}`;
-  const pill = (
-    // A group, not a button: the picker inside it is the button, and a
-    // button in a button is nothing a reader can use (axe's
-    // nested-interactive). Still focusable, for its Delete and its menu.
-    <span
-      // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- a group round the pill's picker, focused for its Delete and its menu's key
-      tabIndex={0}
-      role="group"
-      aria-label={`${label} ${ident}`}
-      aria-keyshortcuts="Delete"
-      data-point={index}
-      data-base-ui-swipe-ignore="x"
-      // Up or down scrolls the lines or moves the sheet (swipe-ignore "x", the one scrolling
-      // rule); a hold, its menu. No iOS callout over the hold.
-      className="inline-flex shrink-0 items-center rounded-full touch-pan-y select-none [-webkit-touch-callout:none]"
-      data-testid={role === "stop" ? "stop" : `route-${role}`}
-      onPointerDown={(e) => guard.down(e.pointerType === "touch")}
-      onTouchEnd={(e) => {
-        if (guard.lifted()) e.preventDefault();
-      }}
-    >
-      {mark}
-      <AirportPicker
-        value={pointName(ident)}
-        placeholder={label}
-        ariaLabel={waypoint ? `${label}, a waypoint` : label}
-        look="pill"
-        fixes={role === "stop"}
-        // 28 tall, as a fuel stop's and a procedure's chips are, at the
-        // owner's ask ("make the other airport pills as thin as the fuel
-        // airport pills"); a finger's 44 round it (index.css).
-        // A line under a row's size, as the pills were: three fields and a
-        // procedure's chip keep to one line on a phone (procedures.spec).
-        // As wide as its ident, every gap the same: five letters wide, C81 sat
-        // 14 points short of its arrow to KUGN's 6 (the owner, 2026-11-11:
-        // "Look at the spacing of first airport in route").
-        // Its 44-point area 44 tall and half the row's gap-2 wider each
-        // side, meeting the arrows' beside it (RouteToken, WEB-4), laid
-        // against the pill itself: unplaced, as it is under a mouse, where
-        // the base layer's `relative` is a coarse pointer's alone, the area
-        // was laid against the route's field and the last pill took every
-        // tap on the line, its arrows and chips too.
-        className={cn(
-          "relative h-7 rounded-full px-0.75 hit-x-1 hit-y-2",
-          TEXT.detail,
-          "font-semibold",
-          // A present position in the pilot's words, not an ident's capitals.
-          isPosition(ident) && "normal-case",
-          unknown && "text-destructive",
-        )}
-        onChange={onChange}
-        invalid={unknown || undefined}
-        open={changing}
-        onOpenChange={setChanging}
-        onTap={onOpen}
-      />
-    </span>
-  );
+  const status = unknown ? ", not known" : closed ? ", Closed" : cautions.length ? ", with a caution" : "";
+  const { onProcedures, onInsertBefore, onInsertAfter, onInfo, ...rest } = actions;
   return (
-    <ContextMenu
-      onOpenChange={(open) => {
-        if (open) guard.opened();
-      }}
-    >
-      <ContextMenuTrigger render={pill} />
-      {/* FPL's "⋯"'s items, in its words and order (PointMenuItems), at
-          the audit's finding: the altitude there after Set altitude…, a
-          waypoint's cruise as a flight level, an airport's pattern in feet,
-          the plan's until the pilot sets their own. */}
-      <ContextMenuContent finalFocus={finalFocus}>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={`${label} ${pointName(ident)}${status}`}
+            aria-invalid={red || undefined}
+            aria-keyshortcuts="Delete"
+            data-point={index}
+            data-testid={role === "stop" ? "stop" : `route-${role}`}
+            data-closed={closed ? "" : undefined}
+            // A swipe that starts on it slides the row (swipe-ignore "x"),
+            // up or down the sheet's; no iOS callout over a hold.
+            data-base-ui-swipe-ignore="x"
+            // 28 tall, as the chips are, as wide as its ident; a finger's 44
+            // round it, half the gap-2 wider each side so neighbours' areas
+            // meet (hit-x-1), laid against the pill (relative). A plain
+            // filled pill, the ident alone, in the N-number's and the
+            // altitude's fill (navlog/pillLook), with no airport or waypoint
+            // mark (the owner, 2026-11-23: "Keep it simple pills").
+            className={cn(
+              "relative h-7 rounded-full px-2.5 font-semibold uppercase hit-x-1 hit-y-2 touch-manipulation select-none [-webkit-touch-callout:none]",
+              TEXT.detail,
+              isPosition(ident) && "normal-case",
+              red ? "bg-destructive/10 text-destructive hover:text-destructive" : "bg-foreground/8 text-foreground hover:bg-foreground/12",
+            )}
+          />
+        }
+      >
+        {pointName(ident)}
+        {/* ForeFlight's red "!" at its top right; the words in the menu. */}
+        {!red && cautions.length > 0 && (
+          <span
+            aria-hidden="true"
+            data-testid="pill-caution"
+            className={cn(
+              "absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive font-bold text-background",
+              TEXT.caption,
+            )}
+          >
+            !
+          </span>
+        )}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-56" finalFocus={finalFocus}>
         <PointMenuItems
-          kit={CONTEXT_MENU}
+          kit={DROPDOWN}
           later={later}
           testId="pill-menu"
           actions={{
+            ...rest,
             ident: pointName(ident),
-            onChange: onOpen ? () => setChanging(true) : undefined,
-            direct,
-            onDirect,
-            onAltitude: onEditAltitude,
-            onInfo: onOpen,
-            onMoveUp: index > 0 && canStep(-1) ? () => onStep(-1) : undefined,
-            onMoveDown: !last && canStep(1) ? () => onStep(1) : undefined,
-            onRemove,
+            notes,
+            onAddBefore: onInsertBefore,
+            onAddAfter: onInsertAfter,
+            onInfo: field ? onInfo : undefined,
+            onProcedures: kind && onProcedures ? () => onProcedures(kind) : undefined,
             altitude: (
               <span className={cn("flex items-center gap-1", altitude.caution?.length && "text-caution-ink")}>
                 {altitude.caution?.length ? <TriangleAlert className="size-3.5" aria-label="With a caution" /> : null}
@@ -205,7 +159,9 @@ export default function RoutePill({
             ),
           }}
         />
-      </ContextMenuContent>
-    </ContextMenu>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
+
+const NO_CAUTIONS: string[] = [];

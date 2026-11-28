@@ -12,7 +12,7 @@
  * chapter 16).
  */
 import { callEngine, engineReady } from "./engine/engine";
-import { flatNm, normalizeDeg } from "./geo";
+import { flatNm } from "./geo";
 
 export type Declination = (lat: number, lon: number) => number;
 
@@ -39,8 +39,8 @@ const VARIATION_STEP_NM = 1;
 /** The variation (`magnetic_variation`) on the UTC day of `now()`, kept
  *  while the point stays within VARIATION_STEP_NM of the one it was asked
  *  at and the day is the same: the strip's track asks it at every GPS fix,
- *  about once a second, for a figure that changes over miles and years
- *  (the waste audit of 2026-11-21, item 12). */
+ *  about once a second, for a figure that changes over miles and years.
+ */
 export function nearVariation(now: () => Date = () => new Date()): Declination {
   let last: { lat: number; lon: number; date: string; east: number } | null = null;
   return (lat, lon) => {
@@ -52,5 +52,7 @@ export function nearVariation(now: () => Date = () => new Date()): Declination {
   };
 }
 
-/** A true direction as a magnetic one, for a variation east positive. */
-export const magneticOf = (trueDeg: number, eastDeg: number) => normalizeDeg(trueDeg - eastDeg);
+/** A true direction as a magnetic one, for a variation east positive:
+ *  the engine's magnetic_of ("east is least", FAA-H-8083-25C ch. 16), the
+ *  one copy the nav log's legs and the phones turn theirs with. */
+export const magneticOf = (trueDeg: number, eastDeg: number) => callEngine("magnetic_of", { true_deg: trueDeg, variation_deg: eastDeg });

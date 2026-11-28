@@ -58,7 +58,7 @@ class DiagnosticsControllerTest {
     @Test
     void aPhonesReportIsKeptWithNoSessionOrToken() throws Exception {
         mockMvc.perform(post("/api/diagnostics")
-                        .header("X-Forwarded-For", "203.0.113.20")
+                        .with(from("203.0.113.20"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(IOS))
                 .andExpect(status().isNoContent());
@@ -79,7 +79,7 @@ class DiagnosticsControllerTest {
     @Test
     void notAReportIsRefused() throws Exception {
         mockMvc.perform(post("/api/diagnostics")
-                        .header("X-Forwarded-For", "203.0.113.21")
+                        .with(from("203.0.113.21"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(IOS.replace("\"ios\"", "\"watch\"")))
                 .andExpect(status().isBadRequest());
@@ -89,7 +89,7 @@ class DiagnosticsControllerTest {
     @Test
     void aBadVersionIsCleanedAndUnknownKindsAndFiguresAreDroppedNotRefused() throws Exception {
         mockMvc.perform(post("/api/diagnostics")
-                        .header("X-Forwarded-For", "203.0.113.24")
+                        .with(from("203.0.113.24"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"platform\": \"ios\", \"version\": \"1.0 <b>(42)</b>" + "9".repeat(60)
                                 + "\", \"device\": \"phone\", \"faults\": ["
@@ -122,7 +122,7 @@ class DiagnosticsControllerTest {
                 .mapToObj(i -> "\"m" + i + "\": " + (i == 0 ? "1e9" : "1"))
                 .collect(java.util.stream.Collectors.joining(","));
         mockMvc.perform(post("/api/diagnostics")
-                        .header("X-Forwarded-For", "203.0.113.23")
+                        .with(from("203.0.113.23"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"platform\": \"android\", \"version\": \"1.0 (1)\", \"os\": \"" + "x".repeat(60)
                                 + "\", \"device\": \"phone\", \"faults\": [" + faults + "], \"metrics\": {" + figures
@@ -150,7 +150,7 @@ class DiagnosticsControllerTest {
     void pastTheHoursAllowanceReportsAreDroppedQuietly() throws Exception {
         for (int i = 0; i < DiagnosticsController.PER_HOUR + 5; i++) {
             mockMvc.perform(post("/api/diagnostics")
-                            .header("X-Forwarded-For", "203.0.113.22")
+                            .with(from("203.0.113.22"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(IOS))
                     .andExpect(status().isNoContent());
@@ -161,5 +161,14 @@ class DiagnosticsControllerTest {
     @Test
     void nobodySignedInReadsThem() throws Exception {
         mockMvc.perform(get("/api/diagnostics")).andExpect(status().isUnauthorized());
+    }
+
+    /** A caller of its own, as Tomcat names it once its RemoteIpValve has
+     *  read a trusted proxy's X-Forwarded-For (application.yml). */
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor from(String address) {
+        return request -> {
+            request.setRemoteAddr(address);
+            return request;
+        };
     }
 }

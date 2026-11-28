@@ -25,7 +25,8 @@ The package is that module split by source, a module each:
 
 - common: the headers, time limit, clocks and lock every part shares, and
   an airplane read from a readsb answer (`_aircraft`).
-- adsb_lol: adsb.lol's API by region and by search, and its globe's traces.
+- adsb_lol: adsb.lol's API by region and by search.
+- globe: adsb.lol's globe, an airplane's traces today and its last minutes.
 - adsbx: ADS-B Exchange, the fallback, within its month's requests.
 - radar: the FAA's terminal radar's tracks through SWIM (ingest writes them).
 - store: the live store the planner and ingest share (SQLite).
@@ -51,23 +52,17 @@ from .adsb_lol import (
     BACKOFF_S,
     FIND_URL,
     FRESH_S,
-    GLOBE,
-    GLOBE_BACKOFF_S,
     KEEP_S,
     MAX_RADIUS_NM,
     MIN_GAP_S,
     NEAR_RADIUS_NM,
-    RECENT_TTL_S,
-    RECENT_URL,
     REGION_DEG,
     REGION_RADIUS_NM,
-    TRACE_TTL_S,
-    TRACE_URL,
-    UNREAD,
     URL,
     WIDE_REGION_DEG,
     WIDE_REGION_RADIUS_NM,
 )
+from .globe import GLOBE, GLOBE_BACKOFF_S, RECENT_TTL_S, RECENT_URL, TRACE_TTL_S, TRACE_URL, UNREAD
 from .adsbx import ADSBX_HOST, ADSBX_MIN_GAP_S, ADSBX_MONTHLY, ADSBX_SOURCE, ADSBX_URL, ADSBX_USAGE_FILE
 from .radar import (
     ELSEWHERE_RECORD_S,
@@ -81,8 +76,17 @@ from .radar import (
     prune,
     radar_wanted,
 )
-from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, follow, followed
-from .watched import FOLLOW_EVERY_S, FOLLOW_QUIET_AFTER_S, FOLLOW_QUIET_EVERY_S, WATCH_FOR_S, WATCH_GAP_S, follow_job, follow_round
+from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, follow, followed, require_share_key
+from .watched import (
+    FOLLOW_EVERY_S,
+    FOLLOW_QUIET_AFTER_S,
+    FOLLOW_QUIET_EVERY_S,
+    WATCH_FOR_S,
+    WATCH_GAP_S,
+    follow_job,
+    follow_round,
+    watch_round,
+)
 from .view import ALTIMETER_NM, near, on_altimeter
 from .lookup import ADSBX_BY, FOUND_TTL_S, find, find_credited, registered
 from .routes import OFF_ROUTE_NM, ROUTE_TTL_S, ROUTE_URL, route
@@ -112,6 +116,7 @@ from .flights import (
     past_flight,
 )
 from .alerts import LANDED_UNHEARD_S, status
+from .replay import ready as replay_ready
 from .bases import BASED_TTL_S, BASED_WORKERS, based, based_judged
 
 __all__ = [
@@ -189,6 +194,7 @@ __all__ = [
     "follow",
     "follow_job",
     "follow_round",
+    "watch_round",
     "followed",
     "forget_looks",
     "forget_stale",
@@ -203,6 +209,8 @@ __all__ = [
     "past_flight",
     "radar_wanted",
     "registered",
+    "replay_ready",
+    "require_share_key",
     "route",
     "status",
 ]

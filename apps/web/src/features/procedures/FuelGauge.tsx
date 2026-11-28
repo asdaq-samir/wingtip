@@ -10,7 +10,7 @@ import { gaugeWords } from "./gaugeWords";
  * colour, a step up from the grey, not the caution's amber, which means a
  * caution wherever it is drawn (the owner, 2026-11-17: "Yes to all recs");
  * one under the reserve the flight is held to in red, and one past empty
- * the gallons short, "−12 gal", its gauge empty.
+ * the gallons short, "12 gal short", its gauge empty.
  *
  * With the tanks' size known it is React Aria's stock Meter (role meter,
  * its value the gallons over the usable fuel), so VoiceOver hears "Fuel in

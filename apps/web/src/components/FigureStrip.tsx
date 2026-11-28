@@ -1,9 +1,10 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import { FIGURE_SIZE, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE, PIN_FIGURE } from "../lib/text";
 import Explain from "./Explain";
 import FigureWait from "./FigureWait";
+import { useFiguresFit } from "./useFiguresFit";
 import type { ExplainedTerm } from "../lib/explain";
 
 export interface StripFigure {
@@ -41,16 +42,6 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unit
   pin: PIN_FIGURE,
 };
 
-/** Where the strip's size follows the sheet a frame at a time (`pin`,
- *  usePinAtFoot's --pin-p), nothing in it eases its size of its own: a
- *  figure that is a button (Dist, ETE) is a stock Button, which eases every
- *  property (transition-all), so its type trailed the sheet by 150 ms and
- *  went on shrinking after the sheet had stopped, 37 to 32 points over the
- *  last 100 ms of a tap down to half (the motion review of 2026-11-22,
- *  sampled each frame), and ran a transition per figure every frame of a
- *  pull. Its colours and its press's fade still ease as they come. */
-const SIZE_FOLLOWS = "[&_*]:transition-[color,background-color,border-color,opacity]";
-
 /**
  * The one strip of figures pinned at a sheet's foot, in every state:
  * FPL's flight figures on the ground, in a dry run and in flight
@@ -64,16 +55,17 @@ const SIZE_FOLLOWS = "[&_*]:transition-[color,background-color,border-color,opac
  * 17.88 and 19.65 keep four), as the iPhone's and Android's strips stack.
  * Every figure at its full size, never shrunk to fit (the owner,
  * 2026-11-21, at 19.65 px: "1,320 nm" and "⚠ 111.3 gal" read smaller than
- * "262 nm" and "23.1 gal"): the columns are as wide as their content, the
- * first flush left and the last flush right with the rest spread between,
- * and only where even that is too wide is a figure cut short with "…",
+ * "262 nm" and "23.1 gal"): the columns are as wide as their content,
+ * 20 apart and together in the strip's middle (FPL's foot spread over
+ * its width, 8 apart at the least), every figure centred in
+ * its own (the owner, 2026-11-26), and only where even that is too wide is a figure cut short with "…",
  * the figures always exact, never a rounded form in their place.
  *
  * `tap` makes a figure a button: given the figure and its face (the mark,
  * the value and the unit, sized to fit), it returns the button round the
  * face, or null where that figure is not one. A button's dd does not
  * clip, so its 44-point area (the button's after) reaches past it rather
- * than being cut off (the FPL audit's A17); the figure in it is cut short
+ * than being cut off; the figure in it is cut short
  * instead.
  */
 export default function FigureStrip({
@@ -82,41 +74,81 @@ export default function FigureStrip({
   testId,
   tap,
   still = false,
+  row = false,
+  spread = row,
 }: {
   figures: StripFigure[];
   size?: StripSize;
   testId?: string;
   tap?: (figure: StripFigure, face: ReactNode) => ReactNode;
   /** No roll as a figure changes: in flight the GPS's figures change every
-   *  second, and a roll on each blurred them all the time (the motion
-   *  review of 2026-11-22). */
+   *  second, and a roll on each blurred them all the time. */
   still?: boolean;
+  /** One row whatever the width, never two by two: a bar one row high
+   *  (FPL's pill), where figures are dropped from the end until the rest
+   *  fit at full size, never one cut short. */
+  row?: boolean;
+  /** Spread over the strip's whole width, the room left shared between
+   *  the figures, 8 apart at the least: FPL's foot, the pill and the thin
+   *  strip over the tab bar (as wide as the bar, FlightFoot). Else 20
+   *  apart, together in the middle. */
+  spread?: boolean;
 }) {
   const type = TYPE[size];
   const roll = still ? undefined : "figure-roll";
-  // As many columns as figures, so none ever wraps onto a row of its own
-  // (in flight the GPS altitude, a fifth figure in four columns, went under
-  // the rest, and the pill showed that row alone).
-  const cols = { "--cols": figures.length } as CSSProperties;
+  // Two by two where the figures do not fit across at their full size
+  // (useFiguresFit), as below 16 rem: never one cut short.
+  const strip = useRef<HTMLDListElement>(null);
+  const fitting = useFiguresFit(strip, figures.map((f) => `${f.label ?? f.name}${f.value}${f.unit ?? ""}`).join("|"));
+  const fits = fitting >= figures.length;
+  const fit = row || fits;
+  // One row that does not hold them all at full size: figures dropped from
+  // the end until the rest fit, rather than any cut short with "…" (at the owner's 17.88 and 19.65 px on a 375-point iPhone;
+  // three at 320 points in Slide Over),
+  // one kept
+  // whatever. Those dropped stay laid out, out of the grid and out of
+  // sight, so what the strip needs is measured the same and the row never
+  // flips between counts.
+  const shown = row && !fits ? Math.max(1, fitting) : figures.length;
+  const dropped = (i: number) => i >= shown;
+  // As many columns as figures shown, so none ever wraps onto a row of its
+  // own (in flight the GPS altitude, a fifth figure in four columns, went
+  // under the rest, and the pill showed that row alone).
+  const cols = { "--cols": shown } as CSSProperties;
   return (
-    <div className={cn("@container/figures relative", size === "pin" && SIZE_FOLLOWS)} data-slot="section-summary">
+    <div className="@container/figures relative" data-slot="section-summary">
       <dl
+        ref={strip}
+        // One small gap between figures, 20 (1.25rem, so it grows with the
+        // reader's text), the figures together in the strip's middle, where
+        // the room left was spread between them and their gaps came out at
+        // whatever the figures' lengths left, 42 points on a long route and
+        // more on a short one (the owner, 2026-11-26: "we should pick a
+        // small gap that looks nice for small figures size"); useFiguresFit
+        // reads it, a figure dropped where even that does not fit. FPL's
+        // foot (`spread`) spreads them over its whole width, 8 apart at
+        // the least (the owner, 2026-11-26: "For the pill size, span the
+        // full width for the figures", "for small size, span the width of
+        // tabs bar").
         className={cn(
-          "grid justify-between gap-x-2 gap-y-3",
+          // Spread, the room left sets the gaps, and the least between two
+          // is 8, so a long route's five still fit a phone's pill: at 20 the
+          // GPS altitude was the one dropped (the owner, 2026-11-26: "GPS
+          // not showing on pill strip").
+          "grid gap-y-3",
+          spread ? "justify-between gap-x-2" : "justify-center gap-x-5",
           "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
-          "@max-[16rem]/figures:grid-cols-2",
+          !row && "@max-[16rem]/figures:grid-cols-2",
+          !fit && "grid-cols-2",
         )}
         style={cols}
         data-testid={testId}
+        data-stacked={!fit || undefined}
       >
         {figures.map((f, i) => {
-          // The first figure flush with the strip's leading edge and the
-          // last with its trailing one, the rest centred in their columns,
-          // so the figures span the sheet's whole width (the owner,
-          // 2026-11-20: "Why aren't we using the full width for the figures
-          // at the bottom?"), where each centred in its fifth left the ends
-          // inset. Not in the two-column stack of a narrow strip.
-          const edge = figures.length > 2 && (i === 0 ? "start" : i === figures.length - 1 ? "end" : null);
+          // Every figure centred, its name over its value (the owner,
+          // 2026-11-26: "Center align them all"), each column as wide as its
+          // own figure.
           const button = tap?.(
             f,
             <>
@@ -145,11 +177,9 @@ export default function FigureStrip({
             // Each column as wide as its widest of name and figure.
             <div
               key={f.name}
-              className={cn(
-                "min-w-0 text-center",
-                edge === "start" && "@min-[16rem]/figures:text-left",
-                edge === "end" && "@min-[16rem]/figures:text-right",
-              )}
+              inert={dropped(i) || undefined}
+              aria-hidden={dropped(i) || undefined}
+              className={cn("min-w-0 text-center", dropped(i) && "invisible absolute")}
             >
               {/* Its names and units a grey that reads on the pill's glass
                   over any chart (WCAG's 4.5:1), where the muted one did not;
@@ -157,7 +187,18 @@ export default function FigureStrip({
                   section's capitals (the owner's list, 2026-11-17).
                   To a screen reader the figure in full words, here or as its
                   button's name. */}
-              <dt className={cn(GROUP_HEADING, type.name, "truncate tracking-normal normal-case text-foreground/65")}>
+              {/* A name that explains itself (ETE, ETA) does not clip, as a
+                  button's dd does not, so its 44-point area reaches past
+                  its line; its words are
+                  one short abbreviation, nothing to cut. */}
+              <dt
+                className={cn(
+                  GROUP_HEADING,
+                  type.name,
+                  f.explain ? "overflow-visible whitespace-nowrap" : "truncate",
+                  "tracking-normal normal-case text-foreground/65",
+                )}
+              >
                 {f.explain ? (
                   <Explain term={f.explain} spoken={f.label ?? f.name} className="text-inherit">
                     {f.label ?? f.name}
@@ -168,16 +209,17 @@ export default function FigureStrip({
                 {f.said && !button && <span className="sr-only">{f.said}</span>}
               </dt>
               <dd
+                // The size before the value's leading: tailwind-merge takes a
+                // font size after a line height as setting both, and dropped
+                // the strip's own leading (the pill's value 30 tall, not 25).
                 className={cn(
-                  type.value,
                   FIGURE_SIZE,
+                  type.value,
                   "truncate font-semibold tabular-nums",
                   button && "overflow-visible",
                   // A figure that is not a button said wrong in red, its
                   // mark before it (a destination not known, TripFigures).
                   !button && f.alert && "inline-flex w-full items-baseline justify-center text-destructive",
-                  !button && f.alert && edge === "start" && "@min-[16rem]/figures:justify-start",
-                  !button && f.alert && edge === "end" && "@min-[16rem]/figures:justify-end",
                 )}
                 data-testid={f.testId}
                 data-alert={(!button && f.alert) || undefined}

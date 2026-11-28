@@ -78,39 +78,73 @@ fn given(h: &Held) -> String {
     format!("Given {}{mm}", said(h.on))
 }
 
+/// A make and model as the instructor wrote it, compared without case,
+/// spaces or hyphens: "C-172" and "c172" are one.
+fn model_key(m: &str) -> String {
+    m.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_uppercase()).collect()
+}
+
+/// The latest of `codes` for the flight's make and model: Ok with the one
+/// that matches (or None where none can), Err where it cannot be told --
+/// the flight's make and model is not given (with the latest of any), or
+/// an endorsement has none written (with it).
+fn latest_for<'a>(held: &'a [Held], codes: &[&str], flown: Option<&str>) -> Result<Option<&'a Held>, Option<&'a Held>> {
+    let Some(flown) = flown.map(model_key).filter(|k| !k.is_empty()) else { return Err(latest(held, codes)) };
+    let of = |h: &&Held| codes.contains(&h.code.as_str());
+    let key = |h: &Held| h.make_model.as_deref().map(model_key).filter(|k| !k.is_empty());
+    if let Some(h) = held.iter().filter(of).filter(|h| key(h).as_deref() == Some(flown.as_str())).max_by_key(|h| h.on) {
+        return Ok(Some(h));
+    }
+    // One with no make and model written may be for this one: can't tell.
+    match held.iter().filter(of).filter(|h| key(h).is_none()).max_by_key(|h| h.on) {
+        Some(h) => Err(Some(h)),
+        None => Ok(None),
+    }
+}
+
+/// The detail where the make and model can't be matched.
+fn cannot_tell(any: Option<&Held>, flown: Option<&str>) -> String {
+    match (any, flown.filter(|m| !m.trim().is_empty())) {
+        (Some(h), Some(_)) => format!("Can't tell: {} with no make and model written", given(h)),
+        (Some(h), None) => format!("Can't tell: the flight's make and model is not given ({})", given(h)),
+        (None, _) => "Can't tell: the flight's make and model is not given".to_owned(),
+    }
+}
+
 /// What the student's record answers of 14 CFR 61.93(d) for a solo
-/// cross-country on `flight_on`: (4) a solo cross-country endorsement,
-/// 61.93(c)(1) and (2), and (5) a solo endorsement current on the day,
-/// 61.87(n) and (p) -- "within the 90 days preceding the date of the
-/// flight". The rest of (d) -- the planning correct, the weather flyable
+/// cross-country on `flight_on` in `make_model`: (4) a solo cross-country
+/// endorsement, 61.93(c)(1) and (2), and (5) a solo endorsement current on
+/// the day, 61.87(n) and (p) -- "within the 90 days preceding the date of
+/// the flight". Both are for the make and model flown: 61.93(d)(5) wants
+/// the student "current for that make and model", and 61.87(n) an
+/// endorsement "for the specific make and model aircraft to be flown", so
+/// an endorsement for a C172 does not serve a PA-28. Where the flight's
+/// make and model is not given, or an endorsement has none written,
+/// neither is met, and each says it can't tell. The rest of (d) -- the planning correct, the weather flyable
 /// under VFR, the student proficient -- is the instructor's own to
 /// determine. Each (rule, label, met, detail).
-pub fn solo_xc_checks(flight_on: i64, held: &[Held]) -> Vec<(&'static str, &'static str, bool, String)> {
-    let xc = latest(held, &[SOLO_XC]);
-    let solo = latest(held, &SOLO);
-    let current = solo.is_some_and(|h| h.on <= flight_on && h.on + 90 >= flight_on);
+pub fn solo_xc_checks(flight_on: i64, held: &[Held], make_model: Option<&str>) -> Vec<(&'static str, &'static str, bool, String)> {
+    let not_for = |any: Option<&Held>| match any {
+        Some(h) => format!("None on record for this make and model ({})", given(h)),
+        None => "None on record".to_owned(),
+    };
+    let xc = match latest_for(held, &[SOLO_XC], make_model) {
+        Ok(Some(h)) => (true, given(h)),
+        Ok(None) => (false, not_for(latest(held, &[SOLO_XC]))),
+        Err(any) => (false, cannot_tell(any, make_model)),
+    };
+    let solo = match latest_for(held, &SOLO, make_model) {
+        Ok(Some(h)) => {
+            let current = h.on <= flight_on && h.on + 90 >= flight_on;
+            let late = if current { String::new() } else { format!(", not within the 90 days before {}", said(flight_on)) };
+            (current, format!("{}{late}", given(h)))
+        }
+        Ok(None) => (false, not_for(latest(held, &SOLO))),
+        Err(any) => (false, cannot_tell(any, make_model)),
+    };
     vec![
-        (
-            "61.93(d)(4)",
-            "A solo cross-country endorsement for the make and model",
-            xc.is_some(),
-            xc.map_or_else(|| "None on record".to_owned(), given),
-        ),
-        (
-            "61.93(d)(5)",
-            "A solo endorsement current on the day of the flight",
-            current,
-            solo.map_or_else(
-                || "None on record".to_owned(),
-                |h| {
-                    format!(
-                        "{}{}",
-                        given(h),
-                        if current { String::new() } else { format!(", not within the 90 days before {}", said(flight_on)) }
-                    )
-                },
-            ),
-        ),
+        ("61.93(d)(4)", "A solo cross-country endorsement for the make and model", xc.0, xc.1),
+        ("61.93(d)(5)", "A solo endorsement current on the day of the flight", solo.0, solo.1),
     ]
 }
 
@@ -189,7 +223,9 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             opt_day(&mut out, solo_until(&held));
             out.push_str(",\"checks\":[");
             if let Some(flight_on) = v.get("flight_on").and_then(Value::as_str) {
-                for (i, (rule, label, met, detail)) in solo_xc_checks(days(name, flight_on)?, &held).iter().enumerate() {
+                for (i, (rule, label, met, detail)) in
+                    solo_xc_checks(days(name, flight_on)?, &held, v.get("make_model").and_then(Value::as_str)).iter().enumerate()
+                {
                     if i > 0 {
                         out.push(',');
                     }
@@ -260,7 +296,10 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             let due = paperwork::aircraft_due(
                 paperwork::AircraftDays {
                     tail: v.get("tail_number").and_then(Value::as_str).unwrap_or("The airplane").to_owned(),
-                    for_hire: matches!(v.get("for_hire"), Some(Value::Bool(true))),
+                    for_hire: match v.get("for_hire") {
+                        Some(Value::Bool(b)) => Some(*b),
+                        _ => None,
+                    },
                     annual_until: annual,
                     hundred_hour_due_at: hundred,
                     elt_until: elt,
@@ -311,14 +350,46 @@ mod tests {
     }
 
     #[test]
+    fn a_vor_check_holds_to_its_limits_and_its_thirty_days() {
+        // 14 CFR 91.171(a)(2): "within the preceding 30 days"; (b)(1), (b)(2)
+        // a test signal or surface checkpoint "plus or minus 4 degrees",
+        // (b)(3) an airborne checkpoint "plus or minus 6 degrees", (b)(4) a
+        // radial along an airway "6 degrees", (c) dual systems "4 degrees"
+        // (eCFR as mirrored by Cornell LII, read 2026-11-27). Each limit on
+        // its line and a tenth past it.
+        let vor = |kind: &str, error: f64| {
+            ask("inspections_due", &format!(r#"{{"vor_check":{{"on":"2026-11-01","kind":"{kind}","error_deg":{error}}}}}"#))
+        };
+        for (kind, limit) in [("VOT", 4.0), ("GROUND", 4.0), ("DUAL", 4.0), ("AIRBORNE", 6.0), ("RADIAL", 6.0)] {
+            assert!(vor(kind, limit).contains(r#""within":true"#) && vor(kind, -limit).contains(r#""within":true"#), "{kind}");
+            assert!(
+                vor(kind, limit + 0.1).contains(r#""within":false"#) && vor(kind, -limit - 0.1).contains(r#""within":false"#),
+                "{kind}"
+            );
+        }
+        // Done 1 Nov, good through 1 Dec (day 30), not 2 Dec (day 31).
+        assert!(vor("VOT", 0.0).contains(r#""until":"2026-12-01""#));
+    }
+
+    #[test]
+    fn a_hundred_hour_is_listed_unless_the_owner_says_not_for_hire() {
+        // 14 CFR 91.409(b): owed for hire. Not said is weighed as for hire,
+        // and says so; only the owner's "not for hire" leaves it off.
+        let at = |hire: &str| ask("inspections_due", &format!(r#"{{"tail_number":"N1","hundred_hour_at_hours":100,{hire}}}"#));
+        assert!(at(r#""for_hire":true"#).contains(r#""label":"100-Hour Inspection","#));
+        assert!(at(r#""for_hire":null"#).contains("100-Hour Inspection, if Flown for Hire"));
+        assert!(!at(r#""for_hire":false"#).contains("hundred-hour"));
+    }
+
+    #[test]
     fn a_solo_endorsement_is_good_for_90_days() {
         let r = ask(
             "endorsement_records",
-            r#"{"held":[{"code":"solo-first","on":"2026-01-01"},{"code":"solo-xc-training","on":"2026-02-01","make_model":"C172"}],"flight_on":"2026-04-02"}"#,
+            r#"{"held":[{"code":"solo-first","on":"2026-01-01","make_model":"C172"},{"code":"solo-xc-training","on":"2026-02-01","make_model":"C172"}],"flight_on":"2026-04-02","make_model":"C172"}"#,
         );
         assert!(r.contains(r#""until":["2026-04-01",null]"#), "{r}");
         assert!(r.contains(r#""solo_until":"2026-04-01""#), "{r}");
-        assert!(r.contains(r#""met":false,"detail":"Given 1 Jan 2026, not within the 90 days before 2 Apr 2026""#), "{r}");
+        assert!(r.contains(r#""met":false,"detail":"Given 1 Jan 2026 for a C172, not within the 90 days before 2 Apr 2026""#), "{r}");
         assert!(r.contains(r#""met":true,"detail":"Given 1 Feb 2026 for a C172""#), "{r}");
     }
 }

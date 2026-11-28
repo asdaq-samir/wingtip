@@ -4,7 +4,7 @@ import { sameField } from "../../lib/procedures";
  *  first), or -1: a fix along an airway is no typed point. The departure,
  *  a field's own step, is never one of these rows. A fix flown twice (out
  *  and back over VPBNG) is two typed points, and each visit's menu works
- *  on its own (the audit's WEB-2). */
+ *  on its own. */
 export function nthTyped(routePoints: readonly string[], ident: string, n: number): number {
   let left = n;
   for (let j = 1; j < routePoints.length; j++) {
@@ -20,7 +20,7 @@ export function nthTyped(routePoints: readonly string[], ident: string, n: numbe
  *  step, not counted, as nthTyped does not), and, where the route is at it
  *  more than once, which visit this is, from 1 (`visit`), for its own
  *  altitude's key (visitKey) -- as ProceduresRoute counts the nav log's
- *  rows (the audit's WEB-2). */
+ *  rows. */
 export function visitAt(routePoints: readonly string[], index: number): { seen: number; visit: number | undefined } {
   const ident = routePoints[index];
   if (ident === undefined || index === 0) return { seen: 0, visit: undefined };

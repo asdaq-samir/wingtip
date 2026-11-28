@@ -1,0 +1,563 @@
+{
+  "_note": "The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group), one set of cases for every app: the web's lib/map/gl/mapDim.test.ts, Android's MapDimTest and iOS's MarkDimTests read this file, so an app whose dim drifts from the others fails its test. Each section names the apps that keep that part of the policy; a phone that takes one up adds itself. The paper's and the words' are the engine's map_dim_words (engine/facade/tests/map_dim.rs), which every app asks. Worked from the policy's own definitions: the dim is the chart's brightness at night and 1 by day; a colour dimmed by colour is its sRGB times the dim; the paper is the chart's white through MapLibre's raster-contrast (1/(1-k) over 0, 1+k under, about the middle) then its brightness; the words' share of light is (the paper's luminance / the towered blue night ink's)^(1/2.2), floored at the lesser of 0.75 and that share at the night's own contrast 0.13, in hundredths, never under 0.01 at night, 0 by day; each night ink is brought down to the towered blue's luminance (its sRGB times (that luminance / its own)^(1/2.2), at most 1). WCAG 2 relative luminance throughout.",
+  "dim": {
+    "apps": [
+      "web",
+      "android",
+      "ios"
+    ],
+    "cases": [
+      {
+        "night": true,
+        "brightness": 0.5,
+        "dim": 0.5
+      },
+      {
+        "night": true,
+        "brightness": 0.3,
+        "dim": 0.3
+      },
+      {
+        "night": true,
+        "brightness": 1,
+        "dim": 1
+      },
+      {
+        "night": true,
+        "brightness": -0.2,
+        "dim": 0
+      },
+      {
+        "night": true,
+        "brightness": 1.4,
+        "dim": 1
+      },
+      {
+        "night": false,
+        "brightness": 0.5,
+        "dim": 1
+      },
+      {
+        "night": false,
+        "brightness": 0.3,
+        "dim": 1
+      }
+    ]
+  },
+  "colour": {
+    "apps": [
+      "web",
+      "android",
+      "ios"
+    ],
+    "cases": [
+      {
+        "colour": "#e600e6",
+        "dim": 0.5,
+        "dimmed": "#730073"
+      },
+      {
+        "colour": "#e600e6",
+        "dim": 1,
+        "dimmed": "#e600e6"
+      },
+      {
+        "colour": "#e600e6",
+        "dim": 0,
+        "dimmed": "#000000"
+      },
+      {
+        "colour": "#dc2626",
+        "dim": 0.46,
+        "dimmed": "#651111"
+      },
+      {
+        "colour": "#ffffff",
+        "dim": 0.3,
+        "dimmed": "#4d4d4d"
+      },
+      {
+        "colour": "#3f9a1c",
+        "dim": 0.5,
+        "dimmed": "#204d0e"
+      },
+      {
+        "colour": "#0b0f0a",
+        "dim": 0.5,
+        "dimmed": "#060805"
+      }
+    ]
+  },
+  "opacity": {
+    "apps": [
+      "web",
+      "android"
+    ],
+    "cases": [
+      {
+        "about": "a constant, multiplied whole",
+        "value": 0.8,
+        "dimmed": [
+          "*",
+          [
+            "coalesce",
+            [
+              "global-state",
+              "mapDim"
+            ],
+            1
+          ],
+          0.8
+        ]
+      },
+      {
+        "about": "none set, 1 dimmed",
+        "value": null,
+        "dimmed": [
+          "*",
+          [
+            "coalesce",
+            [
+              "global-state",
+              "mapDim"
+            ],
+            1
+          ],
+          1
+        ]
+      },
+      {
+        "about": "a data expression, multiplied whole",
+        "value": [
+          "get",
+          "o"
+        ],
+        "dimmed": [
+          "*",
+          [
+            "coalesce",
+            [
+              "global-state",
+              "mapDim"
+            ],
+            1
+          ],
+          [
+            "get",
+            "o"
+          ]
+        ]
+      },
+      {
+        "about": "a zoom curve: the dim in each stop's output, where MapLibre allows the zoom",
+        "value": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0,
+          10,
+          1
+        ],
+        "dimmed": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            0
+          ],
+          10,
+          [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            1
+          ]
+        ]
+      },
+      {
+        "about": "an hcl curve, the same",
+        "value": [
+          "interpolate-hcl",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          5,
+          0.2,
+          9,
+          1
+        ],
+        "dimmed": [
+          "interpolate-hcl",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          5,
+          [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            0.2
+          ],
+          9,
+          [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            1
+          ]
+        ]
+      },
+      {
+        "about": "a zoom step: its first output and each stop's",
+        "value": [
+          "step",
+          [
+            "zoom"
+          ],
+          0,
+          9,
+          1
+        ],
+        "dimmed": [
+          "step",
+          [
+            "zoom"
+          ],
+          [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            0
+          ],
+          9,
+          [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  "layers": {
+    "apps": [
+      "web",
+      "android"
+    ],
+    "cases": [
+      {
+        "about": "a symbol's words and icons",
+        "layer": {
+          "id": "a",
+          "type": "symbol",
+          "source": "s",
+          "paint": {
+            "text-color": "#000000"
+          }
+        },
+        "paint": {
+          "text-color": "#000000",
+          "icon-opacity": [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            1
+          ],
+          "text-opacity": [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            1
+          ]
+        }
+      },
+      {
+        "about": "a raster is never dimmed",
+        "layer": {
+          "id": "b",
+          "type": "raster",
+          "source": "s"
+        },
+        "paint": null
+      },
+      {
+        "about": "nor a fill's wash",
+        "layer": {
+          "id": "c",
+          "type": "fill",
+          "source": "s",
+          "paint": {
+            "fill-opacity": 0.9
+          }
+        },
+        "paint": {
+          "fill-opacity": 0.9
+        }
+      },
+      {
+        "about": "a circle's fill and its edge",
+        "layer": {
+          "id": "d",
+          "type": "circle",
+          "source": "s",
+          "paint": {
+            "circle-opacity": 0.5
+          }
+        },
+        "paint": {
+          "circle-opacity": [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            0.5
+          ],
+          "circle-stroke-opacity": [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            1
+          ]
+        }
+      },
+      {
+        "about": "a line",
+        "layer": {
+          "id": "e",
+          "type": "line",
+          "source": "s",
+          "paint": {
+            "line-color": "#e600e6",
+            "line-opacity": 0.35
+          }
+        },
+        "paint": {
+          "line-color": "#e600e6",
+          "line-opacity": [
+            "*",
+            [
+              "coalesce",
+              [
+                "global-state",
+                "mapDim"
+              ],
+              1
+            ],
+            0.35
+          ]
+        }
+      }
+    ]
+  },
+  "paper": {
+    "apps": [
+      "engine"
+    ],
+    "cases": [
+      {
+        "brightness": 0.5,
+        "contrast": 0.13,
+        "paper": 0.537356
+      },
+      {
+        "brightness": 0.5,
+        "contrast": -0.17,
+        "paper": 0.4575
+      },
+      {
+        "brightness": 0.5,
+        "contrast": 0.53,
+        "paper": 0.781915
+      },
+      {
+        "brightness": 0.3,
+        "contrast": 0.13,
+        "paper": 0.322414
+      },
+      {
+        "brightness": 0.3,
+        "contrast": -0.17,
+        "paper": 0.2745
+      },
+      {
+        "brightness": 0.65,
+        "contrast": 0.13,
+        "paper": 0.698563
+      },
+      {
+        "brightness": 1,
+        "contrast": 0.13,
+        "paper": 1
+      },
+      {
+        "brightness": 0,
+        "contrast": 0.13,
+        "paper": 0.0
+      }
+    ]
+  },
+  "words": {
+    "apps": [
+      "engine"
+    ],
+    "cases": [
+      {
+        "night": true,
+        "brightness": 0.5,
+        "contrast": 0.13,
+        "share": 0.77
+      },
+      {
+        "night": true,
+        "brightness": 0.5,
+        "contrast": -0.17,
+        "share": 0.75
+      },
+      {
+        "night": true,
+        "brightness": 0.5,
+        "contrast": 0.53,
+        "share": 1
+      },
+      {
+        "night": true,
+        "brightness": 0.3,
+        "contrast": 0.13,
+        "share": 0.47
+      },
+      {
+        "night": true,
+        "brightness": 0.3,
+        "contrast": -0.17,
+        "share": 0.47
+      },
+      {
+        "night": true,
+        "brightness": 0.65,
+        "contrast": 0.13,
+        "share": 1
+      },
+      {
+        "night": true,
+        "brightness": 1,
+        "contrast": 0.13,
+        "share": 1
+      },
+      {
+        "night": true,
+        "brightness": 0,
+        "contrast": 0.13,
+        "share": 0.01
+      },
+      {
+        "night": false,
+        "brightness": 0.5,
+        "contrast": 0.13,
+        "share": 0
+      }
+    ]
+  },
+  "nightInks": {
+    "apps": [
+      "web",
+      "android",
+      "ios"
+    ],
+    "inks": {
+      "#2465b8": "#82b4ff",
+      "#c0309f": "#f28ddc",
+      "#117a35": "#5cc685",
+      "#1c1a17": "#afb1b4",
+      "#dc2626": "#ff8a8a",
+      "#d70015": "#ff8a8a",
+      "#c2410c": "#fb9466",
+      "#2563eb": "#8db2fc",
+      "#b45309": "#dfaa20",
+      "#7c3aed": "#bba1ff",
+      "#78716c": "#b6b1ad",
+      "#be185d": "#f58cc4",
+      "#0f766e": "#4ac4b9",
+      "#57534e": "#b6b1ad",
+      "#9333ea": "#c99cff"
+    }
+  }
+}

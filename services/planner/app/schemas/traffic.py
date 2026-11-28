@@ -75,6 +75,10 @@ class AircraftRegistration(BaseModel):
     serial: str | None = None
     manufacturer: str | None = None
     model: str | None = None
+    #: Its maker and model in a few words, the engine's airplane_short_type:
+    #: "Airbus" and "A321" for "AIRBUS S A S" and "A321-271NX".
+    make_short: str | None = None
+    model_short: str | None = None
     year: int | None = None
     aircraft_type: str | None = None
     engines: int | None = None
@@ -152,7 +156,11 @@ class PastFlightSummary(BaseModel):
     on: float
     landed: bool
     in_air: bool
-    max_alt_ft: float
+    #: None where its source gives no altitudes (OpenSky's flights).
+    max_alt_ft: float | None = None
+    #: Where it came from where not adsb.lol or the planner's own recording
+    #: ("OpenSky Network"), for the card's credit.
+    source: str | None = None
 
 
 class PastFlights(BaseModel):
@@ -184,6 +192,15 @@ class PastFlightPoint(BaseModel):
     gs_kt: float | None = None
     track_deg: float | None = None
     vrate_fpm: float | None = None
+    #: As the engine's replay_track made it ready (wingtip.traffic.replay):
+    #: the climb read as a VSI reads it, ft/min; a report
+    #: after a hole of none (nothing known since the last); on the ground;
+    #: and its height held, the last good one carried where readsb's
+    #: pressure altitude went stale or an airborne report sent none.
+    vs_fpm: float | None = None
+    gap: bool | None = None
+    ground: bool | None = None
+    alt_held: bool | None = None
 
 
 class PastFlight(BaseModel):

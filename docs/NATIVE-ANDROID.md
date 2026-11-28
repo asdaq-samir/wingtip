@@ -11,7 +11,7 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
 
 - `apps/android/`: a Gradle project of one module, `app`, in the Kotlin DSL,
   every version in the catalog `gradle/libs.versions.toml`, on Gradle
-  9.9.2 and AGP 9.6.0-alpha05, whose built-in Kotlin compiles the app (no Kotlin
+  9.9.3 and AGP 9.6.0-alpha05, whose built-in Kotlin compiles the app (no Kotlin
   Android plugin), for API 37 (compiled against 37.2, the newest minor SDK), on Java 25 (the gateway's LTS): Gradle
   runs on the Temurin 25 that `gradle/gradle-daemon-jvm.properties`
   names, fetched once into `~/.gradle/jdks` by the foojay resolver, and
@@ -55,7 +55,18 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     stay by hand). Every model is read by `Gateway.json`
     (`ignoreUnknownKeys`, `coerceInputValues`), and enums are plain
     strings, so a field or an enum value a server adds before the app
-    knows it never fails a decode (`ApiToleranceTest`), `NavLog.kt` (the nav log's streamed lines, by hand);
+    knows it never fails a decode (`ApiToleranceTest`), `NavLog.kt` (the nav log's streamed lines, by hand).
+    Every call to the gateway is the generated `GatewayApi`'s, on the
+    client its limit asks: `api`, `writes`, `anonymous` (no cookies, for
+    the app's own diagnostics reports) and `files` (`GatewayFiles`, an
+    answer kept whole as sent, the account's export, its path held to the
+    generated one by `GatewayFilesTest`); the overlay archive's address,
+    which MapLibre and the kept copy read in byte ranges, is
+    `Planner.overlayArchive`, and the paths MapLibre fills or reads as
+    bytes (the chart and terrain tiles, the model weather's pictures, a
+    plate's picture, a cycle pack) are `PlannerPaths`, each the generated
+    operation's path (`PlannerPathsTest`). An `/api/` path written outside
+    `api/` and `Config` fails the `planner-http-by-hand-phones` Semgrep rule;
   - `Charts`, `Session`, `Plan`: the models of state, ViewModels with
     their state in flows (which chart, who is signed in, the route and
     what the planner said of it), and `Links` (the site's links the app
@@ -65,8 +76,10 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     of the Web Mercator maths, clamped at MapLibre's own limits;
   - `map/`: the map. `ChartMap` (the MapLibre view, its camera, the
     route, own ship and the path flown), `MapStyle` (the first style as
-    JSON: the chart and the overlay tiles' layers, the web's
-    `glStyle.ts` and `glOverlays.ts`), `OverlayPictures` (the symbols'
+    JSON: the chart and the overlay tiles' layers, `design/map-style.json`'s,
+    generated as `map/generated/OverlayStyle.kt` by
+    `scripts/build/map-style.sh`, the web's the same), `OverlayState` (the
+    switches and the fields' weather as the map's state), `OverlayPictures` (the symbols'
     pictures, drawn with Canvas), `MapLoading` (Material's loading
     indicator until the map is drawn), `Map3dLayer` (Terrain: the relief
     and the 3D view) and `map/flow` (Model Weather);
@@ -81,8 +94,9 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     Settings, Wingtip by default, from the tokens; Native is Material as
     it comes, `design/Native.kt`), `Figures` (the strip and `ProblemLine`, the one error
     style), `SectionTitle`, `WingtipIcons` (the concept table of
-    docs/design/icons.md), `CardActions` (each card kind's actions, the
-    web's lib/cardActions.ts);
+    docs/design/icons.md), `CardActions` (a card's row as a button group;
+    each kind's actions are `design/generated/CardActions.kt`, from
+    design/card-actions.json);
   - `ui/sheet/`: `MapSheet` (the panel on a phone: Material's standard
     bottom sheet, `BottomSheetScaffold`, at its peek or expanded, on the
     theme's expressive springs, since the owner on 2026-11-09 had stock
@@ -187,9 +201,12 @@ it is on the website. Its tiles go through the app's own OkHttp client,
 so a tile through the gateway carries the session's cookie and every
 tile is kept in the one cache.
 
-The web's map is MapLibre GL JS, so the phone's style follows it
-closely (`map/MapStyle.kt` beside `apps/web/src/lib/map/gl/glStyle.ts`
-and `glOverlays.ts`):
+The web's map is MapLibre GL JS, so the phone's style is the web's: the
+overlay tiles' layers are one source, `design/map-style.json`, generated
+into both apps (`scripts/build/map-style.sh`, checked in CI), and
+`map/MapStyle.kt` keeps only Android's own part -- the chart, the sources,
+the traffic -- with `OverlayState`, `MapLabels` and `MapDim` for what
+changes over it:
 
 - **The chart** is the base layer's tiles, the 512-pixel `@2x` tiles
   on any screen denser than 1x where the kind was drawn at them
@@ -206,12 +223,39 @@ and `glOverlays.ts`):
   byte ranges by MapLibre Native's own `pmtiles://` source (11.7 and
   later). They are in the first style with the chart, so they draw per
   tile with it and follow a pinch; nothing is asked of the planner or the
-  engine for the view. The archive's name is kept in the app's files
+  engine for the view. Every overlay layer is on the archive's one
+  vector source, where the web gives the airports and the VFR waypoints
+  their own: two sources on one `pmtiles://` address fetched and parsed
+  each tile twice. The archive's name is kept in the app's files
   (`Charts`), and the first style waits at most 1.5 s for it.
 - **The labels** are Inter at weight 700 as on the web, as signed
   distance field glyphs in the app's assets (`assets/glyphs/Inter-Bold`,
   written by `scripts/build/map-glyphs.py` from the web's Inter), so no
   glyph server is asked.
+- **The route over the whole country** (rules.md, the web's round 4):
+  a Class B field's mark is half size and unnamed below
+  `map.zoom.class-b-named`; the route's fields are named on their dark
+  pill, placed before the chart's marks (the destination first, on
+  whichever side is free), its tops of climb and descent from
+  `route-tags`, and an approach plate's tags from `procedure-words`;
+  own ship keeps an empty symbol's room in MapLibre's collision under
+  the LocationComponent, so no ident is drawn under it
+  (`RouteMarksLayer`, `MapStyle`'s airports, `PlateLayer`).
+- **A NOTAM's own card** is the engine's `notam_card`, as the web's
+  NotamCard (rules.md 19): its title what happened, the field and its
+  number under it ("FDC 6/3373"), its category, chips (Active, Permanent,
+  "Affects your departure", a stop, arrival or alternate while in force:
+  red where it takes away a procedure that role flies, neutral where it
+  is only the field's; the engine's `notam_affects`, as on the web and
+  the iPhone), its effect,
+  the procedures not authorized, its times in the field's own zone, a
+  line each that drops "· in 18d" rather than wraps ("Since 05/27 13:43
+  CDT", "Ends ...", no "local", Z or "estimated"; one the engine's
+  `until_charts` says runs until the charts change ends "Permanent"; the
+  owner, 2026-11-23) and its text as sent folded; its words
+  (`notam_read`) where the engine gives no card. The field's NOTAM rows
+  and the card draw their times with the one builder,
+  `NotamTimes.timeLines` (`NotamLines`), as the web's one `timeLines`.
 - **The map is shown as one thing**: Material's loading indicator in the
   middle of what the sheet leaves (`MapLoading`, still with the system's
   animations off) until the map is first at rest with the chart and the
@@ -246,8 +290,9 @@ and `glOverlays.ts`):
   file): Airspace, VORs and Fixes, Terminal Area Charts, Private Fields,
   Military Fields and Traffic, the web's "On the Map" rows with the
   web's defaults, applied as the overlay layers' visibility and the
-  airports' filter (`MapStyle.visible`, `airportsFilter`, the web's
-  `applyOverlayFilters`).
+  map's state the airports' filter reads (`OverlayState.switches`, the
+  web's `applyOverlayFilters`); each field's weather pip is that state
+  too (`OverlayState.weather`).
 - **The terminal area chart** pinned over the sectional at every zoom it
   exists at (`Charts.terminal`, the web's `chart-terminal`).
 - **Taps and cards**: a tap picks, in the web's order, an airplane, a
@@ -335,8 +380,9 @@ and `glOverlays.ts`):
   the layers (Off, On, In Flight; off by default) and, while it is not
   off, Red Within (the engine's `clearances_ft`), stock segmented
   buttons, kept in the settings file. The engine's `hazard_view` takes
-  the setting, own ship's speed and GPS height (to 50 ft, so a fix a
-  second repaints nothing while level) and the plan's highest leg, and
+  the setting, own ship's speed and GPS height (down to its 50 ft step,
+  so a fix a second repaints nothing while level and the red band never
+  starts late) and the plan's highest leg, and
   answers whether to draw and the red and amber lines; a
   `ColorReliefLayer` on the relief's own terrain source (`TerrainDem`,
   shared with the hillshade and removed only once neither draws from it)
@@ -372,6 +418,20 @@ and `glOverlays.ts`):
   precipitation's reading has no temperature or sky glyph, and the wind
   at a level no temperature; the world wind's picture beyond the grid is
   not drawn.
+
+At night the Dimmer reaches what is drawn on the chart (`map/MapDim`, the
+web's mapDim, the same `map-dim` tokens and fixture): the style's lines,
+circles and icons by their opacity, its light-haloed words by their
+colour at the words' light (`MapDim.wordLight`, `nightWord`) on the halo
+kept whole, as is a TFR's number (`MapDim.word`), and
+the lines and marks added in code by their colour (`MapDim.colour`, the
+web's DIM_BY_COLOUR), each a constant colour a layer, darkened with the
+chart so its contrast with it is kept: the course and its dark edge, the
+selected leg, the route's tags, the selected field's and the glide's
+rings, the forecast areas' edges, the 3D approach and shelf words, and
+the hazard's obstacle rings (the owner's "Dim by colour", 2026-11-27). A
+downloaded region's chart (`offline-N`) is painted with the chart. The
+terrain's hazard tint is never dimmed.
 
 ## Downloads: the chart with no signal
 
@@ -425,8 +485,9 @@ start fetch the cycle the planner then serves and delete the old cycle's
 charts when it is done.
 
 With no signal in the air (the offline audit of 2026-11-10): Emergency
-and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`,
-"From this phone, without weather"); a re-plan that fails puts the last
+and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`:
+the box the engine's `fields_near` gives, ranked by its `best_fields`, as
+the iPhone's PackFields; "From this phone, without weather"); a re-plan that fails puts the last
 whole plan back, saying "Not changed: no connection."
 (`plan/PlanShown`); Keep for the Air also keeps each field's own NOTAMs,
 the route's side view and the radar loop's newest frame over the route
@@ -476,9 +537,15 @@ runner:
   reports by), signed with the upload key where the repository has it,
   and every 64-bit native library checked for 16 KB pages
   (`scripts/ci/android_build.sh`, `scripts/ci/android_16k.py`; below);
-- every night, and by hand: then `:app:connectedDebugAndroidTest` on an
-  API 35 x86_64 emulator (reactivecircus/android-emulator-runner), and
-  the release build's `ReleaseEngineTest` (below).
+- every night, in a wave's validation and by hand: then
+  `:app:connectedDebugAndroidTest` on an API 35 x86_64 emulator
+  (reactivecircus/android-emulator-runner), on the phone and on a Pixel
+  Tablet, and the release build's `ReleaseEngineTest` (below). The two
+  `device` jobs start with the build job, not after it: Gradle builds the
+  APKs they install in their own run anyway, so waiting held them 14
+  minutes behind the unit tests and lint (run 45127491141). Where the
+  engine's cache has not been kept yet, each builds the engine for the
+  emulator's x86_64 alone (`WINGTIP_ENGINE_ABIS`).
 - No upload to Google Play from CI: the bundle is uploaded by hand
   (Releasing to Google Play, below).
 
@@ -696,6 +763,14 @@ local time and Z, about how long in the air, the landing time, the
 destination's weather in words from the planner's airport card -- and
 Share, Android's share sheet (ACTION_SEND). The live shareable track
 waits for the AWS launch.
+Own ship's GPS (`flight/OwnShip.kt`) reads at high accuracy always: on
+the ground a fix at most every 2 s and only after 10 m moved, at flying
+speed, following or on a diagram one a second. The balanced accuracy the
+ground had used answered from Wi-Fi and the cell towers with no speed, so
+a takeoff roll might never read as flying speed (2026-11-27). The screens
+that show something of the fix read it in a small composable of their own
+(the plate's own ship, a VOR card's radial), or only as needed (Ask reads
+it as a question is sent, the clearance page to a mile).
 In flight (#218, the owner's option A of 2026-11-08), as the iPhone:
 `flight/InFlight.kt` asks the engine once a fix for `in_flight`,
 `vertical_speed` and `glide_ring`; with own ship on and at flying speed
@@ -706,7 +781,9 @@ instruments bar -- groundspeed, track, GPS altitude (mean sea level: `getMslAlti
 the route the next field's distance, time to go and desired track, the
 distance off course and the destination's arrival with the fuel the
 plan leaves; Nearest one tap away (a sheet of the nearest fields, which
-are within a still-air glide by `glide_reaches`); and "A Planning Aid, Not for
+are within a still-air glide by `glide_reaches`, asked again each mile the
+airplane moves, `OwnShip.byTheMile`, as the one search's nearest are, and
+the glide worked again when the glide ratio changes); and "A Planning Aid, Not for
 Navigation" (`R.string.wording_planning_aid_notice_title`). The glide ring is a dashed line under the route
 (`ChartMap`'s `glide`), over the higher of the packs' ground (ahead's
 `ground_ft`) and the nearest field. FiguresStrip counts down from the

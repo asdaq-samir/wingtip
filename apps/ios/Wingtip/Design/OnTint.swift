@@ -6,7 +6,7 @@ import UIKit
 /// whichever stands further from the tint. White suits the deep blues by
 /// day; the light tints at night -- Wingtip's #57A8FF, Glass Cockpit's
 /// #46D3E6, Chart Ink's #5AC8FA -- take the dark ground, as white on
-/// Glass Cockpit's cyan read 1.79:1 (the iOS sheet audit, 2026-11-10)
+/// Glass Cockpit's cyan read 1.79:1
 /// where WCAG 1.4.3 asks 4.5:1 of words (docs/design/ios.md, "Weights and
 /// contrast"). Native is iOS's own and keeps the system's white.
 extension Look {

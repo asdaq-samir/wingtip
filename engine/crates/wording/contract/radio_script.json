@@ -190,6 +190,10 @@
                 },
                 "listen": {
                   "type": "boolean"
+                },
+                "ctaf": {
+                  "type": "boolean",
+                  "description": "Called on the field's CTAF (AIM 4-1-9): the page's label for it."
                 }
               },
               "required": [

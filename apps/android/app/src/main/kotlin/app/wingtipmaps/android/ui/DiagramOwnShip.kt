@@ -21,6 +21,7 @@ import app.wingtipmaps.android.plates.ChartInkBar
 import app.wingtipmaps.android.plates.ChartInkButton
 import app.wingtipmaps.android.plates.pageInk
 import app.wingtipmaps.android.plates.rememberChartInk
+import app.wingtipmaps.android.plates.rememberPlateLook
 
 /**
  * The FAA's airport diagram with the airplane on it (#218), as the iOS
@@ -87,7 +88,10 @@ fun DiagramOwnShipDialog(place: AirportPlace, url: String, onClose: () -> Unit, 
         when {
             shown != null -> {
                 val rings = shown.hotSpots.map { PageRing(it.x / shown.width, it.y / shown.height, it.name) }
-                ZoomablePage(shown.image, "Airport diagram", ownShipOn(shown, fix, fix?.let { model.place(shown, it) }), ink.pageInk(), rings)
+                // White on black at night unless picked, as a plate is (rememberPlateLook).
+                val look = rememberPlateLook()
+                val mark = ownShipOn(shown, fix, fix?.let { model.place(shown, it) })
+                ZoomablePage(shown.image, "Airport diagram", mark, ink.pageInk(), rings, inverted = look.inverted, brightness = look.brightness)
                 RunwayAdviceBanner(advice, Modifier.align(Alignment.TopCenter).padding(WingtipSpace.Md))
             }
             read.problem != null -> ProblemLine(read.problem)

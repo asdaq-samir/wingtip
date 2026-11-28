@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { openTab, settle, slow, openRoute } from "./helpers";
 import { pickAirplane } from "./startState";
-import { circuitsOf, openRunways } from "./procedureStubs";
+import { circuitsOf, openRunways, otherRunway, runwayOf, runwayOptions } from "./procedureStubs";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -15,59 +15,22 @@ test("a field's traffic pattern is picked by its runway, kept in the address and
   // chips under its arrival and approach.
   await expect(procedures.getByRole("heading").first()).toHaveText("C81");
   const destination = procedures.getByRole("region", { name: "KDLH · Arrive" });
-  await expect(destination.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
   await openRunways(destination);
-  const runway = destination
-    .getByRole("button", { name: /^Runway / })
-    .and(page.locator(':not([disabled]):not([aria-pressed="true"])'))
-    .first();
-  const name = (await runway.innerText()).trim();
+  const runway = otherRunway(page);
+  const name = await runwayOf(runway);
   await runway.click();
-  // The line folded to the runway picked.
-  const folded = destination.locator("[data-folded]");
-  await expect(folded).toHaveText(name);
-  await expect(folded).toHaveAttribute("aria-pressed", "true");
+  // The pill says the runway picked.
+  const pill = destination.getByTestId("runway-pill");
+  await expect(pill).toHaveAccessibleName(new RegExp(`^RWY ${name}\\b`));
   await expect(page).toHaveURL(new RegExp(`[?&]pattern=[^&]*KDLH(%3A|:)${name}(%2C|,|&|$)`));
   await expect.poll(circuitsOf(page), { timeout: slow(10000) }).toContain("pattern-at-KDLH");
 
   // No None: every landing is on a runway (the owner's "Why is none even an
-  // option?"), and the chip picked tapped again keeps it.
+  // option?"), and the one picked picked again keeps it.
   await openRunways(destination);
-  await expect(destination.getByRole("button", { name: /None/ })).toHaveCount(0);
-  await destination.getByRole("button", { name: new RegExp(`^Runway ${name}\\b`) }).click();
+  await expect(page.getByRole("menuitemradio", { name: /None/ })).toHaveCount(0);
+  await page.getByRole("menuitemradio", { name: new RegExp(`^Runway ${name}\\b`) }).click();
   await expect(page).toHaveURL(new RegExp(`[?&]pattern=[^&]*KDLH(%3A|:)${name}(%2C|,|&|$)`));
-});
-
-test("a runway line opened stays open until folded, and folds with its field", async ({ page }) => {
-  // The owner, 2026-10-28: "Keep the routes and runway opened until
-  // folded … for runways also fold them when the whole airport is
-  // collapsed". It folded after two seconds untouched.
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  await openTab(page, "Nav Log");
-  await openRoute(page);
-  const procedures = page.getByTestId("procedures");
-  const destination = procedures.getByRole("region", { name: "KDLH · Arrive" });
-  // A runway picked first, the pilot's own, which a pick into the wind
-  // landing late leaves be: then opened from its fold, and left alone.
-  await openRunways(destination);
-  await destination
-    .getByRole("button", { name: /^Runway / })
-    .and(page.locator(':not([disabled]):not([aria-pressed="true"])'))
-    .first()
-    .click();
-  await destination.locator("[data-folded]").click();
-  await page.waitForTimeout(3000);
-  await expect(destination.locator("[data-folded]")).toHaveCount(0);
-  await expect(destination.getByRole("button", { name: /^Runway / }).nth(1)).toBeVisible();
-  // The field's line folded and opened again by a tap on it: its runways
-  // folded to the one picked.
-  const fold = async () => {
-    await procedures.locator('[data-testid="timeline-line"][data-ident="KDLH"]').getByTestId("timeline-toggle").click();
-  };
-  await fold();
-  await fold();
-  await expect(destination.locator("[data-folded]")).toHaveCount(1);
 });
 
 test(
@@ -113,35 +76,29 @@ test("the destination's runway into the wind is picked as the route comes in, an
   await openTab(page, "Nav Log");
   await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  await expect(kdlh.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
-  await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
-    timeout: slow(60_000),
-  });
+  await expect(kdlh.getByTestId("runway-pill")).toHaveAccessibleName(/^RWY 9, into the wind/, { timeout: slow(60_000) });
   await expect(page).not.toHaveURL(/NONE/);
   await expect(page).not.toHaveURL(/[?&]procs=/);
   await openRunways(kdlh);
-  const other = kdlh
-    .getByRole("button", { name: /^Runway / })
-    .and(page.locator(':not([disabled]):not([aria-pressed="true"])'))
-    .first();
-  const name = (await other.innerText()).trim();
+  const other = otherRunway(page);
+  const name = await runwayOf(other);
   await other.click();
   await expect(page).toHaveURL(new RegExp(`[?&]pattern=[^&]*KDLH(%3A|:)${name}(%2C|,|&|$)`));
   await page.goto(page.url());
   await settle(page);
   await openTab(page, "Nav Log");
   await openRoute(page);
-  await expect(kdlh.locator("[data-folded]")).toHaveText(name, { timeout: slow(20000) });
+  await expect(kdlh.getByTestId("runway-pill")).toHaveAccessibleName(new RegExp(`^RWY ${name}\\b`), { timeout: slow(20000) });
 });
 
 /**
  * A field typed by its FAA identifier is named by its ICAO code once its
  * card is in, at the owner's ask ("K is not showing in front of ORD"),
  * the pick made under the old name kept; its arrivals are offered by the
- * d-TPP's own code for a STAR ("STR"); and its many runways stay one line,
- * scrolled sideways.
+ * d-TPP's own code for a STAR ("STR"); and its many runways in its
+ * runway pill's menu.
  */
-test("a field typed as ORD is KORD, its arrivals offered and its runways one line", async ({ page }) => {
+test("a field typed as ORD is KORD, its arrivals offered and its runways in its menu", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=ORD&pattern=ORD:9L&auto=-");
   await expect(page).toHaveURL(/[?&]dest=KORD(&|$)/, { timeout: slow(20000) });
   await expect(page).toHaveURL(/[?&]pattern=[^&]*KORD(%3A|:)9L(%2C|,|&|$)/);
@@ -150,32 +107,11 @@ test("a field typed as ORD is KORD, its arrivals offered and its runways one lin
   await openRoute(page);
   const kord = page.getByTestId("procedures").getByRole("region", { name: "KORD · Arrive" });
   await expect(kord.locator("[data-testid=procedure-kind][data-kind=arrival]")).toBeVisible({ timeout: slow(20000) });
-  const chips = kord.getByTestId("procedure-pattern");
-  await expect(chips.first()).toBeVisible({ timeout: slow(20000) });
-  // Folded to 9L, picked; opened, every runway on one line.
-  await expect(chips).toHaveCount(1);
-  await expect(chips.first()).toHaveText("9L");
+  // 9L picked on its pill; its menu every runway, 9L checked.
+  await expect(kord.getByTestId("runway-pill")).toHaveAccessibleName(/^RWY 9L\b/, { timeout: slow(20000) });
   await openRunways(kord);
-  const tops = await chips.evaluateAll((all) => all.map((c) => Math.round(c.getBoundingClientRect().top)));
-  expect(tops.length).toBeGreaterThan(5);
-  expect(new Set(tops).size).toBe(1);
-  // The runway picked scrolled into sight, in the line's middle where it
-  // can be, its neighbours either side (the owner's ask), or as near as
-  // the line's end lets it.
-  const nineLeft = kord.getByRole("button", { name: /^Runway 9L/ });
-  await expect(nineLeft).toBeInViewport();
-  await expect
-    .poll(() =>
-      nineLeft.evaluate((chip) => {
-        const line = chip.closest<HTMLElement>("[data-slides]")!;
-        const box = line.getBoundingClientRect(),
-          c = chip.getBoundingClientRect();
-        const off = Math.abs(c.left + c.width / 2 - (box.left + box.width / 2));
-        const atEnd = line.scrollLeft <= 0 || line.scrollLeft >= line.scrollWidth - line.clientWidth - 1;
-        return off <= 2 || atEnd;
-      }),
-    )
-    .toBe(true);
+  expect(await runwayOptions(page).count()).toBeGreaterThan(5);
+  await expect(page.getByRole("menuitemradio", { name: /^Runway 9L\b/ })).toHaveAttribute("aria-checked", "true");
 });
 
 /**
@@ -195,13 +131,11 @@ test("a field's departure is picked after its runways, as its arrival and approa
   // pick ("Can the selection for procedures be after runways so when
   // selected can expand", option C).
   await expect(menu).toHaveText(/^\+ DEP/);
-  await expect(menu).toHaveAttribute("data-look", "add");
-  const chips = kord.getByTestId("procedure-pattern").locator("visible=true").first();
+  await expect(menu).toHaveAttribute("data-look", "slim");
+  const chips = kord.getByTestId("runway-pill");
   await expect(chips).toBeVisible();
-  // On the runways' own line after them, at the owner's asks ("Can arrival
-  // and approach pills be next to the runway when runway is collapsed?",
-  // "Same with departure", "Approach doesn't need to go next line just let
-  // it slide with runways"): beside the runway picked, or sliding with them.
+  // On Takeoff's line after its runway's pill (the owner, 2026-11-25:
+  // "landing or takeoff should have pills in front of the title").
   await expect
     .poll(async () => {
       const [m, c] = [await menu.boundingBox(), await chips.boundingBox()];

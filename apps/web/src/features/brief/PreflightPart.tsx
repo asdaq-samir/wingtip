@@ -3,7 +3,6 @@ import { wholeNm } from "../../lib/format";
 import { hoverTfr, mouseHover } from "../../lib/map/marks/mapHover";
 import AccordionSection from "../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import SectionTitle from "../../components/SectionTitle";
 import type { NavLogAltitude, Totals } from "../../lib/api/types";
 import type { FlightBriefing } from "./useFlightBriefing";
 import { ceilingAndVisibility } from "../plan";
@@ -47,12 +46,13 @@ interface Props {
  *  and the NOTAMs, then what is done before leaving -- the airspace, the
  *  risk, the paperwork, the loading. */
 export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Props) {
-  const { items, landings, setFolds, printing, folds, assessment, briefingPendingMessage, ifr, planForms, briefing } = vm;
+  const { items, landings, setFolds, printing, folds, assessment, briefingPendingMessage, briefingComing, ifr, planForms, briefing } = vm;
   return (
     <>
       <BriefChecks
         items={items}
         flight={`${landings.join("-")}|${depart}`}
+        ifr={ifr}
         here={TILE_SECTIONS}
         onOpen={(section) => setFolds((open) => (open.includes(section) ? open : [...open, section]))}
       />
@@ -64,8 +64,10 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
       {/* What a row opens, and what is done before leaving -- the
           paperwork, the passengers -- a row each, at the owner's pick
           of the redesign: they were laid open, ten screens of them
-          under the Go / No-Go. */}
-      <SectionTitle className="mt-2 px-1 print:hidden">Before You Go</SectionTitle>
+          under the Go / No-Go. No heading of their own: "Before You Go"
+          is the overview's row that opens the checks, and a second one
+          here named another thing (the owner, 2026-11-25: "it should be
+          very clear what's happening with the tap"). */}
       <SectionsOpen.Provider value={printing}>
         <Accordion multiple value={folds} onValueChange={(v) => setFolds(v as string[])} data-testid="before-you-go">
           <AirspaceSection vm={vm} />
@@ -82,7 +84,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
               ) : undefined
             }
           >
-            {!assessment ? <Pending>{briefingPendingMessage}</Pending> : <RiskAssessment assessment={assessment} />}
+            {!assessment ? <Pending coming={briefingComing}>{briefingPendingMessage}</Pending> : <RiskAssessment assessment={assessment} />}
           </AccordionSection>
 
           {/* The loading, done at home: its envelope and what it changes. */}
@@ -110,6 +112,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
                       briefing.metars[dest]!.ceiling_ft ?? null,
                       briefing.metars[dest]!.visibility_sm ?? null,
                       briefing.metars[dest]!.visibility_plus,
+                      briefing.metars[dest]!.visibility_minus,
                     ),
                   ]
                     .filter(Boolean)
@@ -134,7 +137,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
  *  -- and the special-use areas the legs cross, with when the flight gets
  *  to each against its times of use. */
 function AirspaceSection({ vm }: { vm: FlightBriefing }) {
-  const { tfrsCrossed, specialUse, briefing, briefingPendingMessage, unchecked, passAt, tfrInForce } = vm;
+  const { tfrsCrossed, specialUse, briefing, briefingPendingMessage, briefingComing, unchecked, passAt, tfrInForce } = vm;
   return (
     <AccordionSection
       title="TFRs & Special Use"
@@ -151,7 +154,7 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
       }
     >
       {!briefing ? (
-        <Pending>{briefingPendingMessage}</Pending>
+        <Pending coming={briefingComing}>{briefingPendingMessage}</Pending>
       ) : (
         <div className="space-y-4">
           <div data-testid="tfrs">

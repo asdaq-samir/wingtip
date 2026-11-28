@@ -8,7 +8,7 @@ import { EXPLAINED, type ExplainedTerm } from "../../lib/explain";
 import LegWorkings from "./LegWorkings";
 import type { Phase } from "./workings";
 import DiversionDrill from "./DiversionDrill";
-import { tas } from "./navLogColumns";
+import { tas } from "./legTas";
 
 /** A shorthand's tap area in the grid: a 44-point square centred on it. */
 const SHORTHAND_AREA = "after:inset-auto after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2";
@@ -39,8 +39,7 @@ export function LegLine({ leg, at, phase }: { leg: Leg; at: { name: string; lat:
     // and the checkpoint's note's own tap band (DescriptionCell's label) 9
     // above it -- 20 between them, so neither takes the other's taps. pt-2:
     // a shorthand's area reaches 13 over its line, which took the selected
-    // row's foot above the note (the iOS audit's P1, "River near Palmyra"
-    // lost to WCA's).
+    // row's foot above the note.
     <div className="mb-5 space-y-1 pt-2 print:hidden">
       {/* Rows 44 apart (a figure's 38 and 6), so one shorthand's square
           meets the one under it rather than taking it. */}
@@ -50,7 +49,7 @@ export function LegLine({ leg, at, phase }: { leg: Leg; at: { name: string; lat:
             {/* The shorthand a tap for its meaning where it has one (Explain),
                 its area a 44-point square on the word (TC is 14 wide), not the
                 word and 4 a side: the columns, 68 apart at the least, keep
-                the squares apart (the iOS audit's P1, the nav log's leg). */}
+                the squares apart. */}
             <dt className={TEXT.note}>{name in EXPLAINED ? <Explain term={name as ExplainedTerm} className={SHORTHAND_AREA} /> : name}</dt>
             <dd className={cn("text-foreground tabular-nums", TEXT.detail)}>{value}</dd>
           </div>

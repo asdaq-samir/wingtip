@@ -1,5 +1,4 @@
-//! Route options across the antimeridian (the aviation audit's AV-11, the
-//! routes audit's P12). The grid is a box of latitude and longitude, its
+//! Route options across the antimeridian. The grid is a box of latitude and longitude, its
 //! columns from the west edge east: PADK (Adak, 176.6 W) to PASY (Shemya,
 //! 174.1 E) read as plain longitudes made it about 350 degrees wide, and
 //! every way went round the world. So everything a route's options read

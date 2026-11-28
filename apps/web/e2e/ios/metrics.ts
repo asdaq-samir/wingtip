@@ -123,10 +123,13 @@ export function hitAreaMisses(page: Page, scope = "body", size = 44): Promise<Hi
             if (getComputedStyle(a).position === "sticky") return !a.contains(el);
           return false;
         };
-        // A popover or a sheet open over the page covers what is under its
-        // edge, as iOS's do: a row half under it is covered, not crowded.
+        // A popover, a menu or a sheet open over the page covers what is
+        // under its edge, as iOS's do: a row half under it is covered, not
+        // crowded. A menu (role=menu, Base UI's Menu popup) as a popover
+        // (the owner, 2026-11-27: "Yes, like popovers"; an airplane's Alert
+        // menu over the map's buttons on the Duo's cover screen).
         const over = (hit: Element | null) => {
-          const layer = hit?.closest('[data-slot="popover-content"], [data-slot="sheet-content"], [role="dialog"]');
+          const layer = hit?.closest('[data-slot="popover-content"], [data-slot="sheet-content"], [role="dialog"], [role="menu"]');
           return !!layer && !layer.contains(el);
         };
         const cx = r.left + r.width / 2,

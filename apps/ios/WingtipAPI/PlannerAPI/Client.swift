@@ -1198,7 +1198,9 @@ public struct Client: APIProtocol {
     /// ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight
     /// uses). With no flight there is no runway in use or cruise altitude to
     /// weigh. `unchecked` names the TFRs when their list could not be had;
-    /// `time_zone` is the field's, for its NOTAMs' local times.
+    /// `time_zone` is the field's, for its NOTAMs' local times. Each NOTAM
+    /// comes read for the card: its `reading`, `card` and `subject`
+    /// (app.notam_reading).
     ///
     /// - Remark: HTTP `GET /api/airport/{ident}/notams`.
     /// - Remark: Generated from `#/paths//api/airport/{ident}/notams/get(airport_notams)`.
@@ -2858,6 +2860,297 @@ public struct Client: APIProtocol {
                 case 422:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Operations.ApproachPlate.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Approach Debriefs
+    ///
+    /// The approaches a track flew, one for each time it came down a final:
+    /// of the field's approaches drawn, the one whose final it fitted best,
+    /// the one picked where it fits as well, each fix by fix against the
+    /// procedure (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) in the engine's
+    /// ApproachDebrief. A POST for the drawings and the track; it changes
+    /// nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/post(approach_debriefs)`.
+    public func approachDebriefs(_ input: Operations.ApproachDebriefs.Input) async throws -> Operations.ApproachDebriefs.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ApproachDebriefs.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/approach/debriefs",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ApproachDebriefs.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Operations.ApproachDebriefs.Output.Ok.Body.JsonPayload.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ApproachDebriefs.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Approach Transition
+    ///
+    /// Of an approach's transitions drawn, the one the track came in by:
+    /// every fix of it before the final passed, the closest to it on the way;
+    /// null where none was flown, so the approach stays from vectors.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs/transition`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/transition/post(approach_transition)`.
+    public func approachTransition(_ input: Operations.ApproachTransition.Input) async throws -> Operations.ApproachTransition.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ApproachTransition.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/approach/debriefs/transition",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ApproachTransition.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Operations.ApproachTransition.Output.Ok.Body.JsonPayload?.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ApproachTransition.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Approach Lesson
+    ///
+    /// An approach taught as an instructor teaches it, from the FAA's coded
+    /// procedure (FAA-H-8083-16B, chapter 4): the briefing, the steps flown
+    /// fix by fix at `gs_kt` with the way to each, the quiz, and the side
+    /// view. What the coded data does not hold, the minimums above all, is
+    /// "See the plate", never a figure made up. A POST for the drawing; it
+    /// changes nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/lesson`.
+    /// - Remark: Generated from `#/paths//api/approach/lesson/post(approach_lesson)`.
+    public func approachLesson(_ input: Operations.ApproachLesson.Input) async throws -> Operations.ApproachLesson.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ApproachLesson.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/approach/lesson",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ApproachLesson.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ApproachTaught.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ApproachLesson.Output.UnprocessableContent.Body
                     let chosenContentType = try converter.bestContentType(
                         received: contentType,
                         options: [
@@ -12089,7 +12382,8 @@ public struct Client: APIProtocol {
     ///
     /// An airplane being tracked: what it is, the field it took off from
     /// and its track today (wingtip.traffic.flight); no track where its trace
-    /// cannot be had.
+    /// cannot be had. Followed from now on, its flights recorded, only where
+    /// a signed-in pilot opened it (X-Pilot-Id, set by the gateway).
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/get(traffic_flight)`.
@@ -12109,6 +12403,11 @@ public struct Client: APIProtocol {
                     method: .get
                 )
                 suppressMutabilityWarning(&request)
+                try converter.setHeaderFieldAsURI(
+                    in: &request.headerFields,
+                    name: "X-Pilot-Id",
+                    value: input.headers.xPilotId
+                )
                 converter.setAcceptHeader(
                     in: &request.headerFields,
                     contentTypes: input.headers.accept
@@ -12281,7 +12580,9 @@ public struct Client: APIProtocol {
     /// Traffic Past Flight
     ///
     /// One of those flights' reports, for its track log and its replay
-    /// (wingtip.traffic.past_flight); 404 where it is not one of them.
+    /// (wingtip.traffic.past_flight), made ready to replay by the engine
+    /// (wingtip.traffic.replay_ready: gaps, a held or missing height carried at
+    /// the last good one); 404 where it is not one of them.
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}/history/{flight_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/history/{flight_id}/get(traffic_past_flight)`.
@@ -12631,6 +12932,99 @@ public struct Client: APIProtocol {
                 case 422:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Operations.TrafficRoute.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Usage Daily
+    ///
+    /// Every route's calls on each finished UTC day from `since` on, today
+    /// left out until it is over: totals by route template, method and status,
+    /// tied to no pilot (docs/privacy-inventory.md).
+    ///
+    /// - Remark: HTTP `GET /api/usage/daily`.
+    /// - Remark: Generated from `#/paths//api/usage/daily/get(usage_daily)`.
+    public func usageDaily(_ input: Operations.UsageDaily.Input) async throws -> Operations.UsageDaily.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.UsageDaily.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/usage/daily",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "since",
+                    value: input.query.since
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.UsageDaily.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.UsageDays.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.UsageDaily.Output.UnprocessableContent.Body
                     let chosenContentType = try converter.bestContentType(
                         received: contentType,
                         options: [

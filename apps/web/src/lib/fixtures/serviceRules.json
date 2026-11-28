@@ -5,33 +5,87 @@
       "about": "A GFS level in feet, knots and Celsius: 3,048 m is 10,000 ft (0.3048 m a foot), 10 kt east in m/s blows from the west, 263.15 K is -10 C; no wind at all is from 360; a level with a figure missing is left out",
       "input": {
         "levels": [
-          { "height_m": 3048, "temp_k": 263.15, "u_m_s": 5.144444444444445, "v_m_s": 0 },
-          { "height_m": 1524, "temp_k": 273.15, "u_m_s": 0, "v_m_s": 0 },
-          { "height_m": 6096, "temp_k": null, "u_m_s": 1, "v_m_s": 1 }
+          {
+            "height_m": 3048,
+            "temp_k": 263.15,
+            "u_m_s": 5.144444444444445,
+            "v_m_s": 0
+          },
+          {
+            "height_m": 1524,
+            "temp_k": 273.15,
+            "u_m_s": 0,
+            "v_m_s": 0
+          },
+          {
+            "height_m": 6096,
+            "temp_k": null,
+            "u_m_s": 1,
+            "v_m_s": 1
+          }
         ]
       },
       "answer": [
-        { "altitude_ft": 10000.0, "wind_dir_true_deg": 270.0, "wind_speed_kt": 10.0, "temp_c": -10.0 },
-        { "altitude_ft": 5000.0, "wind_dir_true_deg": 360.0, "wind_speed_kt": 0.0, "temp_c": 0.0 }
+        {
+          "altitude_ft": 10000.0,
+          "wind_dir_true_deg": 270.0,
+          "wind_speed_kt": 10.0,
+          "temp_c": -10.0
+        },
+        {
+          "altitude_ft": 5000.0,
+          "wind_dir_true_deg": 360.0,
+          "wind_speed_kt": 0.0,
+          "temp_c": 0.0
+        }
       ]
     }
   ],
   "velocity_track": [
     {
       "about": "A track toward where it goes, degrees true, and its speed; none where it does not move",
-      "input": { "velocities": [{ "east": 3, "north": 4 }, { "east": -10, "north": 0 }, { "east": 0, "north": 0 }] },
+      "input": {
+        "velocities": [
+          {
+            "east": 3,
+            "north": 4
+          },
+          {
+            "east": -10,
+            "north": 0
+          },
+          {
+            "east": 0,
+            "north": 0
+          }
+        ]
+      },
       "answer": [
-        { "track_deg": 36.86989764584402, "speed": 5.0 },
-        { "track_deg": 270.0, "speed": 10.0 },
-        { "track_deg": null, "speed": 0.0 }
+        {
+          "track_deg": 36.86989764584402,
+          "speed": 5.0
+        },
+        {
+          "track_deg": 270.0,
+          "speed": 10.0
+        },
+        {
+          "track_deg": null,
+          "speed": 0.0
+        }
       ]
     }
   ],
   "gairmet_window": [
     {
       "about": "AIM 7-1-6: the 03Z snapshot stands for 00Z to 06Z, as a hazard at 03 and none at 00 or 06 exists from 0001 to 0559",
-      "input": { "valid": 1794452400 },
-      "answer": { "valid_from": 1794441600.0, "valid_to": 1794463200.0 }
+      "input": {
+        "valid": 1794452400
+      },
+      "answer": {
+        "valid_from": 1794441600.0,
+        "valid_to": 1794463200.0
+      }
     }
   ],
   "rvr_readings": [
@@ -79,12 +133,45 @@
   ],
   "datis_ends": [
     {
-      "about": "A broadcast heard at 0000Z is the airport's until 0200Z: two of AIM 4-1-13's hourly updates",
+      "about": "A broadcast heard at 0000Z is the airport's until 0115Z: AIM 4-1-13's hourly update and a quarter hour for it to come",
       "input": {
         "heard": 1763337600
       },
       "answer": {
-        "ends": 1763344800.0
+        "ends": 1763342100.0
+      }
+    }
+  ],
+  "rvr_ends": [
+    {
+      "about": "An RVR reading heard at 0000Z is the runway's until 0010Z: ten of AIM 7-1-13's minute updates missed",
+      "input": {
+        "heard": 1763337600
+      },
+      "answer": {
+        "ends": 1763338200.0
+      }
+    }
+  ],
+  "flow_ends": [
+    {
+      "about": "A ground delay program the advisory ends at 0300Z is kept to then",
+      "input": {
+        "heard": 1763337600,
+        "ends": 1763348400
+      },
+      "answer": {
+        "ends": 1763348400.0
+      }
+    },
+    {
+      "about": "A ground stop with no end given, heard at 0000Z, is kept six hours, to 0600Z",
+      "input": {
+        "heard": 1763337600,
+        "ends": null
+      },
+      "answer": {
+        "ends": 1763359200.0
       }
     }
   ],
@@ -152,6 +239,173 @@
       "answer": {
         "left": false
       }
+    }
+  ],
+  "airplane_short_type": [
+    {
+      "about": "Airbus A321: the company's words and the variant left off (the owner, 2026-11-27)",
+      "input": {
+        "manufacturer": "AIRBUS S A S",
+        "model": "A321-271NX"
+      },
+      "answer": {
+        "make_short": "Airbus",
+        "model_short": "A321"
+      }
+    },
+    {
+      "about": "The registry's maker already cased, the same",
+      "input": {
+        "manufacturer": "Airbus S A S",
+        "model": "A321-271NX"
+      },
+      "answer": {
+        "make_short": "Airbus",
+        "model_short": "A321"
+      }
+    },
+    {
+      "about": "Boeing 737",
+      "input": {
+        "manufacturer": "BOEING",
+        "model": "737-8H4"
+      },
+      "answer": {
+        "make_short": "Boeing",
+        "model_short": "737"
+      }
+    },
+    {
+      "about": "A model of letters first keeps its number: Piper PA-28",
+      "input": {
+        "manufacturer": "PIPER AIRCRAFT INC",
+        "model": "PA-28-140"
+      },
+      "answer": {
+        "make_short": "Piper",
+        "model_short": "PA-28"
+      }
+    },
+    {
+      "about": "Cessna 172S",
+      "input": {
+        "manufacturer": "CESSNA",
+        "model": "172S"
+      },
+      "answer": {
+        "make_short": "Cessna",
+        "model_short": "172S"
+      }
+    },
+    {
+      "about": "De Havilland DHC-6",
+      "input": {
+        "manufacturer": "DE HAVILLAND",
+        "model": "DHC-6"
+      },
+      "answer": {
+        "make_short": "De Havilland",
+        "model_short": "DHC-6"
+      }
+    },
+    {
+      "about": "Cirrus SR22",
+      "input": {
+        "manufacturer": "CIRRUS DESIGN CORP",
+        "model": "SR22"
+      },
+      "answer": {
+        "make_short": "Cirrus",
+        "model_short": "SR22"
+      }
+    },
+    {
+      "about": "No maker: the model alone",
+      "input": {
+        "manufacturer": null,
+        "model": "A321-271NX"
+      },
+      "answer": {
+        "make_short": null,
+        "model_short": "A321"
+      }
+    },
+    {
+      "about": "No model: the maker alone",
+      "input": {
+        "manufacturer": "PIPER",
+        "model": null
+      },
+      "answer": {
+        "make_short": "Piper",
+        "model_short": null
+      }
+    },
+    {
+      "about": "Neither: nothing",
+      "input": {
+        "manufacturer": null,
+        "model": null
+      },
+      "answer": {
+        "make_short": null,
+        "model_short": null
+      }
+    }
+  ],
+  "name_case": [
+    {
+      "about": "A registrant's name, its company form kept (MASTER's NAME)",
+      "input": {
+        "text": "ROCA ROJA Y CABALLO GRIS DE IDAHO LLC"
+      },
+      "answer": "Roca Roja Y Caballo Gris De Idaho LLC"
+    },
+    {
+      "about": "Inc written as a word",
+      "input": {
+        "text": "UNITED AIRLINES INC",
+        "kind": "person"
+      },
+      "answer": "United Airlines Inc"
+    },
+    {
+      "about": "A maker's initials kept (ACFTREF, ENGINE)",
+      "input": {
+        "text": "IAE INTERNATIONAL AERO",
+        "kind": "maker"
+      },
+      "answer": "IAE International Aero"
+    },
+    {
+      "about": "A facility's code kept (NASR's frequencies)",
+      "input": {
+        "text": "DULUTH RCO",
+        "kind": "facility"
+      },
+      "answer": "Duluth RCO"
+    },
+    {
+      "about": "A street's ordinal and compass point as written",
+      "input": {
+        "text": "100 1ST AVE NE",
+        "kind": "street"
+      },
+      "answer": "100 1st Ave NE"
+    },
+    {
+      "about": "Each of a list, a null row empty",
+      "input": {
+        "texts": [
+          "CHICAGO",
+          null
+        ],
+        "kind": "facility"
+      },
+      "answer": [
+        "Chicago",
+        ""
+      ]
     }
   ]
 }

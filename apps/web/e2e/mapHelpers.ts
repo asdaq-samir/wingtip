@@ -22,6 +22,16 @@ export async function mapStill(page: Page) {
     .toBe(true);
 }
 
+/** Once the map's layers are on it, a right-click's or a held finger's
+ *  listener among them (PickedGl): GlMapShell mounts them at MapLibre's
+ *  `load`, which waits for every tile in view, the chart's too, and on
+ *  CI's runner, the planner drawing the chart's tiles as they are asked
+ *  for, that came long after the page looked settled. PickedGl's own
+ *  probe (useGlProbe's picked-ring) is put on the map as it mounts. */
+export async function mapLayersOn(page: Page) {
+  await expect(page.locator('[data-gl-probe="picked-ring"]').first()).toBeAttached({ timeout: slow(30_000) });
+}
+
 /** A tap on the chart itself, somewhere nothing else is: not a marker,
  *  a popup, the panel over the map or its buttons -- found by asking the
  *  browser what is under each candidate point. */

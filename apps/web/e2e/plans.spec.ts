@@ -13,6 +13,7 @@ import {
   openTab,
   settle,
   sideDrawer,
+  sheetFoot,
   slow,
   openPanel,
 } from "./helpers";
@@ -232,29 +233,31 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
 }) => {
   // The planner's answer for Chicago to Las Vegas in a 172, without the
   // minutes of terrain and winds it takes to reach it.
-  await page.route("**/api/planner/navlog**", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/x-ndjson",
-      body:
-        [
-          { type: "stage", detail: "Planning cruise altitudes…" },
-          {
-            type: "error",
-            retry: false,
-            detail: "No legal VFR cruising altitude 830-858 nm along the route",
-            brief: "Aircraft ceiling restricts mountainous flying",
-            reasons: [
-              "The terrain and obstacles there need 10,600 ft.",
-              "The first westbound VFR altitude above that is 12,500 ft.",
-              "The aircraft's service ceiling stops at 11,700 ft.",
-            ],
-            advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
-          },
-        ]
-          .map((m) => JSON.stringify(m))
-          .join("\n") + "\n",
-    }),
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/navlog"),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/x-ndjson",
+        body:
+          [
+            { type: "stage", detail: "Planning cruise altitudes…" },
+            {
+              type: "error",
+              retry: false,
+              detail: "No legal VFR cruising altitude 830-858 nm along the route",
+              brief: "Aircraft ceiling restricts mountainous flying",
+              reasons: [
+                "The terrain and obstacles there need 10,600 ft.",
+                "The first westbound VFR altitude above that is 12,500 ft.",
+                "The aircraft's service ceiling stops at 11,700 ft.",
+              ],
+              advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
+            },
+          ]
+            .map((m) => JSON.stringify(m))
+            .join("\n") + "\n",
+      }),
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
 
@@ -267,14 +270,14 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   // The figures at half, under its profile (on a phone the pill is the
   // one row since the fixed snap points): the book's time, marked "≈".
   await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
 
   // All the way up: the cruising altitude's chip red, and no line under
   // the route.
   await grabberTo(page, "full");
   // The figures stay, the book's marked "≈", where why stood in their
   // place in red; why is the Brief's, its Go / No-Go's altitude red.
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
   await openTab(page, "Brief");
   const altitude = sideDrawer(page).getByTestId("verdict-altitude");
   await expect(altitude).toHaveAttribute("data-finding", "stop");

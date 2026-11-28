@@ -65,11 +65,11 @@ extension ReadbackCheck {
         var lines: [Line] = []
         if !read.isEmpty {
             let list = read.count == 1 ? read[0] : read.dropLast().joined(separator: ", ") + " and " + read.last!
-            lines.append(Line(ok: true, words: list.prefix(1).uppercased() + list.dropFirst() + " read back"))
+            lines.append(Line(ok: true, words: Format.capital(list) + " read back"))
         }
         for item in check.items {
             let name = parts.first { $0.item == item.item }?.name ?? item.item
-            let named = name.prefix(1).uppercased() + name.dropFirst()
+            let named = Format.capital(name)
             if let said = item.said {
                 lines.append(Line(ok: false, words: "\(named): \(said) said, \(item.cleared) cleared"))
             } else {

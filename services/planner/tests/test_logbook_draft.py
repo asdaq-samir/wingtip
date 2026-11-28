@@ -44,7 +44,8 @@ def test_the_draft_logs_the_flight_as_flown(the_fixtures_fields):
     d = answer.json()
     e = d["entry"]
     assert (e["flownOn"], e["route"], e["totalHours"]) == ("2026-11-09", "C81 KDLH", 4.0)
-    assert (e["dayLandings"], e["nightLandings"]) == (1, 1)
+    # 61.57(b)(1): the full stop after 1 hour after sunset, but its takeoff before it: day.
+    assert (e["dayLandings"], e["nightLandings"]) == (2, 0)
     assert e["crossCountryHours"] == e["totalHours"]
     assert [a["name"] for a in d["approaches"]] == ["ILS RWY 27", "ILS RWY 27"]
     assert d["instrument"] == {"approaches": 2, "holding": True, "tracking": True}

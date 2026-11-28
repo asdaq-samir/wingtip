@@ -1,8 +1,6 @@
 package app.wingtipmaps.android.clearance
 
 import android.Manifest
-import android.os.Build
-import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -142,8 +141,7 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
             val head = listOfNotNull(if (planned.dep.isEmpty()) null else "${planned.dep} → ${planned.dest}", "IFR", tail).joinToString(" · ")
             Text(head, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (state.clearance != null && state.heard) {
-                // The card's actions under its head, in sight at half (the
-                // Android audit's AND-1): at the foot of the sheet's full
+                // The card's actions under its head, in sight at half: at the foot of the sheet's full
                 // height they sat below the window at half.
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                     if (radio != null) {
@@ -190,8 +188,8 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
     }
 }
 
-/** The clearance understood: Android's Confirm (API 30), a key tap before. */
-private val UNDERSTOOD: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+/** The clearance understood: Compose's Confirm, a key tap below API 30. */
+private val UNDERSTOOD = HapticFeedbackType.Confirm
 
 /** The four steps in a row: done in the go ink, the one now in the
  *  tint, the rest to come. */
@@ -239,7 +237,7 @@ private fun Craft(c: Clearance, state: ClearanceModel.State) {
         c.read.classB -> CraftRow(stringResource(R.string.clearance_cleared_to), "Class Bravo airspace")
         c.read.limit != null -> CraftRow(
             stringResource(R.string.clearance_cleared_to),
-            state.found?.limit?.let(ClearanceWords::place) ?: c.read.limit.split(" ").joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } },
+            state.found?.limit?.let(ClearanceWords::place) ?: ClearanceWords.capitalWords(c.read.limit),
         )
     }
     if (c.route.isNotEmpty() || c.read.asFiled) CraftRow(stringResource(R.string.clearance_route), ClearanceWords.route(c, state.found))

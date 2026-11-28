@@ -17,6 +17,11 @@ nonisolated enum Format {
     /// What is written for a figure not known, which is not zero.
     static let none = "—"
 
+    /// Words with their first letter a capital, the rest as they are, to
+    /// start a line with ("maintain" to "Maintain"), as Android's
+    /// Format.capital: the one copy of it.
+    static func capital(_ words: some StringProtocol) -> String { words.prefix(1).uppercased() + words.dropFirst() }
+
     // MARK: The shared table (formats.json)
 
     /// A cruising altitude on the cruise controls, the profile and the
@@ -72,10 +77,46 @@ nonisolated enum Format {
     /// A UTC clock time as reports and flight plans give it: "1432Z".
     static func zulu(_ date: Date) -> String { date.formatted(zuluStyle) }
 
+    /// A zone's short name at a time, "CDT", in en_US as the FAA writes it:
+    /// TimeZone.abbreviation(for:) follows the phone's own locale, which
+    /// outside the US can give "GMT-5" for Chicago.
+    static func zoneName(_ zone: TimeZone, at date: Date) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
+        return date.formatted(Date.VerbatimFormatStyle(format: "\(timeZone: .specificName(.short))", locale: locale, timeZone: zone, calendar: calendar))
+    }
+
     /// A clock time, 24-hour, in a zone (the phone's own by default),
     /// "09:05", as the web app's clockTime writes it.
     static func clock(_ date: Date, in zone: TimeZone = .current) -> String {
         date.formatted(clockStyle(zone))
+    }
+
+    /// The day an arrival is written with where it is not the day the
+    /// flight left, as the web's arrivalDay: "Tue" within the week, "11/30"
+    /// a week or more on, each day counted in its own zone (the arrival's
+    /// field's, the departure's; this phone's where one has none); nil on
+    /// the same day. A flight left at 14:27 and said "15:54", the next
+    /// day's, read as 87 minutes on for 2,700 nm (the owner's iPhone,
+    /// 2026-11-23).
+    static func arrivalDay(_ at: Date, left: Date, zone: TimeZone? = nil, leftZone: TimeZone? = nil) -> String? {
+        var there = Calendar(identifier: .gregorian)
+        there.timeZone = zone ?? .current
+        var home = Calendar(identifier: .gregorian)
+        home.timeZone = leftZone ?? .current
+        // Each end's calendar day as a UTC midnight, so the count is whole days.
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = .gmt
+        func midnight(_ date: Date, _ calendar: Calendar) -> Date {
+            utc.date(from: calendar.dateComponents([.year, .month, .day], from: date)) ?? date
+        }
+        let days = utc.dateComponents([.day], from: midnight(left, home), to: midnight(at, there)).day ?? 0
+        if days == 0 { return nil }
+        if days > 0 && days < 7 {
+            return at.formatted(Date.FormatStyle(locale: locale, calendar: there, timeZone: there.timeZone).weekday(.abbreviated))
+        }
+        let day = there.dateComponents([.month, .day], from: at)
+        return "\(day.month ?? 0)/\(day.day ?? 0)"
     }
 
     /// Foundation's verbatim date styles: Sendable values with the
@@ -130,12 +171,14 @@ nonisolated enum Format {
 
     /// The fuel in the tanks as FPL's gauge writes it, whole gallons
     /// rounded down, so never more in them than there are; past empty the
-    /// gallons short with a minus, "−12 gal" (the engine's fuel_in_tanks;
-    /// the owner, 2026-11-20: "Instead of showing 0 gal, can you show
-    /// negative gal"), rounded the same way down, never fewer short.
+    /// gallons short in words, "12 gal short" (the engine's fuel_in_tanks
+    /// below nought), rounded the same way down, never fewer short. It was
+    /// "−12 gal", which read as a figure gone wrong at a destination a leg
+    /// could not reach (the owner's iPhone, 2026-11-23, as the web's
+    /// gaugeWords).
     static func tankGallons(_ gal: Double) -> String {
         let whole = Int(gal.rounded(.down))
-        return "\(whole < 0 ? "\u{2212}" : "")\(abs(whole)) gal"
+        return whole < 0 ? "\(-whole) gal short" : "\(whole) gal"
     }
 
     /// A weight, grouped pounds: "2,450 lb".
@@ -179,21 +222,6 @@ nonisolated enum Format {
     /// A figure to a tenth, without a ".0" it does not have: "3", "1.5".
     static func tenths(_ x: Double) -> String {
         x == x.rounded() && abs(x) < 1e9 ? String(Int(x)) : number(x, decimals: 1)
-    }
-
-    /// A visibility as a whole and a fraction of a statute mile, as a METAR
-    /// writes it: 1.625 is (1, "5/8"), 10 is (10, nil). To the sixteenth
-    /// below 3 sm (the finest a US report gives, "1/16SM") and the whole
-    /// mile from 3, always down, as the web's reportedVisibility: a
-    /// visibility rounded up is more than was seen, and an eighth was
-    /// written ".125".
-    static func reportedVisibility(_ sm: Double) -> (whole: Int, fraction: String?) {
-        let whole = Int((sm + 1e-9).rounded(.down))
-        let sixteenths = sm >= 3 ? 0 : Int(((sm + 1e-9 - Double(whole)) * 16).rounded(.down))
-        guard sixteenths > 0 else { return (whole, nil) }
-        var (n, d) = (sixteenths, 16)
-        while n % 2 == 0 { n /= 2; d /= 2 }
-        return (whole, "\(n)/\(d)")
     }
 
     /// Hours to a tenth as a logbook keeps them, "1.5 h".

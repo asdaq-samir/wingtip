@@ -2,8 +2,7 @@
  * The slippy-map tile scheme's one formula, the Web Mercator projection
  * (EPSG:3857) the map, the chart's pyramid and the overlay archive are
  * all cut by: where a point falls on it, and in tiles at a zoom. It was
- * written four ways, some clamping the latitude and some not (the hand-built
- * audit, 2026-11-12). No MapLibre here: Keep for the Air reaches this from
+ * written four ways, some clamping the latitude and some not. No MapLibre here: Keep for the Air reaches this from
  * the page's first script (issue #87).
  *
  * Written out rather than taken from @mapbox/tilebelt (MIT, 2.0.3): its
@@ -20,7 +19,19 @@ const MAX_LATITUDE = 85.0511287798;
  *  sphere of 6,378,137 m). The web's one place for the earth's size;
  *  MapLibre's MercatorCoordinate is not used for it because it takes the
  *  mean radius (6,371,008.8 m), a tenth of a percent short of the tiles'. */
-export const WORLD_WIDTH_M = 40075016.686;
+const WORLD_WIDTH_M = 40075016.686;
+
+/** The Web Mercator world's width on the ground at `lat`, m: the equator's
+ *  shrunk by the parallel's cosine, so a share of the world's width times
+ *  this is that many metres east and west there. Its own cosine, not
+ *  lib/geo's lonScale, so this file stays free of the engine's module
+ *  (Keep for the Air reaches it from the page's first script). */
+export const worldMetresAt = (lat: number) => WORLD_WIDTH_M * Math.cos((lat * Math.PI) / 180);
+
+/** Ground metres a screen point covers at `lat` and MapLibre's `zoom`: its
+ *  camera's world is 512 points wide at zoom 0 (its tileSize), not the
+ *  raster tiles' 256. */
+export const metresPerPoint = (lat: number, zoom: number) => worldMetresAt(lat) / (512 * 2 ** zoom);
 
 /** Where a longitude falls across the Web Mercator world, 0 at 180 W to 1
  *  at 180 E. */
@@ -32,6 +43,9 @@ export function mercY(lat: number): number {
   const phi = (Math.max(-MAX_LATITUDE, Math.min(MAX_LATITUDE, lat)) * Math.PI) / 180;
   return (1 - Math.asinh(Math.tan(phi)) / Math.PI) / 2;
 }
+
+/** The longitude at `x` across the Web Mercator world (mercX's inverse). */
+export const lonOf = (x: number) => x * 360 - 180;
 
 /** The latitude at `y` down the Web Mercator world (mercY's inverse). */
 export const latOf = (y: number) => (Math.atan(Math.sinh(Math.PI * (1 - 2 * y))) * 180) / Math.PI;

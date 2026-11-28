@@ -86,7 +86,7 @@ export function useRouteWays({
   // Kept only under the same ends, while the route is one of the cards':
   // a route changed by hand is the route, the cards asked for afresh from
   // it. With the ends swapped the stops are the same (none) and the kept
-  // figures and fuel stops were the old route's (the audit of 2026-10-24).
+  // figures and fuel stops were the old route's.
   // The ways as they are now too, off the query's cache: asked for again
   // (the minimums or the time changed) while browsing, a way not among
   // those kept ended the browsing, and the way in sight became the route.
@@ -139,7 +139,7 @@ export function useRouteWays({
     // again -- another airplane, departure time or minimums -- so FPL's
     // Routes row stays where it is, dimmed, till the new ones come: it
     // went for half a second at every change of airplane, and the list
-    // under it jumped up and back (the flicker audit's FL-12). Not under a
+    // under it jumped up and back. Not under a
     // new route, whose ways are other ways (keyed [_, dep, dest, via]).
     placeholderData: (previous, previousQuery) =>
       previousQuery && sameRoute(previousQuery.queryKey, [planned.dep, `${planned.dest ?? ""}`, baseStops.join(",")])

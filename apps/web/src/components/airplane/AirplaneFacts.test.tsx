@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { AirplaneFacts } from "./AirplaneFacts";
+import { shortWeight } from "./shortWeight";
 import type { AircraftRegistration } from "../../lib/api/types";
 
 afterEach(cleanup);
@@ -10,6 +11,9 @@ const record = {
   n_number: "N654FL",
   manufacturer: "Piper",
   model: "PA-28-140",
+  // As the planner sends them (the engine's airplane_short_type).
+  make_short: "Piper",
+  model_short: "PA-28",
   year: 1971,
   seats: 4,
   engines: 1,
@@ -21,31 +25,51 @@ const record = {
 const fact = (id: string) => screen.queryByTestId(`facts-${id}`)?.textContent ?? null;
 
 describe("an airplane card's facts strip", () => {
-  it("says the registry's type, year, seats, engines, registration and owner, each under its name", () => {
+  it("says the registry's type, year, seats, and engines, each under its name, its registration and owner left to its Registration section", () => {
     render(<AirplaneFacts record={record} testId="facts" />);
-    expect(fact("type")).toBe("TypePiper PA-28-140");
+    expect(fact("make")).toBe("PiperPA-28"); // its maker the name, its model the value
     expect(fact("year")).toBe("Year1971");
     expect(fact("seats")).toBe("Seats4");
     expect(fact("engines")).toBe("Engines1");
-    expect(fact("status")).toBe("RegistrationValid");
-    expect(fact("owner")).toBe("OwnerJane Q Pilot");
+    expect(fact("status")).toBeNull();
+    expect(fact("owner")).toBeNull();
   });
 
-  it("takes the FAA's reference model's seats and engines over the record's", () => {
-    render(<AirplaneFacts record={record} model={{ seats: 6, engines: 2 } as never} testId="facts" />);
+  it("takes the FAA's reference model's seats and engines over the record's, and its weight class short", () => {
+    render(<AirplaneFacts record={record} model={{ seats: 6, engines: 2, weight_class: "Up to 12,499 lb" } as never} testId="facts" />);
     expect(fact("seats")).toBe("Seats6");
     expect(fact("engines")).toBe("Engines2");
+    expect(fact("weight")).toBe("Weight≤12,499 lb");
   });
 
-  it("says an owner withheld from the record is not in it, and a lapsed registration in the destructive ink", () => {
-    render(<AirplaneFacts record={{ ...record, owner: null, standing: "lapsed", status: "Expired" }} testId="facts" />);
-    expect(fact("owner")).toBe("OwnerNot in the record");
-    expect(screen.getByTestId("facts-status").querySelector("dd")?.className).toContain("text-destructive-ink");
+  it("keeps to five facts, Engines giving way to who flies it, and gives traffic's ICAO address", () => {
+    render(
+      <AirplaneFacts
+        record={null}
+        type="Airbus A-350-1000"
+        year="2019"
+        operator="Qatar Airways"
+        traffic={{ address: "06a1e7" }}
+        testId="facts"
+      />,
+    );
+    expect(fact("make")).toBe("AirbusA-350-1000");
+    expect(fact("operator")).toBe("OperatorQatar Airways");
+    expect(fact("engines")).toBeNull();
+    expect(fact("address")).toBe("ICAO Address06a1e7");
+    expect(screen.getByTestId("facts").children).toHaveLength(4);
   });
 
-  it("falls back to the traffic's type and year with no record, and draws nothing with nothing to say", () => {
+  it("writes every weight class short", () => {
+    expect(shortWeight("12,500 to 19,999 lb")).toBe("12,500–19,999 lb");
+    expect(shortWeight("20,000 lb and over")).toBe("≥20,000 lb");
+    expect(shortWeight("UAV up to 55 lb")).toBe("≤55 lb");
+    expect(shortWeight(null)).toBeNull();
+  });
+
+  it("names a bare type code Model, and draws nothing with nothing to say", () => {
     render(<AirplaneFacts record={null} type="A321" year="2019" testId="facts" />);
-    expect(fact("type")).toBe("TypeA321");
+    expect(fact("make")).toBe("ModelA321");
     expect(fact("year")).toBe("Year2019");
     expect(fact("owner")).toBeNull();
     cleanup();

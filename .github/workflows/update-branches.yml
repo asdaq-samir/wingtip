@@ -1,35 +1,16 @@
 name: Update branches
 
 # Each push to main brings the open claude/ pull requests up to date with
-# it, so their CI runs against what they will merge into and a conflict
-# shows the moment main makes it, not when the pull request is next
-# looked at (the owner, 2026-11-06: development faster). GitHub's "update
-# branch" merges main in -- never a rebase, as CLAUDE.md asks of a pushed
-# branch.
-#
-# Gently, as CLAUDE.md's "write to GitHub gently" says: one write at a
-# time, ten seconds or more apart, at most ten updates a run (the rest
-# wait for main's next push), and a pull request pushed to in the last
-# five minutes is left alone, since its session may be pushing again.
-#
-# A pull request that cannot be updated for a conflict gets the one label
-# needs-merge, which comes off when its branch is next current.
-#
-# And every open pull request that conflicts with its base, whoever's and
-# whatever the base, carries one comment saying so, taken off when it
-# merges cleanly again (scripts/ci/pr_conflicts.py; the owner, 2026-11-15).
-# GitHub starts no CI on a pull request that conflicts, so it shows no
-# failing check: #579 sat a day under the label alone, and nobody saw it.
-#
-# The token: a push made with the workflow's own GITHUB_TOKEN starts no
-# workflow (GitHub's rule against loops; ci.yml says the same of the
-# branches Auto-merge moved), so the pull request would sit with no checks
-# and never merge. The update is made with MERGE_TOKEN, the owner's
-# fine-grained token Auto-merge already uses, so its merge commit is the
-# owner's push and starts CI like any other. Without MERGE_TOKEN it falls
-# back on GITHUB_TOKEN and starts CI on the branch by hand
-# (workflow_dispatch, which that token may start), whose "CI passed" lands
-# on the same commit.
+# it (GitHub's "update branch", a merge, never a rebase), so their CI runs
+# against what they merge into (the owner, 2026-11-06). Gently: one write at
+# a time, ten seconds apart, at most ten a run, and none to a pull request
+# pushed in the last five minutes. One that conflicts gets the label
+# needs-merge, and every open pull request that conflicts with its base
+# carries one comment saying so until it merges cleanly
+# (scripts/ci/pr_conflicts.py; the owner, 2026-11-15): GitHub runs no CI on
+# it, so no red check shows (#579 sat a day). Pushed with MERGE_TOKEN, the
+# owner's, as a GITHUB_TOKEN push starts no workflow; without it, CI is
+# started on the branch by hand (workflow_dispatch).
 
 on:
   push:
@@ -57,7 +38,7 @@ concurrency:
 
 jobs:
   update:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}

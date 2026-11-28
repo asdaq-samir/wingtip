@@ -14,7 +14,7 @@ import {
 import { courseBox } from "./mapProbes";
 
 /**
- * The route changed in its box: every point sits as close to its arrows
+ * The route changed in its box: every point sits as close to the next
  * as the next, and the map fits the whole course again into the room
  * above the sheet, a stop taken out as much as a new destination, and
  * the sheet turning under the fit (the owner, 2026-11-11: "Look at the
@@ -36,34 +36,33 @@ async function centredAboveSheet(page: Page) {
   }).toPass({ timeout: slow(10_000) });
 }
 
-test("the route box's pills sit as close to their marks and arrows as each other, a three-letter departure too", async ({ page }) => {
+test("the route box's pills read left to right with no arrows, each the same gap from the next, a three-letter departure too", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&stops=KUGN&dest=KPWK");
   await settle(page);
   await openPanel(page);
   await typeRoute(page);
   const slide = sideDrawer(page).getByTestId("route-slide");
-  await expect(slide.getByRole("group")).toHaveCount(3);
-  // Each pill's ident, from its mark's right to the next arrow's glyph:
-  // five letters wide, C81 sat 14 points short of its arrow to KUGN's 6.
-  // Each point is a token of the field of its own (React Aria's), the arrow
-  // to the next at the head of the next one's: the arrows in order, the
-  // i-th after the i-th pill.
-  const gaps = await slide.evaluate((el) => {
-    const arrows = [...el.querySelectorAll<HTMLElement>('[data-testid="route-arrow"] svg')];
-    return [...el.querySelectorAll<HTMLElement>("[role=group]")].map((pill, i) => {
-      const mark = pill.firstElementChild!.getBoundingClientRect();
+  await expect(slide.locator("[data-point]")).toHaveCount(3);
+  // ForeFlight's route editor (the owner, 2026-11-23): no arrow between two
+  // pills, the gap between each two the same, gap-2's 8; and each ident as
+  // far in from its pill's edge as the others are (C81 sat 14 points short
+  // once). The pill is its ident alone, no mark (b1ebeeb1b, "Keep it simple
+  // pills"): its text first, a caution's "!" after it.
+  await expect(slide.getByTestId("route-arrow")).toHaveCount(0);
+  const pills = await slide.evaluate((el) =>
+    [...el.querySelectorAll<HTMLElement>("[data-point]")].map((pill) => {
+      const box = pill.getBoundingClientRect();
       const range = document.createRange();
-      range.selectNodeContents(pill.querySelector("button")!);
-      const text = range.getBoundingClientRect();
-      const arrow = arrows[i]?.getBoundingClientRect();
-      return { before: text.left - mark.right, after: arrow ? arrow.left - text.right : null };
-    });
-  });
-  const befores = gaps.map((g) => g.before);
-  expect(Math.max(...befores) - Math.min(...befores), JSON.stringify(gaps)).toBeLessThan(1.5);
-  const afters = gaps.flatMap((g) => (g.after === null ? [] : [g.after]));
-  expect(afters).toHaveLength(2);
-  expect(Math.abs(afters[0]! - afters[1]!), JSON.stringify(gaps)).toBeLessThan(1.5);
+      range.selectNodeContents(pill.firstChild!);
+      return { left: box.left, right: box.right, top: box.top, before: range.getBoundingClientRect().left - box.left };
+    }),
+  );
+  const befores = pills.map((p) => p.before);
+  expect(Math.max(...befores) - Math.min(...befores), JSON.stringify(pills)).toBeLessThan(1.5);
+  const gaps = pills.slice(1).map((p, i) => p.left - pills[i]!.right);
+  for (const gap of gaps) expect(Math.abs(gap - 8), JSON.stringify(pills)).toBeLessThan(1.5);
 });
 
 test("a stop taken out fits the map to the course again, above the half sheet", async ({ page }) => {
@@ -77,7 +76,7 @@ test("a stop taken out fits the map to the course again, above the half sheet", 
   await settled(sideDrawer(page));
   // The same two ends: the fit was once per departure and destination,
   // and a stop put in or taken out left the map where it was.
-  await sideDrawer(page).getByRole("group", { name: "Stop 1 KDPA" }).focus();
+  await sideDrawer(page).getByRole("button", { name: "Stop 1 KDPA" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]stops=/);
   await grabberTo(page, "half");

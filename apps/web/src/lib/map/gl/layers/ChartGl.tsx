@@ -4,12 +4,14 @@ import type { Course } from "../../../api/types";
 import { chartQuery } from "../../../queryClient";
 import { usePreferences } from "../../../preferences";
 import { useGlLayer, useGlMap, useGlPaint } from "../glLayer";
-import { useChartLook } from "../useChartLook";
-import { chartPaint, chartRole, chartSource, chartStyle, type ChartStyle } from "../glStyle";
+import { useChartLook, useMapDim } from "../useChartLook";
+import { chartLayersAs, chartPaint, chartRole, chartSource, chartStyle, type ChartStyle } from "../glStyle";
 import { chartBrightness } from "../../chartLook";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
 import { LABEL_NIGHT, LABEL_SCALE, labelScale } from "./common";
+import { MAP_DIM, WARNING_DIM, mapDimWords } from "../mapDim";
+import { testDriven } from "../useGlProbe";
 import { useCloseImagery } from "../useCloseImagery";
 import { useChartMissed } from "../useChartMissed";
 
@@ -38,7 +40,7 @@ export function ChartGl({ course }: { course: Course | null }) {
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const chart = course ?? chartOnly ?? null;
   const base = usePreferences((s) => s.base);
-  const { night, sunlight, dim, contrast } = useChartLook();
+  const { night, sunlight, dim, contrast, keptDim, keptContrast } = useChartLook();
   // None picked: no chart, its terminal sheet or the imagery it fades
   // into; the overlay and the plain ground (BaseGl) are the map's base.
   const none = base === "none";
@@ -70,11 +72,27 @@ export function ChartGl({ course }: { course: Course | null }) {
   useEffect(() => {
     if (none) map.setMaxZoom(CLOSE_MAX_ZOOM);
   }, [map, none]);
-  // The labels' halos dimmed after dark with the page's theme (common's
-  // HALO_COLOUR reads it), not glaring white over the night's chart.
+  // The labels' halos dark after dark with the page's theme (common's
+  // HALO_COLOUR reads it), not glaring white over the night's chart, and
+  // their words at the paper's light under the Dimmer as committed
+  // (mapDimWords' words), so they are no brighter than the chart; one
+  // figure, 0 by day, asked of the engine as the committed look changes.
+  const committed = chartPaint(night, sunlight, keptDim, keptContrast);
+  const keptBrightness = Number(committed?.["raster-brightness-max"] ?? 1),
+    keptRasterContrast = Number(committed?.["raster-contrast"] ?? 0);
+  const { words, warning: warnings } = useMemo(
+    () => mapDimWords(night, keptBrightness, keptRasterContrast),
+    [night, keptBrightness, keptRasterContrast],
+  );
   useEffect(() => {
-    if (map.style) map.setGlobalStateProperty(LABEL_NIGHT, night);
-  }, [map, night]);
+    if (map.style) map.setGlobalStateProperty(LABEL_NIGHT, words);
+  }, [map, words]);
+  // And the night's warnings under the paper's light, Contrast and all
+  // (mapDimWords' warning), a constant colour each, so no tile is laid out
+  // again.
+  useEffect(() => {
+    if (map.style) map.setGlobalStateProperty(WARNING_DIM, warnings);
+  }, [map, warnings]);
   // The map's words grown with the pilot's text size, at most 1.2x, while
   // the Map card's Larger Map Labels is on (common's labelScale): read
   // from the page's root size, again as the window changes (iOS sets a
@@ -94,6 +112,19 @@ export function ChartGl({ course }: { course: Course | null }) {
     .map((p) => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "")
     .join(" ");
   const brightness = chartBrightness(dim, sunlight, night);
+  // What is drawn on the chart at its brightness at night (mapDim): one
+  // global state every symbol's, line's and circle's opacity (or, dimmed
+  // by colour, its colour) reads, eased on the style's transition
+  // (MapLibre eases a constant paint from the state before), set as the
+  // Dimmer is committed (useMapDim, chartLookPreview) while the chart's
+  // own paint follows it live. No paint by feature reads it where this app can help
+  // it (useGlLines' ink, the shelves' two layers, the rings and the
+  // selections hidden by colour; dimRelayout.test): such a one has
+  // MapLibre lay its source out again at every step of the Dimmer.
+  const mapDim = useMapDim();
+  useEffect(() => {
+    if (map.style) map.setGlobalStateProperty(MAP_DIM, mapDim);
+  }, [map, mapDim]);
   const look = sunlight ? "bright" : brightness < 1 ? "dimmed" : "normal";
   useEffect(() => {
     const el = map.getContainer();
@@ -102,8 +133,12 @@ export function ChartGl({ course }: { course: Course | null }) {
   }, [map, kinds, look]);
   // And the brightness and contrast each chart layer is drawn at, read
   // from the map at rest, not from what was asked: the look said "dimmed"
-  // while the chart close in was drawn undimmed (UI audit B10).
+  // while the chart close in was drawn undimmed. For the
+  // browser tests alone, as useGlProbe's are: a whole style read at every
+  // rest is a cost a pilot's phone need not pay (in flight, about once a
+  // second, as the camera rests at each fix).
   useEffect(() => {
+    if (!testDriven()) return;
     // Each layer by its role ("chart 0.5"), the hidden last base left out.
     const drawn = (name: "raster-brightness-max" | "raster-contrast", none: number, others: string[] = []) =>
       map
@@ -174,11 +209,7 @@ function ChartSources({
   const visibility = shown ? "visible" : "none";
   // Added hidden where it is the kept one, so it fetches nothing at all
   // (useGlLayer reads its specs once, as the part mounts).
-  useGlLayer(
-    "chart",
-    spec.sources,
-    spec.layers.map((l) => ({ ...l, layout: { visibility } })),
-  );
+  useGlLayer("chart", spec.sources, chartLayersAs(spec, visibility));
   const names = ids.join();
   useEffect(() => {
     for (const id of names.split(",")) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility);
@@ -193,15 +224,6 @@ function ChartSources({
   }, [map, spec, fade, shown]);
   useEffect(() => {
     if (!shown) return;
-    // The frame the chart's first tile is drawn in, for the speed
-    // measurements (a canvas is no Largest Contentful Paint candidate, as
-    // an image is): `chart-drawn`, once a page.
-    const drawn = (e: { sourceId?: string; tile?: unknown }) => {
-      if (chartRole(e.sourceId) !== "chart" || !e.tile) return;
-      map.off("sourcedata", drawn);
-      if (!performance.getEntriesByName("chart-drawn").length) map.once("render", () => performance.mark("chart-drawn"));
-    };
-    map.on("sourcedata", drawn);
     // The level of the chart's tiles drawn now, on the map's element, for
     // the browser tests: the zoom rounded, as raster tiles are chosen, no
     // further than the chart's own last level.
@@ -216,7 +238,6 @@ function ChartSources({
     map.on("moveend", level);
     map.on("zoom", level);
     return () => {
-      map.off("sourcedata", drawn);
       map.off("moveend", level);
       map.off("zoom", level);
     };

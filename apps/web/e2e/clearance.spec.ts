@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { grabberTo, inSheet, openPanel, typeRoute, settle, sideDrawer, slow } from "./helpers";
 import { extrasOn } from "./extras";
+import { watchFor } from "./pacing";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
 test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
@@ -244,7 +245,7 @@ test("with nothing heard the pill stays and says so until put away", async ({ pa
   }).toPass({ timeout: slow(20_000) });
   await expect(pill).toContainText("No microphone could be used", { timeout: slow(10_000) });
   // Still there a while on.
-  await page.waitForTimeout(3000);
+  await watchFor(page, 3000);
   await expect(pill).toBeVisible();
   await pill.getByTestId("radio-pill-close").click();
   await expect(pill).toHaveCount(0);

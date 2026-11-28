@@ -136,7 +136,7 @@ def select_cruise_altitude(
     segment, as it always was. `paths`, the legs flown along a departure's,
     an arrival's or an approach's path (wingtip.procedure_legs.paths_by_hop):
     each such leg's floor is the highest over its own line and the path's
-    pieces, the ground the airplane flies over (the aviation audit's AV-2).
+    pieces, the ground the airplane flies over.
     `fcst_hr` picks the winds/temperatures
     forecast period the freezing level is read from (see
     wingtip.weather.forecast_hour). `pending`, when given, holds the stages

@@ -25,7 +25,6 @@ import type {
   AirportAtis,
   AirportRvr,
   CopilotAround,
-  DepartureEvents,
   FlowAtAirports,
   ItwsAlerts,
   SaaStatuses,
@@ -84,7 +83,6 @@ export const plannerMap = {
   liveAtis: (airport: string) => planner.GET("/api/live/atis", { params: { query: { airport } } }).then(data<AirportAtis>),
   liveFlow: (airports: string[]) =>
     planner.GET("/api/live/flow", { params: { query: { airports: airports.join(",") } } }).then(data<FlowAtAirports>),
-  liveDepartures: (ident: string) => planner.GET("/api/live/departures", { params: { query: { ident } } }).then(data<DepartureEvents>),
 
   /** What the in-flight copilot reads (features/copilot): the fields round
    *  the airplane with their METARs, the areas on the rest of the route
@@ -112,8 +110,8 @@ export const plannerMap = {
   /** The FAA's record of a US airplane by its N-number or ICAO address,
    *  null for any other name: off the planner's disk, at once, where the
    *  find waits on the live sources (lib/airplane/lookup). */
-  trafficRegistered: (q: string) =>
-    planner.GET("/api/traffic/registered", { params: { query: { q } } }).then(data<AircraftRegistration | null>),
+  trafficRegistered: (q: string, signal?: AbortSignal) =>
+    planner.GET("/api/traffic/registered", { params: { query: { q } }, signal }).then(data<AircraftRegistration | null>),
 
   /** A tracked flight's airplane, where it took off and its path today,
    *  and a US airplane's FAA registration. */

@@ -17,8 +17,8 @@ export interface TankAt {
  * ("departure" for the first), at the owner's ask ("next to airport say
  * ... fuel", "I mean fuel in tanks"): the engine's (fuel_in_tanks) -- at
  * the departure the fuel on board at engine start, full unless the pilot
- * set their own on its gauge (`own`, by field: FuelSet, the owner's "can
- * we set the fuel tank by tapping on it?", 2026-11-21), the start, taxi
+ * set their own in the address (`own`, by field: its `tanks`; the gauge
+ * no longer sets it, the owner, 2026-11-25), the start, taxi
  * and takeoff allowance and the legs' own burn taken from them after,
  * fuelled again at each field landed at (full, or the pilot's own), as
  * the planner checks each flight (wingtip.route_join.route_totals); under the

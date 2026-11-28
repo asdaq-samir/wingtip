@@ -114,6 +114,19 @@ export default function NotamRankingSection() {
             </p>
           </>
         )}
+        {/* The official set at Flight Service, a quiet link here, where
+              the Checks' NOTAMs row had left the Brief for it: one place
+              for NOTAMs, the way out inside it, also while the ranking is pending or failed (the owner, 2026-11-25:
+              "it should be very clear what's happening with the tap"). */}
+        <a
+          href="https://www.1800wxbrief.com"
+          target="_blank"
+          rel="noreferrer"
+          className={cn("relative self-start text-tint hit-y-2.5", TEXT.note)}
+          data-testid="brief-notams-official"
+        >
+          Every NOTAM at 1800wxbrief.com ↗
+        </a>
       </div>
     </section>
   );

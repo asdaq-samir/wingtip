@@ -7,7 +7,7 @@ import { Button as BaseButton } from "@base-ui/react/button";
 
 /** A foot link: grey words, its 44-point hit area a pseudo-element round
  *  them, the links far enough apart that their areas meet without
- *  overlapping (CLAUDE.md; the web audit's WEB-45: Privacy and Terms were
+ *  overlapping (CLAUDE.md; Privacy and Terms were
  *  42 and 35 by 26 with no area of their own). */
 const FOOT_LINK = "relative outline-none hit-x-2 hit-y-3.5 focus-visible:ring-2 focus-visible:ring-ring";
 

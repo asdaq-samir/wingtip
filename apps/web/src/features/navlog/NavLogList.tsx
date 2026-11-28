@@ -32,17 +32,20 @@ const SELECTED_NIGHT = "dark:bg-foreground/5 dark:hover:bg-foreground/5 dark:foc
  *  else its course ("MC 258°"), which no airplane changes. The course is
  *  the great circle's at the leg's start less the leg's variation (the
  *  engine's navlog legs), as a pilot sets out on it; a bare
- *  "258°" read as either, and as true (the UI audit's A4). */
+ *  "258°" read as either, and as true. */
 function courseWords(leg: Leg, airplane: boolean): ReactNode {
   const heading = airplane ? leg.magnetic_heading_deg : null;
   // The abbreviation says what it means on a tap (Explain), nothing added.
+  // Over the next line: the leg's words are 8 from its line's foot, so its
+  // 44 reaches 4 into the next line's, which drew over it and took the
+  // taps there.
   return heading != null ? (
     <>
-      <Explain term="MH" /> {bearing(heading)}
+      <Explain term="MH" className="z-10" /> {bearing(heading)}
     </>
   ) : (
     <>
-      <Explain term="MC" /> {bearing(leg.magnetic_course_deg)}
+      <Explain term="MC" className="z-10" /> {bearing(leg.magnetic_course_deg)}
     </>
   );
 }
@@ -151,7 +154,7 @@ export function NavLogList({
           className={cn("grid grid-cols-[2.125rem_minmax(0,1fr)_auto] gap-x-2.5 px-1.5 pb-0.5 text-right text-muted-foreground", TEXT.note)}
           data-testid="navlog-list-heads"
         >
-          {/* The clock's zone, once over the column (the FPL audit's A19). */}
+          {/* The clock's zone, once over the column. */}
           {airplane && <span className="col-start-3">ETA {zoneName(new Date(from))}</span>}
           {airplane && <span className="col-start-3">GS kt</span>}
         </div>
@@ -195,16 +198,25 @@ export function NavLogList({
                     </span>
                   </div>
                 )}
-                {/* Where the route leaves the United States, before the first
-                    row there: its figures are by US rules (warn, never limit). */}
-                {cautions[at] && cautions[at] !== cautions[at - 1] && (
-                  <div role="row" className="relative flex min-h-7 items-center py-1 pl-12.5" data-testid="navlog-jurisdiction">
-                    <span aria-hidden="true" className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
-                    <span role="cell" aria-colspan={7} className={cn("font-semibold text-caution-ink", TEXT.note)}>
-                      {cautions[at]}
-                    </span>
-                  </div>
-                )}
+                {/* Outside the United States, its figures by US rules (warn,
+                    never limit): a leg across another country before its
+                    first row, the leg's own words ("The leg to KBUF crosses
+                    Canada (Ontario)"), and a field there before its row. */}
+                {[at > 0 ? cautions[at - 1]!.leaving : null, cautions[at]!.at]
+                  .filter((words): words is string => !!words)
+                  .map((words) => (
+                    <div
+                      key={words}
+                      role="row"
+                      className="relative flex min-h-7 items-center py-1 pl-12.5"
+                      data-testid="navlog-jurisdiction"
+                    >
+                      <span aria-hidden="true" className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
+                      <span role="cell" aria-colspan={7} className={cn("font-semibold text-caution-ink", TEXT.note)}>
+                        {words}
+                      </span>
+                    </div>
+                  ))}
                 {airway && (
                   // Under IFR along an airway, where it is joined or its
                   // altitudes change: the route column of a paper IFR log.
@@ -243,8 +255,7 @@ export function NavLogList({
                       selected && "rounded-b-none bg-foreground/8 hover:bg-foreground/8 focus-visible:bg-foreground/8",
                       // By night 5%, as a card's glass actions are (CardAction):
                       // the light foreground's 8% put the tint's words in it
-                      // (MH, Show the Work) at 4.43 to 1 on a side panel (the
-                      // iOS audit's P15, a sideways iPhone's nav log).
+                      // (MH, Show the Work) at 4.43 to 1 on a side panel.
                       selected && SELECTED_NIGHT,
                     )}
                   >
@@ -281,7 +292,7 @@ export function NavLogList({
                       {airplane ? etaAt(from, row.minutesFlown) : null}
                     </span>
                     {/* Grey, and the text's own colour on the selection's tint,
-                      where grey fell under 4.5:1 (the iPhone audit's P15). */}
+                      where grey fell under 4.5:1. */}
                     <span
                       className={cn(
                         "col-start-2 tabular-nums",
@@ -321,7 +332,7 @@ export function NavLogList({
                           </span>
                           {/* A separator only between cells that say something: with
                               no airplane there is no time, and the row read "334° ·
-                              6.0 nm · · 2,500 ft" (the audit's WEB-39). */}
+                              6.0 nm · · 2,500 ft". */}
                           {airplane && <span aria-hidden="true"> · </span>}
                           <span role="cell">
                             {!airplane ? null : leg ? leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min` : <FigureWait />}

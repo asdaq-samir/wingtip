@@ -101,21 +101,25 @@ test("at 320 points wide, Settings and the logbook reflow: nothing sideways (WCA
   }
 });
 
-test("with Reduce Motion a card arrives without its slide", async ({ page }) => {
+test("with Reduce Motion a card keeps its slide alone, as iOS keeps a sheet's", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/app/plan?open=setup");
   await cardOpen(page);
-  // index.css's Reduce Motion: every transition and animation near none.
-  const longest = await page
+  // index.css's Reduce Motion: every transition and animation near none,
+  // but a sheet's slide along its one axis (sheet/insets' SHEET_SLIDE, the
+  // apple-design audit of 2026-11-23, M5, which the owner took), and a
+  // fade, iOS's own in a move's place (index.css' card-fade): what still
+  // eases on the card is its transform and its opacity, nothing else.
+  const moving = await page
     .locator("[data-sheet-card][data-open]")
     .first()
     .evaluate((el) => {
       const s = getComputedStyle(el);
-      return Math.max(
-        ...[s.transitionDuration, s.animationDuration].flatMap((d) =>
-          d.split(",").map((x) => parseFloat(x) * (x.includes("ms") ? 1 : 1000)),
-        ),
-      );
+      const ms = (d: string) => parseFloat(d) * (d.includes("ms") ? 1 : 1000);
+      const durations = s.transitionDuration.split(",").map(ms);
+      const eased = s.transitionProperty.split(",").filter((_, i) => durations[i % durations.length]! >= 1);
+      return { eased: eased.map((p) => p.trim()), animation: Math.max(...s.animationDuration.split(",").map(ms)) };
     });
-  expect(longest).toBeLessThan(1);
+  expect(moving.animation).toBeLessThan(1);
+  for (const property of moving.eased) expect(["transform", "translate", "opacity"]).toContain(property);
 });

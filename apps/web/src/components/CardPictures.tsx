@@ -19,6 +19,10 @@ export type CardSlide = {
    *  button, not in it, where a link inside a button is two controls in
    *  one (axe's nested-interactive). */
   credit?: ReactNode;
+  /** Words and controls, not a picture (the airplane card's flight now,
+   *  its ends each a tap): a labelled group, where a picture's role would
+   *  hide its controls from VoiceOver. */
+  content?: boolean;
 };
 
 // A tile 70% of the card's width, so the next one shows at the edge and
@@ -88,7 +92,12 @@ export function CardPictures({
                     {slide.picture}
                   </BaseButton>
                 ) : (
-                  <div role="img" aria-label={slide.label} className="absolute inset-0" data-testid={slide.testId}>
+                  <div
+                    role={slide.content ? "group" : "img"}
+                    aria-label={slide.label}
+                    className="absolute inset-0"
+                    data-testid={slide.testId}
+                  >
                     {slide.picture}
                   </div>
                 )}

@@ -11,6 +11,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { AirportPlace } from "../../lib/api/types";
+import { ACTION, CARD_ACTIONS } from "../../lib/generated/cardActions";
 import PlaceActions from "./PlaceActions";
 
 const FIELD = {
@@ -56,5 +57,28 @@ describe("PlaceActions", () => {
     const add = screen.getByTestId("place-add-stop");
     expect(add).toHaveProperty("disabled", true);
     expect(add.getAttribute("aria-label")).toBe("Add Stop: Closed indefinitely");
+  });
+});
+
+/** Each action's tile on the airport card, by its test id. */
+const TILE = {
+  flyHere: "fly-here",
+  addStop: "place-add-stop",
+  call: "place-call",
+  favorite: "place-favorite",
+  address: "place-address-action",
+};
+
+describe("the airport card's row is design/card-actions.json's", () => {
+  const ways = [
+    { kind: "airport", props: {} },
+    { kind: "airportAsStop", props: { asStop: true } },
+    { kind: "airportStopOff", props: { addStopOff: "already on the route" } },
+  ] as const;
+  test.each(ways)("$kind: the generated table's actions, in its order, each with its label", ({ kind, props }) => {
+    render(<PlaceActions place={FIELD} ident="KMSN" flying={false} onFlyHere={vi.fn()} onAddStop={vi.fn()} {...props} />);
+    const names = CARD_ACTIONS[kind];
+    expect(tiles()).toEqual(names.map((name) => TILE[name]));
+    for (const name of names) expect(screen.getByTestId(TILE[name]).textContent).toContain(ACTION[name].label);
   });
 });

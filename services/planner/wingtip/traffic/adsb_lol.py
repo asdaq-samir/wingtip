@@ -1,6 +1,6 @@
 """adsb.lol, the map's traffic: its API asked about a region at most once in five seconds
-(the package's docstring says how), a pilot's search asked ahead of the regions' turns, and its
-globe's traces of an airplane, today's and its last few minutes."""
+(the package's docstring says how), and a pilot's search asked ahead of the regions' turns. Its
+globe's traces of an airplane are wingtip.traffic.globe's."""
 
 from __future__ import annotations
 
@@ -8,10 +8,11 @@ import math
 import threading
 
 import requests
-from cachetools import TTLCache
 
+from .. import outside, ratelimit
+from .shared_gate import SharedGate
 from ..geo import distance_nm
-from .common import HEADERS, TIMEOUT_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _number, _sleep, _wall, lol_headers, refused_for_s
+from .common import TIMEOUT_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _sleep, lol_headers, refused_for_s
 
 URL = "https://api.adsb.lol/v2/point/{lat:.2f}/{lon:.2f}/{radius}"
 
@@ -35,18 +36,30 @@ WIDE_REGION_RADIUS_NM = 250
 MAX_RADIUS_NM = 165
 #: A region's answer is given again, not asked for, this long.
 FRESH_S = 5.0
-#: Never two requests to adsb.lol closer together than this.
+#: Never two requests to adsb.lol closer together than this, from the
+#: planner and ingest together (shared_gate).
 MIN_GAP_S = 5.0
+#: The longest a pilot's search waits for its turn, s (it was a gap, 5 s, and the request's 5 s after): further off,
+#: it is answered at once from the FAA's radar or with the FAA's record (/api/traffic/find, `checked` false).
+SEARCH_WAIT_S = 1.0
 #: Turned away or not answered, nothing is asked for this long (a 429's Retry-After where longer).
 BACKOFF_S = 15.0
+#: Searches not answered in their time this many times in a row: adsb.lol is hanging, not refusing, and the next
+#: searches are not sent for SEARCH_HOLD_S, where each spent its whole timeout every turn. The
+#: regions' turns are not held by it: a region waits out its own longer timeout and keeps its last answer meanwhile.
+SEARCH_TIMEOUTS_HELD = 2
+SEARCH_HOLD_S = 15.0
 #: A region's last answer is given while adsb.lol cannot be asked, until it is this old; then it is unavailable.
 KEEP_S = 60.0
 
 #: Each region's last answer: (when it came, monotonic, airplanes).
 _REGIONS: dict = {}
-#: When adsb.lol may next be asked for a region (the regions' turns taken in order from it), when
-#: the last request went, a search's turn, and until when nothing is asked after a refusal.
-_STATE = {"next_ask": 0.0, "last_ask": -math.inf, "search_at": -math.inf, "blocked_until": -math.inf}
+#: When adsb.lol may next be asked for a region (the regions' turns taken in order from it) and a search's turn;
+#: in _LOL when the last request went, and until when nothing is asked after a refusal: kept in the live store, so
+#: ingest's follow round and the planner keep to one gap and one hold (wingtip.traffic.shared_gate).
+#: `timeouts` and `searches_held_until`: searches not answered in their time in a row, and the hold they started.
+_STATE = {"next_ask": 0.0, "search_at": -math.inf, "timeouts": 0, "searches_held_until": -math.inf}
+_LOL: ratelimit.Gate | SharedGate = SharedGate("adsb.lol")
 #: Regions being asked for now; the rest of a region's askers wait on this.
 _FLIGHTS: dict = {}
 
@@ -66,23 +79,13 @@ def _ask(region: tuple[float, float, int]) -> list[dict]:
     """adsb.lol's airplanes round a region's middle. Raises
     TrafficUnavailable where it turns the request away or does not answer."""
     try:
-        resp = requests.get(URL.format(lat=region[0], lon=region[1], radius=region[2]), headers=lol_headers(), timeout=TIMEOUT_S)
-        _STATE["blocked_until"] = max(_STATE["blocked_until"], _clock() + refused_for_s(resp))
+        resp = outside.live_get(URL.format(lat=region[0], lon=region[1], radius=region[2]), headers=lol_headers(), timeout=TIMEOUT_S)
+        _LOL.hold(refused_for_s(resp), _clock())
         resp.raise_for_status()
         entries = resp.json().get("ac") or []
     except (requests.RequestException, ValueError) as err:
         raise TrafficUnavailable(f"adsb.lol did not answer: {err}") from err
     return [a for a in (_aircraft(e) for e in entries if isinstance(e, dict)) if a is not None]
-
-
-def _region_turn(now: float) -> float:
-    """The next region's turn to ask adsb.lol, taken: the first free one,
-    a gap clear of a search's. Called with the lock held."""
-    slot = max(now, _STATE["next_ask"])
-    if abs(_STATE["search_at"] - slot) < MIN_GAP_S:
-        slot = _STATE["search_at"] + MIN_GAP_S
-    _STATE["next_ask"] = slot + MIN_GAP_S
-    return slot
 
 
 def _region_answer(region: tuple[float, float, int]) -> tuple[float, list[dict]]:
@@ -91,9 +94,10 @@ def _region_answer(region: tuple[float, float, int]) -> tuple[float, list[dict]]
     region with none, after waiting out the gap between requests -- else,
     turned away, its last answer while not too old. One asker at a time
     per region: the rest wait for its answer and are given it. The lock
-    is held only to decide and to store, never across the wait or the
+    is held only to decide and to store, never across the wait, the gate's
+    turn (a write to the store ingest shares, which may wait on it) or the
     request, so a phone whose region has an answer is never kept behind
-    another's request."""
+    another's request or ingest's disk."""
     while True:
         with _LOCK:
             held = _REGIONS.get(region)
@@ -109,45 +113,40 @@ def _region_answer(region: tuple[float, float, int]) -> tuple[float, list[dict]]
                 # Past two gaps is a back-off, not a queue of regions.
                 if wait > 2 * MIN_GAP_S:
                     raise TrafficUnavailable("adsb.lol has not answered for a while")
-                # Take the next free place between requests now, so the
-                # next asker's place is a gap after this one's.
-                slot = _region_turn(now)
+                earliest = max(now, _STATE["next_ask"])
                 flight = _FLIGHTS[region] = threading.Event()
                 break
         # Another phone is asking for this region: wait for it, then look again.
         flight.wait(TIMEOUT_S + 2 * MIN_GAP_S + 1)
     try:
-        while True:
-            if slot > now:
-                _sleep(slot - now)
-            with _LOCK:
-                now = _clock()
-                # A search took a turn within a gap of this one since it
-                # was taken: it goes first, and the region is given its
-                # last answer, or waits for a turn after the search's.
-                go = abs(_STATE["search_at"] - slot) >= MIN_GAP_S
-                if go:
-                    _STATE["last_ask"] = now
-                    break
-                if kept:
-                    break
-                slot = _region_turn(now)
-        if not go:
-            return held
-        asked = now
+        # One turn, taken once in the gate the searches and ingest's follow
+        # round keep to as well (a gap after the last ask of any of them,
+        # two gaps at most), and slept for once; the next region's place is
+        # a gap after this one's.
+        taken = _LOL.take(now, earliest, MIN_GAP_S, 2 * MIN_GAP_S)
+        if taken is None:
+            if kept:
+                return held
+            raise TrafficUnavailable("adsb.lol's next turn is too far off")
+        with _LOCK:
+            _STATE["next_ask"] = max(_STATE["next_ask"], taken + MIN_GAP_S)
+        if taken > now:
+            _sleep(taken - now)
         try:
-            answer = (asked, _ask(region))
+            answer = (taken, _ask(region))
         except TrafficUnavailable:
             answer = None
+        if answer is None:
+            _LOL.hold(BACKOFF_S, taken)
+            until = _LOL.until
         with _LOCK:
             if answer is None:
-                _STATE["blocked_until"] = max(_STATE["blocked_until"], asked + BACKOFF_S)
-                _STATE["next_ask"] = _STATE["blocked_until"]
+                _STATE["next_ask"] = max(_STATE["next_ask"], until)
             else:
                 _REGIONS[region] = answer
                 _FROM_ADSBX.discard(region)
                 if len(_REGIONS) > 256:
-                    for gone in [r for r, (at, _) in _REGIONS.items() if asked - at > KEEP_S]:
+                    for gone in [r for r, (at, _) in _REGIONS.items() if taken - at > KEEP_S]:
                         del _REGIONS[gone]
     finally:
         with _LOCK:
@@ -177,58 +176,54 @@ def _covering(lat: float, lon: float, radius_nm: float) -> tuple[float, list[dic
 
 
 FIND_URL = "https://api.adsb.lol/v2/{by}/{value}"
-#: The same open data's globe (adsb.lol's tar1090), where the traces are:
-#: adsb.lol itself, as globe.adsb.lol answers every read with a redirect
-#: here (seen 2026-10-16), a hop that cost 0.4 s a file (1.1 s against
-#: 0.7 s, three reads each way).
-GLOBE = "https://adsb.lol"
-#: The day's track of an airplane, by its ICAO address: readsb's trace,
-#: on the globe, gzip JSON.
-TRACE_URL = GLOBE + "/data/traces/{last2}/trace_full_{hex}.json"
-#: A trace is read again after this long, s: the map adds the reports
-#: between (TrafficLayer).
-TRACE_TTL_S = 60
-
-_TRACES: TTLCache = TTLCache(maxsize=64, ttl=TRACE_TTL_S)
-#: An airplane's last few minutes, on the same globe: the trace readsb
-#: writes every few seconds (3 to 8 s old, measured 2026-10-12, where the
-#: full trace was 4 to 7 minutes behind). A static file, not the API, so
-#: a search by registration or address costs none of the API's turns.
-RECENT_URL = GLOBE + "/data/traces/{last2}/trace_recent_{hex}.json"
-#: A recent trace is read again after this long, s.
-RECENT_TTL_S = 5
-#: Each airplane's recent trace as read (None for a 404), for its search's
-#: answer and its alerts' state (`status`).
-_RECENT: TTLCache = TTLCache(maxsize=256, ttl=RECENT_TTL_S)
-
-_TRACE_GATES: dict[str, threading.Lock] = {}
 
 
-def _paced(url: str) -> dict:
+def _paced(url: str, wait_most_s: float = 2 * MIN_GAP_S, timeout: float = TIMEOUT_S, same_turn: bool = False) -> dict:
     """adsb.lol's answer to a pilot's search, asked ahead of the regions'
     turns: a gap after the last request that went and the last search's,
     never two within MIN_GAP_S still (a region whose turn it falls near
-    gives way, `_region_answer`). Behind a refusal's back-off it is not
-    asked: TrafficUnavailable."""
+    gives way, `_region_answer`). A turn further off than `wait_most_s` is
+    not waited for: TrafficUnavailable. `same_turn`: a search's second way,
+    sent at once in its first's turn (its own is a gap off, past the wait),
+    passed only once the first was answered. A search's own short timeout
+    holds adsb.lol for no one; a refusal does, and SEARCH_TIMEOUTS_HELD in a
+    row hold the searches alone for SEARCH_HOLD_S."""
     with _LOCK:
         now = _clock()
-        slot = max(now, _STATE["last_ask"] + MIN_GAP_S, _STATE["search_at"] + MIN_GAP_S, _STATE["blocked_until"])
-        if slot - now > 2 * MIN_GAP_S:
-            raise TrafficUnavailable("adsb.lol has not answered for a while")
-        _STATE["search_at"] = slot
+        if now < _STATE["searches_held_until"]:
+            raise TrafficUnavailable("adsb.lol has not answered the last searches in their time")
+        earliest = now if same_turn else max(now, _STATE["search_at"] + MIN_GAP_S)
+    # The turn taken in the gate both processes keep to (it respects a hold
+    # itself), outside the lock: a gap after the last request and the last
+    # search's, a same-turn second way at once.
+    slot = _LOL.take(now, earliest, 0.0 if same_turn else MIN_GAP_S, wait_most_s)
+    if slot is None:
+        raise TrafficUnavailable("adsb.lol's next turn is too far off")
+    with _LOCK:
+        _STATE["search_at"] = max(_STATE["search_at"], slot)
     if slot > now:
         _sleep(slot - now)
-    with _LOCK:
-        _STATE["last_ask"] = max(_STATE["last_ask"], _clock())
     try:
-        resp = requests.get(url, headers=lol_headers(), timeout=TIMEOUT_S)
+        resp = outside.live_get(url, headers=lol_headers(), timeout=timeout)
         resp.raise_for_status()
-        return resp.json()
+        answer = resp.json()
     except (requests.RequestException, ValueError) as err:
-        with _LOCK:
-            wait = max(BACKOFF_S, refused_for_s(err.response) if getattr(err, "response", None) is not None else 0.0)
-            _STATE["next_ask"] = _STATE["blocked_until"] = max(_STATE["blocked_until"], _clock() + wait)
+        if isinstance(err, requests.Timeout):
+            with _LOCK:
+                _STATE["timeouts"] += 1
+                if _STATE["timeouts"] >= SEARCH_TIMEOUTS_HELD:
+                    _STATE["searches_held_until"], _STATE["timeouts"] = _clock() + SEARCH_HOLD_S, 0
+        else:
+            refusal = getattr(err, "response", None)
+            _LOL.hold(max(BACKOFF_S, refused_for_s(refusal) if refusal is not None else 0.0), _clock())
+            until = _LOL.until
+            with _LOCK:
+                _STATE["next_ask"] = max(_STATE["next_ask"], until)
+                _STATE["timeouts"] = 0
         raise TrafficUnavailable(f"adsb.lol did not answer: {err}") from err
+    with _LOCK:
+        _STATE["timeouts"] = 0
+    return answer
 
 
 def _heard(text: str) -> list[dict]:
@@ -254,147 +249,5 @@ def _heard(text: str) -> list[dict]:
     return sorted(best.values(), key=lambda plane: plane["seen_s"])
 
 
-#: adsb.lol's credit, the map's traffic's by default (the planner's
-#: Traffic schema), for a search's answer from it.
+#: adsb.lol's credit, the map's traffic's by default (the planner's Traffic schema), for a search's answer from it.
 ADSB_LOL_SOURCE = {"source": "adsb.lol", "license": "ODbL 1.0"}
-
-
-def _recent_trace(hex_id: str):
-    """An airplane's recent trace (RECENT_URL), kept RECENT_TTL_S: a dict,
-    None where it has none (a 404), UNREAD where it cannot be read now."""
-    with _LOCK:
-        if hex_id in _RECENT:
-            return _RECENT[hex_id]
-    try:
-        resp = _globe_get(RECENT_URL.format(last2=hex_id[-2:], hex=hex_id), TIMEOUT_S)
-        if resp.status_code == 404:
-            trace = None
-        elif resp.status_code == 200:
-            trace = resp.json()
-            if not isinstance(trace, dict):
-                trace = None
-        else:
-            return UNREAD
-    except (requests.RequestException, ValueError, _GlobeRefused):
-        return UNREAD
-    with _LOCK:
-        _RECENT[hex_id] = trace
-    return trace
-
-
-def _recent(hex_id: str) -> list[dict] | None:
-    """The airplane with this address as its recent trace last has it, as
-    `_aircraft` gives it: [it] in the air and heard within STALE_S, [] on
-    the ground, not heard that recently or with no recent trace (a 404),
-    None where the trace cannot be read now (the API is asked instead)."""
-    trace = _recent_trace(hex_id)
-    if trace is UNREAD:
-        return None
-    plane = _last_heard(trace) if trace else None
-    return [plane] if plane is not None else []
-
-
-def _last_heard(trace: dict) -> dict | None:
-    """A trace's last point as the API's answer has an airplane, read by
-    `_aircraft`: readsb's trace point is [seconds after the trace's
-    timestamp, lat, lon, altitude or "ground", ground speed, track, flags,
-    vertical rate, details, source, GNSS altitude, GNSS rate, ...], the
-    callsign and squawk in the last point that carries details."""
-    points = [p for p in trace.get("trace") or [] if isinstance(p, list) and len(p) >= 8]
-    base = _number(trace.get("timestamp"))
-    if not points or base is None:
-        return None
-    last = points[-1]
-    details = next((p[8] for p in reversed(points) if len(p) > 8 and isinstance(p[8], dict)), {})
-    return _aircraft(
-        {
-            "hex": trace.get("icao"),
-            "flight": details.get("flight"),
-            "r": trace.get("r"),
-            "t": trace.get("t"),
-            "lat": last[1],
-            "lon": last[2],
-            "alt_baro": last[3],
-            "alt_geom": last[10] if len(last) > 10 else None,
-            "gs": last[4],
-            "track": last[5],
-            "baro_rate": last[7],
-            "geom_rate": last[11] if len(last) > 11 else None,
-            "seen_pos": round(max(0.0, _wall() - base - float(last[0])), 1),
-            "squawk": details.get("squawk"),
-            "emergency": details.get("emergency"),
-        }
-    )
-
-
-#: How long the globe's files are not asked for after it turns the planner
-#: away, s. Since 2026-10-23 adsb.lol answers the planner's requests for
-#: its trace files with a "Verification" page and a 403, a browser check
-#: the planner cannot pass; asked again on every card, each refusal took
-#: 0.7 to 4 s, and a card's past flights asked for fourteen days of them,
-#: 5 to 13 s, before showing what it had anyway (the recorded track).
-GLOBE_BACKOFF_S = 600.0
-_GLOBE = {"blocked_until": -math.inf}
-
-
-class _GlobeRefused(Exception):
-    """The globe turned the planner away, now or within GLOBE_BACKOFF_S."""
-
-
-def _globe_get(url: str, timeout: float):
-    """A file off adsb.lol's globe, or _GlobeRefused where it is turning
-    the planner away: a 403 or a 429, or a page in place of the file (its
-    verification wall answers 200 to some), starts GLOBE_BACKOFF_S without
-    asking."""
-    if _clock() < _GLOBE["blocked_until"]:
-        raise _GlobeRefused("adsb.lol's globe turned the planner away a moment ago")
-    resp = requests.get(url, headers=HEADERS, timeout=timeout)
-    page = "html" in str(resp.headers.get("content-type") or "").lower()
-    if resp.status_code in (403, 429) or (resp.status_code == 200 and page):
-        _GLOBE["blocked_until"] = _clock() + GLOBE_BACKOFF_S
-        raise _GlobeRefused(f"adsb.lol's globe answered {resp.status_code}")
-    return resp
-
-
-def _trace(hex_id: str) -> dict | None:
-    """An airplane's trace today, read once a minute; None where there is
-    none or it cannot be had (the flight is then drawn without its past).
-    Only an answer is kept -- a 404 is the airplane having no trace today
-    -- never a timeout or a refusal, which is asked again at the next
-    read. One read per airplane at a time: a second asker waits for it
-    and is given what it kept."""
-    with _LOCK:
-        if hex_id in _TRACES:
-            return _TRACES[hex_id]
-        gate = _TRACE_GATES.setdefault(hex_id, threading.Lock())
-    with gate:
-        with _LOCK:
-            if hex_id in _TRACES:
-                return _TRACES[hex_id]
-        try:
-            resp = _globe_get(TRACE_URL.format(last2=hex_id[-2:], hex=hex_id), TIMEOUT_S)
-            if resp.status_code == 200:
-                trace = resp.json()
-                # Anything but an object is not a trace: no past, not a 500.
-                if not isinstance(trace, dict):
-                    trace = None
-            elif resp.status_code == 404:
-                trace = None
-            else:
-                return None
-        except (requests.RequestException, ValueError, _GlobeRefused):
-            return None
-        with _LOCK:
-            _TRACES[hex_id] = trace
-            if len(_TRACE_GATES) > 256:
-                _TRACE_GATES.clear()
-    return trace
-
-
-class _Unread:
-    """A day's trace that could not be had now: refused or not answered."""
-
-
-#: What `_day_trace` gives for a day it could not read, as against None,
-#: a day the airplane has no trace.
-UNREAD = _Unread()

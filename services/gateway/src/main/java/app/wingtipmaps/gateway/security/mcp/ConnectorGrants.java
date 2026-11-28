@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -43,7 +45,7 @@ public class ConnectorGrants {
      * account deleted, a refresh token replayed), and itself neither
      * revoked nor run out. The planner asks on every MCP call, since its
      * JWTs are checked by signature alone and would otherwise outlive all
-     * of that by up to 15 minutes (the security audit's L4). It asked
+     * of that by up to 15 minutes. It asked
      * only whether the pilot had any live connection through the client
      * until the deep review of 2026-11-21: an access token revoked at
      * /oauth2/revoke, while its refresh token stood, or one of a second
@@ -86,6 +88,32 @@ public class ConnectorGrants {
         }
         kept.live(pilotId, clientId, accessToken, expiry.get(), seen);
         return true;
+    }
+
+    /**
+     * Whether this access token, the pilot's own and still active, was
+     * granted wingtip:flights: asked before the connector saves, plans
+     * again or deletes a saved flight. The planner checks the scope too
+     * (app/mcp/calls.pilot), but the internal writes trusted its word
+     * alone, so a planner tool that forgot to ask would write freely
+     * (defence in depth). The
+     * token's own scopes, not the connection's: a connection consented to
+     * before V53 renamed the scope refreshes to wingtip:read and the old
+     * wingtip:write, which grants nothing now.
+     */
+    public boolean mayChangeFlights(long pilotId, String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            return false;
+        }
+        OAuth2Authorization connection = authorizations.findByToken(accessToken, OAuth2TokenType.ACCESS_TOKEN);
+        if (connection == null || !Long.toString(pilotId).equals(connection.getPrincipalName())) {
+            return false;
+        }
+        OAuth2Authorization.Token<OAuth2AccessToken> token = connection.getAccessToken();
+        return token != null
+                && token.isActive()
+                && MessageDigest.isEqual(bytes(token.getToken().getTokenValue()), bytes(accessToken))
+                && token.getToken().getScopes().contains(ConnectorSettings.WRITE);
     }
 
     private static byte[] bytes(String value) {
@@ -145,8 +173,7 @@ public class ConnectorGrants {
     }
 
     /**
-     * Ends one of the pilot's connections from Wingtip's side (the deep
-     * security review's N2): its row goes, with its access and refresh
+     * Ends one of the pilot's connections from Wingtip's side: its row goes, with its access and refresh
      * tokens and the spent ones kept against replay, so the next MCP call
      * with either token is refused (live) and no refresh is granted. The
      * consent behind it goes too once no other connection of theirs stands

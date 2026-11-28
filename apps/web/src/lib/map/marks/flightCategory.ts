@@ -47,6 +47,24 @@ export function chipFillOf(category: string | null | undefined): string {
   return (category && CATEGORY_CHIP[category]) || UNKNOWN_COLOUR;
 }
 
+/** A category set as words (the search's "MVFR"): the scheme's own ink,
+ *  a shade of the dot's hue that reads 4.5:1 and more on every surface by
+ *  day and a lighter one at night (design/tokens.json color.theme's
+ *  category-*-ink; the owner, 2026-11-27: "Lighter word colour at night").
+ *  The dot, the chip and the map's mark keep the FAA's colour (colourOf). */
+export function inkOf(category: string | null | undefined): string {
+  const known = category && category in CATEGORY_COLOURS ? category.toLowerCase() : "unknown";
+  return `var(--category-${known}-ink)`;
+}
+
+/** A category's dot or bar ringed in the chart's casing, as the map draws
+ *  its marks, so each reads 3:1 and more against what is next to it
+ *  (WCAG 1.4.11): at night the FAA's deep blue and red stand off the
+ *  night's navy (2.3 to 3.2:1 on it alone) and no report's grey off the
+ *  night's glass (2.78:1); by day LIFR's #a371f7 off Chart ink's and
+ *  Sunlight's muted fills (2.75 and 2.89:1), 3.35:1 against the ring. On a white surface the ring is unseen. */
+export const DOT_RING = "ring-1 ring-(--chart-casing)";
+
 /** A chip's colour for what is known of a field's weather: its category
  *  once there is a report, grey while checking, when it could not be
  *  checked, and when the field has no report. */

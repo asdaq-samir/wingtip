@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, grabberTo, inSheet, settle, settled, sideDrawer, slow, mapStill } from "./helpers";
+import { closeCard, grabberTo, inSheet, settle, settled, sideDrawer, slow, mapStill, withFoot } from "./helpers";
 import { drawnMarks, markWith } from "./marks";
 import { installFrameRecorder } from "./drawnOnce";
 import { extrasOn } from "./extras";
+import { asPlanner } from "./plannerNotams";
 
 /**
  * The map's sheet with a card over it, from sheet-cards.spec (split at 400
@@ -26,7 +27,7 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
           top: 1,
           unchecked: [],
           notams: [
-            {
+            asPlanner({
               id: "11/101",
               kind: "notam",
               closed: false,
@@ -45,7 +46,7 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
               role: null,
               low_ft: null,
               high_ft: null,
-            },
+            }),
           ],
         },
       }),
@@ -57,17 +58,22 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
   const placeDrawer = sideDrawer(page)
     .locator("[data-sheet-card]")
     .filter({ has: page.getByTestId("place-card") });
-  await place.getByRole("tab", { name: "Info" }).click();
+  await withFoot(place).getByRole("tab", { name: "Info" }).click();
   await grabberTo(page, "full");
   const controls = page.locator("[data-map-controls]");
   const radio = page.getByTestId("mic-circle");
 
-  // All the way up, a NOTAM's card over it at half: the buttons give way.
-  // Its row reached as a finger would, clear of the card's floating tabs.
+  // All the way up, a NOTAM's card opened from it opens all the way up too,
+  // the size of the card it came from (the card rule's 2), then lowered to
+  // half over it: the buttons give way. Its row reached as a finger would,
+  // clear of the card's floating tabs.
   const row = place.getByTestId("place-notam").first();
   await inSheet(page, row);
   await row.click();
   const notam = sideDrawer(page).getByTestId("place-notam-card");
+  await expect(notam).toHaveAttribute("data-panel", "full");
+  await settled(notam);
+  await grabberTo(page, "half");
   await expect(notam).toHaveAttribute("data-panel", "half");
   await settled(notam);
   await expect(page.locator("body")).toHaveAttribute("data-map-panel", "full");

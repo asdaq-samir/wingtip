@@ -1,11 +1,12 @@
 import { ConsoleLeave } from "../../components/consoleLeave";
-import type { ReactNode } from "react";
+import { useEffect, useEffectEvent, type ReactNode } from "react";
 import type { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import SettingsButton from "../../components/SettingsButton";
 import { HeadGrid } from "../../components/HeadGrid";
 import { PinnedHead } from "../../components/PinnedHead";
+import { holdOpenCard } from "../../lib/openCards";
 import { Shown } from "../../lib/shown";
 import { CardLayer } from "../../components/sheet/CardLayer";
 
@@ -45,6 +46,11 @@ export default function ConsoleLayer({
   // opens: the key is the menu's (consoles.spec's role menu, run
   // 42867578624). The rest the Drawer tells it is refused: a tap on the
   // map leaves it, as it leaves every card.
+  // The top card's close while it is up (lib/openCards), so a swipe down
+  // from half and a device's Back close it as its ✕ does; not the tab
+  // bar's Back (`inBar`), its ✕ being in its own head.
+  const closeNow = useEffectEvent(onClose);
+  useEffect(() => (shown ? holdOpenCard({ close: () => closeNow(), inBar: false }) : undefined), [shown]);
   const dismiss = (details: Drawer.Root.ChangeEventDetails) => {
     details.cancel();
     if (details.reason !== "escape-key" || details.event.defaultPrevented) return;
@@ -54,14 +60,11 @@ export default function ConsoleLayer({
     onClose();
   };
   return (
-    // Its drawer open while it is up (CardLayer's `open`), and each time it
-    // is opened at half, as every card opens: kept by lib/shown alone, it
-    // came back at the size it was put away at, the pill, its head alone
-    // (the owner's iPhone, 2026-11-14). A swipe down from half closes it,
-    // as Apple Maps' account sheet; from all the way up it comes to half
-    // (the owner, 2026-11-14).
+    // Its drawer open while it is up (CardLayer's `open`), so each time it
+    // opens it opens as every card does (CardStack), not at the size it was
+    // put away at.
     <Shown.Provider value={shown}>
-      <CardLayer label={label} dismiss={dismiss} onSwipeClose={onClose} finalFocus={finalFocus} open={shown}>
+      <CardLayer label={label} dismiss={dismiss} finalFocus={finalFocus} open={shown}>
         <section
           aria-label={label}
           // Named for the suite only while it is up: put away it is there,
@@ -85,8 +88,7 @@ export default function ConsoleLayer({
         >
           {/* Every card's one head row (PinnedHead, HeadGrid), at the
               sheet's corner: its close the shared CloseButton, not
-              CardClose, as You is no card a device's Back or the tab bar
-              holds (lib/openCards). */}
+              CardClose, as the tab bar's Back does not hold You. */}
           <PinnedHead slot="layer-head" flush className="shrink-0">
             <HeadGrid
               start={<SettingsButton testId="settings-row" />}

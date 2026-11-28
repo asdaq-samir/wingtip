@@ -64,7 +64,10 @@ public record AircraftDto(
         HandbookFigures handbook,
 
         @Schema(description = "Its own handbook figures as its pilot gave them; each null where not given")
-        OwnFigures figures) {
+        OwnFigures figures,
+
+        @Schema(description = "Its category, class and gear as its owner gave them; each null where not said")
+        AirplaneKind kind) {
 
     @Schema(description = "A VOR check for IFR (14 CFR 91.171)")
     public record VorCheckDto(
@@ -106,6 +109,7 @@ public record AircraftDto(
 
             @Schema(
                     description = "Whether it carries people or is given for flight instruction for hire, when the "
-                            + "100-hour inspection applies (91.409(b))")
-            boolean forHire) {}
+                            + "100-hour inspection applies (91.409(b)); null until the owner says, weighed as for hire")
+            @Nullable
+            Boolean forHire) {}
 }

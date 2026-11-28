@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from wingtip import airports, notam_rank, notams, time_zone
 
+from .. import notam_reading
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 from ..router_basics import load_route
 from ..schemas.notam_rank import NotamsRanked, NotamsRankedAsk
@@ -60,13 +61,16 @@ def airport_notams(ident: str) -> NotamsRanked:
     ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight
     uses). With no flight there is no runway in use or cruise altitude to
     weigh. `unchecked` names the TFRs when their list could not be had;
-    `time_zone` is the field's, for its NOTAMs' local times."""
+    `time_zone` is the field's, for its NOTAMs' local times. Each NOTAM
+    comes read for the card: its `reading`, `card` and `subject`
+    (app.notam_reading)."""
     place = airports.find_place(ident)
     if place is None:
         raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
     found = notam_rank.at_field(place["ident"], place["lat"], place["lon"], datetime.now(timezone.utc))
     return NotamsRanked(
-        notams=found["ranked"],
+        # Each read here for the card, the web's engine module carrying no NOTAM reader.
+        notams=notam_reading.read(found["ranked"], notam_reading.field_card(place)),
         top=found["top"],
         coverage_since=notam_rank.coverage_since(),
         full_set=notams.full_set(),

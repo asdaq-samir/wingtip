@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 import { OctagonAlert, TriangleAlert } from "lucide-react";
 import { TEXT } from "../../lib/text";
+import { SkeletonBars } from "../../components/QueryState";
 import { passLine, type TfrWhen } from "../plan/lazy";
 import { FINDING_TONE } from "../../lib/findings";
 import { TFR_WORDS } from "./briefingWords";
@@ -31,8 +32,12 @@ export function Flag({ finding, testId, children }: { finding: "stop" | "caution
   );
 }
 
-/** A section's line while what it shows is still coming, or failed. */
-export function Pending({ children }: { children: ReactNode }) {
+/** A section's line while what it shows is still coming, or failed.
+ *  Coming, the shape of two lines with the words for a screen reader,
+ *  where a grey line of words read as unfinished and then jumped
+ *  (QueryState's bars). */
+export function Pending({ children, coming = false }: { children: ReactNode; coming?: boolean }) {
+  if (coming) return <SkeletonBars fetching={children} />;
   return (
     <p className="text-muted-foreground" role="status">
       {children}

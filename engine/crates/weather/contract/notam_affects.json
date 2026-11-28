@@ -1,0 +1,82 @@
+{
+  "x-call": "wingtip_weather::notam_read::card::affects::call",
+  "description": "Which part of the planned flight a NOTAM affects, the chip on its card: of the roles its field plays in the plan (the departure, a stop, the destination, the alternate filed), each it reaches, and whether it takes away a procedure that role flies (taken, the red chip) or is only the field's (the neutral one). Read from its card's own parts (notam_card), never its words: a departure procedure taken away (SID, ODP, DVA; AIM 5-2-9) reaches the departure and each stop, an arrival (STAR, AIM 5-4-1) or an approach (AIM 5-4-5) the destination, each stop and the alternate (14 CFR 91.169); what happened to the field itself (a runway closed, a light out, or a procedure NOTAM's own sentence closing a surface, FDC 6/3373's \"RWY 18/36 PERMANENTLY CLSD\") reaches every role there. A procedure NOTAM whose procedures it cannot name reaches the roles that fly its kind (JO 7930.2 1-2-1), neutral.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NotamAffectsInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The NOTAM as sent, domestic or ICAO form."
+        },
+        "idents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The field's idents (OSH, KOSH), as notam_card takes them."
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "departure",
+              "stop",
+              "arrival",
+              "alternate"
+            ]
+          },
+          "description": "The roles the NOTAM's field plays in the planned flight, any order; empty where it plays none."
+        }
+      },
+      "required": [
+        "text",
+        "roles"
+      ]
+    },
+    "answer": {
+      "title": "NotamAffectsAnswer",
+      "type": "object",
+      "properties": {
+        "affects": {
+          "type": "array",
+          "description": "Each role it reaches, those it takes a procedure from first, then departure, stop, arrival, alternate; the chip is the first. Empty where it reaches none.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "departure",
+                  "stop",
+                  "arrival",
+                  "alternate"
+                ]
+              },
+              "taken": {
+                "type": "boolean",
+                "description": "It takes away a procedure this role flies: the red chip; false, the field's own, the neutral one."
+              }
+            },
+            "required": [
+              "role",
+              "taken"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "affects"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

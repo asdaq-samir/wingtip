@@ -1,6 +1,6 @@
 import type { AltitudeOption, Leg, Runway, Totals } from "../../lib/api/types";
 import { altFt, bearing, feet, flightLevel, gal, miles, one } from "../../lib/format";
-import { clockTime, duration, zuluTime } from "../../lib/format";
+import { arrivalDay, clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { calmOnRunway, isCalm } from "./wind";
 import { modelledWinds, windsSource } from "../../lib/windsAloft";
@@ -150,18 +150,22 @@ export { clockTime };
 
 /** How the Altitude Advisor's reasoning says the economical plan: none
  *  where the airplane has no climb fuel flow, as the engine then leaves it
- *  out rather than assume one (navlog_plans, the aviation audit's AV-8). */
+ *  out rather than assume one (navlog_plans). */
 export const economicalWords = (plans: { kind: string }[]) =>
   plans.some((o) => o.kind === "economical")
     ? "economical for the least fuel, every climb counted"
     : "no economical plan (no climb fuel flow)";
 
 /** When a leg ends: the departure instant plus the minutes flown to
- *  it -- "—" while the minutes are unknown (a leg not yet in, or one
+ *  it, its day said where not the departure's -- "—" while the minutes are unknown (a leg not yet in, or one
  *  that cannot be flown). */
 export function etaAt(departIso: string, minutes: number | null): string {
   if (minutes === null) return "—";
-  return clockTime(new Date(new Date(departIso).getTime() + minutes * 60_000));
+  const left = new Date(departIso);
+  const at = new Date(left.getTime() + minutes * 60_000);
+  // Its day where it is not the departure's: "Tue 15:54" (arrivalDay).
+  const day = arrivalDay(at, left);
+  return day ? `${day} ${clockTime(at)}` : clockTime(at);
 }
 
 const SURFACE_NAMES: Record<string, string> = {
@@ -250,7 +254,8 @@ export type North = "T" | "M";
  *  "240°T 12G20 kt", "VRB 4 kt" with no direction, "Calm" (isCalm), "Not
  *  reported" with no speed. A field's report, the Brief's, the airport
  *  card's and the nav log's winds aloft were written four ways ("210° 3
- *  kt", "210°/3", "200°T 9 kt", "198°/26 kt"; the UI audit's A7), and a
+ *  kt", "210°/3", "200°T 9 kt", "198°/26 kt"),
+ *  and a
  *  true wind unmarked reads as the magnetic one a tower gives. */
 export function windText(
   dirDeg: number | null | undefined,
@@ -306,11 +311,12 @@ export function windAloft(dirTrueDeg: number, speedKt: number): string {
 
 /** Ceiling and visibility the way a briefer says them, a report's "more
  *  than" visibility as such ("6+ sm", P6SM: FAA JO 7900.5; lib/format's
- *  miles, the code audit's CODE-12). */
+ *  miles), and its "less than" ("M1/4SM"). */
 export function ceilingAndVisibility(
   ceilingFt: number | null | undefined,
   visibilitySm: number | null | undefined,
   visibilityPlus = false,
+  visibilityMinus = false,
 ): string {
-  return `${ceilingFt == null ? "no ceiling" : feet(ceilingFt)} · ${miles(visibilitySm, visibilityPlus)}`;
+  return `${ceilingFt == null ? "no ceiling" : feet(ceilingFt)} · ${miles(visibilitySm, visibilityPlus, visibilityMinus)}`;
 }

@@ -23,18 +23,32 @@ final nonisolated class ReaderDocument: PDFDocument, PDFDocumentDelegate {
     func classForPage() -> AnyClass { InvertiblePage.self }
 }
 
-/// A page drawn as PDFKit draws it, then, on an inverted document, every
-/// colour turned over by a white fill in the difference blend: white
-/// paper black, black type white, a chart's colours their opposites. The
-/// way Apple's PDFKit sample draws over a page (draw(with:to:)).
+/// A page drawn as PDFKit draws it, on an inverted document white on
+/// black (NightPage): white paper black, black type white, a chart's
+/// colours their opposites.
 final nonisolated class InvertiblePage: PDFPage {
     override func draw(with box: PDFDisplayBox, to context: CGContext) {
-        super.draw(with: box, to: context)
-        guard (document as? ReaderDocument)?.inverted == true else { return }
+        let look = PageLook(inverted: (document as? ReaderDocument)?.inverted == true)
+        drawPage(with: box, to: context, look: look) { super.draw(with: box, to: context) }
+    }
+}
+
+nonisolated extension PDFPage {
+    /// The page under a night look (NightPage), in the page's own space:
+    /// PDFKit hands the context over in the box's space, and transforms it
+    /// itself inside its own drawing (`draw`), so the paper and the look
+    /// over it are drawn in the same space as the page, whatever the box's
+    /// origin and the page's rotation.
+    func drawPage(with box: PDFDisplayBox, to context: CGContext, look: PageLook, draw: () -> Void) {
+        let rect = bounds(for: box)
         context.saveGState()
-        context.setBlendMode(.difference)
-        context.setFillColor(UIColor.white.cgColor)
-        context.fill(bounds(for: box))
+        transform(context, for: box)
+        if !look.plain { NightPage.paper(in: context, rect: rect) }
+        context.restoreGState()
+        draw()
+        context.saveGState()
+        transform(context, for: box)
+        NightPage.over(in: context, rect: rect, look: look)
         context.restoreGState()
     }
 }
@@ -59,6 +73,16 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
     /// match a cancelled find had already queued is never highlighted.
     @ObservationIgnored private var words = ""
     private let generation = Atomic<Int>(0)
+    /// The matches PDFKit has told and the main actor not yet taken, with
+    /// the find's number then: taken a batch at a time (`flush`), so a
+    /// common word's thousands of matches are a few hops and a few
+    /// updates of `matches`, not one of each per match.
+    private let told = Mutex<[Told]>([])
+    private let flushQueued = Atomic(false)
+    /// A cite's words still to look for (`go(at:)`), in turn: while there
+    /// are some, the find under way is the cite's, and its first match is
+    /// gone to and the find stopped.
+    @ObservationIgnored private var citeWords: [String] = []
     private(set) var canGoBack = false
     private(set) var canGoForward = false
     /// Told each page turned (ReaderModel keeps the page left at).
@@ -81,6 +105,7 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
     func attach(_ view: PDFView) {
         self.view = view
         view.document = document
+        forgetObservers()
         observers = [Notification.Name.PDFViewPageChanged, .PDFViewChangedHistory].map { name in
             NotificationCenter.default.addObserver(forName: name, object: view, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.changed() }
@@ -88,6 +113,14 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
         }
         changed()
     }
+
+    private func forgetObservers() {
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
+        observers = []
+    }
+
+    // Block observers stay with NotificationCenter until removed.
+    isolated deinit { forgetObservers() }
 
     private func changed() {
         guard let view, let doc = document, let shown = view.currentPage else { return }
@@ -104,30 +137,55 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
         view?.go(to: target)
     }
 
+    /// A heading of the outline gone to, and its page the page in view at
+    /// once: PDFKit's page-changed notice comes on the main queue a moment
+    /// later, and a bookmark made before it was named for the page left
+    /// (DocumentsIPadTests' testContentsAndABookmark on the iPhone, where
+    /// Contents is a sheet gone with the row's tap and Bookmark is at hand
+    /// straight away).
     func go(_ row: ReaderFinding.OutlineRow) {
-        if let destination = row.item?.destination {
-            view?.go(to: destination)
-        } else if let action = row.item?.action as? PDFActionGoTo {
-            view?.go(to: action.destination)
+        let jump = row.item?.action as? PDFActionGoTo
+        guard let destination = row.item?.destination ?? jump?.destination else { return }
+        view?.go(to: destination)
+        if let target = destination.page, let doc = document {
+            page = doc.index(for: target) + 1
+            onPage(page)
         }
     }
 
     /// A cite's paragraph or section: its row in the outline, else the
     /// first place its number is set as a heading ("7-1-5."), else its
-    /// number anywhere.
+    /// number anywhere. Looked for with PDFKit's find, which runs off the
+    /// main thread, as the AIM's 900 pages take seconds to search whole.
     func go(at: String) {
         if let i = ReaderFinding.row(for: at, in: outline.map(\.title)) {
             go(outline[i])
             return
         }
-        guard let doc = document else { return }
-        for words in [ReaderFinding.headingWords(at), at] {
-            if let hit = doc.findString(words, withOptions: [.caseInsensitive]).first {
-                view?.go(to: hit)
-                view?.setCurrentSelection(hit, animate: true)
-                return
-            }
-        }
+        seek([ReaderFinding.headingWords(at), at])
+    }
+
+    /// The first of `words` the document holds, looked for in turn.
+    private func seek(_ words: [String]) {
+        guard let doc = document, let first = words.first else { return }
+        restart(doc)
+        citeWords = words
+        self.words = first
+        finding = true
+        doc.beginFindString(first, withOptions: [.caseInsensitive])
+    }
+
+    /// Any find under way stopped and its matches put away: anything it
+    /// still tells carries a number that is not the next find's.
+    private func restart(_ doc: ReaderDocument) {
+        generation.add(1, ordering: .sequentiallyConsistent)
+        if doc.isFinding { doc.cancelFindString() }
+        generation.add(1, ordering: .sequentiallyConsistent)
+        citeWords = []
+        finding = false
+        matches = []
+        current = nil
+        view?.highlightedSelections = nil
     }
 
     func back() { if view?.canGoBack == true { view?.goBack(nil) } }
@@ -139,14 +197,7 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
     /// (beginFindString), the first shown as it comes.
     func find(_ query: String) {
         guard let doc = document else { return }
-        generation.add(1, ordering: .sequentiallyConsistent)
-        if doc.isFinding { doc.cancelFindString() }
-        // Again once the old find is cancelled: anything it still tells
-        // carries a number that is not this find's.
-        generation.add(1, ordering: .sequentiallyConsistent)
-        matches = []
-        current = nil
-        view?.highlightedSelections = nil
+        restart(doc)
         let words = query.trimmingCharacters(in: .whitespaces)
         self.words = words
         guard words.count >= 2 else { return }
@@ -154,27 +205,44 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
         doc.beginFindString(words, withOptions: [.caseInsensitive])
     }
 
-    // PDFKit's find may tell its matches off the main thread: each taken
-    // to the main actor, in the order told, with the find's number then.
-    // PDFKit makes the selection for this call and keeps no hold on it, so
-    // it is handed to the main actor whole (nonisolated(unsafe)), and is
-    // touched only there.
+    // PDFKit's find may tell its matches off the main thread: each kept,
+    // in the order told, with the find's number then, and one hop to the
+    // main actor queued for all those told before it runs.
     nonisolated func didMatchString(_ instance: PDFSelection) {
-        nonisolated(unsafe) let match = instance
-        let told = generation.load(ordering: .sequentiallyConsistent)
-        Task { @MainActor [weak self] in self?.found(match, in: told) }
+        let number = generation.load(ordering: .sequentiallyConsistent)
+        told.withLock { $0.append(Told(match: instance, generation: number)) }
+        guard flushQueued.compareExchange(expected: false, desired: true, ordering: .sequentiallyConsistent).exchanged else { return }
+        Task { @MainActor [weak self] in self?.flush() }
     }
 
     nonisolated func documentDidEndDocumentFind(_ notification: Notification) {
-        let told = generation.load(ordering: .sequentiallyConsistent)
-        Task { @MainActor [weak self] in self?.ended(told) }
+        let number = generation.load(ordering: .sequentiallyConsistent)
+        Task { @MainActor [weak self] in
+            self?.flush()
+            self?.ended(number)
+        }
     }
 
-    private func found(_ match: PDFSelection, in told: Int) {
-        guard finding, told == generation.load(ordering: .sequentiallyConsistent),
-              Self.same(match.string, words) else { return }
-        match.color = .systemYellow
-        matches.append(match)
+    /// The matches told so far taken in: those of this find, and of its words.
+    private func flush() {
+        flushQueued.store(false, ordering: .sequentiallyConsistent)
+        let batch = told.withLock { pending in
+            defer { pending = [] }
+            return pending
+        }
+        let now = generation.load(ordering: .sequentiallyConsistent)
+        guard finding else { return }
+        let fresh = batch.filter { $0.generation == now && Self.same($0.match.string, words) }.map(\.match)
+        guard !fresh.isEmpty else { return }
+        if !citeWords.isEmpty, let hit = fresh.first {
+            // A cite's first place: gone to, and the find stopped there.
+            if let doc = document { restart(doc) }
+            view?.go(to: hit)
+            view?.setCurrentSelection(hit, animate: true)
+            return
+        }
+        for match in fresh { match.color = .systemYellow }
+        matches += fresh
         if current == nil { show(0) }
     }
 
@@ -185,8 +253,17 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
         return text.map { squeeze($0).caseInsensitiveCompare(squeeze(words)) == .orderedSame } ?? false
     }
 
-    private func ended(_ told: Int) {
-        guard told == generation.load(ordering: .sequentiallyConsistent) else { return }
+    private func ended(_ number: Int) {
+        guard number == generation.load(ordering: .sequentiallyConsistent) else { return }
+        if !citeWords.isEmpty {
+            // Not found as a heading: the cite's next words looked for,
+            // and with none left the reader stays where it is.
+            let rest = Array(citeWords.dropFirst())
+            citeWords = []
+            finding = false
+            seek(rest)
+            return
+        }
         finding = false
         view?.highlightedSelections = matches.isEmpty ? nil : matches
     }
@@ -218,6 +295,15 @@ final class PDFReaderController: NSObject, PDFDocumentDelegate {
         if let at { view.go(to: at) }
         view.backgroundColor = on ? .black : .secondarySystemBackground
     }
+}
+
+/// A match PDFKit told, with the number of the find it was told in.
+/// PDFKit makes the selection for the call and keeps no hold on it, and
+/// the reader touches it only on the main actor once taken (`flush`), so
+/// it crosses from PDFKit's find thread whole.
+private nonisolated struct Told: @unchecked Sendable {
+    let match: PDFSelection
+    let generation: Int
 }
 
 /// PDFKit's own view of the document (UIViewRepresentable): one column

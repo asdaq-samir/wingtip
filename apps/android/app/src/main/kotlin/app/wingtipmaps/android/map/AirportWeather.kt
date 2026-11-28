@@ -3,7 +3,6 @@ package app.wingtipmaps.android.map
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.design.generated.WingtipMap
@@ -32,19 +31,6 @@ enum class AirportWeatherMode(val key: String) {
 
     companion object {
         fun of(key: String?): AirportWeatherMode? = entries.firstOrNull { it.key == key }
-
-        /** What a phone kept before the menu, brought to one of its
-         *  choices as the web's migrateAirportWeather does: Off kept, the
-         *  station model kept, the ring with its barbs With Wind, the rest
-         *  -- the ring alone, the dot -- Flight Category. */
-        fun migrated(look: String?, windArrows: Boolean?): AirportWeatherMode? = when (look) {
-            null -> null
-            "off" -> OFF
-            "station" -> STATION
-            "halo" -> if (windArrows != false) WIND else CATEGORY
-            "dot" -> CATEGORY
-            else -> of(look)
-        }
     }
 }
 
@@ -78,8 +64,7 @@ data class AirportWeather(val mode: AirportWeatherMode = AirportWeatherMode.WIND
 /**
  * The airport weather picked, kept in the app's settings file under its
  * own key, as MapLayersStore keeps the map's switches: read once, a pick
- * made before the read lands winning. A phone that kept the old look and
- * its switches is brought to the menu's choice on the first read.
+ * made before the read lands winning.
  */
 class AirportWeatherStore(private val store: DataStore<Preferences>, private val scope: CoroutineScope) {
     private val _settings = MutableStateFlow(AirportWeather())
@@ -89,7 +74,7 @@ class AirportWeatherStore(private val store: DataStore<Preferences>, private val
 
     val loaded: Job = scope.launch {
         val kept = store.data.first()
-        val mode = if (kept[SHOW] != null) AirportWeatherMode.of(kept[SHOW]) else AirportWeatherMode.migrated(kept[OLD_LOOK], kept[OLD_WIND])
+        val mode = AirportWeatherMode.of(kept[SHOW])
         if (mode != null && !touched) _settings.update { it.copy(mode = mode) }
     }
 
@@ -103,10 +88,6 @@ class AirportWeatherStore(private val store: DataStore<Preferences>, private val
     companion object {
         /** The menu's choice (the web's wingtip.airportWeather version 1). */
         private val SHOW = stringPreferencesKey("map_wx_show")
-
-        /** What the look and the barbs' switch were kept under before. */
-        private val OLD_LOOK = stringPreferencesKey("map_wx_mode")
-        private val OLD_WIND = booleanPreferencesKey("map_wx_wind_arrows")
 
         @Volatile
         private var shared: AirportWeatherStore? = null

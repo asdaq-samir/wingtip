@@ -1,15 +1,13 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { GraduationCap } from "lucide-react";
-import { cn } from "cn";
-import { ListGroup } from "../../components/GroupedList";
+import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Accordion } from "../../components/ui/accordion";
 import { dataWarning } from "../../lib/dataCycles";
 import { useDataCycles } from "../../lib/map/sources/layerAges";
 import { glanceLines, useGlance } from "./glance";
 import { pilotQuery } from "../../lib/queryClient";
 import { trainingQuery } from "../../lib/queryClientRecords";
-import { TEXT } from "../../lib/text";
 import { useAirplaneChosen } from "../../lib/preferences";
 import { useVerdict } from "../../lib/verdict";
 import type { PanelTab } from "../plan";
@@ -25,14 +23,18 @@ function InstructorNote() {
   const { data: training } = useQuery({ ...trainingQuery, enabled: !!pilot });
   const link = training?.instructors.find((l) => l.accepted);
   if (!link) return null;
+  // A plain row of a grouped list, as the Brief's other rows are, where it
+  // was a tinted box that read as something to tap (the owner, 2026-11-25:
+  // "a simple briefing with pages").
   return (
-    <div
-      className={cn("flex items-center gap-2.5 rounded-xl bg-primary/10 px-3.5 py-2.5 text-foreground", TEXT.detail)}
-      data-testid="brief-instructor"
-    >
-      <GraduationCap className="size-5 shrink-0 text-tint" aria-hidden />
-      <span>Your instructor, {link.name ?? link.email}, sees the flights you send them and can sign them off from their phone.</span>
-    </div>
+    <ListGroup className="w-full">
+      <ListRow
+        media={<GraduationCap className="size-5 text-muted-foreground" aria-hidden />}
+        title={`Your Instructor, ${link.name ?? link.email}`}
+        description="Sees the flights you send them and can sign them off from their phone."
+        data-testid="brief-instructor"
+      />
+    </ListGroup>
   );
 }
 
@@ -40,7 +42,7 @@ function InstructorNote() {
  * The Brief as it opens, at the owner's rule (2026-11-03, "a pilot
  * doesn't want to spend too much time in studying the briefs so make it
  * simpler for them to just look and go"), his pick of option A
- * (2026-11-19) and of the Brief audit's option 2 (2026-11-21). Whether to
+ * (2026-11-19) and of option 2 (2026-11-21). Whether to
  * go is over it, under the Brief's name (VerdictPill). Straight under it
  * the findings a pilot acts on, at most three one-sentence lines (the
  * engine's gonogo_glance_lines), each unfolding to why it matters and the

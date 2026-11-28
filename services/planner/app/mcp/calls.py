@@ -104,7 +104,12 @@ async def planner(method: str, path: str, *, query: dict | None = None, body: An
         return as_data(resp.json())
     said = _said(resp)
     if resp.status_code == 404:
-        raise ToolError(f"{said} Check the identifier: search_airports finds one by name.")
+        # search_airports finds airports only: a fix or a navaid is known
+        # by its own identifier, which nothing here looks up by name.
+        raise ToolError(
+            f"{said} Check the identifier: search_airports finds an airport by its name or town; "
+            "a fix or navaid goes by its exact identifier."
+        )
     if resp.status_code in (400, 422):
         raise ToolError(f"Wingtip cannot do that as asked: {said}. Change it and try again.")
     if resp.status_code == 502:
@@ -116,10 +121,13 @@ async def planner(method: str, path: str, *, query: dict | None = None, body: An
 
 # What no report a pilot reads needs, and what hides words from the pilot
 # while the model still reads them: control characters but the line
-# breaks and the tab, and Unicode's format characters (category Cf: zero
-# widths, bidirectional overrides, and the tag characters U+E0000 to
-# U+E007F that spell out ASCII invisibly).
-_HIDDEN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+# breaks and the tab (C0, DEL and C1's U+0080 to U+009F), and the
+# variation selectors (U+FE00 to U+FE0F, U+E0100 to U+E01EF), which draw
+# nothing and can carry bytes; and Unicode's format characters (category
+# Cf: zero widths, bidirectional overrides, and the tag characters
+# U+E0000 to U+E007F that spell out ASCII invisibly). The security review
+# of 2026-11-23, Low 11.
+_HIDDEN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\ufe00-\ufe0f\U000e0100-\U000e01ef]")
 
 
 def as_data(value: Any) -> Any:
@@ -189,5 +197,16 @@ def pick(row: dict, keys) -> dict:
 #: Where the live products come from, as the app credits them.
 METAR_SOURCE = {"source": "NWS Aviation Weather Center (aviationweather.gov) METAR and TAF, as sent"}
 NOTAM_SOURCE = {"source": "FAA NOTAM System (SWIM FNS feed; NMS-API's full set where full_set), as sent; TFRs from tfr.faa.gov"}
-WINDS_SOURCE = {"source": "NWS winds and temperatures aloft forecast (FB)"}
 ENGINE_SOURCE = {"source": "Wingtip engine: dead reckoning, altitudes and fuel, each rule citing its 14 CFR or AIM paragraph"}
+
+
+def winds_source(period: dict | None) -> dict:
+    """Where the winds and temperatures aloft a plan flies come from, the
+    one source every tool names for them (the plan's `winds`, or
+    winds_aloft.winds_period): the run the nav log flew, as it says it
+    ("AWC winds, 12Z"; "NOAA GFS winds, 06Z, in place of AWC"; past the
+    grid's twelve hours the GFS's FB stations, "NOAA GFS, 12Z +18 h")."""
+    held = "Aviation Weather Center GFA winds aloft and NOAA GFS temperatures, as Wingtip's nav log flies them"
+    if not period or not period.get("label"):
+        return {"source": f"{held}; past the grid's twelve hours, the GFS's FB stations"}
+    return {"source": f"{held}: {period['label']}", "valid_at": period.get("valid_at"), "stale": period.get("stale", False)}

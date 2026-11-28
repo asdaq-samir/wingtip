@@ -1,11 +1,8 @@
 import { Suspense, useState } from "react";
 import { Autocomplete, Token, TokenField, TokenInput } from "react-aria-components";
-import { TriangleAlert } from "lucide-react";
 import { ScrollArea } from "@base-ui/react/scroll-area";
 import { cn } from "cn";
 import { PANEL_FIELD } from "../../components/panelField";
-import { Button } from "../../components/ui/button";
-import { Alert, AlertAction, AlertDescription } from "../../components/ui/alert";
 import { InputGroup } from "../../components/ui/input-group";
 import { Popover, PopoverContent } from "../../components/ui/popover";
 import { SearchFieldClear } from "../../components/ui/search-field";
@@ -14,6 +11,7 @@ import type { FuelStopSuggestion } from "../../lib/api/types";
 import { useKeyboardInset } from "../../hooks/use-viewport";
 import { fromChunk } from "../../lib/fromChunk";
 import { TEXT } from "../../lib/text";
+import RouteBoxAlert from "./RouteBoxAlert";
 import PointAltitudeDialog, { type EditedPoint } from "./PointAltitudeDialog";
 import type { RouteProcedure } from "./RouteChips";
 import type { RouteBoxProps } from "./routeBoxProps";
@@ -39,22 +37,19 @@ const RUNS_ON_PX = 8;
 
 /**
  * The route as ForeFlight's is: one box, every point of it a pill in the
- * order flown -- the departure, the airports landed at and the waypoints
- * flown through, the destination -- an arrow between each two. The box is
- * React Aria's TokenField, each point a token: the caret goes anywhere
- * among them and what is typed there goes in there; typed after the
- * destination it goes on to it, the old destination a stop on the way
- * (or, with none, names it); Backspace takes the point before the caret
- * and Undo puts it back. A tap on an arrow asks for a stop there. The
- * airports and waypoints that answer what is typed are offered under the
- * box as it is typed (React Aria's Autocomplete; Enter takes the first,
- * or what was typed, "VPBNG 06C"). A pill is tapped to change it, and
- * moved or taken out from its menu -- a hold, a right-click, or Enter on
- * it selected -- any of them, the departure and the destination too: the
- * next airport along becomes the end taken out, and a route of two keeps
- * the other end, half a route. From Fly via, on the flight the Class B
- * stops (`via`), the ways round are offered before anything is typed.
- * Every change re-plans at once, so there is no Load button.
+ * order flown, left to right with no arrows (the owner, 2026-11-23). The
+ * box is React Aria's TokenField, each point a token: the caret goes
+ * anywhere among them and what is typed there goes in there; typed after
+ * the destination it goes on to it, the old one a stop on the way;
+ * Backspace takes the point before the caret and Undo puts it back. What
+ * answers the typing is offered under the box (React Aria's Autocomplete;
+ * Enter takes the first, or what was typed, "VPBNG 06C"). A tap on a pill
+ * is its menu (RoutePill: Info, Insert Before and After, Show on Map,
+ * Procedures, Change, Move, Remove), as Enter on it is; the arrow keys go
+ * between pills and Delete takes one out, the ends too: the next airport
+ * along becomes the end, a route of two keeping the other, half a route.
+ * From Fly via (`via`) the ways round the Class B are offered before
+ * anything is typed. Every change re-plans at once: no Load button.
  *
  * The search bar's field, as Maps' is, round at a line's ends to sit in
  * the sheet's round corners. The ends stay airports: a waypoint is flown
@@ -66,8 +61,6 @@ export default function RouteBox({
   stops,
   dest,
   waypoints,
-  airspaceOf,
-  metarColourOf,
   altitudeAt,
   onAltitudeChange,
   onChange,
@@ -78,6 +71,9 @@ export default function RouteBox({
   procedures = NO_PROCEDURES,
   onProcedures,
   onOpenAirport,
+  onOpenProcedures,
+  onShowOnMap,
+  shortFlights = NO_SHORT,
   directTo = null,
   onDirectTo,
   fuelStops = NO_FUEL_STOPS,
@@ -85,10 +81,10 @@ export default function RouteBox({
   onHideFuelStop,
   addAt = null,
   unknownPoint = null,
+  unreachable = false,
   onClear,
-  onUndo,
   wrapped = false,
-  height,
+  foot,
 }: RouteBoxProps) {
   // Each by its own name: three of them are refs (the field, the row and
   // its content), which the compiler keeps apart from what is drawn.
@@ -109,7 +105,6 @@ export default function RouteBox({
     onFieldClick,
     onPress,
     onBlur,
-    focused,
     typed,
     clearTyped,
     field,
@@ -117,7 +112,7 @@ export default function RouteBox({
     slideRow,
     toEnd,
     isRoom,
-    arrowAt,
+    insertAt,
     suggestions,
     dismiss,
   } = useRouteBox({ dep, stops, dest, waypoints, onChange, onTypedProcedures, adding, onAddingChange, via, addAt });
@@ -131,12 +126,12 @@ export default function RouteBox({
   // reading, as the popover is on the body, out of the Drawer's viewport.
   const keyboard = useKeyboardInset();
   const at = typed.at;
-  // Empty, the route, from its departure; then each end it lacks, said in
-  // its token where its field was. After a whole route's destination no
-  // words, at the pilot's ask ("Add stop" said it): what is typed there is
+  // Empty, the route, from its departure; a lacking departure said in its
+  // token where its field was, no ghost word after the last point (the owner,
+  // 2026-11-23). After a whole route's destination no words, at the pilot's ask ("Add stop" said it): what is typed there is
   // the new destination, the old one a stop on the way, as Maps' Add Stop
   // does, and a reader is told so (its label).
-  const placeholder = !points.length ? "Route" : at === null ? (hasDest ? "" : "Destination") : at === 0 && !hasDep ? "Departure" : "";
+  const placeholder = !points.length ? "Route" : at === null ? "" : at === 0 && !hasDep ? "Departure" : "";
   const label = !points.length
     ? "The route: its departure and destination, or a whole route typed, as KPWK V100 KLAS"
     : at === null
@@ -150,22 +145,21 @@ export default function RouteBox({
     points,
     waypoints,
     hasDep,
-    hasDest,
     full,
     roleOf,
-    focused,
-    typedAtEnd: !!typed.text && at === null,
     typedAtStart: !!typed.text && at === 0,
     procedures,
     onProcedures,
+    onOpenProcedures,
     fuelStops,
     onKeepFuelStops,
     onHideFuelStop,
-    airspaceOf,
-    metarColourOf,
+    shortFlights,
     altitudeAt,
     unknown: unknownPoint?.ident ?? null,
+    unknownWhy: unknownPoint?.ident ? `${unknownPoint.ident} ${unknownWhy(unknownPoint)}.` : null,
     onOpenAirport,
+    onShowOnMap,
     directTo,
     onDirectTo,
     change: (list: string[]) => void change(list),
@@ -173,7 +167,7 @@ export default function RouteBox({
     remove,
     editAltitude: (ident: string) =>
       setEditing({ ident, waypoint: waypoints.has(ident), altitude: altitudeAt(ident, waypoints.has(ident)) }),
-    arrowAt,
+    insertAt,
   };
   return (
     // React Aria's Autocomplete round the field and its suggestions: the
@@ -201,41 +195,60 @@ export default function RouteBox({
             onClick={toEnd}
             // Four over its line and four under it: the clear's 44-point
             // area, round its 20 in a line 28 tall, reached past the box's
-            // top and foot (the iOS audit's P1 on an approach's page). Its
+            // top and foot. Its
             // buttons are the sheet's first row's strip over it (FplBar;
             // the owner, 2026-11-14), not a footer of its own.
             className={cn(
-              "h-auto flex-wrap items-start border-0 pt-1 pr-1.5 pb-1 pl-1 shadow-none",
-              // Turned from the grouped box: the timeline card's corners.
-              wrapped ? "rounded-(--radius-card)" : "rounded-(--radius-banner)",
+              "h-auto flex-wrap items-start border-0 pt-1 pb-1 shadow-none",
+              // Turned from the grouped box: the timeline card's corners, its
+              // words left-aligned at the box's own 16 of padding, and its
+              // controls as far in from the right (TIMELINE_END), so nothing
+              // moves as the face turns (the owner's iPhone, 2026-11-23).
+              // Wrapped, a toggle's row of room under its last line (h-11): the
+              // fuel stops' pill and the toggle sit there (RouteEditor), under the
+              // pills, never over them (the owner's iPhone, 2026-11-23).
+              wrapped ? "rounded-(--radius-card) pr-4 pb-11 pl-4" : "rounded-(--radius-banner) pr-1.5 pl-1",
               PANEL_FIELD,
             )}
-            style={wrapped && height ? { height } : undefined}
             data-wrapped={wrapped || undefined}
             data-testid="route-box"
           >
             {/* The pills in one row that slides sideways under a finger when the route is longer than the box (the
                owner, 2026-11-04: "FPL can be fixed as one row, in which ids can slide"), as ForeFlight's flight plan
                box does; the end faded where it runs on (Base UI's ScrollArea says so on its viewport), so a point past
-               it reads as there. A drag up or down on it is the sheet's (the Drawer's swipe), across is the row's. */}
+               it reads as there. A drag up or down on it is the sheet's (the Drawer's swipe), across is the row's; wrapped
+               past the room above the foot bar (--route-room), up or down scrolls its lines. */}
             <ScrollArea.Root overflowEdgeThreshold={RUNS_ON_PX} className="min-w-0 flex-1 basis-24">
               <ScrollArea.Viewport
                 ref={slide}
-                // Out of the tab order; a drag up or down is the sheet's.
+                // Out of the tab order.
                 tabIndex={-1}
-                // Its lines inside the box's height less its 8 of padding, scrolling past it.
-                style={
-                  wrapped ? { overflowX: "hidden", overflowY: "auto", maxHeight: height ? height - 8 : undefined } : { overflowY: "hidden" }
-                }
+                // Wrapped, the box grown to hold every line, a pill whole on its
+                // line, up to the room above FPL's foot bar (--route-room,
+                // useFieldRoom); past it the lines scroll here, the toggle's
+                // row under them kept in sight (the owner, 2026-11-25).
+                style={wrapped ? { overflowX: "hidden", overflowY: "auto", maxHeight: "var(--route-room, none)" } : { overflowY: "hidden" }}
                 className={cn(
-                  wrapped ? "overscroll-y-contain" : "overscroll-x-contain",
-                  "data-overflow-x-end:[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]",
-                  "data-overflow-x-start:[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]",
-                  "data-overflow-x-start:data-overflow-x-end:[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]",
+                  // Fades only on the one-row face: wrapped, one hid every line's right (2026-11-23).
+                  // Wrapped, 4 of padding past each side, where the clip of its
+                  // scroll would cut a side pill's 44-point area (hit-*).
+                  wrapped
+                    ? "-mx-1 overscroll-y-contain px-1"
+                    : [
+                        "overscroll-x-contain",
+                        "data-overflow-x-end:[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]",
+                        "data-overflow-x-start:[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]",
+                        "data-overflow-x-start:data-overflow-x-end:[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]",
+                      ],
                 )}
                 data-testid="route-slide"
               >
-                <ScrollArea.Content ref={slideRow} className={cn("flex items-center py-1 pr-2", wrapped ? "flex-wrap" : "flex-nowrap")}>
+                {/* Wrapped, no wider than the box: Base UI's least width, fit-content, ran past its edge. */}
+                <ScrollArea.Content
+                  ref={slideRow}
+                  style={wrapped ? { minWidth: 0 } : undefined}
+                  className={cn("flex items-center py-1 pr-2", wrapped ? "flex-wrap" : "flex-nowrap")}
+                >
                   <TokenField<RouteValue>
                     aria-label={label}
                     value={value}
@@ -249,9 +262,9 @@ export default function RouteBox({
                     onBlur={onBlur}
                     className="relative min-w-full"
                   >
-                    {/* The field, one line that runs on sideways (the row slides): 16 at the least below md, as every
-                        field is -- under 16 iOS zooms the page in on it (checkpoints.spec checks every field); 17 to a
-                        finger, a row's, and 14 from md up. Idents in capitals, as they go in. */}
+                    {/* The field, one line that runs on sideways (the row slides): 16 at the least below md -- under 16 iOS zooms in
+                        (checkpoints.spec checks every field); 17 to a finger, 14 from md up. Capitals in the pills' semibold
+                        sans on their 28 line, so what is typed sits level with them (the owner's iPhone, 2026-11-23). */}
                     <TokenInput
                       ref={field}
                       // The group's control, so the stock InputGroup draws its
@@ -262,16 +275,29 @@ export default function RouteBox({
                       onPointerDown={onPress}
                       onClick={onFieldClick}
                       data-testid="route-type"
+                      // What the field asks for, read by the browser specs (stops, stops-box).
                       data-placeholder={placeholder}
                       data-typed={typed.text}
                       className={cn(
-                        "min-h-7 min-w-full font-mono leading-7 uppercase outline-none",
-                        wrapped ? "w-full whitespace-pre-wrap! break-words" : "w-max whitespace-pre!",
+                        "min-h-7 min-w-full font-sans font-semibold uppercase outline-none",
+                        // Wrapped, the line runs 8 past the field into the row's
+                        // pr-2, so the gap each route piece keeps at its end
+                        // (RouteToken) hangs there at a line's end rather than
+                        // wrapping a piece one place early.
+                        wrapped ? "-me-2 w-[calc(100%+--spacing(2))] whitespace-pre-wrap! break-words" : "w-max whitespace-pre!",
                         TEXT.row,
+                        // Wrapped, its lines 36 apart, the 28 of a pill and the 8
+                        // between two on a line, so the gap between lines is the
+                        // gap between pills, where at 28 two lines' pills all
+                        // but touched, 2 apart (the owner, 2026-11-24: "check
+                        // the pills and spacing between them").
+                        wrapped ? "leading-9 pointer-coarse:leading-9" : "leading-7 pointer-coarse:leading-7",
                       )}
                     >
                       {(segment) => (
-                        <Token className="inline-block align-middle">
+                        // Inline, so its pieces wrap whole (RouteToken), not
+                        // one block cut at the box's edge.
+                        <Token className="inline">
                           <RouteToken i={segment.value ?? 0} box={tokenBox} />
                         </Token>
                       )}
@@ -295,21 +321,11 @@ export default function RouteBox({
                 React Aria's field clear (ui/search-field), its press keeping
                 the focus in the box; the TokenField has no clear slot. */}
             {typed.text && <SearchFieldClear aria-label="Clear what is typed" onPress={clearTyped} className="mt-1 mr-1" />}
-            {/* Nothing typed: half a route cleared by the same stock ✕, and
-                the empty box's Undo, the route just cleared put back. */}
+            {/* Nothing typed: half a route cleared by the same stock ✕; a
+                route cleared is put back by the toast's Undo or Cmd-Z
+                (the owner, 2026-11-23: "No undo needed next to toggle"). */}
             {!typed.text && onClear && points.length > 0 && (
               <SearchFieldClear aria-label="Clear the route" onPress={onClear} className="mt-1 mr-1" data-testid="route-box-clear" />
-            )}
-            {!typed.text && onUndo && !points.length && (
-              <Button
-                variant="plain"
-                size="inline"
-                onClick={onUndo}
-                data-testid="route-undo"
-                className={cn("relative mt-1 mr-1 px-1 text-tint hit-2", TEXT.row)}
-              >
-                Undo
-              </Button>
             )}
           </InputGroup>
           {/* The suggestions under the box: the typing stays in the box,
@@ -319,7 +335,10 @@ export default function RouteBox({
             align="start"
             sideOffset={6}
             anchor={boxEl}
-            className="w-(--anchor-width) max-w-[calc(100vw-16px)] gap-0 p-2"
+            // At once, with no zoom: typing opens, closes and opens it
+            // again as the box empties and fills, and a typed action is
+            // not animated.
+            className="w-(--anchor-width) max-w-[calc(100vw-16px)] gap-0 p-2 data-closed:animate-none data-open:animate-none"
             style={keyboard > 0 ? { paddingBottom: keyboard } : undefined}
             // The typing stays in the box.
             initialFocus={false}
@@ -336,32 +355,8 @@ export default function RouteBox({
             </Suspense>
           </PopoverContent>
         </Popover>
-        {unknownPoint && (
-          // Under the box, the stock Alert in the destructive red its pill
-          // is drawn in, with the one thing to do that the pill's tap does
-          // not: Remove, the stock Button.
-          <Alert variant="destructive" className="mt-1.5 border-0 bg-transparent px-2 py-0" data-testid="route-unknown">
-            <TriangleAlert aria-hidden="true" />
-            <AlertDescription className={cn("text-destructive", TEXT.detail)}>
-              {unknownPoint.ident
-                ? `${unknownPoint.ident} ${unknownWhy(unknownPoint)}. Tap it to change it.`
-                : "A point of the route is not an airport or waypoint we know."}
-            </AlertDescription>
-            {unknownPoint.ident && points.includes(unknownPoint.ident) && (
-              <AlertAction className="top-1/2 right-0 -translate-y-1/2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => remove(points.indexOf(unknownPoint.ident!))}
-                  data-testid="route-unknown-remove"
-                  className="relative hit-y-1.5 after:inset-x-0"
-                >
-                  Remove
-                </Button>
-              </AlertAction>
-            )}
-          </Alert>
-        )}
+        {foot}
+        <RouteBoxAlert unknownPoint={unknownPoint} unreachable={unreachable} points={points} remove={remove} />
         <PointAltitudeDialog
           point={editing}
           onClose={() => setEditing(null)}
@@ -377,3 +372,4 @@ export default function RouteBox({
 
 const NO_PROCEDURES: RouteProcedure[] = [];
 const NO_FUEL_STOPS: FuelStopSuggestion[] = [];
+const NO_SHORT: NonNullable<RouteBoxProps["shortFlights"]> = [];

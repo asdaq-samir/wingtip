@@ -9,23 +9,15 @@ type R<T> = Result<T, String>;
 const NAME: &str = "forecast_run";
 
 fn opt_num(v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{NAME}: \"{key}\" is not a number")),
-    }
+    wingtip_core::ask::opt_num_in(NAME, v, key)
 }
 
 fn num(v: &Value, key: &str) -> R<f64> {
-    opt_num(v, key)?.ok_or_else(|| format!("{NAME}: \"{key}\" is missing"))
+    wingtip_core::ask::num_in(NAME, v, key)
 }
 
 fn list<'a>(v: &'a Value, key: &str) -> R<&'a [Value]> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(&[]),
-        Some(Value::Array(items)) => Ok(items),
-        Some(_) => Err(format!("{NAME}: \"{key}\" is not a list")),
-    }
+    wingtip_core::ask::opt_list_in(NAME, v, key)
 }
 
 fn levels(v: &Value) -> R<Vec<(f64, Option<f64>, f64)>> {

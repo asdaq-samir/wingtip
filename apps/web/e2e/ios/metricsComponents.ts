@@ -195,8 +195,11 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
     if (matchMedia("(pointer: coarse) and (min-width: 744px) and (min-height: 600px)").matches) {
       for (const sheet of document.querySelectorAll('[data-testid="console-sheet"]')) {
         // The planner's Setup is a tab of the map's panel on an iPad too
-        // (MapPage's inPanel), at the owner's ask: the panel's, not a sheet.
-        if (!on(sheet) || sheet.closest('[data-slot="map-panel"]')) continue;
+        // (MapPage's inPanel), at the owner's ask: the panel's, not a sheet;
+        // and You is a card (the owner, 2026-11-13), so on an iPad wide
+        // enough for the inspector it is in the inspector's column, as every
+        // card is (MapPanel), not a form sheet.
+        if (!on(sheet) || sheet.closest('[data-slot="map-panel"], [data-slot="map-inspector"]')) continue;
         const b = sheet.getBoundingClientRect();
         const w = Math.min(540, innerWidth - 40),
           h = Math.min(620, innerHeight * 0.85);

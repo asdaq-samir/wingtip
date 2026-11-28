@@ -101,8 +101,7 @@ final class Session {
     /// this build's own gateway, is taken, and only as a question. Opening
     /// it signs nobody in, as the web's LinkSignIn does not: an attacker's
     /// link for their own account (the custom scheme, or another host)
-    /// would otherwise put this pilot's records into it (security audit
-    /// 2026-11-10, M1).
+    /// would otherwise put this pilot's records into it.
     func open(_ url: URL) async {
         guard let token = Self.signInToken(url) else { return }
         // Whose account it is, asked before the question is put, so the
@@ -168,7 +167,7 @@ final class Session {
     /// the path flown (OwnTrail), the flight recorder's track and the
     /// pilot's marks on charts (PlateMarkup) and the scratchpad's pages, their files deleted, and the gateway's and planner's answers kept in the
     /// session's cache (the account, the logbook, saved flights). Signing
-    /// out and deleting the account both (the store audit's P7). The trail
+    /// out and deleting the account both. The trail
     /// and the recorder are the flight's (OwnShip); with none in hand their
     /// files are deleted all the same.
     static func forgetDevice(trail: OwnTrail?, recorder: FlightRecorder?,
@@ -190,13 +189,12 @@ final class Session {
 
     /// The figures kept per N-number on this device, the pilot's own, and
     /// their airplanes' checklists (LocalChecklists); the Favorites are
-    /// the store's (Tracking.forgetFavorites), and the old key of theirs
-    /// is gone with the first launch's migration. Of what Keep for the Air
+    /// the store's (Tracking.forgetFavorites). Of what Keep for the Air
     /// kept, the Go / No-Go (their minimums, loading and currency) and the
     /// routes; the FAA's and the weather's public data stay (KeptForAir).
     static func forgetPilot(_ defaults: UserDefaults = .standard, kept: URL = KeptForAir.folder) {
         for key in defaults.dictionaryRepresentation().keys
-            where key.hasPrefix(OwnFigureStore.prefix) || key.hasPrefix(LocalChecklists.prefix) || key == KeptAirplane.key {
+            where key.hasPrefix(OwnFigureStore.prefix) || key.hasPrefix(LocalChecklists.prefix) {
             defaults.removeObject(forKey: key)
         }
         KeptForAir.forgetPilotOwn(in: kept)

@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { TEXT, TEXT_POINTS } from "../../lib/text";
 import { FT_PER_NM } from "../../lib/geo";
-import { numberHalfWidth, numbersOf, stripsOf, type SketchRunway } from "./runwayDrawing";
+import { numberHalfWidth, numbersOf, sketchOf, type SketchRunway } from "./runwayDrawing";
 import { closureMarksOf, MARK_STROKE, markHalf } from "./runwayClosures";
 import { CHART } from "../../lib/tokens";
 
@@ -79,7 +79,7 @@ export function RunwaySketch({
     return () => observer.disconnect();
   }, []);
   const drawn = useMemo(() => {
-    const strips = stripsOf(runways, lat, lon);
+    const { strips } = sketchOf(runways, lat, lon);
     if (!strips.length || !size || size.w < 2 * MARGIN || size.h < 2 * MARGIN) return null;
     const { w, h } = size;
     const xs = strips.flatMap((s) => [s.a[0], s.b[0]]),
@@ -187,7 +187,7 @@ export function RunwaySketch({
           never on an open one. Each X square to its runway and just wider
           than it, in the red of the Runways tab's Closed badge (the FAA
           paints them yellow, Figure A-27; faded alone a closed runway
-          read as open, UI audit A5, 2026-11-17). */}
+          read as open). */}
       {drawn?.strips.flatMap((s) =>
         s.closure.marks.map(([x, y], k) => {
           const m = markHalf(s.width);

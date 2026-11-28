@@ -68,8 +68,8 @@ describe("routeMarks", () => {
     expect(marks[0]!.picture!.id).toBe("turn-dot|#e600e6");
     expect(marks[0]!.also!.map((p) => p.id)).toEqual(["route-point-pill"]);
     expect(marks[0]!.props).toMatchObject({ kind: "fix", out: 45 });
-    expect(marks[1]!.props).toMatchObject({ kind: "field" });
-    expect(marks[1]!.props).not.toHaveProperty("out");
+    // A field's ident goes first outside the turn too (fieldSides), here the route's end.
+    expect(marks[1]!.props).toMatchObject({ kind: "field", out: expect.any(Number) });
   });
 });
 

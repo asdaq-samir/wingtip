@@ -36,8 +36,7 @@ final class CheckpointAnnotation: NSObject, MKAnnotation {
 
     /// The names from this zoom in (Leaflet's levels, MapExtras.zoom): out
     /// further, the numbered dots alone, as the web map's checkpoint labels
-    /// come in with the zoom. The UI audit of 2026-11-09 (item 5) found the
-    /// names piled into a stack over the route at the route's own zoom.
+    /// come in with the zoom. The names piled into a stack over the route at the route's own zoom.
     static let namesFromZoom = 8.0
 
     /// Which mark gives way where two meet, as the airport marks' priority

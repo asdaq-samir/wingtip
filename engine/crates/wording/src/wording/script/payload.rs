@@ -12,7 +12,7 @@ pub(super) fn end(v: Option<&Value>) -> Option<End> {
 }
 
 /// `radio_script`: `[{"title", "ident", "kind", "calls": [{"to", "mhz",
-/// "words", "note"?, "listen"?}]}]` from `{"call_sign", "airports":
+/// "words", "note"?, "listen"?, "ctaf"?}]}]` from `{"call_sign", "airports":
 /// [{"ident", "name"?, "airspace_class"?, "frequencies",
 /// "pattern_altitude_ft"?, "takeoff"?, "landing"?: {"ident",
 /// "traffic"?}}], "legs": [{"from", "to", "true_course_deg",
@@ -74,6 +74,9 @@ pub fn script_json(name: &str, v: &Value, frequencies: impl Fn(&Value) -> Result
             }
             if c.listen {
                 out.push_str(",\"listen\":true");
+            }
+            if c.ctaf {
+                out.push_str(",\"ctaf\":true");
             }
             out.push('}');
         }

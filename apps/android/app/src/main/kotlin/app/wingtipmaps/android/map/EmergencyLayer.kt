@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.map
 
-import android.graphics.Color
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.emergency.EmergencyModel
@@ -36,7 +35,10 @@ data class EmergencyLine(val fromLat: Double, val fromLon: Double, val toLat: Do
 /**
  * The line and the ring round the field, in the emergency red on a white
  * casing so it reads over any chart, over the route and under own ship
- * (the web's EmergencyGl layers). Empty while the assistant is shut.
+ * (the web's EmergencyGl layers). At night all three dimmed with the chart
+ * by their colour (MapDim.colour, the owner's "Dim by colour"), the casing
+ * too: whole white it was the brightest thing on the screen in a night
+ * emergency, against the pilot's dark adaptation (AIM 8-1-6). Empty while the assistant is shut.
  */
 object EmergencyLayer {
     const val SOURCE = "emergency"
@@ -52,10 +54,10 @@ object EmergencyLayer {
             return
         }
         style.addSource(GeoJsonSource(SOURCE, json))
-        val red = WingtipColors.Chart.EMERGENCY_HEX.toColorInt()
+        val red = MapDim.colour(WingtipColors.Chart.EMERGENCY_HEX.toColorInt())
         val isLine = Expression.eq(Expression.get("kind"), Expression.literal("to"))
         val layers: List<Layer> = listOf(
-            LineLayer(CASING, SOURCE).withProperties(PropertyFactory.lineColor(Color.WHITE), PropertyFactory.lineWidth(7f), PropertyFactory.lineCap(Property.LINE_CAP_ROUND))
+            LineLayer(CASING, SOURCE).withProperties(PropertyFactory.lineColor(MapDim.colour(WingtipColors.Chart.CASING_HEX.toColorInt())), PropertyFactory.lineWidth(7f), PropertyFactory.lineCap(Property.LINE_CAP_ROUND))
                 .withFilter(isLine),
             LineLayer(LINE, SOURCE).withProperties(PropertyFactory.lineColor(red), PropertyFactory.lineWidth(4f), PropertyFactory.lineCap(Property.LINE_CAP_ROUND))
                 .withFilter(isLine),

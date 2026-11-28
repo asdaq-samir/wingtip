@@ -133,6 +133,12 @@ test(
     const bar = reader.getByTestId("document-markup-bar");
     await expect(bar).toBeVisible();
     await expect(bar.getByTestId("document-tool-highlight")).toHaveAttribute("aria-pressed", "true");
+    // Base UI's Toolbar: the bar is one tab stop, the arrows between its
+    // controls, as its role says (the reuse audit of 2026-11-23, M3).
+    await bar.getByTestId("document-tool-highlight").focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(bar.getByTestId("document-tool-pen")).toBeFocused();
+    await expect(bar.getByTestId("document-tool-highlight")).toHaveAttribute("aria-pressed", "true");
     // Where the iPad's layout puts tools: from the regular width (660) under
     // the reader's head, above the pages; on a phone at the pages' foot.
     const regular = (page.viewportSize()?.width ?? 0) >= 660;

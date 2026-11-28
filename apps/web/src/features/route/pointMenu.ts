@@ -1,12 +1,5 @@
 import { useRef, type ComponentType, type ReactNode } from "react";
 import {
-  ContextMenuGroup,
-  ContextMenuItem,
-  ContextMenuLabel,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
-} from "../../components/ui/context-menu";
-import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -14,8 +7,8 @@ import {
   DropdownMenuShortcut,
 } from "../../components/ui/dropdown-menu";
 
-/** The menu's own parts, a DropdownMenu's or a ContextMenu's (shadcn's,
- *  the same shape). */
+/** The menu's own parts, a DropdownMenu's (shadcn's): FPL's timeline's
+ *  "⋯" and the route box's pill (RoutePill) alike. */
 export interface MenuKit {
   Item: ComponentType<{ onClick?: () => void; variant?: "default" | "destructive"; "data-testid"?: string; children?: ReactNode }>;
   /** Round a Label and what it names, as Base UI asks. */
@@ -32,13 +25,6 @@ export const DROPDOWN: MenuKit = {
   Separator: DropdownMenuSeparator,
   Shortcut: DropdownMenuShortcut,
 };
-export const CONTEXT_MENU: MenuKit = {
-  Item: ContextMenuItem,
-  Group: ContextMenuGroup,
-  Label: ContextMenuLabel,
-  Separator: ContextMenuSeparator,
-  Shortcut: ContextMenuShortcut,
-};
 
 /**
  * A sheet, a dialog or a search opened from a menu's item once the menu has
@@ -46,8 +32,7 @@ export const CONTEXT_MENU: MenuKit = {
  * still held the focus, a desktop's popover lost it to the menu and took
  * that for a click outside it, and closed (the hold spec on the desktop
  * project); and with the focus back there as it opens, the sheet gives it
- * back there as it closes, where VoiceOver was left on the page (the
- * audit's). `keep`, the focus left where the opened thing puts it (the
+ * back there as it closes, where VoiceOver was left on the page. `keep`, the focus left where the opened thing puts it (the
  * route box's search, which takes it itself). `finalFocus` is Base UI's
  * menu popup's: true gives the focus back, false leaves it.
  */

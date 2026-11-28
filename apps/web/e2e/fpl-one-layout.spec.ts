@@ -10,6 +10,7 @@ import {
   routeOptionsItem,
   settle,
   sideDrawer,
+  sheetFoot,
   slow,
   suggestedRoutes,
 } from "./helpers";
@@ -125,11 +126,11 @@ test.describe("/app/plan", () => {
     // Each line one 44-point row while folded.
     for (const line of await timeline.getByTestId("timeline-line").all()) expect((await line.boundingBox())!.height).toBeLessThan(46);
     await expect(timeline.getByTestId("timeline-add-stop")).toBeVisible();
-    await expect(drawer.getByTestId("flight-line")).toBeVisible();
-    // The suggested routes behind the bar's Routes, out above the stops.
-    await expect(drawer.getByTestId("route-group")).toHaveCount(0);
+    await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
+    // The suggested routes behind the bar's Routes, out in the figures' place.
+    await expect(sheetFoot(page).getByTestId("route-group")).toHaveCount(0);
     await (await suggestedRoutes(page)).first().waitFor();
-    await expect(drawer.getByTestId("route-group")).toBeVisible();
+    await expect(sheetFoot(page).getByTestId("route-group")).toBeVisible();
     await (await routeOptionsItem(page)).click();
     await expect(drawer.getByTestId("route-box")).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
@@ -142,10 +143,12 @@ test.describe("/app/plan", () => {
     const before = (await timeline.boundingBox())!;
     await drawer.getByTestId("route-type-open").click();
     await expect(drawer.getByTestId("route-box")).toBeVisible();
-    // The same box in the same place, its size and shape, the route wrapped
-    // in it (the owner, 2026-11-22: "Route box moves down when toggled").
+    // The same box in the same place and width, the route wrapped in it
+    // (the owner, 2026-11-22: "Route box moves down when toggled"), as tall
+    // as its pills and no taller (canvas A, the owner's pick, 2026-11-23).
     const typed = (await drawer.getByTestId("route-box").boundingBox())!;
-    for (const k of ["x", "y", "width", "height"] as const) expect(Math.abs(typed[k] - before[k]), `the box's ${k}`).toBeLessThanOrEqual(1);
+    for (const k of ["x", "y", "width"] as const) expect(Math.abs(typed[k] - before[k]), `the box's ${k}`).toBeLessThanOrEqual(1);
+    expect(typed.height, "the box fits its pills").toBeLessThanOrEqual(before.height + 1);
     await expect(drawer.getByTestId("route-box")).toHaveAttribute("data-wrapped", "true");
     await expect(timeline).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
@@ -169,12 +172,15 @@ test.describe("/app/plan", () => {
     await expect(toggle).toHaveAttribute("aria-pressed", "false");
     await expect(toggle).toBeFocused();
 
-    // A line opened leaves the sheet where it is: at half again, where
-    // More's menu took it all the way up for the route's field (openRoute).
+    // At half every line is folded, and a line opened there takes the
+    // sheet all the way up to show it whole (the owner, 2026-11-24,
+    // fe2473214; TimelineRoute's openLine), its runways and procedures out.
     await grabberTo(page, "half");
     await expect(drawer).toHaveAttribute("data-panel", "half");
-    await timeline.locator('[data-testid="timeline-line"][data-ident="KMSN"]').getByTestId("timeline-toggle").click();
-    await expect(drawer).toHaveAttribute("data-panel", "half");
+    const kmsn = timeline.locator('[data-testid="timeline-line"][data-ident="KMSN"]');
+    await kmsn.getByTestId("timeline-toggle").click();
+    await expect(drawer).toHaveAttribute("data-panel", "full");
+    await expect(kmsn).toHaveAttribute("data-open", "");
 
     // All the way up on a phone, the same timeline: no list of its own.
     if (test.info().project.name === "mobile") {
@@ -232,21 +238,22 @@ test.describe("/app/plan", () => {
     await expect(stops).toBeVisible();
   });
 
-  test('a Direct To from where the airplane is reads "My Location", its Direct to line and Cancel folded and open', async ({ page }) => {
-    // The owner's iPhone, 2026-11-17: the folded line read "POS0" over
-    // "Present position". One name, Apple Maps' "My Location", everywhere.
+  test('a Direct To from where the airplane is reads "POS0", its Direct to line and Cancel folded and open', async ({ page }) => {
+    // A present position on the route is POS0, as a GPS names it, the
+    // pilot's own points going on from it (the owner, 2026-11-24: "Replace
+    // my location to POS0"); said once, not over "Present position".
     await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KUGN&direct=KUGN&was=C81%7C%7CKUGN");
     await settle(page);
     await fromRest(page);
     await openPanel(page);
     const drawer = sideDrawer(page);
     const timeline = drawer.getByTestId("route-summary");
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["My Location", "KUGN"], { timeout: slow(30_000) });
-    await expect(timeline).not.toContainText("POS0");
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["POS0", "KUGN"], { timeout: slow(30_000) });
+    await expect(timeline).not.toContainText("Present position");
     // The Direct to line over the figures.
-    const direct = drawer.getByTestId("direct-strip");
+    const direct = sheetFoot(page).getByTestId("direct-strip");
     await expect(direct).toBeVisible();
-    await expect(drawer).not.toContainText("POS0");
+    await expect(drawer).not.toContainText("Present position");
     // Cancel gives the route back as it was; brought into sight first, the
     // airplane's strip over the route since FPL's title took the first row
     // (the owner, 2026-11-19), so at half it can be under the floating bar.
@@ -270,14 +277,15 @@ test.describe("/app/plan", () => {
     await expect(empty).toBeVisible();
     await expect(empty.getByRole("button", { name: "Pick the departure" })).toBeVisible();
     await expect(empty.getByRole("button", { name: "Pick the destination" })).toBeVisible();
-    await expect(empty.getByTestId("timeline-type-route")).toHaveText("Type or Paste a Route");
+    await expect(empty.getByTestId("route-type-open")).toBeVisible();
     await expect(drawer.getByTestId("route-head")).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
     await expect(drawer.getByTestId("route-type")).toHaveCount(0);
 
-    // Its Type or Paste a Route opens the field, focused; a whole route
+    // The box's toggle, at the Destination's end, turns the card into the
+    // field in its place, focused; a whole route
     // pasted into it keeps it open, the pilot still at it, till the toggle turns it back.
-    await empty.getByTestId("timeline-type-route").click();
+    await empty.getByTestId("route-type-open").click();
     await expect(drawer.getByTestId("route-type")).toBeFocused();
     await page.keyboard.insertText("KORD KOMA KDEN");
     await page.keyboard.press("Enter");
@@ -291,7 +299,7 @@ test.describe("/app/plan", () => {
 
     // The route's ••• keeps three items, and no Show Route As.
     await controlsInSight(page);
-    await drawer.getByTestId("share-route").locator("visible=true").first().click();
+    await sheetFoot(page).getByTestId("share-route").locator("visible=true").first().click();
     await expect(page.getByTestId("share-link")).toBeVisible();
     await expect(page.getByText("Show Route As")).toHaveCount(0);
   });
@@ -304,7 +312,7 @@ test.describe("/app/plan", () => {
     await openPanel(page);
     const drawer = sideDrawer(page);
     const here = drawer.getByTestId("timeline-line").first();
-    await expect(here.getByTestId("timeline-ident")).toHaveText("My Location", { timeout: slow(30_000) });
+    await expect(here.getByTestId("timeline-ident")).toHaveText("POS0", { timeout: slow(30_000) });
     await here.getByTestId("point-menu").click();
     await expect(page.getByTestId("point-menu-change")).toBeVisible();
     await expect(page.getByTestId("point-menu-move-down")).toHaveCount(0);
@@ -318,7 +326,7 @@ test.describe("/app/plan", () => {
     await openPanel(page);
     const drawer = sideDrawer(page);
     await suggestedRoutes(page);
-    await expect(drawer.getByTestId("route-group")).toBeVisible();
+    await expect(sheetFoot(page).getByTestId("route-group")).toBeVisible();
     await clearTheRoute(page);
     await expect(page).not.toHaveURL(/[?&]dest=/);
     // A new route typed in the same page, no reload: its suggested routes
@@ -335,6 +343,6 @@ test.describe("/app/plan", () => {
       await expect(item).toBeVisible({ timeout: 2000 });
       await expect(item).toHaveAttribute("aria-pressed", "false");
     }).toPass({ timeout: slow(30_000) });
-    await expect(drawer.getByTestId("route-group")).toHaveCount(0);
+    await expect(sheetFoot(page).getByTestId("route-group")).toHaveCount(0);
   });
 });

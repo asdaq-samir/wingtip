@@ -241,7 +241,13 @@ struct InspectionsSection: View {
             }
             // Whether the 100-hour is owed at all (91.409(b)): only then is
             // it listed and reminded of.
-            Toggle(isOn: Binding(get: { form.forHire ?? false }, set: { form.forHire = $0 })) {
+            // Unset until the owner answers: the engine then lists the
+            // 100-hour as "if flown for hire", not as owed or not owed.
+            Picker(selection: $form.forHire) {
+                Text("Not Set").tag(Bool?.none)
+                Text("Yes").tag(Bool?.some(true))
+                Text("No").tag(Bool?.some(false))
+            } label: {
                 Text("Flown for hire")
                 Text("Hire or instruction for hire: the 100-hour, 91.409(b)")
             }
@@ -340,7 +346,7 @@ struct VorCheckSection: View {
 }
 
 private enum PreviewData {
-    static let airplane = OwnAircraftRecord(climbFuelBurnGph: 11, climbTasKt: 76, colour: "White, blue stripe", createdAt: "2026-06-01", cruisePowerPct: 65, cruiseTasKt: 112, dueItems: [], equipment: "SDFGRY", figures: GWOwnFigures(glideRatio: 9, taxiFuelGal: 1.2), fuelBurnGph: 8.5, id: 4, inspections: Inspections(annualGoodThrough: "2027-06-30", annualOn: "2026-06-14", eltBatteryDueOn: "2028-02-01", eltInspectedOn: "2026-06-14", eltInspectionGoodThrough: "2027-06-30", forHire: false, hoursNow: 4312.4, hundredHourAtHours: 4280, hundredHourDueAtHours: 4380, staticCheckGoodThrough: "2027-03-31", staticCheckOn: "2025-03-02", transponderCheckGoodThrough: "2027-03-31", transponderCheckOn: "2025-03-02"), openSquawks: [Squawk(deferredFor: "VFR_DAY", id: 9, inoperative: true, reportedOn: "2026-10-30", text: "Left landing light out")], surveillance: "B1", tailNumber: "N3429J", typeDesignator: "P28A", usableFuelGal: 48, vorCheck: VorCheck(checkedOn: "2026-10-25", errorDeg: 2, goodThrough: "2026-11-24", kind: "VOT", limitDeg: 4, place: "KDLH VOT", withinLimit: true))
+    static let airplane = OwnAircraftRecord(climbFuelBurnGph: 11, climbTasKt: 76, colour: "White, blue stripe", createdAt: "2026-06-01", cruisePowerPct: 65, cruiseTasKt: 112, dueItems: [], equipment: "SDFGRY", figures: GWOwnFigures(glideRatio: 9, taxiFuelGal: 1.2), fuelBurnGph: 8.5, id: 4, inspections: Inspections(annualGoodThrough: "2027-06-30", annualOn: "2026-06-14", eltBatteryDueOn: "2028-02-01", eltInspectedOn: "2026-06-14", eltInspectionGoodThrough: "2027-06-30", forHire: false, hoursNow: 4312.4, hundredHourAtHours: 4280, hundredHourDueAtHours: 4380, staticCheckGoodThrough: "2027-03-31", staticCheckOn: "2025-03-02", transponderCheckGoodThrough: "2027-03-31", transponderCheckOn: "2025-03-02"), kind: .init(), openSquawks: [Squawk(deferredFor: "VFR_DAY", id: 9, inoperative: true, reportedOn: "2026-10-30", text: "Left landing light out")], surveillance: "B1", tailNumber: "N3429J", typeDesignator: "P28A", usableFuelGal: 48, vorCheck: VorCheck(checkedOn: "2026-10-25", errorDeg: 2, goodThrough: "2026-11-24", kind: "VOT", limitDeg: 4, place: "KDLH VOT", withinLimit: true))
 }
 
 #Preview("AircraftFormView") {

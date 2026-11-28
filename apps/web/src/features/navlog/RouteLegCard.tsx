@@ -1,7 +1,6 @@
 import { Trash2 } from "lucide-react";
-import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
-import { CardAction } from "../../components/CardAction";
+import { CardAction, CardActionRow } from "../../components/CardAction";
 import DirectToIcon from "../../lib/glyphs/DirectToIcon";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { SheetCard } from "../../components/SheetCard";
@@ -66,7 +65,7 @@ function RouteLegBody({ leg }: { leg: RouteLegView }) {
   return (
     <div className="flex flex-col gap-3">
       {actions > 0 && (
-        <div className={cn("grid gap-2", actions === 2 ? "grid-cols-2" : "grid-cols-1")}>
+        <CardActionRow columns={actions === 2 ? 2 : 1}>
           {leg.direct && (
             <CardAction
               icon={<DirectToIcon />}
@@ -79,7 +78,7 @@ function RouteLegBody({ leg }: { leg: RouteLegView }) {
           {leg.remove && (
             <CardAction icon={<Trash2 />} label={`Remove ${leg.to}`} destructive onClick={leg.remove} testId="route-leg-remove" />
           )}
-        </div>
+        </CardActionRow>
       )}
       <ListGroup>
         <ListRow title="Distance" value={leg.distanceNm === null ? <FigureWait /> : nm(leg.distanceNm)} data-testid="route-leg-distance" />

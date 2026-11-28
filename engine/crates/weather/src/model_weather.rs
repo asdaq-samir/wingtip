@@ -136,13 +136,7 @@ pub fn cape_category(j_kg: f64) -> &'static str {
     word
 }
 
-fn num(name: &str, v: &Value, key: &str) -> Result<Option<f64>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
+use wingtip_core::ask::opt_num_in as num;
 
 fn band(out: &mut String, word: &str, from: f64) {
     out.push_str("{\"word\":");

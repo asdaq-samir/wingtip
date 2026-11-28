@@ -64,7 +64,21 @@ def _feet_msl(ft, ref) -> float | None:
 #: What the card reads a TFR by (the engine's tfr_read) and shows of it:
 #: its kind, rule, title and levels as tfr.faa.gov gives them, and its
 #: instructions, NOTAM text and whom to call as its XNOTAM file does.
-TFR_FACTS = ("kind", "rule", "title", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref", "instructions", "text", "facility", "contact")
+TFR_FACTS = (
+    "kind",
+    "rule",
+    "title",
+    "floor_ft",
+    "floor_ref",
+    "floor_varies",
+    "ceiling_ft",
+    "ceiling_ref",
+    "ceiling_varies",
+    "instructions",
+    "text",
+    "facility",
+    "contact",
+)
 
 
 def _tfr_facts(t: dict, field: dict | None) -> dict:
@@ -72,6 +86,8 @@ def _tfr_facts(t: dict, field: dict | None) -> dict:
     it, else its nearest edge (wingtip.tfr.near_point)."""
     facts = {k: t.get(k) for k in TFR_FACTS}
     facts["instructions"] = facts["instructions"] or []
+    # A TFR stored before the weather service kept them says neither.
+    facts["floor_varies"], facts["ceiling_varies"] = bool(t.get("floor_varies")), bool(t.get("ceiling_varies"))
     facts.update(over_field=t.get("crosses") if field else None, field=field, edge=t.get("edge") if field else None)
     return facts
 

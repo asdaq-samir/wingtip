@@ -1,4 +1,5 @@
 use super::*;
+use std::sync::{Arc, Mutex};
 
 /// A TFR, as the phone kept it or the planner read it: its NOTAM, its
 /// title, the rule it is issued under, its floor and ceiling in feet with
@@ -76,6 +77,13 @@ pub(super) fn tfrs_of(text: &str) -> Vec<Tfr> {
 /// force is from its effective to its expiry time, as its NOTAM gives
 /// them (AIM 3-5-3); one with neither is taken as in force.
 pub(super) fn tfr_alerts(track: &Track, ground: Option<f64>, now: i64, list: &[Tfr]) -> Vec<Alert> {
+    alerts_under(track, ground, now, list, |i| list[i].under)
+}
+
+/// tfr_alerts with the ground under each TFR (its `under`) given apart,
+/// so the phone's kept list, read once (kept_tfrs), is never copied to
+/// set it.
+fn alerts_under(track: &Track, ground: Option<f64>, now: i64, list: &[Tfr], under_of: impl Fn(usize) -> Option<f64>) -> Vec<Alert> {
     let until = now + *track.times.last().unwrap() as i64;
     // The look-ahead's box, as the classes and special-use areas are met
     // (areas.rs): a TFR whose box misses it holds none of the track's
@@ -83,14 +91,14 @@ pub(super) fn tfr_alerts(track: &Track, ground: Option<f64>, now: i64, list: &[T
     // point-in-polygon tests a TFR on every GPS tick.
     let window = track.boxes(1.0);
     let mut found = Vec::new();
-    for t in list {
+    for (i, t) in list.iter().enumerate() {
         if t.to.is_some_and(|e| e < now) || t.from.is_some_and(|s| s > until) {
             continue;
         }
         if !shape_box(&t.shape).is_some_and(|b| meets(b, &window)) {
             continue;
         }
-        let under = t.under.or(ground);
+        let under = under_of(i).or(ground);
         let floor = height_msl(t.floor, t.floor_agl, under, 0.0);
         let ceiling = height_msl(t.ceiling, t.ceiling_agl, under, f64::INFINITY);
         let holds = |x: f64, y: f64| polygons_hold(&t.shape, x, y);
@@ -116,14 +124,35 @@ pub(super) fn tfr_alerts(track: &Track, ground: Option<f64>, now: i64, list: &[T
     found
 }
 
-pub(super) fn tfrs(packs: &[Pack], track: &Track, ground: Option<f64>, now: i64, text: &str) -> Vec<Alert> {
-    let mut list = tfrs_of(text);
-    for t in &mut list {
-        // The ground at the TFR's first point, for its AGL heights.
-        if t.floor_agl || t.ceiling_agl {
-            let (x, y) = t.shape[0][0][0];
-            t.under = ground_ft(packs, y, x);
-        }
+/// The phone's kept TFRs read (tfrs_of) once for each text it hands over:
+/// `ahead` is asked on every GPS fix with the same text, which was parsed
+/// whole each time. The last text read is kept with its reading and
+/// compared byte for byte, so a changed list is always read anew. A lock
+/// another call's panic poisoned only costs the reading again.
+fn kept_tfrs(text: &str) -> Arc<Vec<Tfr>> {
+    static KEPT: Mutex<Option<(String, Arc<Vec<Tfr>>)>> = Mutex::new(None);
+    if let Ok(kept) = KEPT.lock()
+        && let Some((was, list)) = kept.as_ref()
+        && was == text
+    {
+        return list.clone();
     }
-    tfr_alerts(track, ground, now, &list)
+    let list = Arc::new(tfrs_of(text));
+    if let Ok(mut kept) = KEPT.lock() {
+        *kept = Some((text.to_owned(), list.clone()));
+    }
+    list
+}
+
+pub(super) fn tfrs(packs: &[Pack], track: &Track, ground: Option<f64>, now: i64, text: &str) -> Vec<Alert> {
+    let list = kept_tfrs(text);
+    // The ground at each TFR's first point, for its AGL heights.
+    let under: Vec<Option<f64>> = list
+        .iter()
+        .map(|t| {
+            let (x, y) = t.shape[0][0][0];
+            (t.floor_agl || t.ceiling_agl).then(|| ground_ft(packs, y, x)).flatten()
+        })
+        .collect();
+    alerts_under(track, ground, now, &list, |i| under[i])
 }

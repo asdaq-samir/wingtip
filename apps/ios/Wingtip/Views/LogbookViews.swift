@@ -76,7 +76,7 @@ struct LogbookView: View {
                         } description: {
                             Text("Flights you log, or the ones Wingtip drafts after you land, show here.")
                         } actions: {
-                            Button("Log a Flight") { adding = .blank(aircraft: plan.tail) }.glassProminentButton()
+                            Button("Log a Flight") { adding = .blank(aircraft: plan.tail, entries: flights.entries) }.glassProminentButton()
                         }
                     } else if months.isEmpty {
                         ContentUnavailableView.search(text: query)
@@ -121,14 +121,14 @@ struct LogbookView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { adding = .blank(aircraft: plan.tail) } label: { Label("Log a Flight", systemImage: "plus") }
+                    Button { adding = .blank(aircraft: plan.tail, entries: flights.entries) } label: { Label("Log a Flight", systemImage: "plus") }
                 }
             }
         }
         .modifier(SaveFileExporter(saving: $saving))
         .sheet(isPresented: Binding(get: { adding != nil }, set: { if !$0 { adding = nil } })) {
             NavigationStack {
-                LogbookEntryForm(entry: adding ?? .blank(aircraft: plan.tail), isNew: true) { saved in
+                LogbookEntryForm(entry: adding ?? .blank(aircraft: plan.tail, entries: flights.entries), isNew: true) { saved in
                     try await Gateway.addLogbookEntry(saved)
                     await load()
                 }
@@ -201,16 +201,17 @@ struct LogbookView: View {
     @ViewBuilder private var currencySection: some View {
         Section("Currency") {
             LabeledContent {
-                UntilText(date: currency?.dayPassengersUntil)
+                UntilText(date: currency?.dayPassengersUntil, unknown: currency?.dayPassengersUnknown)
             } label: {
                 Text("Passengers by Day")
-                Text("3 takeoffs and landings in 90 days")
+                // What the logbook does not say, in the gateway's words, else the rule.
+                Text(currency?.dayPassengersUnknown ?? "3 takeoffs and landings in 90 days")
             }
             LabeledContent {
-                UntilText(date: currency?.nightPassengersUntil)
+                UntilText(date: currency?.nightPassengersUntil, unknown: currency?.nightPassengersUnknown)
             } label: {
                 Text("Passengers at Night")
-                Text("3 to a full stop at night in 90 days")
+                Text(currency?.nightPassengersUnknown ?? "3 to a full stop at night in 90 days")
             }
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 OptionalDayRow(title: "Flight Review", day: dateBinding(\.flightReviewOn), upTo: Date())
@@ -321,7 +322,9 @@ struct LogbookView: View {
             // launch left to send, stays off the list.
             let held = flights.held
             flights.entries = list.filter { !held.contains($0.id) }
-            currency = try await Gateway.currency()
+            // Passengers judged for the airplane the plan flies, where the
+            // logbook says its category, class and gear (61.57(a)(1)).
+            currency = try await Gateway.currency(toFly: AirplaneKind.of(flights.entries, tail: plan.tail))
             do { reminders = try await Gateway.reminders(); remindersProblem = nil } catch {
                 remindersProblem = Problems.say("Whether reminders are on could not be fetched", error)
             }

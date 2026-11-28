@@ -7,6 +7,7 @@ import {
   openPanel,
   settle,
   sideDrawer,
+  sheetFoot,
   slow,
   tapTheChart,
   grabberTo,
@@ -18,6 +19,7 @@ import { routeMenuSwitch } from "./mapCard";
 import { drawnMarks, markWith, tapMark } from "./marks";
 import { mapZoom } from "./mapZoom";
 import { pickAirplane } from "./startState";
+import { hold } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -32,10 +34,10 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   // two different airports.
   await page.goto("/app/plan?dep=C81&dest=C81");
   await grabberTo(page, "full");
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText("1h", { timeout: slow(30000) });
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText("1h", { timeout: slow(30000) });
   // Its name as shown, "Aloft", and in full words to a screen reader
   // (TripFigures' dt: the shorthand hidden from it, the said words beside).
-  const aloft = sideDrawer(page).locator('[data-slot="section-summary"] dt').nth(1);
+  const aloft = sheetFoot(page).locator('[data-slot="section-summary"] dt').nth(1);
   await expect(aloft.locator("[aria-hidden]")).toHaveText("Aloft");
   await expect(aloft.locator(".sr-only")).toHaveText("Time aloft, one hour");
   // Its fuel required among the figures.
@@ -46,7 +48,7 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   await page.getByTestId("local-duration").click();
   await page.getByRole("option", { name: "2h", exact: true }).click();
   await expect(page).toHaveURL(/[?&]local_min=120/);
-  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText("2h", { timeout: slow(30000) });
+  await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText("2h", { timeout: slow(30000) });
 });
 
 test("plan page: every popup the map opens dismisses the same way", async ({ page }) => {
@@ -77,7 +79,7 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
   await page.mouse.move(map.x + map.width / 2, map.y + map.height / 3);
   for (let i = 0; i < 4; i++) {
     await page.mouse.wheel(0, 300);
-    await page.waitForTimeout(400);
+    await hold(page, 400);
   }
 
   await expect.poll(markWith(page, "class-b-fields", "KORD"), { timeout: slow(25000) }).not.toBeNull();
@@ -161,7 +163,7 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   // were all it took.
   for (let i = 0; i < 8 && !((await zoomOfTiles()) <= 5); i++) {
     await page.mouse.wheel(0, 300);
-    await page.waitForTimeout(400);
+    await hold(page, 400);
     await mapStill(page);
   }
   await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeLessThanOrEqual(5);
@@ -245,7 +247,7 @@ test("the chart's airports keep coming in under a finger's pan, before it lets g
   await page.mouse.down();
   for (let i = 1; i <= 30; i++) {
     await page.mouse.move(left + (run * i) / 30, y);
-    await page.waitForTimeout(40);
+    await hold(page, 40);
   }
   // Still held: fields drawn that were not in sight before.
   await expect.poll(async () => [...(await idents())].some((i) => !before.has(i)), { timeout: slow(10_000) }).toBe(true);

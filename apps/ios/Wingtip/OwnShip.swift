@@ -18,8 +18,8 @@ import Observation
 /// its default on the ground, where a still phone goes stationary and
 /// gives nothing; a CLBackgroundActivitySession keeps it going with the
 /// phone locked while flying, with Apple's blue indicator. It was a
-/// CLLocationManager delegate with its own accuracy and filter switching
-/// (the stock audit, 2026-11-21). The permission is LocationPermission's.
+/// CLLocationManager delegate with its own accuracy and filter switching.
+/// The permission is LocationPermission's.
 @MainActor
 @Observable
 final class OwnShip {
@@ -32,6 +32,16 @@ final class OwnShip {
         let at: Date
 
         static func == (a: Fix, b: Fix) -> Bool { a.at == b.at }
+    }
+
+    /// Own ship as the hazard colouring reads it (hazardFix): the speed is
+    /// the fix's when the band last changed, equal while `underway` is.
+    struct HazardFix: Equatable, Sendable {
+        let underway: Bool
+        let speedKt: Double?
+        let gpsFt: Double?
+
+        static func == (a: HazardFix, b: HazardFix) -> Bool { a.underway == b.underway && TerrainHazard.step(a.gpsFt) == TerrainHazard.step(b.gpsFt) }
     }
 
     private(set) var fix: Fix?
@@ -53,6 +63,21 @@ final class OwnShip {
     /// what a card's distance from the airplane reads, so a parked
     /// airplane's jitter does not draw it again and ask the engine again.
     private(set) var coarseCoordinate: CLLocationCoordinate2D?
+    /// The fix's place by the mile (OwnShip.byTheMile), changed only when
+    /// it changes: what the lists of the fields near the airplane are
+    /// asked again by, so a fix a second does not run their views again.
+    private(set) var byTheMile: String?
+    /// What the map's terrain hazard colouring is asked with (HazardInput):
+    /// the height as read, told apart by its whole step (TerrainHazard.step), and
+    /// whether the airplane is at flying speed, the one thing the engine's
+    /// hazard_view reads the speed for (its `underway`). Changed only when
+    /// either changes, so a fix in cruise runs neither the map's body nor
+    /// its update, nor asks the engine again.
+    private(set) var hazardFix: HazardFix?
+    /// Whether there is a fix, changed only when that changes: what a card
+    /// offering something from the position reads in its body (From My
+    /// Position, Direct To), the fix itself read only in the action.
+    private(set) var hasFix = false
     /// The position refused, by the permission or by an update that says
     /// so (CLLocationUpdate.authorizationDenied).
     private(set) var denied = false
@@ -222,29 +247,48 @@ final class OwnShip {
         switch next.source {
         case .receiver: if let receiverFix = next.fix, receiverFix.at != fix?.at { took(receiverFix) }
         case .device: if let deviceFix, deviceFix.at != fix?.at { took(deviceFix) }
-        case .none: if fix != nil { fix = nil; markedFt = nil }
+        case .none: if fix != nil { lost() }
         }
     }
 
     private func handBack() {
-        if let deviceFix { took(deviceFix) } else { fix = nil; markedFt = nil }
+        if let deviceFix { took(deviceFix) } else { lost() }
+    }
+
+    /// No fix: none drawn and none read.
+    private func lost() {
+        fix = nil
+        markedFt = nil
+        hazardFix = nil
+        hasFix = false
+        coarseCoordinate = nil
+        byTheMile = nil
     }
 
     /// A fix taken: the live updates', and a test's.
     func took(_ fix: Fix) {
         self.fix = fix
+        if !hasFix { hasFix = true }
         let marked = Traffic.markedFt(fix.altitudeFt)
         if marked != markedFt { markedFt = marked }
+        // Flying speed asked of the engine once a fix: the hazard, the path,
+        // the recorder and the instruments (InFlight, by FlightLoops) all
+        // read this one answer.
+        let underway = (try? Flight.underway(fix.groundspeedKt)) ?? false
+        let hazard = HazardFix(underway: underway, speedKt: fix.groundspeedKt, gpsFt: fix.altitudeFt)
+        if hazard != hazardFix { hazardFix = hazard }
         let coarse = Self.coarse(fix.coordinate)
         if coarse.latitude != coarseCoordinate?.latitude || coarse.longitude != coarseCoordinate?.longitude { coarseCoordinate = coarse }
+        let mile = Self.byTheMile(fix.coordinate)
+        if mile != byTheMile { byTheMile = mile }
         // The path flown, and the phone's position kept in the background
         // only while flying (the location background mode, project.yml):
         // on the ground the reading stops with the app, as any map's does.
         // The flight recorder (the automatic logbook) keeps it in the
         // background past the flying speed too, until the engine finds
         // the airplane landed and at rest: 1.1's flight time ends there.
-        let recording = recorder.took(fix)
-        flying = trail.took(fix) || recording
+        let recording = recorder.took(fix, underway: underway)
+        flying = trail.took(fix, underway: underway) || recording
         // Kept going with the phone locked or the app put away while
         // flying: the alerts ahead and the path flown went on only with the
         // screen on, where a pilot's phone in a mount locks itself. Apple's
@@ -266,6 +310,13 @@ final class OwnShip {
         guard yes != isPrecise else { return }
         isPrecise = yes
         read()
+    }
+
+    /// A place by the minute of arc, a nautical mile of latitude: the key a
+    /// list of the fields near it is asked again by once the airplane has
+    /// moved about a mile.
+    nonisolated static func byTheMile(_ at: CLLocationCoordinate2D) -> String {
+        "\((at.latitude * 60).rounded()),\((at.longitude * 60).rounded())"
     }
 
     /// A place to a thousandth of a degree (coarseCoordinate).

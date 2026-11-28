@@ -32,10 +32,14 @@ export const TEXT = {
   /** A section's title in the planning panel's tabs, with font-semibold:
    *  20 on its 25 leading (iOS Title 3), and 18 with a mouse -- above a
    *  row's 17, where the same size in a heavier weight read as one more
-   *  row (the tabs' content audit, 2026-10-07). */
+   *  row. */
   heading: TYPE_CLASS.heading,
   /** A row's name and its value, a section's title: 17, 14. */
   row: TYPE_CLASS.row,
+  /** A slim pill's words (the runway's, ARR's, the N-number's and FL's
+   *  pills): 16 on 22 everywhere, a size under a row's so a 24-point pill
+   *  holds them. */
+  pill: TYPE_CLASS.pill,
   /** The line under a row's name: 15, 12. */
   detail: TYPE_CLASS.detail,
   /** What is read rather than scanned -- a section's summary, a
@@ -55,7 +59,7 @@ export const TEXT = {
    *  and icon size a bit bigger so it fits nicely"; the tabs to "pop out
    *  more", 2026-10-22). The bars drew a note's 13 while this role said 12,
    *  and the 13-on-17 `tab` role had no caller; one role now, and `tab` is
-   *  gone (the scale audit's Q3, the owner, 2026-11-21). */
+   *  gone (the owner, 2026-11-21). */
   tabBar: TYPE_CLASS.tabBar,
   /** A figure's name, an ident, a chip's word in the display face
    *  (index.css --display: Barlow Condensed in the Chart ink look, the
@@ -79,6 +83,13 @@ export const TEXT = {
  *  caps", 2026-10-23). */
 export const SECTION_TITLE = `font-medium text-foreground ${TEXT.heading}`;
 
+/** A list group's title inside a section (ListGroup in AccordionSection):
+ *  a label, as iOS heads a group in a grouped list and as a menu labels
+ *  its part (MENU_LABEL) -- a note's 13, medium, grey, in the title's own
+ *  words -- where it was the section's 20 too, three headings deep at one
+ *  size (Risk Assessment over "From the Briefing and Your Logbook"). */
+export const GROUP_LABEL = `font-medium text-muted-foreground ${TEXT.note}`;
+
 /** A group's heading, as iOS's grouped lists set one: a note's size,
  *  semibold, in capitals, spaced out and grey. Over a list's box
  *  (ListGroup), the nav log's columns, a popover's parts -- one look,
@@ -93,8 +104,9 @@ export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row 
 /** A figure pinned at the map panel's foot (FigureStrip), its
  *  value, unit and name small at half and their own size at the pill and
  *  all the way up (MapPanel's --sheet-progress, 0 at half, 1 at the other
- *  two; the owner, 2026-11-05), each with its iOS leading at either end (the audit's P3: 15
- *  on 20 to 20 on 25, 11 on 13 to 13 on 18), eased between as the size
+ *  two; the owner, 2026-11-05), each with its iOS leading at either end (15
+ *  on 20 to 20 on 25, 11 on 13 to 13 on 18),
+ *  eased between as the size
  *  is. The value's size is `--fig`; the unit is a share of it, so the two grow
  *  together, 11 of 15 at half to 13 of 20 at the pill. On a kneeboard
  *  (index.css: an iPad, read at arm's length, where the side panel has no
@@ -129,25 +141,27 @@ export const FIXED_FIGURE = {
   unitScale: 0.65,
 };
 
-/** FPL's figures, pinned at the sheet's foot: thin at half and all the
- *  way up, each value iOS's Footnote's 13, tight on 16, under its
+/** FPL's figures in its foot (FlightFoot's GroundFoot): thin at half and
+ *  all the way up, each value iOS's Footnote's 13, tight on 16, under its
  *  name in a Caption 2's 11 on 12, in under 32 points (the owner, 2026-11-22: "Show the
- *  labels even for thin strip"), growing to the pill's own, a heading's
- *  20 on 25 under a note's 13 on 18, as the sheet goes to the pill (--pin-p, 0 to 1, usePinAtFoot's
- *  growAt, a frame at a time under the finger; the owner, 2026-11-22:
- *  "make the figures strip very thin when fpl is half or full"; "It should
- *  follow finger to look natural"). One strip that changes size. On a
+ *  labels even for thin strip"; "make the figures strip very thin when fpl
+ *  is half or full"), and the pill's own at the pill, a heading's 20 on 25
+ *  under a note's 13 on 18: --strip-full, 0 or 1, set once as the sheet
+ *  comes to rest (sheet/FootBar), never followed with the finger. On a
  *  kneeboard (an iPad) the pill's own is the flying size GROW_FIGURE gives
  *  there, 26 on 31 under 15-point names (the owner, 2026-11-21: "Yes do it
  *  all for iPad"), from the same thin line. */
 const KNEEBOARD_PIN =
-  "kneeboard:[--fig:calc(0.8125rem+(var(--type-figure)-0.8125rem)*var(--pin-p,1))] kneeboard:leading-[calc(1rem+0.9375rem*var(--pin-p,1))]";
+  "kneeboard:[--fig:calc(0.8125rem+(var(--type-figure)-0.8125rem)*var(--strip-full,1))] kneeboard:leading-[calc(1rem+0.9375rem*var(--strip-full,1))]";
 const KNEEBOARD_PIN_NAME =
-  "kneeboard:text-[length:calc(0.6875rem+(var(--type-detail)-0.6875rem)*var(--pin-p,1))] kneeboard:leading-[calc(0.75rem+0.5rem*var(--pin-p,1))]";
+  "kneeboard:text-[length:calc(0.6875rem+(var(--type-detail)-0.6875rem)*var(--strip-full,1))] kneeboard:leading-[calc(0.75rem+0.5rem*var(--strip-full,1))]";
 export const PIN_FIGURE = {
-  value: `[--fig:calc(0.8125rem+0.4375rem*var(--pin-p,1))] leading-[calc(1rem+0.5625rem*var(--pin-p,1))] ${KNEEBOARD_PIN}`,
-  unit: "text-[length:0.65em] leading-(--lead-note)",
-  name: `text-[length:calc(0.6875rem+0.125rem*var(--pin-p,1))] leading-[calc(0.75rem+0.375rem*var(--pin-p,1))] ${KNEEBOARD_PIN_NAME}`,
+  value: `[--fig:calc(0.8125rem+0.4375rem*var(--strip-full,1))] leading-[calc(1rem+0.5625rem*var(--strip-full,1))] ${KNEEBOARD_PIN}`,
+  // Never under a Caption 2's 11 points (Apple's floor; in rem, so it grows
+  // with the reader's text): 0.65 of the thin strip's 13 was 8.45 px, "nm"
+  // after Dist.
+  unit: "text-[length:max(0.6875rem,0.65em)] leading-(--lead-note)",
+  name: `text-[length:calc(0.6875rem+0.125rem*var(--strip-full,1))] leading-[calc(0.75rem+0.375rem*var(--strip-full,1))] ${KNEEBOARD_PIN_NAME}`,
   unitScale: 0.65,
 };
 

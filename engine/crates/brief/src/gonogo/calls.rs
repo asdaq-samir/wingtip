@@ -38,6 +38,14 @@ impl In<'_> {
         }
     }
 
+    pub(crate) fn opt_bool(&self, v: &Value, key: &str) -> R<Option<bool>> {
+        match v.get(key) {
+            None | Some(Value::Null) => Ok(None),
+            Some(Value::Bool(b)) => Ok(Some(*b)),
+            Some(_) => self.err(key, "is not true or false"),
+        }
+    }
+
     pub(crate) fn num(&self, v: &Value, key: &str) -> R<f64> {
         self.opt_num(v, key)?.map_or_else(|| self.err(key, "is missing"), Ok)
     }

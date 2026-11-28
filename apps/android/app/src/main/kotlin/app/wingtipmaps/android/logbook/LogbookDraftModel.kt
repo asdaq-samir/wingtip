@@ -88,7 +88,7 @@ class LogbookDraftModel(
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
-    /** The minute of points and the end offered last read. */
+    /** The points last read and the end offered then. */
     private var looked: Pair<Int, Double?>? = null
     private var tail: String? = null
     private var type: String? = null
@@ -112,14 +112,20 @@ class LogbookDraftModel(
         askIfWanted()
     }
 
-    /** The engine's reading, once each minute of points, and only once the
-     *  airplane has flown: ground alone has no landing to find (the
-     *  iPhone's look). Collected in turn, so `looked` is never raced. */
+    /** The engine's reading, once each minute of points, once each ten
+     *  at flying speed, and only once the airplane has flown: ground
+     *  alone has no landing to find (the iPhone's look). Collected in
+     *  turn, so `looked` is never raced. */
     private suspend fun look(recorded: Recorded) {
-        val minute = if (recorded.flown) recorded.points.size / LOOK_EVERY_POINTS else 0
-        if (looked == minute to recorded.askedTo) return
-        looked = minute to recorded.askedTo
-        val seen = recorded.points.take(minute * LOOK_EVERY_POINTS)
+        val every = lookEvery(recorded)
+        val size = recorded.points.size
+        val upTo = if (recorded.flown) size / every * every else 0
+        // Not again for the same points, nor for fewer of a track that has
+        // not shrunk (a speed hovering at flying speed changes `every`).
+        val last = looked
+        if (last != null && last.second == recorded.askedTo && (upTo == last.first || (upTo < last.first && size >= last.first))) return
+        looked = upTo to recorded.askedTo
+        val seen = recorded.points.take(upTo)
         val reading = if (seen.size >= 2) withContext(readOn) { rules.read(seen) } else null
         val ended = DraftEntry.ended(reading, seen, recorded.askedTo)
         if (ended == _state.value.endedAt) return
@@ -162,6 +168,15 @@ class LogbookDraftModel(
 
     fun byInstruments(yes: Boolean) = _state.update { it.copy(byInstruments = yes) }
 
+    /** The pilot's logbook, for an airplane's category, class and gear; none where it can't be read. */
+    private suspend fun entriesOrNone() = try {
+        source.entries().orEmpty()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        emptyList()
+    }
+
     /** Log: the entry kept by the gateway, linked to its saved flight; the
      *  flown track sent to that flight, or, where that fails, kept on the
      *  phone (TrackShelf) before the recorder lets its own copy go, and
@@ -176,7 +191,9 @@ class LogbookDraftModel(
         viewModelScope.launch {
             try {
                 val linked = s.linked
-                val entry = source.add(DraftEntry.request(draft, s.edits, s.byInstruments, linked))
+                // The airplane's category, class and gear where the logbook has said them for its N-number.
+                val kind = AirplaneKind.of(entriesOrNone(), (s.edits[DraftField.AIRPLANE] ?: draft.entry.aircraft)?.trim())
+                val entry = source.add(DraftEntry.request(draft, s.edits, s.byInstruments, linked, kind))
                 if (linked != null) {
                     val track = SavedTrack(
                         points = flight.recorded.value.points.map { SavedTrackPoint(t = it.t.toLong(), lat = it.lat, lon = it.lon, altFt = it.altFt) },
@@ -193,7 +210,7 @@ class LogbookDraftModel(
                 flight.forget()
                 LogbookChanged.changed()
                 val currency = try {
-                    source.currency()?.let(CurrencyWords::lines).orEmpty()
+                    source.currency(kind)?.let(CurrencyWords::lines).orEmpty()
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -230,5 +247,15 @@ class LogbookDraftModel(
          *  (12 at FlightRecorder's 5 s): whether a flight has ended is a
          *  question of minutes. */
         const val LOOK_EVERY_POINTS = 12
+
+        /** At flying speed, once ten minutes of points (the iPhone's
+         *  lookEveryFlying): a flight cannot have come to rest while the
+         *  airplane is still at flying speed, and each read takes the
+         *  whole track. Kept, rarer, so a flight once found ended and then
+         *  flown on is no longer offered. */
+        const val LOOK_EVERY_FLYING = 120
+
+        /** The points between the engine's reads of this track. */
+        fun lookEvery(recorded: Recorded): Int = if (recorded.atSpeed) LOOK_EVERY_FLYING else LOOK_EVERY_POINTS
     }
 }

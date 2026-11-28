@@ -7,7 +7,7 @@ import json
 import pandas as pd
 
 from wingtip import airports
-from wingtip.airports import search_airports
+from wingtip.airports import count_airports, search_airports
 
 
 def test_a_search_finds_a_word_of_the_name_not_only_its_start(us_airports_csv):
@@ -17,6 +17,15 @@ def test_a_search_finds_a_word_of_the_name_not_only_its_start(us_airports_csv):
     assert [a["ident"] for a in search_airports("paul", cache_path=us_airports_csv)] == ["KMSP"]
     # An ident typed whole first, before the idents it starts.
     assert search_airports("kdlh", cache_path=us_airports_csv)[0]["ident"] == "KDLH"
+
+
+def test_the_count_is_every_match_the_search_has(us_airports_csv):
+    """count_airports, the connector's total past its last page, counts
+    what search_airports matches, one word from the index and more than
+    one scanned, without building each match's row."""
+    for query in ("k", "kdlh", "duluth intl", "zzz", " "):
+        assert count_airports(query, cache_path=us_airports_csv) == len(search_airports(query, limit=100_000, cache_path=us_airports_csv))
+    assert count_airports("k", cache_path=us_airports_csv) > 1
 
 
 def test_the_search_index_holds_every_us_field_the_search_answers_with(us_airports_csv):

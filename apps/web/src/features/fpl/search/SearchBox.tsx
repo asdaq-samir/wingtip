@@ -33,8 +33,7 @@ export default function SearchBox({
     inputRef.current?.focus();
   });
   // FPL's head's height (SHEET_BAR: 49 at the default size), a white card
-  // on the sheet's grey, its own 44-point hit area (the sheet audit's
-  // F-P2, 2026-11-10).
+  // on the sheet's grey, its own 44-point hit area.
   return (
     <label
       className={cn(
@@ -106,8 +105,11 @@ export default function SearchBox({
         className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
       />
       {/* Base UI's own clear: shown while something is typed, the
-          words cleared through the root's onValueChange, the focus kept. */}
-      <CommandClear aria-label="Clear the search" data-testid="search-clear" />
+          words cleared through the root's onValueChange, the focus kept.
+          Its 44-point area (12 round its 20) stays clear of the mic's (its
+          own 44) rather than overlapping it: 16 apart, where the row's gap of
+          8 let a tap just right of the ✕ start the mic */}
+      <CommandClear aria-label="Clear the search" data-testid="search-clear" className="mr-2" />
       {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
       {/* The microphone, the field's trailing button: on-device speech
           only (lib/speechLocal), so none where the browser has no
@@ -127,7 +129,9 @@ export default function SearchBox({
           // their room: at a large text size the row's round buttons grow
           // with the text, and at twice the size the field was 0 wide and
           // took no typing (card-scroll.spec's text size test, 2026-11-20).
-          className="size-9 @max-[180px]/search:hidden"
+          // A round icon button is 44, as Apple Maps' are, inside the
+          // field's 49 (it was 36).
+          className="size-11 @max-[180px]/search:hidden"
         />
       )}
     </label>

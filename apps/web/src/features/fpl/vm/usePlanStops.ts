@@ -1,12 +1,14 @@
-import { useEffect, useEffectEvent } from "react";
-import { airportQuery, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
-import { navlogQuery, suggestedStopAt } from "../../plan";
+import { useEffect, useEffectEvent, useMemo } from "react";
+import { prefetchAirport } from "../../../lib/queryClient";
+import { prefetchRoute, suggestedStopAt } from "../../plan";
 import { useSuggestedStops } from "../../stops";
-import { useMapActions } from "../../route";
+import { fuelStopsAt, useMapActions, waypointStopsOf } from "../../route";
+import { sameField } from "../../../lib/procedures";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanCards } from "./usePlanCards";
 import type { PlanPicks } from "./usePlanPicks";
+import { useKept } from "./useKept";
 
 /**
  * The stops the planner suggests and keeping them (useSuggestedStops), the
@@ -32,22 +34,39 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
     : "";
   const prefetchAhead = useEffectEvent(() => {
     if (!nextStops) return;
-    const ahead = { ...planParams, stops: nextStops };
-    void queryClient.prefetchQuery(courseQuery(ahead.dep, ahead.dest, nextStops));
-    if (showWaypoints) void queryClient.prefetchQuery(checkpointsQuery(ahead.dep, ahead.dest, nextStops));
-    void queryClient.prefetchQuery(navlogQuery(ahead, showWaypoints));
+    prefetchRoute({ ...planParams, stops: nextStops }, showWaypoints);
     // And the new stops' cards, whose reports their runways are picked into
     // the wind from as they land in the route: in by then, not asked after.
-    for (const ident of nextStops) void queryClient.prefetchQuery(airportQuery(ident));
+    nextStops.forEach(prefetchAirport);
   });
   useEffect(() => prefetchAhead(), [aheadKey]); // keyed on the route and the plan's choices
   // The map's cards' and the radio's actions on the route (useMapActions).
   useMapActions({ course, planned, aircraft, setStops, setRoute, directToChartPoint, flyAltitude, typeProcedures });
-  return {
-    ...suggested,
-    // The suggested stop the airport's card is open on, where it is one: its
-    // figures at the card's top, and Add Stop keeps it at its place
-    // (PlaceCard's `stop`).
-    suggestedAt: suggestedStopAt(place, fuelStops),
-  };
+  // The suggested stop the airport's card is open on, where it is one: its
+  // figures at the card's top, and Add Stop keeps it at its place
+  // (PlaceCard's `stop`) -- after the point its flight leaves, by that
+  // point's place in the route (fuelStopsAt, by both the flight's ends; the
+  // stops flown through the box's own waypointStopsOf, airways too), so a
+  // field the route leaves twice takes it on the right flight.
+  const at = useMemo(() => suggestedStopAt(place, fuelStops), [place, fuelStops]);
+  const points = [planned.dep, ...planned.stops, planned.dest];
+  const fixes = waypointStopsOf(planned.stops, course);
+  const flightAt = at
+    ? fuelStopsAt(points, fixes, fuelStops).findIndex(
+        (f) => !!f && [...f.stops, ...(f.choices ?? [])].some((c) => sameField(c.ident, place!)),
+      )
+    : -1;
+  const after = !at
+    ? -1
+    : flightAt >= 0
+      ? flightAt
+      : Math.max(
+          0,
+          points.findIndex((p) => sameField(p, at.after)),
+        );
+  const atStop = at ? at.stop : null;
+  // The same object while the stop and its place are (useMemo), and the
+  // slice while nothing in it changes (useKept), as each slice is.
+  const suggestedAt = useMemo(() => (atStop ? { stop: atStop, after } : null), [atStop, after]);
+  return useKept({ ...suggested, suggestedAt });
 }

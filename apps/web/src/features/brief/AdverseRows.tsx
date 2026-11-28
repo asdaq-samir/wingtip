@@ -7,6 +7,7 @@ import { useDataCycles } from "../../lib/map/sources/layerAges";
 import { TEXT } from "../../lib/text";
 import type { PanelTab } from "../plan";
 import type { Adverse, AdverseRow } from "./adverse";
+import { capitalised } from "../../lib/capitals";
 
 /** A clock time with its zone, "14:40 CST", as the Brief's rows say one. */
 const time = (iso: string) => `${clockTime(new Date(iso))} ${zoneName(new Date(iso))}`;
@@ -25,12 +26,12 @@ function whenWords(row: AdverseRow): string {
         : `reported ${time(row.time)}`
     : null;
   const said = [legs, at].filter(Boolean).join(" · ");
-  return said ? said.charAt(0).toUpperCase() + said.slice(1) : "During the flight";
+  return said ? capitalised(said) : "During the flight";
 }
 
 /**
- * The Brief's Adverse Conditions, under the findings (the owner's pick of
- * the Brief audit's option 2, 2026-11-21): the standard briefing's first
+ * The Brief's Adverse Conditions, under the findings (the owner's pick, 2026-11-21):
+ * the standard briefing's first
  * element (AIM 7-1-5(b)(1)), a row each for the TFR the route goes
  * through, the SIGMETs, the urgent pilot reports and the G-AIRMETs met on
  * the route, at most three in the engine's order (gonogo_adverse_rows),
@@ -67,7 +68,7 @@ export function AdverseGroup({ adverse, onOpen }: { adverse: Adverse | undefined
 
 /**
  * What a pilot should know is missing, as one caution at the findings'
- * end, before they go (the Brief audit's finding 16): what the briefing
+ * end, before they go: what the briefing
  * could not check (aviationweather.gov not answering) and FAA data the
  * plan rests on past its cycle (the engine's data_cycle, lib/dataCycles).
  * The plan is still made (warn, never limit). Nothing when neither.

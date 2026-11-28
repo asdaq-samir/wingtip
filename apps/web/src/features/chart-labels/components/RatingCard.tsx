@@ -89,7 +89,7 @@ export default function RatingCard({
         onValueChange={(v) => onRate(v[0] ? (Number(v[0]) as Rating) : rating!)}
         // The group's own 44 a pseudo-element behind it, as Segmented's
         // track has: a group of toggles, a control of its own
-        // to the iOS audit, and its row is 40 (isolate keeps the area over
+        // to the iOS panel, and its row is 40 (isolate keeps the area over
         // the card). The row does not grow.
         className="relative isolate grid w-full grid-cols-6 gap-2 rounded-none hit-y-0.5 after:-z-10"
       >

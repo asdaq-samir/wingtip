@@ -10,7 +10,8 @@ struct PlateCard: View {
     @Environment(Navigator.self) private var nav
     let key: String
     @AppStorage(PlateLook.Keys.opacity) private var opacity = PlateLook.defaultOpacity
-    @AppStorage(PlateLook.Keys.inverted) private var inverted = false
+    @AppStorage(PlateLook.Keys.inverted) private var inverted: Bool?
+    @Environment(\.colorScheme) private var scheme
     @AppStorage(PlateLook.Keys.annotations) private var annotations = true
     @State private var model = PlateCardModel()
     @State private var shown: ShownPicture?
@@ -46,7 +47,10 @@ struct PlateCard: View {
             }
             Section {
                 Toggle("Show Annotations", isOn: $annotations)
-                Toggle("Invert Plate Colors", isOn: $inverted)
+                // The pilot's pick, else the appearance (PageLook.inverted).
+                Toggle("Invert Plate Colors", isOn: Binding(
+                    get: { PageLook.inverted(kept: inverted, dark: scheme == .dark) },
+                    set: { inverted = $0 }))
                 // Continuous, so a slider (the owner circled ForeFlight's):
                 // its ends a clear page and a solid one.
                 Slider(value: $opacity, in: PlateLook.leastOpacity...1) {

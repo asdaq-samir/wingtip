@@ -22,8 +22,11 @@ async function changeDestination(page: Page) {
   // turned into it by its toggle (Type the route, TypeRouteButton; the
   // owner, 2026-11-22), where openRoute leaves the timeline.
   await typeRoute(page);
-  await page.getByLabel(/^(\S+, )?Destination$/).click({ button: "right" });
+  await page.getByTestId("route-dest").click();
   await page.getByTestId("pill-menu-change").click();
+  // Change asks for what goes in the point's place, Apple Maps' Change
+  // Stop (RouteToken's changePoint, 2026-11-23): "Search for an airport in
+  // place of KMSP", its ident in the field to start.
 }
 
 async function slowSearch(page: Page, heldFor: string) {
@@ -51,15 +54,16 @@ test(
     await slowSearch(page, "KDLH");
     await page.goto("/app/plan?dep=C81&dest=KMSP");
     await openPanel(page);
-    const destination = page.getByLabel(/^(\S+, )?Destination$/);
+    // The destination's pill, named "Destination KMSP" (RoutePill).
+    const destination = page.getByTestId("route-dest");
     await changeDestination(page);
-    const box = page.getByLabel("Search for a destination");
+    const box = page.getByLabel("Search for an airport in place of KMSP");
     await box.fill("KD");
     await expect(page.getByRole("option", { name: /KDAA/ })).toBeVisible();
 
     await box.pressSequentially("LH");
     await box.press("Enter");
-    await expect(destination).toContainText("KDLH");
+    await expect(destination).toHaveAccessibleName(/^Destination KDLH\b/);
   },
 );
 
@@ -67,15 +71,16 @@ test("once the rows answer the box, Enter takes the highlighted row", async ({ p
   await slowSearch(page, "");
   await page.goto("/app/plan?dep=C81&dest=KMSP");
   await openPanel(page);
-  const destination = page.getByLabel(/^(\S+, )?Destination$/);
+  // The destination's pill, named "Destination KMSP" (RoutePill).
+  const destination = page.getByTestId("route-dest");
   await changeDestination(page);
-  const box = page.getByLabel("Search for a destination");
+  const box = page.getByLabel("Search for an airport in place of KMSP");
   await box.fill("KD");
   await expect(page.getByRole("option", { name: /KDAA/ })).toBeVisible();
   await expect(page.getByRole("listbox")).not.toHaveAttribute("aria-busy", "true");
 
   await box.press("Enter");
-  await expect(destination).toContainText("KDAA");
+  await expect(destination).toHaveAccessibleName(/^Destination KDAA\b/);
 });
 
 /** How a search's row is drawn: its height, its ident's weight, its two
@@ -97,16 +102,19 @@ const rowLook = (row: Locator) =>
     };
   });
 
-test("a stop at the route box's arrow and the route's ends are picked in the one search, scoped to them", async ({ page }, info) => {
-  // One search field (the one card rule, 2026-11-10): the route box's arrow
-  // between two points asks the one search for a stop there, as the
-  // airport picker asks it for an end, where it opened a field of its own.
+test("a stop from a route pill's Insert Before and the route's ends are picked in the one search, scoped to them", async ({
+  page,
+}, info) => {
+  // One search field (the one card rule, 2026-11-10): a pill's Insert
+  // Before asks the one search for a stop there, as Change asks it for an
+  // end, where it opened a field of its own.
   test.skip(info.project.name !== "mobile", "judged as a phone");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
-  // The route box's arrows are in its field (typeRoute), not the timeline.
+  // The route box's pills are in its field (typeRoute), not the timeline.
   await typeRoute(page);
-  await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
+  await sideDrawer(page).getByTestId("route-dest").click();
+  await page.getByTestId("pill-menu-add-before").click();
   const field = page.getByTestId("search-airports");
   await expect(field).toHaveAccessibleName("Search airports and waypoints");
   await expect(field).toBeFocused();
@@ -127,6 +135,6 @@ test("a stop at the route box's arrow and the route's ends are picked in the one
   await page.goto("/app/plan?dep=C81&dest=KMSP");
   await openPanel(page);
   await changeDestination(page);
-  await expect(page.getByTestId("search-airports")).toHaveAccessibleName("Search for a destination");
+  await expect(page.getByTestId("search-airports")).toHaveAccessibleName("Search for an airport in place of KMSP");
   await expect(sideDrawer(page).getByRole("search")).toHaveCount(1);
 });

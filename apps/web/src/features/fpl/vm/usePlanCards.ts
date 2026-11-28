@@ -3,6 +3,7 @@ import type { PanelState } from "../../../lib/mapChrome";
 import type { PanelList } from "../../plan";
 import { usePlaceCards } from "./usePlaceCards";
 import type { PlanRoute } from "./usePlanRoute";
+import { useKept } from "./useKept";
 
 /**
  * The cards over the tabs and the lists in full (usePlanWorkspace): an
@@ -24,7 +25,8 @@ export function usePlanCards({ address, setAddress }: PlanRoute, setPanel: (stat
     },
     [list, closeList],
   );
-  return {
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({
     ...placeCards,
     ...placeCards.cards,
     // The lists in full, the address's (`list`, useAddressCards), kept for
@@ -35,7 +37,7 @@ export function usePlanCards({ address, setAddress }: PlanRoute, setPanel: (stat
     listAway,
     // A field's or a point's card over the place up, its own out of sight.
     cardUp: !!placeCards.cards.place || !!placeCards.cards.heldPoint,
-  };
+  });
 }
 
 /** The cards over the tabs, as the workspace's hooks read them. */

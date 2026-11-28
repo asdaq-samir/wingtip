@@ -2,10 +2,11 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { wcagContrast as contrast, type Color } from "culori";
 import { lookTokens, over, parseColour, type Look } from "./contrast";
-import { BADGE, CATEGORY, CATEGORY_CHIP } from "./tokens";
+import { BADGE, CATEGORY, CATEGORY_CHIP, CATEGORY_UNKNOWN } from "./tokens";
 
 /**
- * Every look the pilot can pick, by day, at night and in sunlight, held to
+ * Every look the pilot can pick, by day, at night and in sunlight, and
+ * each with the device's Increase Contrast (prefers-contrast: more), held to
  * WCAG 2.2's contrast: words 4.5:1 on every surface they sit on (1.4.3),
  * and what marks a control or a state 3:1 (1.4.11). The colours are
  * tokens.css's, which scripts/build/design-tokens.sh writes from
@@ -20,8 +21,10 @@ const LOOKS: (Look & { name: string })[] = [];
 for (const brand of ["wingtip", "cockpit", "ink", "native"] as const) {
   for (const dark of [false, true]) {
     for (const bright of [false, true]) {
-      const name = `${{ wingtip: "Wingtip", cockpit: "Glass Cockpit", ink: "Chart Ink", native: "Native" }[brand]}, ${dark ? "night" : "day"}${bright ? ", sunlight" : ""}`;
-      LOOKS.push({ name, brand, dark, bright });
+      for (const more of [false, true]) {
+        const name = `${{ wingtip: "Wingtip", cockpit: "Glass Cockpit", ink: "Chart Ink", native: "Native" }[brand]}, ${dark ? "night" : "day"}${bright ? ", sunlight" : ""}${more ? ", more contrast" : ""}`;
+        LOOKS.push({ name, brand, dark, bright, more });
+      }
     }
   }
 }
@@ -45,6 +48,12 @@ const STOCK_SHORTFALLS: Record<string, number> = {
   "Native, day: --ring on --popover": 2.59,
   "Native, day: --ring on --muted": 2.38,
   "Native, day: --ring on --sheet": 2.59,
+  // Increase Contrast lifts the grey words and the edges, not the ring.
+  "Native, day, more contrast: --ring on --background": 2.59,
+  "Native, day, more contrast: --ring on --card": 2.59,
+  "Native, day, more contrast: --ring on --popover": 2.59,
+  "Native, day, more contrast: --ring on --muted": 2.38,
+  "Native, day, more contrast: --ring on --sheet": 2.59,
 };
 
 /** What a pair is held to: `least` as WCAG gives it, which the ratio
@@ -77,6 +86,13 @@ const WORDS = [
   "--go-ink",
   "--destructive",
   "--destructive-ink",
+  // A flight category set as words (lib/map/marks/flightCategory inkOf):
+  // the scheme's ink, a lighter one at night (the owner, 2026-11-27).
+  "--category-vfr-ink",
+  "--category-mvfr-ink",
+  "--category-ifr-ink",
+  "--category-lifr-ink",
+  "--category-unknown-ink",
 ];
 /** Words on their own fills: each pair as a component sets it. */
 const ON_FILL: [string, string][] = [
@@ -111,6 +127,14 @@ describe.each(LOOKS)("$name", (look) => {
     expect(got).toBe(want);
   });
 
+  /** A field's and a checkbox's edge, the only boundary a stock checkbox
+   *  has (components/ui/checkbox): 3:1 on every surface (WCAG 1.4.11), in
+   *  every look but Native, which keeps shadcn's own (STOCK_SHORTFALLS'
+   *  note). */
+  it.skipIf(look.brand === "native" && !look.bright && !look.more).each(SURFACES)("a field's edge marks 3:1 or more on %s", (surface) => {
+    expect(contrast(c("--input"), c(surface))).toBeGreaterThanOrEqual(3);
+  });
+
   it("caution's words on its wash, 4.5:1 or more", () => {
     const wash = t["--caution-wash"] ?? "";
     const alpha = Number(/\/\s*([\d.]+)%/.exec(wash)?.[1] ?? 100) / 100;
@@ -131,8 +155,15 @@ describe("the flight categories' colours", () => {
 
   /** The map's discs on the white ring they are drawn in
    *  (lib/map/marks/airportMark): 3:1, a graphic that carries meaning. */
-  it.each(Object.entries(CATEGORY))("%s's disc marks 3:1 or more on white", (_, disc) => {
+  it.each([...Object.entries(CATEGORY), ["unknown", CATEGORY_UNKNOWN]])("%s's disc marks 3:1 or more on white", (_, disc) => {
     expect(contrast(colour(disc, "disc"), colour("#ffffff", "white"))).toBeGreaterThanOrEqual(3);
+  });
+
+  /** No report's grey as a dot on the surfaces it sits on with no ring by
+   *  day (the sheet, Chart ink's paper and muted): 3:1, where #8fa3b0 was
+   *  2.3:1 on the sheet (the themes audit, 2026-11-27). */
+  it.each(["#ffffff", "#f2f2f7", "#f7f2e7", "#efe8da"])("no report's dot marks 3:1 or more on %s", (surface) => {
+    expect(contrast(colour(CATEGORY_UNKNOWN, "unknown"), colour(surface, "surface"))).toBeGreaterThanOrEqual(3);
   });
 });
 

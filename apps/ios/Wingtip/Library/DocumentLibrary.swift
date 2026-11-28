@@ -42,25 +42,44 @@ final class DocumentLibrary {
     /// Why a file handed over was not added, said at the list's head.
     var problem: String?
     @ObservationIgnored private var askedAt: Date?
+    @ObservationIgnored private var loading: Task<Void, Never>?
+    /// The documents listed again since the load began (a PDF opened from
+    /// Files at launch): the load's older listing is not put over it.
+    @ObservationIgnored private var listed = false
 
     init(store: DeviceDocuments, cloud: DocumentCloud, places: ReaderPlaces) {
         self.store = store
         self.cloud = cloud
         self.places = places
-        shelf = store.loadShelf() ?? []
-        // A delete's Undo lasts the launch it was made in.
-        store.purge()
-        reloadDevice()
+        shelf = []
+    }
+
+    /// The device's side read off the main actor once, after the app's
+    /// first frame (ScreenModels.loadKept), where it was read in the
+    /// launch before it: a delete's Undo lasts the launch it was made in,
+    /// so the trash goes first, then the shelf as last read (unless one
+    /// has come from the planner meanwhile) and the documents' own files.
+    /// Each reader of the kept documents waits on it.
+    func load() async {
+        if loading == nil {
+            loading = Task {
+                let opened = await store.opening()
+                if shelf.isEmpty { shelf = opened.shelf ?? [] }
+                if !listed { (own, kept) = (opened.own, opened.kept) }
+            }
+        }
+        await loading?.value
     }
 
     /// This device's library, its iCloud switch and its places, made once
     /// for the app (ScreenModels).
     static func device() -> DocumentLibrary {
-        DocumentLibrary(store: .device, cloud: DocumentCloud(defaults: .standard, context: { Records.container.mainContext }),
+        DocumentLibrary(store: .device, cloud: DocumentCloud(defaults: .standard, container: { Records.container }),
                         places: ReaderPlaces(file: DeviceDocuments.device.root.appending(path: "places.json")))
     }
 
     func reloadDevice() {
+        listed = true
         own = store.ownList()
         kept = store.keptList()
     }
@@ -102,6 +121,7 @@ final class DocumentLibrary {
             shelfFailed = true
             return
         }
+        await load()
         for entry in DeviceDocuments.stale(kept, shelf: shelf) { await keep(entry) }
     }
 
@@ -116,7 +136,7 @@ final class DocumentLibrary {
                 guard let total = entry.bytes, total > 0 else { return }
                 self?.keeping[entry.id] = min(1, Double(bytes) / Double(total))
             }
-            try store.keep(entry, edition: edition, from: file)
+            _ = try await store.keeping(entry, edition: edition, from: file)
             reloadDevice()
         } catch {
             failed.insert(entry.id)
@@ -154,17 +174,18 @@ final class DocumentLibrary {
             guard FileManager.default.fileExists(atPath: file.path(percentEncoded: false)) else { throw CocoaError(.fileNoSuchFile) }
             return (.pdf(file), nil)
         }
+        await load()
         if shelf.isEmpty { await refreshShelf() }
         let wanted = shelf.first { $0.id == place.doc }?.edition
         if let mine = kept.first(where: { $0.doc == place.doc }), wanted == nil || wanted == mine.edition {
-            return (try read(store.keptFile(mine), kind: mine.entry.kind), mine.edition)
+            return (try await read(store.keptFile(mine), kind: mine.entry.kind), mine.edition)
         }
         guard let entry = entry(place.doc), let edition = wanted else { throw CocoaError(.fileNoSuchFile) }
-        return (try read(try await fetch(entry, edition: edition, progress: progress), kind: entry.kind), edition)
+        return (try await read(try await fetch(entry, edition: edition, progress: progress), kind: entry.kind), edition)
     }
 
-    private func read(_ file: URL, kind: String) throws -> ReaderSource {
-        kind == "text" ? .text(try JSONDecoder().decode(CfrText.self, from: Data(contentsOf: file))) : .pdf(file)
+    private func read(_ file: URL, kind: String) async throws -> ReaderSource {
+        kind == "text" ? .text(try await store.text(file)) : .pdf(file)
     }
 
     // MARK: The pilot's own
@@ -172,18 +193,14 @@ final class DocumentLibrary {
     /// PDFs handed over (Files, the share sheet, a drop), each added to
     /// the pilot's own; a file that is not a PDF said at the list's head.
     @discardableResult
-    func add(_ urls: [URL]) -> [OwnDocument] {
-        var added: [OwnDocument] = []
-        for url in urls {
-            do {
-                added.append(try store.addOwn(from: url))
-            } catch {
-                problem = String(localized: "\(url.lastPathComponent) isn't a PDF, so it wasn't added.")
-            }
-        }
+    func add(_ urls: [URL]) async -> [OwnDocument] {
+        let (added, refused) = await store.addingOwn(urls)
+        if let name = refused.last { problem = String(localized: "\(name) isn't a PDF, so it wasn't added.") }
         if !added.isEmpty { problem = nil }
         reloadDevice()
-        cloud.pushed(added, from: store)
+        // Sent behind any send under way, but not waited for: a PDF opened
+        // from Files opens at once, not after every earlier iCloud send.
+        Task { await cloud.pushed(added, from: store) }
         return added
     }
 
@@ -209,7 +226,7 @@ final class DocumentLibrary {
         undo.register(self, named: String(localized: "Delete \(doc.name)")) { library in
             try? library.store.restoreOwn(id)
             library.reloadDevice()
-            if let back = library.own.first(where: { $0.id == id }) { library.cloud.pushed([back], from: library.store) }
+            if let back = library.own.first(where: { $0.id == id }) { Task { await library.cloud.pushed([back], from: library.store) } }
         }
     }
 
@@ -217,14 +234,6 @@ final class DocumentLibrary {
     func forgetRemoved(_ id: String? = nil) {
         store.purge()
         if let id { places.forget(DocPlace.own(id).doc) }
-    }
-
-    /// A pilot's own document by its record from iCloud (DocumentCloud):
-    /// written here under the same id, so the two are one document.
-    func took(_ doc: OwnDocument, pdf: URL) {
-        guard !own.contains(where: { $0.id == doc.id }), (try? store.addOwn(from: pdf, id: doc.id, added: doc.added)) != nil else { return }
-        try? store.renameOwn(doc.id, to: doc.name)
-        reloadDevice()
     }
 }
 

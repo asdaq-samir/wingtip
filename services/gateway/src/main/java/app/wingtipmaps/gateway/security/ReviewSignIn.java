@@ -27,8 +27,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class ReviewSignIn {
 
-    /** The shortest code accepted: 20 random characters is out of reach of guessing at any request rate. */
-    static final int SHORTEST_CODE = 20;
+    /** The shortest code accepted, in base64url's own characters: 32 of
+     *  them are 192 random bits, as `openssl rand -base64 24` makes (with
+     *  + and / written - and _). 20 of any character let a short word
+     *  pass. */
+    static final int SHORTEST_CODE = 32;
+
+    private static final java.util.regex.Pattern CODE =
+            java.util.regex.Pattern.compile("[A-Za-z0-9_-]{" + SHORTEST_CODE + ",}");
 
     /** Review sign-in off: what a slice test without this bean has. */
     public static final ReviewSignIn OFF = new ReviewSignIn(false, "", "");
@@ -46,9 +52,9 @@ public class ReviewSignIn {
     }
 
     public ReviewSignIn(boolean enabled, String email, String code) {
-        if (enabled && (email.isBlank() || code.length() < SHORTEST_CODE)) {
+        if (enabled && (email.isBlank() || !CODE.matcher(code).matches())) {
             throw new IllegalStateException("REVIEW_SIGN_IN is on: REVIEW_SIGN_IN_EMAIL must be set and "
-                    + "REVIEW_SIGN_IN_CODE at least " + SHORTEST_CODE + " characters");
+                    + "REVIEW_SIGN_IN_CODE at least " + SHORTEST_CODE + " letters, digits, - and _");
         }
         this.enabled = enabled;
         this.email = email.trim();

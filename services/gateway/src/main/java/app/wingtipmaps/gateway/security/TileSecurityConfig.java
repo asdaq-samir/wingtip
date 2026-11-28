@@ -22,7 +22,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  * cookie, a 600-byte Content-Security-Policy and the other page headers on
  * each one, about 1.2 KB of headers a tile over HTTP/1.1 (no header
  * compression), some 50 KB a screenful; and the cookie also kept a CDN
- * from storing the answer (the tiles audit, 2026-11-21). A tile carries
+ * from storing the answer. A tile carries
  * no script to police and no form to forge, so only nosniff stays.
  *
  * <p>Who may ask is unchanged: only a GET of a route the planner's

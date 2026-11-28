@@ -7,6 +7,7 @@ typealias GWAccountExport = GatewayAPI.Components.Schemas.AccountExport
 typealias GWAccountRecordsDto = GatewayAPI.Components.Schemas.AccountRecordsDto
 typealias GWAircraftDto = GatewayAPI.Components.Schemas.AircraftDto
 typealias GWAircraftRequest = GatewayAPI.Components.Schemas.AircraftRequest
+typealias GWAirplaneKind = GatewayAPI.Components.Schemas.AirplaneKind
 typealias GWAppVersionsDto = GatewayAPI.Components.Schemas.AppVersionsDto
 typealias GWAppleNonceAnswer = GatewayAPI.Components.Schemas.AppleNonceAnswer
 typealias GWAppleToken = GatewayAPI.Components.Schemas.AppleToken

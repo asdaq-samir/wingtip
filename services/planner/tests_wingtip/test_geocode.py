@@ -4,9 +4,17 @@ Bureau's gazetteer of places and its geocoder, stubbed."""
 import io
 import zipfile
 
+import pytest
 import requests
 
-from wingtip import geocode
+from wingtip import geocode, ratelimit
+
+
+@pytest.fixture(autouse=True)
+def _geocoder_not_held(monkeypatch):
+    """Each test's geocoder its own, held by no other test's failure."""
+    monkeypatch.setattr(geocode, "_GEOCODER", ratelimit.Gate())
+
 
 GAZETTEER = (
     "USPS|GEOID|GEOIDFQ|ANSICODE|NAME|LSAD|FUNCSTAT|ALAND|AWATER|ALAND_SQMI|AWATER_SQMI|INTPTLAT|INTPTLONG\n"
@@ -86,6 +94,43 @@ def test_a_geocoder_that_does_not_answer_finds_nothing_and_fails_nothing(monkeyp
 
     monkeypatch.setattr(geocode.requests, "get", down)
     assert geocode.find_addresses("4000 International Ln") == []
+
+
+def test_a_geocoder_that_failed_is_not_asked_again_for_a_minute(monkeypatch):
+    """Round 6's audit, N4: during a Census outage each keystroke's search
+    waited its whole timeout. After a failure, searches answer without it."""
+    monkeypatch.setattr(geocode, "_ADDRESSES", {})
+    asked = []
+
+    def down(url, **kwargs):
+        asked.append(kwargs["timeout"])
+        raise requests.Timeout("slow")
+
+    monkeypatch.setattr(geocode.requests, "get", down)
+    assert geocode.find_addresses("4000 Intern") == [] and geocode.find_addresses("4000 Interna") == []
+    assert asked == [geocode.GEOCODER_TIMEOUT_S]
+    geocode._GEOCODER.until -= geocode.GEOCODER_HOLD_S
+    geocode.find_addresses("4000 Internat")
+    assert len(asked) == 2
+
+
+def _answering(status):
+    resp = requests.Response()
+    resp.status_code = status
+    return resp
+
+
+@pytest.mark.parametrize("status, held", [(400, False), (404, False), (429, True), (503, True)])
+def test_only_an_outage_holds_the_geocoder_for_everyone(monkeypatch, status, held):
+    """Round 7's audit, C6: a 400 about one address's text turned the search off for a minute for every pilot."""
+    monkeypatch.setattr(geocode, "_ADDRESSES", {})
+    asked = []
+    monkeypatch.setattr(geocode.requests, "get", lambda url, **kw: asked.append(url) or _answering(status))
+    assert geocode.find_addresses("4000 Odd %%") == [] and geocode._GEOCODER.held(geocode.time.monotonic()) is held
+    # The same text is not asked again either way; another's is, unless the geocoder is held.
+    assert geocode.find_addresses("4000 Odd %%") == [] and len(asked) == 1
+    geocode.find_addresses("4000 Other Rd")
+    assert len(asked) == (1 if held else 2)
 
 
 def test_an_address_kept_past_its_time_is_given_when_the_geocoder_does_not_answer(monkeypatch):

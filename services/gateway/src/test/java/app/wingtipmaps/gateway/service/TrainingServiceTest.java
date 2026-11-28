@@ -99,7 +99,13 @@ class TrainingServiceTest {
         ArgumentCaptor<List<PlannerEndorsementsAsk>> endorsements = ArgumentCaptor.forClass(List.class);
         verify(planner, times(1)).records(any(), endorsements.capture());
         assertThat(endorsements.getValue()).hasSize(2);
-        verify(planner, never()).endorsements(any(), any());
+        // 61.93(d)(4), (5): the checks are asked in the make and model the
+        // review names, not with none (round 7's N9).
+        assertThat(endorsements.getValue())
+                .filteredOn(a -> a.getFlightOn() != null)
+                .singleElement()
+                .satisfies(a -> assertThat(a.getMakeModel()).isEqualTo("C172"));
+        verify(planner, never()).endorsements(any(), any(), any());
         verify(planner, never()).experience(any(), any());
         assertThat(record.reviews()).hasSize(3);
         assertThat(record.reviews().get(2).endorsement().until()).isEqualTo(day.plusDays(60));

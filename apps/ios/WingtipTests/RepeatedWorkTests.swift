@@ -86,6 +86,39 @@ struct RepeatedWorkTests {
         #expect(ownShip.markedFt == 3_280)
     }
 
+    /// The map's hazard colouring reads own ship's height in its 50 ft
+    /// steps and whether it is at flying speed, not each fix, so a fix in
+    /// cruise runs neither the map's body nor the engine's hazard_view.
+    @Test func theHazardIsAskedAgainOnlyAtAFiftyFootStepOrFlyingSpeed() throws {
+        let file = FileManager.default.temporaryDirectory.appending(path: "rec-\(UUID().uuidString).json")
+        let ownShip = OwnShip(recorder: FlightRecorder(file: file))
+        func take(feet: Double, kt: Double, at s: TimeInterval) {
+            let metres = Measurement(value: feet, unit: UnitLength.feet).converted(to: .meters).value
+            let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 42, longitude: -88), altitude: metres,
+                                      horizontalAccuracy: 5, verticalAccuracy: 5, course: 0, speed: kt / Units.ktPerMS,
+                                      timestamp: Date(timeIntervalSince1970: s))
+            ownShip.took(OwnShip.fix(location))
+        }
+        #expect(!ownShip.hasFix)
+        take(feet: 3_020, kt: 0, at: 1)
+        #expect(ownShip.hasFix)
+        let parked = try #require(ownShip.hazardFix)
+        // The height is kept as read (the engine is sent it); only HazardFix's
+        // == compares by TerrainHazard's 50 ft step.
+        #expect(TerrainHazard.step(parked.gpsFt) == 60 && !parked.underway)
+        // Ten feet of wander and a knot of taxi leave it alone: not even
+        // set again (its speed is still the parked fix's), so nothing
+        // observing it is told.
+        take(feet: 3_030, kt: 1, at: 2)
+        #expect(ownShip.hazardFix?.speedKt == 0)
+        // At flying speed, then the next step (rounded down, so never
+        // above the GPS's height): asked again.
+        take(feet: 3_030, kt: 100, at: 3)
+        #expect(ownShip.hazardFix?.underway == true && ownShip.hazardFix?.speedKt ?? 0 > 99)
+        take(feet: 3_075, kt: 101, at: 4)
+        #expect(TerrainHazard.step(ownShip.hazardFix?.gpsFt) == 61)
+    }
+
     // MARK: The airport card's distance (item 8)
 
     @Test func theCardsDistanceReadsAPlaceThatAParkedAirplanesJitterLeavesAlone() {
@@ -95,6 +128,13 @@ struct RepeatedWorkTests {
         #expect(a.latitude == b.latitude && a.longitude == b.longitude)
         // A tenth of a mile north is a new place.
         #expect(OwnShip.coarse(CLLocationCoordinate2D(latitude: 42.1247, longitude: -88.457)).latitude != a.latitude)
+    }
+
+    @Test func theNearestFieldsAreAskedAgainByTheMile() {
+        let here = OwnShip.byTheMile(CLLocationCoordinate2D(latitude: 42.1230, longitude: -88.4570))
+        // A tenth of a mile north is the same mile; a mile and a half is not.
+        #expect(OwnShip.byTheMile(CLLocationCoordinate2D(latitude: 42.1247, longitude: -88.4570)) == here)
+        #expect(OwnShip.byTheMile(CLLocationCoordinate2D(latitude: 42.1480, longitude: -88.4570)) != here)
     }
 
     // MARK: The GPS on the ground (item 10)
@@ -172,5 +212,18 @@ struct RepeatedWorkTests {
         #expect(!Traffic.wanted(covered: true, fix: fix(kt: 0)))
         #expect(!Traffic.wanted(covered: true, fix: nil))
         #expect(Traffic.wanted(covered: true, fix: fix(kt: 100)))
+    }
+
+    /// Own ship's flying speed is asked of the engine once a fix (OwnShip),
+    /// and the instruments take that answer rather than asking again: told
+    /// "not underway", a 100 kt fix is read so. (The other way round would
+    /// ask the planner for the nearest field, which a unit test does not.)
+    @Test func theInstrumentsTakeOwnShipsFlyingSpeedRatherThanAskingAgain() throws {
+        let fix = OwnShip.Fix(coordinate: CLLocationCoordinate2D(latitude: 42, longitude: -88), altitudeFt: 800, trackDeg: 0,
+                              groundspeedKt: 100, accuracyM: 5, at: Date())
+        #expect(try Flight.underway(100))
+        let inFlight = InFlight()
+        inFlight.took(fix, plan: Plan(), underway: false)
+        #expect(!inFlight.underway)
     }
 }

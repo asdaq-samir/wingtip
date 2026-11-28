@@ -27,12 +27,21 @@ const STAYS: Layout = {
   "text-ignore-placement": true,
 };
 
+/** Shown wherever it falls, as STAYS, but taking its room: the labels
+ *  placed after it (the layers under it) keep off it rather than be drawn
+ *  half under it. A route field's mark and a turn's dot ignored placement
+ *  and the chart's idents ran under them, "KLW…" clipped against KBUF's
+ *  mark at the country's zoom (the owner's iPhone screenshot, 2026-11-23). */
+const KEEPS_ROOM: Layout = { ...STAYS, "icon-ignore-placement": false, "icon-padding": 0 };
+
 /** How a mark gives way: kept by MapLibre's collision in `sort` order
- *  (lowest placed first), or kept wherever it falls. */
-export type Giving = { collide: true; sort: ExpressionSpecification | number } | { collide?: false };
+ *  (lowest placed first), or kept wherever it falls, taking no room from
+ *  the others or, with `room`, keeping them off it. */
+export type Giving = { collide: true; sort: ExpressionSpecification | number } | { collide?: false; room?: boolean };
 
 function giving(how: Giving): Layout {
-  return how.collide ? { "symbol-sort-key": how.sort, "icon-padding": 0, "text-padding": 0 } : STAYS;
+  if (how.collide) return { "symbol-sort-key": how.sort, "icon-padding": 0, "text-padding": 0 };
+  return how.room ? KEEPS_ROOM : STAYS;
 }
 
 /** A picture alone (a pin, a field's mark, a barb), its point the

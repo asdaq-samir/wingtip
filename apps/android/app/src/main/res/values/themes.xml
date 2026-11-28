@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The window's theme before Compose draws: Material 3, light or dark
-     with the system, no action bar (the screens have none), and the
+     by the app's own Appearance, which NightMode hands the system
+     (UiModeManager.setApplicationNightMode, Android 12 and later; the
+     phone's own before that), no action bar (the screens have none), and the
      status and navigation bars see-through for the map under them
      (MainActivity's enableEdgeToEdge). The colours on the screens are
      Compose's (ui/Theme.kt). -->

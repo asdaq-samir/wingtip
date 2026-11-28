@@ -115,17 +115,7 @@ private fun MapPick.Vor.station() = app.wingtipmaps.android.engine.Station(ident
 @Composable
 internal fun VorCard(vor: MapPick.Vor, flight: FlightModel = hiltViewModel()) {
     Head(ink(MapStyle.BLUE), vor.kind, listOfNotNull(vor.name?.let(MapRules::placeName), vor.freq).joinToString(" · "))
-    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
-    val radial = fix?.let { MapRules.radialOf(vor.station(), it.lat, it.lon) }
-    radial?.exceptionOrNull()?.let { ProblemLine("The radial failed: ${it.message}") }
-    val on = radial?.getOrNull()
-    if (on != null) {
-        Text(
-            "On the ${Format.headingFigures(on.radial)} radial · ${Format.distance(on.nm)}",
-            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold,
-        )
-        Text("${Format.heading(on.toCourse)} to fly to it", color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+    VorRadial(vor, flight)
     val morseAsked = remember(vor.ident) { MapRules.morse(vor.ident) }
     morseAsked.exceptionOrNull()?.let { ProblemLine("The identifier's Morse failed: ${it.message}") }
     morseAsked.getOrNull()?.let { morse ->
@@ -165,6 +155,21 @@ internal fun VorCard(vor: MapPick.Vor, flight: FlightModel = hiltViewModel()) {
         }
     }
     Fact(stringResource(R.string.fact_position), Format.position(vor.lat, vor.lon))
+}
+
+/** The radial own ship is on, its own composable so that only these two
+ *  lines are drawn again at each fix, not the whole card. */
+@Composable
+private fun VorRadial(vor: MapPick.Vor, flight: FlightModel) {
+    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
+    val radial = fix?.let { MapRules.radialOf(vor.station(), it.lat, it.lon) }
+    radial?.exceptionOrNull()?.let { ProblemLine("The radial failed: ${it.message}") }
+    val on = radial?.getOrNull() ?: return
+    Text(
+        "On the ${Format.headingFigures(on.radial)} radial · ${Format.distance(on.nm)}",
+        style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold,
+    )
+    Text("${Format.heading(on.toCourse)} to fly to it", color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 /** A fix's or a VFR waypoint's card (the web's FixCard, WaypointCard):

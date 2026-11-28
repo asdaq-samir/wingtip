@@ -16,6 +16,7 @@ import { usePlanSearch } from "./usePlanSearch";
 import { usePlanFlight } from "./usePlanFlight";
 import { usePlanLeg } from "./usePlanLeg";
 import { usePlanBrief } from "./usePlanBrief";
+import { useKept } from "./useKept";
 
 /**
  * The planner's view model (PlanWorkspace, MVVM): the plan read from the
@@ -32,18 +33,17 @@ import { usePlanBrief } from "./usePlanBrief";
  * FPL (`fpl`), the search bars (`search`), the dry run and flying
  * (`flight`), the point and leg picked (`leg`), and what the screen says
  * of the plan with the flight to save (`brief`). Their order here is the
- * order their effects run in.
+ * order their effects run in; each is one object while nothing in it changes (useKept).
  */
 export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "panel" | "setPanel">) {
   "use no memo"; // Left to its own memos, as it always was: compiled, it put 18 KB on the first load.
   usePrefetchWhenIdle();
   // The panel's size as of now, for what a tap does with it: read when
   // tapped, not a dependency, so a turn of the sheet does not make every
-  // handler new and with them the route's list, the nav log and the
-  // briefing drawn again -- 37 ms of the nav log alone at a quarter of a
-  // laptop's speed, at the turn's first frame (profiled on the phone
-  // project, half to the pill, 2026-10-27: the owner's "the non smooth map
-  // and sheet").
+  // handler new and with them the route's list, the nav log and the briefing
+  // drawn again -- 37 ms of the nav log alone at a quarter of a laptop's speed,
+  // at the turn's first frame (profiled on the phone project, half to the
+  // pill, 2026-10-27: the owner's "the non smooth map and sheet").
   useEffect(() => {
     panelNow.current = panel;
   }, [panel]);
@@ -63,7 +63,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const flight = usePlanFlight(route, plan, fpl, view);
   const leg = usePlanLeg(route, plan, fpl, flight.dryRunning);
   const brief = usePlanBrief(route, plan, fpl, routeList.waypointStops);
-  return { view, route, plan, cards, picks, map, stops, routeList, fpl, search, flight, leg, brief };
+  return useKept({ view, route, plan, cards, picks, map, stops, routeList, fpl, search, flight, leg, brief });
 }
 
 /** The planner's view model, as its view and sub-views read it. */

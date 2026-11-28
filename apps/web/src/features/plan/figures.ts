@@ -7,6 +7,16 @@ import { callEngine } from "../../lib/engine/engine";
 import { pointName } from "../../lib/identSchema";
 import { sameField } from "../../lib/procedures";
 
+/** Minutes from the departure to the landing at the destination, the
+ *  planner's own figure: the time in the air (Totals.ete_min) and the time
+ *  on the ground at the stops (Totals.ground_min, "the destination's arrival
+ *  is ete_min and this after the departure"). FPL's timeline, the place
+ *  card's forecast hour and the Brief's Arrive all read it, so the three
+ *  say one time (the Brief left the
+ *  turnarounds out and read about an hour early on a two-stop flight). */
+export const arrivalMin = (totals: Pick<Totals, "ete_min" | "ground_min"> | null | undefined): number | null =>
+  totals?.ete_min == null ? null : totals.ete_min + (totals.ground_min ?? 0);
+
 /** One of the flight's figures: its name over it, its unit after it. */
 interface Figure {
   name: string;
@@ -189,7 +199,7 @@ export function shortFlights(totals: Totals | null): { name: string; shortGal: n
   if (!totals) return [];
   // Each named by its two ends' own names (pointName), found by the
   // flight's index (`hop`), not the engine's raw idents, where a pilot's
-  // own point read "@43.1,-89.3,4500" (the code audit's CODE-13). A route
+  // own point read "@43.1,-89.3,4500". A route
   // with no stops has no flight to name: "".
   return stripFuel(totals).short.map((s) => {
     const hop = s.hop == null ? undefined : totals.hops[s.hop];
@@ -225,6 +235,6 @@ export function figuresLine(input: TripInput, noAirplane = false): string {
   const said = figures.map((f) => (f.unit ? `${f.value} ${f.unit}` : f.value));
   // With no airplane the time and the fuel are none of the planner's (the
   // owner, 2026-11-09: "don't assume"): said why, not two dashes ("1,334
-  // nm · — · —", the UI audit's C4).
+  // nm · — · —").
   return (noAirplane && figures.slice(1).every((f) => f.value === "—") ? [said[0], "no airplane picked"] : said).join(" · ");
 }

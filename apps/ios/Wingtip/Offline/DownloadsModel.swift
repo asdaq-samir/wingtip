@@ -117,7 +117,7 @@ final class DownloadsModel {
 
     nonisolated static func camel(_ name: String) -> String {
         let parts = name.split(separator: "_")
-        return parts.enumerated().map { $0.offset == 0 ? String($0.element) : $0.element.prefix(1).uppercased() + $0.element.dropFirst() }.joined()
+        return parts.enumerated().map { $0.offset == 0 ? String($0.element) : Format.capital($0.element) }.joined()
     }
 
     /// A region of the catalog's cycle kept: its files listed, the picked

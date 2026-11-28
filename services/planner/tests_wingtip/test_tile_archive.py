@@ -271,3 +271,18 @@ def test_the_aws_server_never_draws_a_tile_its_published_archive_did_not_give(ca
     monkeypatch.setattr(chart_tiles.tile_archive, "over_http", lambda url, session: Unreachable())
     with pytest.raises(chart_tiles.TileUnavailable):
         chart_tiles.tile_bytes(65, 94, 8, "sec")
+
+
+def test_a_cycle_transcoded_into_staging_leaves_the_served_archive_alone(cache, tmp_path):
+    """`transcode --out`: the WebP archive written under the staging
+    folder, the served PNG one untouched; run again, it is not written
+    twice."""
+    served = cache / CYCLE / "sec.pmtiles"
+    tile_archive.write(served, [(8, 65, 94, len(_png(OLD)), lambda: _png(OLD))], {})
+    before = served.read_bytes()
+    staging = tmp_path / "staging"
+    assert chart_archives.transcode(CYCLE, ("sec",), workers=1, out=staging) == {"sec.pmtiles": 1}
+    assert served.read_bytes() == before
+    staged = tile_archive.on_disk(staging / CYCLE / "sec.pmtiles")
+    assert staged.header["tile_type"] == tile_archive.TileType.WEBP and _webp_of(OLD, staged.get(8, 65, 94))
+    assert chart_archives.transcode(CYCLE, ("sec",), workers=1, out=staging) == {}

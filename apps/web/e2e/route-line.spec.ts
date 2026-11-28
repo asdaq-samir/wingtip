@@ -1,9 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
-import { drawn, openPanel, settle, sideDrawer, slow, suggestedRoutes } from "./helpers";
+import { drawn, openPanel, settle, sheetFoot, sideDrawer, slow, suggestedRoutes } from "./helpers";
 import { recordedDirect } from "./recordedStops";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { watchFor } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -131,11 +132,15 @@ test("FPL's Routes are one row of chips, As typed at first, and a chip tapped is
   await expect(chips.first()).toHaveAttribute("data-pressed", "");
   await expect(chips.first()).toHaveAccessibleName(/^As typed, the route as typed, .*\d+ nm.*crosses storms/);
   await expect(chips.nth(1)).toHaveAccessibleName(/^Avoid Weather, .*\d+ nm, \d+\.\d gal/);
-  // Above the route's one folded line, with no airport cards among them:
-  // the cards are the route's editor, which hides the chips while open.
+  // In the foot strip, in the figures' place below the route's one folded
+  // line (the owner, 2026-11-23, 730d03aa8), with no airport cards among
+  // them: the cards are the route's editor, which hides the chips while open.
+  await expect(sheetFoot(page).locator("[data-foot-strip]").getByTestId("route-line")).toBeVisible();
+  // Below the route's lines: the summary's box runs on behind the fixed bar
+  // (its Add a Stop scrolls clear of it, sheet/FootBar), its lines do not.
   const lineBox = (await line.boundingBox())!,
-    summary = (await sideDrawer(page).getByTestId("route-summary").boundingBox())!;
-  expect(lineBox.y + lineBox.height).toBeLessThanOrEqual(summary.y + 1);
+    last = (await sideDrawer(page).getByTestId("route-summary").getByTestId("timeline-line").last().boundingBox())!;
+  expect(lineBox.y, "below the route's line").toBeGreaterThanOrEqual(last.y + last.height - 1);
   await expect(sideDrawer(page).getByTestId("route-field")).toHaveCount(0);
   await expect.poll(() => planned.length, { timeout: slow(15_000) }).toBeGreaterThan(0);
   // Every way drawn on the chart beside the course, as the chips' probe says (WaysGl).
@@ -170,10 +175,43 @@ test("the routes' chips and their ways stay, whichever is picked", async ({ page
     .click({ timeout: slow(30_000) });
   // Left alone, they stay, their ways on the chart (the owner, 2026-10-28:
   // "Keep the routes and runway opened until folded"; they fold no more).
-  await page.waitForTimeout(3000);
+  await watchFor(page, 3000);
   await expect(line.getByTestId("route-line-chip")).toHaveCount(3);
   await expect(line.getByTestId("route-line-chip").filter({ hasText: "Fastest" })).toHaveAttribute("data-pressed", "");
   await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBeGreaterThan(0);
+});
+
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 393, height: 852 }, hasTouch: true, isMobile: true });
+  test("Routes swaps the foot's figures for the routes' chips in the same place, and back", async ({ page }) => {
+    // The owner, 2026-11-23: "When routes is tapped, show the routes instead
+    // of the figures strip." One slot over the tab bar (FlightFoot's
+    // GroundFoot): the tabs do not move, a chip picked keeps them out.
+    await ways(page);
+    await recordedDirect(page);
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    await openPanel(page);
+    const foot = page.getByTestId("foot-bar");
+    const tabs = page.getByTestId("fpl-actions");
+    await expect(foot.getByTestId("flight-line")).toBeVisible({ timeout: slow(30_000) });
+    const before = (await tabs.boundingBox())!;
+    const line = await suggestedRoutes(page);
+    await expect(foot.getByTestId("route-line")).toBeVisible();
+    await expect(foot.getByTestId("flight-line")).toHaveCount(0);
+    expect((await tabs.boundingBox())!.y, "the tabs stay put").toBeCloseTo(before.y, 0);
+    const strip = (await foot.locator("[data-foot-strip]").boundingBox())!;
+    expect(strip.y + strip.height, "the chips over the tabs").toBeLessThanOrEqual(before.y + 1);
+    await line
+      .getByTestId("route-line-chip")
+      .filter({ hasText: "Fastest" })
+      .click({ timeout: slow(30_000) });
+    await expect(line.getByTestId("route-line-chip").filter({ hasText: "Fastest" })).toHaveAttribute("data-pressed", "");
+    await expect(page.getByTestId("routes-toggle")).toHaveAttribute("aria-pressed", "true");
+    await page.getByTestId("routes-toggle").click();
+    await expect(foot.getByTestId("route-line")).toHaveCount(0);
+    await expect(foot.getByTestId("flight-line")).toBeVisible();
+  });
 });
 
 test("another airplane picked keeps the Routes row in its place, dimmed, till its own ways come", async ({ page }) => {

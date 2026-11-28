@@ -65,6 +65,10 @@ def web_class(name, role):
         out += ["uppercase", "native:normal-case"]
     if "letterSpacing" in v:
         out += ["tracking-[%gem]" % v["letterSpacing"], "native:tracking-normal"]
+    # The web's tracking by size (`web.tracking`, em), where the phones'
+    # system faces track by size of themselves.
+    if "tracking" in web:
+        out += ["tracking-[%gem]" % web["tracking"], "native:tracking-normal"]
     if v.get("tabular"):
         out.append("tabular-nums")
     return " ".join(out)
@@ -74,3 +78,31 @@ def web_value(t):
     """A token's value on the web: its `web` override where it has one
     ($extensions["app.wingtipmaps"].web), else the one every app reads."""
     return t.get("$extensions", {}).get("app.wingtipmaps", {}).get("web", t["$value"])
+
+
+def resolve_space(tree):
+    """The spacing scale with its aliases read through ({space.lg} for
+    space.group), so every platform writes the one number, not the name.
+    An alias may lead to another, read through to its number whatever the
+    order; one outside `space` ({radius.lg} would have read space.lg), to a
+    name the scale lacks, or round in a loop is refused (the r10 audit)."""
+    space = tree["space"]
+
+    def number(name, seen):
+        if name in seen:
+            raise ValueError(f"space.{name}: its aliases go round in a loop ({' -> '.join(seen + [name])})")
+        if not isinstance(space.get(name), dict):
+            raise ValueError(f"space.{seen[-1]}: no space.{name} to read")
+        value = space[name]["$value"]
+        if not isinstance(value, str):
+            return value
+        group, _, target = value.strip("{}").partition(".")
+        if group != "space" or not target:
+            raise ValueError(f"space.{name}: {value} is not a space token")
+        return number(target, seen + [name])
+
+    names = [n for n, t in space.items() if isinstance(t, dict) and "$value" in t]
+    numbers = {n: number(n, []) for n in names}
+    for n in names:
+        space[n]["$value"] = numbers[n]
+    return tree

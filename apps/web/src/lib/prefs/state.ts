@@ -11,7 +11,7 @@ import type { MapSlice } from "./mapTypes";
  * app's look (lookSlice), the airplane and the pilot's limits
  * (airplaneSlice), the places and airplanes kept (keptSlice) and what is
  * said in the air (alertsSlice). It was one 614-line store changed by
- * every feature (the code audit's CODE-22). Components read a part with
+ * every feature. Components read a part with
  * the hook (`usePreferences(s => s.base)`); code outside React -- the
  * map's chart layers -- reads `getState()` and `subscribe()`.
  *

@@ -96,7 +96,8 @@ test("experience item by item, a report's codes looked up, and an endorsement da
         label: "Solo flight (each further 90 days)",
         validDays: 90,
         template: "",
-        fields: [],
+        // It names the make and model (61.87(p)), as the engine's kind does.
+        fields: [{ key: "mm", label: "Make and Model", example: "Cessna 172", required: true }],
       },
     ],
     fullName: "Avery B. Student",
@@ -147,8 +148,12 @@ test("experience item by item, a report's codes looked up, and an endorsement da
   await expect(codes.first()).toContainText("National Airspace System: Airspace classes and associated requirements and limitations.");
   await expect(codes.nth(1)).toContainText("Diversion");
 
+  // The make and model the paper endorsement names, sent with its day
+  // (61.93(d)(4), (5) asks a solo cross-country's review in it).
+  await console.getByTestId("endorsement-mm-solo-90").fill("Cessna 172");
   await fillDate(console.getByTestId("endorsement-solo-90"), "2026-09-01");
   await expect.poll(() => sent.at(-1)?.url ?? "").toContain("/api/training/endorsements/solo-90");
+  expect(sent.at(-1)?.body).toEqual({ endorsedOn: "2026-09-01", makeModel: "Cessna 172" });
   await expect(console.getByTestId("endorsement").filter({ has: page.getByTestId("endorsement-solo-90") })).toContainText(
     /Good to 30 Nov 2026|Ran out 30 Nov 2026/,
   );

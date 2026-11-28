@@ -6,7 +6,7 @@ import { useIsMobile } from "../../hooks/use-mobile";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { airportQuery, plateQuery } from "../../lib/queryClient";
-import { plateKey, useHiddenPlates, usePlateLook } from "./plateLook";
+import { plateKey, useHiddenPlates, usePlateInverted, usePlateLook } from "./plateLook";
 import { pageMarkOf } from "./platePosition";
 
 /** The plate's title as its card writes it: the field, then the FAA's
@@ -47,6 +47,7 @@ export function usePlateCard(airport: string, id: string) {
   const place = useQuery(airportQuery(airport)).data;
   const chart = chartOf(plate?.name, place?.procedures ?? []);
   const look = usePlateLook();
+  const inverted = usePlateInverted();
   const hidePlate = useHiddenPlates((s) => s.hide);
   const [fullScreen, setFullScreen] = useState(false);
   const beside = !useIsMobile();
@@ -71,7 +72,7 @@ export function usePlateCard(airport: string, id: string) {
       close();
     },
     opacity: look.opacity,
-    inverted: look.inverted,
+    inverted,
     annotations: look.annotations,
     setOpacity: look.setOpacity,
     setInverted: look.setInverted,

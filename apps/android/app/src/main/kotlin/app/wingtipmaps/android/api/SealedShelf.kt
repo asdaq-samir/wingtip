@@ -26,7 +26,7 @@ interface Seal {
 }
 
 /**
- * The cookies kept sealed (the security audit's L9, 2026-11-10): the
+ * The cookies kept sealed: the
  * session cookie is the pilot's 30-day sign-in, so it is written to the
  * app's kept store (Kept, the DataStore the "cookies" preferences moved
  * to) encrypted with a key the Android Keystore holds and never

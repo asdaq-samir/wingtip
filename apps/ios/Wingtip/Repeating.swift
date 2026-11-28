@@ -16,6 +16,12 @@ enum Repeating {
     /// How much longer each interval is with the app put away or the
     /// phone locked.
     static let slowed = 2
+    /// The share of each interval the system may move a wake by, so the
+    /// loops' wakes (the receiver each second, the traffic, the Watch,
+    /// the Lock Screen, the widgets) fall together rather than each
+    /// waking the CPU on its own; Apple's energy guide asks timers for a
+    /// tolerance of at least a tenth of their interval.
+    static let tolerance = 0.15
 
     /// `work` now, then again `seconds` after each run ends, so a run
     /// that took longer than the interval is not piled up behind.
@@ -25,7 +31,7 @@ enum Repeating {
         while !Task.isCancelled {
             await work()
             for half in 1...slowed where half == 1 || putAway {
-                try? await clock.sleep(for: .seconds(seconds))
+                try? await clock.sleep(for: .seconds(seconds), tolerance: .seconds(seconds * tolerance))
             }
         }
     }

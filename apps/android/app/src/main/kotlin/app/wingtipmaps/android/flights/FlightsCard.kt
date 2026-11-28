@@ -50,7 +50,7 @@ fun interface SavedFlights {
 }
 
 /**
- * Saved Flights' view model (the Android audit's AND-6, the owner's (b):
+ * Saved Flights' view model (the owner's (b):
  * Flights now, Sunlight later): the pilot's saved flights, newest first as
  * the gateway gives them, fetched as the card opens, a failure said where
  * the list would be.
@@ -84,8 +84,7 @@ class FlightsModel(private val source: SavedFlights) : ViewModel() {
 
         /** "14 Nov 2026", in the phone's zone, which the screen says as
          *  "Saved 14 Nov 2026" (R.string.saved_on): saved, not filed, as the
-         *  app can really file with Flight Service (the code audit's
-         *  CODE-14, the web's and the iPhone's words). */
+         *  app can really file with Flight Service. */
         fun savedOn(createdAt: String, zone: ZoneId = ZoneId.systemDefault()): String? =
             runCatching { SAVED_ON.format(Instant.parse(createdAt).atZone(zone)) }.getOrNull()
 

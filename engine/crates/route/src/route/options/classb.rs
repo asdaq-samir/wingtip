@@ -15,7 +15,7 @@ use super::grid::Area;
 use crate::geo;
 use crate::json::{self, Value};
 use std::collections::HashMap;
-use wingtip_core::flat::Flat;
+use wingtip_core::flat::{to_segment, Flat};
 use wingtip_core::grid::Point;
 use wingtip_core::sort::StableSort;
 
@@ -162,11 +162,9 @@ fn orient(a: Point, b: Point, c: Point) -> f64 {
     (b.1 - a.1) * (c.0 - a.0) - (b.0 - a.0) * (c.1 - a.1)
 }
 
+/// core's to_segment on the frame's (east, north), as its points are (north, east).
 fn point_segment(p: Point, a: Point, b: Point) -> f64 {
-    let (dx, dy) = (b.1 - a.1, b.0 - a.0);
-    let len = dx * dx + dy * dy;
-    let t = if len > 0.0 { (((p.1 - a.1) * dx + (p.0 - a.0) * dy) / len).clamp(0.0, 1.0) } else { 0.0 };
-    ((a.1 + dx * t - p.1).powi(2) + (a.0 + dy * t - p.0).powi(2)).sqrt()
+    to_segment((p.1, p.0), (a.1, a.0), (b.1, b.0))
 }
 
 /// The least distance between two segments on a flat frame, in its units:

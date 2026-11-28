@@ -277,7 +277,17 @@ services:
       # between the planner and ingest, which the Mac's file sharing into
       # Docker does not give, and ingest's writes hung (2026-11-08).
       - live-store:/live
+      # The planner's own secrets, apart from the live store ingest also
+      # mounts: the follow share key, made once (FOLLOW_SHARE_KEY_FILE).
+      - planner-secrets:/secrets
     environment:
+      # The key the followed airplanes' shares are hashed with, made at
+      # random into the planner's secrets volume on its first start and
+      # never into the live store beside the shares (the round 7 audit,
+      # P-M1; wingtip.traffic.recorded). FOLLOW_SHARE_KEY in .env, where
+      # set, is used instead; production sets it (infra/server/deploy.sh).
+      FOLLOW_SHARE_KEY: ${FOLLOW_SHARE_KEY:-}
+      FOLLOW_SHARE_KEY_FILE: /secrets/follow_share.key
       # The stores ingest writes, on the volume above (wingtip/stores.py);
       # each takes the file it had on data/raw the first time.
       LIVE_STORE: /live/live.sqlite
@@ -319,6 +329,15 @@ services:
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
       # adsb.lol's API key, where there is one (wingtip.traffic.common).
       ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
+      # The OpenSky Network's API client, an airplane's past flights
+      # (wingtip.traffic.opensky): off without both.
+      OPENSKY_CLIENT_ID: ${OPENSKY_CLIENT_ID:-}
+      OPENSKY_CLIENT_SECRET: ${OPENSKY_CLIENT_SECRET:-}
+      # The contact Planespotters.net's photo API asks a server to name in
+      # its User-Agent (wingtip.aircraft_photo): the site's support page,
+      # no one's own address; unset, the airplane card had no photo, the
+      # API answering 403 to a request without one (2026-11-26).
+      PLANESPOTTERS_CONTACT: ${PLANESPOTTERS_CONTACT:-https://wingtipmaps.app/support/}
       # The FAA's radar from SWIM shown with no LADD list kept: this stack
       # is the owner's own, not public (wingtip.traffic.ladd; production
       # keeps the default, 1, and shows none until a list is saved).
@@ -370,6 +389,10 @@ services:
       LADD_REQUIRED: ${LADD_REQUIRED:-0}
       # The followed airplanes' rounds ask adsb.lol with the planner's key.
       ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
+      # Their past flights prefetched each night from the OpenSky Network
+      # with the planner's client (wingtip.traffic.opensky): off without both.
+      OPENSKY_CLIENT_ID: ${OPENSKY_CLIENT_ID:-}
+      OPENSKY_CLIENT_SECRET: ${OPENSKY_CLIENT_SECRET:-}
       # The FAA's SWIM feeds (ingest.swim); each off without its own. The
       # owner's SCDS subscriptions' login and queues.
       SWIM_HOST: ${SWIM_HOST:-}
@@ -672,8 +695,9 @@ services:
     # whole into apps/web/.dist-next and then renamed into dist file by
     # file, index.html last, so a page loading mid-build gets the old
     # build or the new one, never half of one; the replaced builds' files
-    # stay an hour for pages already open (2026-11-08, a phone's
-    # "Importing a module script failed").
+    # stay a day for pages already open (2026-11-08, a phone's
+    # "Importing a module script failed"). No .br or .gz here: the
+    # gateway's server.compression gzips on the fly.
     environment:
       VITE_PUBLISH_DIR: dist
     command: ["npx", "--no-install", "vite", "build", "--watch"]
@@ -705,6 +729,8 @@ networks:
 volumes:
   # The planner's and ingest's shared live store (see their mounts).
   live-store:
+  # The planner's own secrets (its mount above).
+  planner-secrets:
   pgdata_pg18:
   # gateway's JVM class-data archive -- see JAVA_TOOL_OPTIONS on gateway.
   gateway-cds:

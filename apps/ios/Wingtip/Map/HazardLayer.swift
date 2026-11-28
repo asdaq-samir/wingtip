@@ -1,8 +1,9 @@
 import MapKit
+import os
 
 /// The DOF's obstacles the hazard colouring rings: only those the engine
 /// levels red or amber, each a dot of a few points, as the web's
-/// OBSTACLE_LAYER (3 points at zoom 9 to 6 at 13, a white casing).
+/// OBSTACLE_LAYER (3 points at zoom 9 to 6 at 13), each with a dark ring.
 final class HazardObstacleOverlay: NSObject, MKOverlay, Sendable {
     let points: [(at: MKMapPoint, warning: Bool)]
     let boundingMapRect: MKMapRect
@@ -15,20 +16,39 @@ final class HazardObstacleOverlay: NSObject, MKOverlay, Sendable {
     }
 }
 
-/// Unchecked: MKOverlayRenderer is not Sendable; this one holds nothing.
-final nonisolated class HazardObstacleRenderer: MKOverlayRenderer, @unchecked Sendable {
+/// Unchecked: MKOverlayRenderer is not Sendable; its brightness is in a lock.
+/// At night the dots are dimmed by their colour with the chart (OverlayDim,
+/// the owner's "Dim by colour" for obstacle warnings), so they keep their
+/// contrast with the dimmed chart, where an opacity would wash them out.
+final nonisolated class HazardObstacleRenderer: MKOverlayRenderer, NightDimmed, @unchecked Sendable {
+    private let brightness = OSAllocatedUnfairLock(initialState: CGFloat(1))
+
+    func dim(brightness next: CGFloat) {
+        if brightness.withLock({ old in defer { old = next }; return old != next }) { setNeedsDisplay() }
+    }
+
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
         guard let dots = overlay as? HazardObstacleOverlay else { return }
+        let light = brightness.withLock { $0 }
+        // The three inks worked out once a tile, not twice a dot.
+        let ink = { (colour: UIColor) in (OverlayDim.colour(colour, brightness: light) ?? colour).cgColor }
+        let edge = ink(WingtipColor.Chart.routeEdge), warning = ink(WingtipColor.Chart.warning), caution = ink(WingtipColor.Chart.caution)
         // The web's zoom of the view, from MapKit's 2^28-point world.
         let zoom = log2(MKMapSize.world.width * Double(zoomScale) / 256)
         let radius = (3 + 3 * min(1, max(0, (zoom - 9) / 4))) / Double(zoomScale)
         let near = mapRect.insetBy(dx: -radius * 2, dy: -radius * 2)
-        context.setLineWidth(1 / zoomScale)
-        context.setStrokeColor(WingtipColor.Chart.casing.cgColor)
+        // A dark ring in the course's edge colour, dimmed by colour, by
+        // day and by night: a white one vanished on the sectional's white
+        // paper and on the dimmed chart alike (1:1), where the dark ring
+        // stands about 5:1 off the paper at the default Dimmer and keeps
+        // the amber about 3:1 inside it (WCAG 2.2 1.4.11 counts the
+        // adjacent edge), the amber still amber beside the red.
+        context.setLineWidth(1.5 / zoomScale)
+        context.setStrokeColor(edge)
         for dot in dots.points where near.contains(dot.at) {
             let centre = point(for: dot.at)
             let ring = CGRect(x: centre.x - radius, y: centre.y - radius, width: radius * 2, height: radius * 2)
-            context.setFillColor((dot.warning ? WingtipColor.Chart.warning : WingtipColor.Chart.caution).cgColor)
+            context.setFillColor(dot.warning ? warning : caution)
             context.fillEllipse(in: ring)
             context.strokeEllipse(in: ring)
         }
@@ -57,9 +77,8 @@ final class HazardLayer {
     private var asking: Task<Void, Never>?
 
     func update(_ map: MKMapView, _ asked: HazardInput) {
-        var next = asked
-        next.gpsFt = TerrainHazard.stepped(asked.gpsFt)
-        guard next != input else { return }
+        if let input, input.same(asked) { return }
+        let next = asked
         input = next
         let was = view
         view = next.setting == .off ? nil : try? TerrainHazard.view(setting: next.setting, clearanceFt: next.clearanceFt, speedKt: next.speedKt,

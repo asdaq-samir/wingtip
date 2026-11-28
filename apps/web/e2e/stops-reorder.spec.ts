@@ -117,7 +117,7 @@ test("My Location put down in the middle of the route stays where it was, and it
   const list = sideDrawer(page).getByTestId("procedures");
   const grip = list.getByTestId("route-grip").first();
   await draggable(page);
-  await expect(list.getByTestId("timeline-ident").first()).toHaveText("My Location");
+  await expect(list.getByTestId("timeline-ident").first()).toHaveText("POS0");
   await onGrip(grip);
   await page.keyboard.press("Enter");
   const at = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");
@@ -125,7 +125,7 @@ test("My Location put down in the middle of the route stays where it was, and it
   expect(await at()).toMatch(/between .*KMSN.* and .*KDLH/i);
   await page.keyboard.press("Enter");
   await expect(list.getByTestId("timeline-refusal").first()).toHaveText("My Location can only start or end the route.");
-  await expect(list.getByTestId("timeline-ident")).toHaveText(["My Location", "KMSN", "KDLH"]);
+  await expect(list.getByTestId("timeline-ident")).toHaveText(["POS0", "KMSN", "KDLH"]);
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
   await expect(page).toHaveURL(stopsAre("KMSN"));
 });

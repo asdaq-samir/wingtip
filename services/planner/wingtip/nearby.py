@@ -18,6 +18,7 @@ reads the file and asks nothing.
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import math
@@ -32,6 +33,7 @@ import requests
 
 from . import outside
 from .config import DATA_DIR
+from .engine import ask as engine
 from .geo import box_around, distance_nm
 from .geo_boxes import split_box
 from .units import M_PER_NM
@@ -216,13 +218,13 @@ def _kind_of(taxonomy: dict | None, basic: str | None) -> str | None:
     return None
 
 
+@functools.lru_cache(maxsize=1024)
 def _words(category: str | None) -> str:
-    """The theme's category in words: "american_restaurant" "American
-    restaurant", "car_rental_service" "Car rental"."""
+    """The theme's category in words, in the engine's sentence case (faa_words, from capitals,
+    as every casing the app shows is the engine's): "american_restaurant" "American restaurant"."""
     if not category:
         return ""
-    text = category.removesuffix("_service").replace("_", " ")
-    return text[:1].upper() + text[1:]
+    return engine("faa_words", text=category.removesuffix("_service").replace("_", " ").upper())
 
 
 def _site(row: dict) -> str | None:

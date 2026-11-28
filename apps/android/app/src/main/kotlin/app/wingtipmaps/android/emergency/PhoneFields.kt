@@ -9,14 +9,14 @@ import app.wingtipmaps.android.api.generated.GlideFigures
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.airportsInView
-import app.wingtipmaps.android.engine.generated.bearingDeg
-import app.wingtipmaps.android.engine.generated.distanceNm
-import kotlin.math.cos
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.bestFields
+import app.wingtipmaps.android.engine.generated.fieldsNear
 
 /**
  * The fields round the airplane from the cycle packs kept on the phone,
  * for the emergency assistant and Nearest when the planner cannot be
- * reached (the offline audit's gap 2): the same fields the map draws with
+ * reached: the same fields the map draws with
  * no signal (InView's airportsInView), each with the engine's miles and
  * course to it (`distance_nm`, `bearing_deg`). The engine's best_fields
  * then ranks them on the phone as it ranks the planner's.
@@ -29,42 +29,65 @@ import kotlin.math.cos
  * from it is on the short side, never the long.
  */
 object PhoneFields {
-    /** Half the box first asked, degrees of latitude: about 30 nm, past a
-     *  light single's still-air glide from 10,000 ft above the ground. */
-    const val HALF_DEG = 0.5
-
-    /** The widest box asked where the first holds too few fields: about
-     *  120 nm each way. */
-    const val WIDEST_DEG = 2.0
-
     /** A field and the engine's miles and course to it from the airplane. */
     data class Near(val pin: AirportPin, val distanceNm: Double, val bearingDeg: Double, val groundFt: Double?)
 
-    /** The `want` nearest fields round the point, nearest first, the box
-     *  widened until it holds that many or reaches WIDEST_DEG; null where no
-     *  pack covers the point at all. */
+    /** The packs' fields in a box (south, west, north, east); null where no
+     *  pack covers it. */
+    fun interface Pins {
+        fun inBox(south: Double, west: Double, north: Double, east: Double): List<AirportPin>?
+    }
+
+    /** The `want` fields round the point, the engine's best_fields' order;
+     *  null where no pack covers the point at all; the engine's failure thrown. */
     fun near(packs: CyclePacks, lat: Double, lon: Double, want: Int): List<Near>? {
-        var half = HALF_DEG
+        val pins = read(lat, lon, want) { s, w, n, e -> packs.airportsInView(s, w, n, e) } ?: return null
+        // Standing still at the field: the packs' ahead answers only its ground.
+        return ranked(pins, lat, lon, want) { packs.ahead(it.lat, it.lon, 0.0, 0.0, null)?.groundFt }
+    }
+
+    /**
+     * The packs' fields round the point in the box the engine's fields_near
+     * gives, the one rule both phones read their boxes by: asked first with
+     * no box, then again with the count found, until it answers null (enough
+     * fields, or its widest box). Null where no pack covers a box asked, or
+     * the engine gave no first box. The engine's own failure is thrown, as
+     * the iPhone's PackFields throws it, never read as no pack here.
+     */
+    fun read(lat: Double, lon: Double, want: Int, pins: Pins): List<AirportPin>? {
+        val at = EngineContract.FieldsNearInputAt(lat, lon)
+        var found: List<AirportPin>? = null
+        var half: Double? = null
         while (true) {
-            // A degree of longitude is shorter by the cosine of the latitude.
-            val across = half / cos(Math.toRadians(lat)).coerceAtLeast(0.2)
-            val pins = packs.airportsInView(lat - half, lon - across, lat + half, lon + across) ?: return null
-            if (pins.size >= want || half >= WIDEST_DEG) return nearest(pins, want) { measure(packs, lat, lon, it) }
-            half *= 2
+            val box = Engine.fieldsNear(at, want.toDouble(), half, found?.size?.toDouble()).getOrThrow().box ?: return found
+            found = pins.inBox(box.south, box.west, box.north, box.east) ?: return null
+            half = box.halfDeg
         }
     }
 
-    /** The pins nearest first, at most `want`; one the engine could not
-     *  measure left out. */
-    fun nearest(pins: List<AirportPin>, want: Int, measure: (AirportPin) -> Near?): List<Near> =
-        pins.mapNotNull(measure).sortedBy { it.distanceNm }.take(want)
+    /** The pins as best_fields' candidates: no elevation, runway or METAR,
+     *  which the packs do not hold, the use as the packs give it. The packs
+     *  hold open fields only (NASR ARPT_STATUS O), so no status is sent. */
+    fun candidates(pins: List<AirportPin>): List<EngineContract.BestFieldsInputFieldsItem> =
+        pins.map {
+            EngineContract.BestFieldsInputFieldsItem(
+                ident = it.ident, name = it.name, lat = it.lat, lon = it.lon, runways = emptyList(),
+                towered = it.towered, private = it.isPrivate, military = it.military,
+            )
+        }
 
-    private fun measure(packs: CyclePacks, lat: Double, lon: Double, pin: AirportPin): Near? {
-        val nm = Engine.distanceNm(lat, lon, pin.lat, pin.lon).getOrNull() ?: return null
-        val course = Engine.bearingDeg(lat, lon, pin.lat, pin.lon).getOrNull() ?: return null
-        // Standing still at the field: the packs' ahead answers only its ground.
-        val ground = packs.ahead(pin.lat, pin.lon, 0.0, 0.0, null)?.groundFt
-        return Near(pin, nm, course, ground)
+    /**
+     * The pins ranked by the engine's best_fields in glide mode with no
+     * airplane, as the iPhone's PackFields ranks them: nearest first, each
+     * with the engine's distance and true course; at most `want`. Empty
+     * where the engine could not rank them (it logs why).
+     */
+    fun ranked(pins: List<AirportPin>, lat: Double, lon: Double, want: Int, ground: (AirportPin) -> Double?): List<Near> {
+        if (pins.isEmpty()) return emptyList()
+        val answer = Engine.bestFields(mode = "glide", at = EngineContract.BestFieldsInputAt(lat, lon), fields = candidates(pins), limit = want.toDouble())
+            .getOrNull() ?: return emptyList()
+        val byIdent = pins.associateBy { it.ident }
+        return answer.fields.mapNotNull { f -> byIdent[f.ident]?.let { Near(it, f.distanceNm, f.courseDeg, ground(it)) } }
     }
 
     /** The planner's /api/emergency/fields answer as the packs can give it:

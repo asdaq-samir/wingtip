@@ -6,6 +6,7 @@
 
 use crate::limits::is_flight_level;
 use wingtip_core::text::js_round;
+use wingtip_core::time::parse_date;
 
 /// Item 9's wake turbulence category L: a maximum certificated takeoff
 /// weight of 15,500 lb or less (AIM Appendix 4, from FAA Order JO 7360.1).
@@ -54,7 +55,7 @@ pub struct Procedure<'a> {
 /// back (route::points). Filed with its strokes, the point read as
 /// something else: in item 15 an oblique stroke brings in "the next speed
 /// and altitude" or a delay ("/DHH+MM"). The point the weather-avoiding
-/// ways turn at is one (the UI audit's A8). Anything else is as it was.
+/// ways turn at is one. Anything else is as it was.
 fn filed_point(point: &str) -> String {
     let parts: Vec<&str> = point.split('/').collect();
     let [base, course, nm] = parts[..] else { return point.to_owned() };
@@ -167,7 +168,7 @@ pub fn endurance_burn_gph(legs: &[BurnLeg], cruise_burn_gph: Option<f64>) -> Opt
 /// a day not written "YYYY-MM-DD". Both days are UTC's.
 pub fn date_of_flight(depart: &str, today: &str) -> Option<String> {
     fn day(d: &str) -> Option<&str> {
-        d.get(..10).filter(|d| d.as_bytes()[4] == b'-' && d.as_bytes()[7] == b'-')
+        d.get(..10).filter(|d| parse_date(d).is_some())
     }
     let (d, t) = (day(depart)?, day(today)?);
     (d != t).then(|| format!("DOF/{}{}{}", &d[2..4], &d[5..7], &d[8..10]))

@@ -3,23 +3,29 @@
 from __future__ import annotations
 
 import re
-import threading
 
 from cachetools import TTLCache
 
 from .. import registry
+from ..single_flight import one_at_a_time
 from .common import TrafficUnavailable, _LOCK, _aircraft
-from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _heard, _paced, _recent
+from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, SEARCH_WAIT_S, _heard, _paced
+from .globe import _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
+from .radar import _heard_elsewhere_now
 from .routes import _CALLSIGN
 
 _HEX = re.compile(r"^~?[0-9a-f]{6}$")
 _N_NUMBER = re.compile(r"^N[1-9][0-9A-Z]{0,4}$")
 
+#: How long a search's request to adsb.lol's API may take, s: a pilot waits on it.
+SEARCH_TIMEOUT_S = 3.0
+#: The FAA's terminal radar's credit, for a search answered from it (ingest's, through SWIM).
+RADAR_SOURCE = {"source": "FAA radar, through SWIM", "license": "FAA SWIM terms"}
+
 #: A search's answer from adsb.lol is given again this long, s.
 FOUND_TTL_S = 15
 _FOUND: TTLCache = TTLCache(maxsize=256, ttl=FOUND_TTL_S)
-_FIND_GATES: dict[str, threading.Lock] = {}
 
 
 def find(query: str) -> list[dict]:
@@ -50,36 +56,32 @@ def find_credited(query: str) -> tuple[list[dict], dict]:
             return heard, ADSB_LOL_SOURCE
         if text in _FOUND:
             return _FOUND[text]
-        gate = _FIND_GATES.setdefault(text, threading.Lock())
-    # One search for a name at a time: the rest wait and are given its answer.
-    with gate:
+    # One search for a name at a time: the rest wait and are given its
+    # answer (single_flight's gate, let go once the last asker is done).
+    with one_at_a_time(("traffic search", text)):
         with _LOCK:
             if text in _FOUND:
                 return _FOUND[text]
-        try:
-            looked = _looked_up(text)
-            if looked is not None:
-                answer = (looked, ADSBX_SOURCE)
-            else:
-                hex_id = _address_of(text)
-                recent = _recent(hex_id) if hex_id else None
-                # The API only where the trace could not be read: a search
-                # there waits its turn behind the map's regions and any
-                # refusal's back-off, which is what kept the owner's
-                # searches waiting (2026-10-12). A trace read (a 404 is
-                # "none heard") settles it, as the API reads the same
-                # data; ADS-B Exchange's "none" alone does not, since its
-                # receivers are not adsb.lol's and an airplane heard only
-                # by adsb.lol's would be missed in the air. The FAA's
-                # record never waits on this: /api/traffic/registered.
-                answer = (recent, ADSB_LOL_SOURCE) if recent is not None else _asked(text, adsbx_tried=True)
-            # The answer is stored in the same lock section the gate is
-            # dropped in, so a search arriving between finds one or the other.
-            with _LOCK:
-                _FOUND[text] = answer
-        finally:
-            with _LOCK:
-                _FIND_GATES.pop(text, None)
+        looked = _looked_up(text)
+        if looked is not None:
+            answer = (looked, ADSBX_SOURCE)
+        else:
+            hex_id = _address_of(text)
+            recent = _recent(hex_id) if hex_id else None
+            # The API only where the trace could not be read: a search
+            # there waits its turn behind the map's regions and any
+            # refusal's back-off, which is what kept the owner's
+            # searches waiting (2026-10-12). A trace read (a 404 is
+            # "none heard") settles it, as the API reads the same
+            # data; ADS-B Exchange's "none" alone does not, since its
+            # receivers are not adsb.lol's and an airplane heard only
+            # by adsb.lol's would be missed in the air. The FAA's
+            # record never waits on this: /api/traffic/registered.
+            answer = (recent, ADSB_LOL_SOURCE) if recent is not None else _asked_or_radar(text, hex_id)
+        # Stored before the gate is let go, so a search arriving after
+        # finds it.
+        with _LOCK:
+            _FOUND[text] = answer
         return answer
 
 
@@ -140,32 +142,48 @@ def registered(query: str) -> dict | None:
     return registry.lookup(n_number=text) if _N_NUMBER.fullmatch(text) else None
 
 
-def _asked(text: str, adsbx_tried: bool = False) -> tuple[list[dict], dict]:
+def _asked_or_radar(text: str, hex_id: str | None) -> tuple[list[dict], dict]:
+    """adsb.lol's API's answer (`_asked`, ADS-B Exchange tried already);
+    where its turn is more than SEARCH_WAIT_S off or it does not answer,
+    the FAA's radar's report of the airplane named by its address, where
+    ingest heard it, at once; else TrafficUnavailable, the FAA's record
+    then answered (`checked` false)."""
+    try:
+        return _asked(text)
+    except TrafficUnavailable:
+        heard = _heard_elsewhere_now(hex_id) if hex_id else None
+        if heard is None:
+            raise
+        return [heard], RADAR_SOURCE
+
+
+def _asked(text: str) -> tuple[list[dict], dict]:
     """adsb.lol's answer to a search, and its credit: by address, callsign
-    or registration, as the text reads, the next way where one finds none;
-    where it turns us away, ADS-B Exchange asked the same way, unless it
-    was asked about this search already (`adsbx_tried`)."""
+    or registration, as the text reads, the next way where one finds none
+    -- in the same turn, as the next turn is a gap off, further than a
+    search waits, so the second way was never asked (a
+    foreign registration typed without its dash, whose callsign search
+    finds nothing, was never found).
+    TrafficUnavailable where a way cannot
+    be asked or is not answered: ADS-B Exchange was asked first
+    (`_looked_up`), and the next way is never sent in a turn the first did
+    not take (ten pilots' refused first ways each sent a
+    second inside the gap)."""
     if _HEX.fullmatch(text.lower()):
         tries = [("hex", text.lower()), ("callsign", text)]
     elif _N_NUMBER.fullmatch(text) or "-" in text:
         tries = [("reg", text)]
     else:
         tries = [("callsign", text), ("reg", text)]
+    answered = False
     for by, value in tries:
-        credit = ADSB_LOL_SOURCE
-        try:
-            found = [
-                a
-                for a in (_aircraft(e) for e in _paced(FIND_URL.format(by=by, value=value)).get("ac") or [] if isinstance(e, dict))
-                if a is not None
-            ]
-        except TrafficUnavailable:
-            if adsbx_tried:
-                raise
-            # adsb.lol turning us away: ADS-B Exchange asked the same way.
-            found, credit = _adsbx(f"{ADSBX_BY[by]}/{value}", search=True), ADSBX_SOURCE
+        # Raises past the loop where the way is refused or not answered, so
+        # only a way that was answered lends the next its turn.
+        answer = _paced(FIND_URL.format(by=by, value=value), SEARCH_WAIT_S, SEARCH_TIMEOUT_S, same_turn=answered)
+        answered = True
+        found = [a for a in (_aircraft(e) for e in answer.get("ac") or [] if isinstance(e, dict)) if a is not None]
         if found:
-            return found, credit
+            return found, ADSB_LOL_SOURCE
     return [], ADSB_LOL_SOURCE
 
 

@@ -32,17 +32,17 @@ planner's wingtip.modelwinds (#535).
 
 from __future__ import annotations
 
-import json
 import logging
 import math
 import time
 from datetime import datetime, timedelta, timezone
 
 import numpy as np
-import wingtip_native
+from cachetools import TTLCache
 from wingtip import utc, weather_store
 
 from . import nomads
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -242,8 +242,10 @@ class ModelWindsUnavailable(RuntimeError):
     """NOMADS did not give a GFS run."""
 
 
-#: (run, step) -> when NOMADS last said it was not posted yet.
-_NOT_UP: dict = {}
+#: The (run, step)s NOMADS said were not posted yet, each kept
+#: NOT_UP_RETRY_S and then asked again: entries go by themselves, where a
+#: dict gained one for every run and step for as long as the process lived.
+_NOT_UP: TTLCache = TTLCache(maxsize=256, ttl=NOT_UP_RETRY_S)
 
 
 def fetch_period(fcst_hr: str) -> None:
@@ -264,7 +266,7 @@ def fetch_period(fcst_hr: str) -> None:
         return
     fields, run, step = got
     period = period_of(run, step, fcst_hr)
-    until = json.loads(wingtip_native.call("weather_expires_at", json.dumps({"product": "winds", "valid_to": utc.epoch(period["use_to"])})))
+    until = engine("weather_expires_at", product="winds", valid_to=utc.epoch(period["use_to"]))
     weather_store.write(
         f"winds-{fcst_hr}",
         {"stations": _at_stations(fields), "period": period},
@@ -302,13 +304,13 @@ def _fetch(fcst_hr: str, now: datetime, held: tuple | None = None) -> tuple[dict
         run = latest - timedelta(hours=6 * n)
         step = forecast_step(run, target)
         key = (run, step)
-        if time.time() - _NOT_UP.get(key, 0) < NOT_UP_RETRY_S:
+        if key in _NOT_UP:
             continue
         if held == (utc.iso(run), step):
             return None
         body = _download(run, step)
         if body is None:
-            _NOT_UP[key] = time.time()
+            _NOT_UP[key] = True
             continue
         try:
             return _read_grib(body), run, step
@@ -365,7 +367,7 @@ def _at_stations(fields: dict) -> dict:
     out = {}
     for code, (lat, lon) in STATIONS.items():
         grib = [{key: _at(fields[(var, hpa)], lat, lon) for key, var in _GRIB_KEYS} for hpa in LEVELS_HPA]
-        read = json.loads(wingtip_native.call("model_wind_levels", json.dumps({"levels": grib})))
+        read = engine("model_wind_levels", levels=grib)
         levels = {
             int(round(level["altitude_ft"])): {
                 "wind_dir_true_deg": round(level["wind_dir_true_deg"]),

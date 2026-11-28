@@ -1,7 +1,7 @@
 //! A report's visibility as a figure and whether it is "at least": the
 //! METAR's and the TAF's group ("10SM", "1 1/2SM", "P6SM") and the
 //! Aviation Weather Center's feeds' text ("10+"), read in one place so the
-//! "+" is carried wherever the figure is (the 2026-11-14 audit's CODE-12).
+//! "+" is carried wherever the figure is.
 
 /// A visibility in statute miles from "10SM", "1/2SM", "M1/4SM", "P6SM"
 /// (with the whole miles of "1 1/2SM" given as `whole`): the value and
@@ -29,7 +29,7 @@ pub(crate) fn statute_miles(group: &str, whole: Option<f64>) -> Option<(f64, boo
 /// "6+" or "1.5", in statute miles, and whether it is "at least": the
 /// feed's "+" is the report's own P6SM or 10SM-and-more, kept as
 /// `visibility_plus` beside the figure as the raw report's is, so an app
-/// writes "10+ sm" and never "10 sm" (the 2026-11-14 audit's CODE-12).
+/// writes "10+ sm" and never "10 sm".
 pub fn feed_visibility(text: &str) -> Option<(f64, bool)> {
     let t = text.trim();
     let (body, plus) = match t.strip_suffix('+') {

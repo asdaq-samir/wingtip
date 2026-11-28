@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "The figures the hosts' own traffic code holds to, one copy for them: stale_s, 30 s, past which a position heard (the planner's feed) or the map's last answer (the web, which then says traffic is not available) is too old to draw: the airplane is somewhere else by now. A design choice, no rule: seconds-old internet data is for knowing what is about, never for avoiding it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TrafficFiguresInput",
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "answer": {
+      "title": "TrafficFiguresAnswer",
+      "type": "object",
+      "properties": {
+        "stale_s": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "stale_s"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

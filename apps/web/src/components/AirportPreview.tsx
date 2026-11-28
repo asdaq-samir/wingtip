@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { feet, grouped } from "../lib/format";
 import { airportQuery } from "../lib/queryClient";
-import { colourOf } from "../lib/map/marks/flightCategory";
+import { DOT_RING, colourOf } from "../lib/map/marks/flightCategory";
 import { TEXT } from "../lib/text";
 
 /**
@@ -36,7 +36,7 @@ export default function AirportPreview({ ident }: { ident: string }) {
         <p className={cn("flex items-start gap-2", TEXT.detail)}>
           {category && (
             <span
-              className="mt-1 size-2.5 shrink-0 rounded-full"
+              className={cn("mt-1 size-2.5 shrink-0 rounded-full", DOT_RING)}
               style={{ background: colourOf(category) }}
               aria-label={`${category} weather`}
               role="img"

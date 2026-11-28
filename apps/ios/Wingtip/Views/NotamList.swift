@@ -13,6 +13,9 @@ struct NotamListView: View {
     let source: NotamSource
     @Environment(Plan.self) private var plan
     @State private var ranked: APINotamsRanked?
+    /// Whether each runs until the charts are updated, read once with the
+    /// list (FieldNotamWords.untilCharts), never by a row as it is drawn.
+    @State private var untilCharts: [String: Bool] = [:]
     @State private var problem: String?
 
     var body: some View {
@@ -25,7 +28,8 @@ struct NotamListView: View {
                 ForEach(NotamRows.places(shown, source: source), id: \.title) { place in
                     Section {
                         ForEach(place.notams, id: \.id) { notam in
-                            NavigationLink { NotamDetailView(notam: notam) } label: { NotamRow(notam: notam) }
+                            let charts = untilCharts[notam.id]
+                            NavigationLink { NotamDetailView(notam: notam, untilCharts: charts) } label: { NotamRow(notam: notam, untilCharts: charts) }
                         }
                     } header: {
                         Text("\(place.title) · \(place.notams.count)")
@@ -64,11 +68,17 @@ struct NotamListView: View {
         case .route:
             let model = ready
             await model.fetchNotams(force: force)
-            ranked = model.notams
+            // Read once: the model may fetch again across the await, and the
+            // rows must be the ones untilCharts was read for.
+            let fresh = model.notams
+            untilCharts = await FieldNotamWords.untilCharts(fresh?.notams ?? [])
+            ranked = fresh
             problem = model.notamsProblem ?? (plan.routed ? nil : "Plan a route to see its NOTAMs.")
         case .field(let ident):
             do {
-                ranked = try await KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value
+                let fresh = try await KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value
+                untilCharts = await FieldNotamWords.untilCharts(fresh.notams)
+                ranked = fresh
                 problem = nil
             } catch {
                 problem = Problems.say("\(ident)'s NOTAMs could not be fetched", error)
@@ -129,15 +139,36 @@ enum NotamRows {
         return order.map { Place(title: $0, notams: by[$0] ?? []) }
     }
 
-    /// "In effect now", "From 1400Z", or the span "1400Z–2200Z", from the
-    /// NOTAM's own times; the engine says whether it is in force.
-    static func when(_ notam: APIRankedNotam) -> String {
-        let starts = notam.starts.flatMap(date).map(Format.zulu)
-        let ends = notam.ends.flatMap(date).map(Format.zulu)
-        let span = [starts, ends].compactMap { $0 }.joined(separator: "–")
-        if notam.inForce == true { return ends.map { "In effect now, until \($0)" } ?? "In effect now" }
-        if let starts { return ends == nil ? "From \(starts)" : span }
-        return span
+    /// "In effect now", "From 11/09 14:00 UTC", or the span, from the
+    /// NOTAM's own times; the engine says whether it is in force. The
+    /// route's list knows no field's zone, so UTC, said so, never a bare Z
+    /// (the owner, 2026-11-23; FieldNotamWords.when). Where the engine's
+    /// notam_card says it runs until the charts are updated (`untilCharts`:
+    /// PERM with an EST end or none, JO 7930.2 4-2-1), its end is
+    /// "permanent", never the EST date (the owner, 2026-11-23: "For a
+    /// permanent, just say permanent"), as on the field's list. Where the
+    /// card could not be read (nil, an engine error), no end is said at
+    /// all, never a firm date that may only be the estimate
+    /// nor "estimated", which the owner ruled out: "In effect now" or
+    /// "From …", and one not in force with no start "Not in
+    /// effect", never a blank line. `untilCharts` has no
+    /// default, so a new caller cannot drop every end by leaving it out.
+    static func when(_ notam: APIRankedNotam, untilCharts: Bool?, now: Date = .now) -> String {
+        let (s, e) = (notam.starts.flatMap(date), notam.ends.flatMap(date))
+        let tfr = notam.kind == "tfr"
+        let permanent = !tfr && untilCharts == true
+        let unread = !tfr && untilCharts == nil && e != nil
+        let firm = permanent || unread ? nil : e
+        let year = FieldNotamWords.withYear([s, firm], now: now)
+        let starts = s.map { FieldNotamWords.when($0, zone: nil, year: year) }
+        let ends = firm.map { FieldNotamWords.when($0, zone: nil, year: year) }
+        if notam.inForce == true {
+            if permanent { return "In effect now, permanent" }
+            return ends.map { "In effect now, until \($0)" } ?? "In effect now"
+        }
+        if permanent { return starts.map { "From \($0), permanent" } ?? "Permanent" }
+        if let starts { return ends.map { "\(starts)–\($0)" } ?? "From \(starts)" }
+        return ends.map { "Until \($0)" } ?? (notam.inForce == false ? "Not in effect" : "")
     }
 
     private static func date(_ text: String) -> Date? {
@@ -168,6 +199,7 @@ enum NotamRows {
 /// A NOTAM's row: its kind's badge, its words, and when.
 struct NotamRow: View {
     let notam: APIRankedNotam
+    let untilCharts: Bool?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.md) {
@@ -179,7 +211,7 @@ struct NotamRow: View {
                 .background(NotamRows.colour(notam), in: RoundedRectangle(cornerRadius: WingtipRadius.badge, style: .continuous))
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(NotamRows.summary(notam)).font(.body).lineLimit(4)
-                let when = NotamRows.when(notam)
+                let when = NotamRows.when(notam, untilCharts: untilCharts)
                 if !when.isEmpty {
                     Text(when).font(.subheadline.monospacedDigit())
                         .foregroundStyle(notam.inForce == true ? WingtipInk.caution : .secondary)
@@ -195,6 +227,7 @@ struct NotamRow: View {
 /// then the NOTAM as sent, monospaced and selectable to copy.
 struct NotamDetailView: View {
     let notam: APIRankedNotam
+    let untilCharts: Bool?
 
     var body: some View {
         List {
@@ -206,7 +239,7 @@ struct NotamDetailView: View {
             }
             Section("As Sent") {
                 Text(notam.raw).font(.body.monospaced()).textSelection(.enabled)
-                let when = NotamRows.when(notam)
+                let when = NotamRows.when(notam, untilCharts: untilCharts)
                 if !when.isEmpty { LabeledContent("Effective", value: when) }
             }
         }

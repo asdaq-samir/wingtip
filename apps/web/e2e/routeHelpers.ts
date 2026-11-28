@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { planFromSearch } from "./oneSearch";
-import { closeCard, grabberTo, inSheet, openPanel, settled, sideDrawer, slow } from "./sheetHelpers";
+import { cardHost, closeCard, grabberTo, inSheet, openPanel, settled, sideDrawer, sheetFoot, slow } from "./sheetHelpers";
 
 /**
  * The route in the map's sheet: its field and FPL's timeline, its
@@ -74,7 +74,8 @@ export async function clearTheRoute(page: Page) {
  *  one at a time: from a page to the
  *  Brief's cards (BriefGlance), then FPL's route and nav log again. */
 export async function closeBrief(page: Page) {
-  const card = sideDrawer(page).getByTestId("brief-card");
+  // A card, in the card's host (cardHost): the inspector on an iPad on its side.
+  const card = cardHost(page).getByTestId("brief-card");
   if (!(await card.isVisible().catch(() => false))) return;
   if (!(await card.getByTestId("brief-glance").isVisible())) {
     await closeCard(page, "brief-close");
@@ -102,11 +103,11 @@ export async function controlsInSight(page: Page) {
  *  owner, 2026-11-22: "route option can show in the tab bar"), which says
  *  whether the suggested routes are out (aria-pressed). */
 export async function routeOptionsItem(page: Page): Promise<Locator> {
-  return sideDrawer(page).getByTestId("routes-toggle");
+  return sheetFoot(page).getByTestId("routes-toggle");
 }
 
-/** The suggested routes' chips, put out above the route by the bar's
- *  Routes where they are not out already. */
+/** The suggested routes' chips, put out in the foot's figures' place by
+ *  the bar's Routes where they are not out already. */
 export async function suggestedRoutes(page: Page): Promise<Locator> {
   await expect(async () => {
     const item = await routeOptionsItem(page);
@@ -114,5 +115,6 @@ export async function suggestedRoutes(page: Page): Promise<Locator> {
     if ((await item.getAttribute("aria-pressed")) !== "true") await item.click();
     await expect(item).toHaveAttribute("aria-pressed", "true", { timeout: 2000 });
   }).toPass({ timeout: slow(30_000) });
-  return sideDrawer(page).getByTestId("route-line");
+  // In the foot's strip, which on a phone's sheet is the foot bar beside the sheet's popup.
+  return sheetFoot(page).getByTestId("route-line");
 }

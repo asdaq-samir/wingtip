@@ -2,6 +2,8 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import type { AirplaneDetails } from "../../lib/api/types";
 import { day } from "./infoDay";
 import { WORDING } from "../../lib/wording/generated/wording";
+import { FirstFew } from "../../components/FirstFew";
+import { skeletonRows } from "../../components/skeletonRows";
 
 const joined = (...parts: (string | number | null | undefined)[]) =>
   parts.filter((p) => p !== null && p !== undefined && p !== "").join(" · ");
@@ -25,7 +27,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
   if (!details)
     return (
       <ListGroup title="History">
-        <None text={failed ? WORDING.historyNotFetched : "Fetching its history…"} />
+        {failed ? <None text={WORDING.historyNotFetched} /> : skeletonRows({ rows: 3, fetching: "Fetching its history…" })}
       </ListGroup>
     );
   const { based, ntsb, documents, reservation } = details;
@@ -34,81 +36,99 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
     <div className="space-y-5">
       {(based?.field || details.based_pending) && (
         <div data-testid="airplane-based">
-          <ListGroup title="Usually Based At">
-            {based?.field ? (
-              <ListRow
-                title={joined(based.field.ident, based.field.name)}
-                description={`${based.count} of ${based.ends} takeoffs and landings`}
-                data-testid="airplane-based-field"
-              />
-            ) : (
-              <None text="Looking…" />
-            )}
-          </ListGroup>
+          <FirstFew
+            title="Usually Based At"
+            testId="airplane-history-based"
+            rows={[
+              based?.field ? (
+                <ListRow
+                  key="field"
+                  title={joined(based.field.ident, based.field.name)}
+                  description={`${based.count} of ${based.ends} takeoffs and landings`}
+                  data-testid="airplane-based-field"
+                />
+              ) : (
+                <None key="looking" text="Looking…" />
+              ),
+            ]}
+          />
         </div>
       )}
       <div>
-        <ListGroup title="Safety History">
-          {ntsb.length === 0 && <None text="No NTSB accident or incident on record since 2008." />}
-          {ntsb.map((c) => (
-            <ListRow
-              key={c.ev_id}
-              title={joined(day(c.date), c.kind, c.ntsb_no)}
-              description={joined(town(c.city, c.state), c.phase, c.damage, c.highest_injury)}
-              href={c.carol_url}
-              data-testid="airplane-ntsb"
-            />
-          ))}
-          {ntsb
-            .filter((c) => c.docket_url)
-            .map((c) => (
-              <ListRow key={`docket-${c.ev_id}`} title={`Docket ${c.ntsb_no ?? ""}`.trim()} href={c.docket_url!} />
-            ))}
-        </ListGroup>
+        <FirstFew
+          title="Safety History"
+          testId="airplane-history-safety"
+          rows={[
+            ...(ntsb.length === 0 ? [<None key="none" text="No NTSB accident or incident on record since 2008." />] : []),
+            ...ntsb.map((c) => (
+              <ListRow
+                key={c.ev_id}
+                title={joined(day(c.date), c.kind, c.ntsb_no)}
+                description={joined(town(c.city, c.state), c.phase, c.damage, c.highest_injury)}
+                href={c.carol_url}
+                data-testid="airplane-ntsb"
+              />
+            )),
+            ...ntsb
+              .filter((c) => c.docket_url)
+              .map((c) => <ListRow key={`docket-${c.ev_id}`} title={`Docket ${c.ntsb_no ?? ""}`.trim()} href={c.docket_url!} />),
+          ]}
+        />
       </div>
       <div data-testid="airplane-ownership">
-        <ListGroup title="Ownership History">
-          {past.length === 0 && <None text="No past registrations." />}
-          {past.map((p, i) => (
-            <ListRow
-              key={`reg-${i}`}
-              title={joined(p.n_number, p.same_airframe ? "This airframe" : "Another airplane", p.status)}
-              description={joined(
-                [p.manufacturer, p.model].filter(Boolean).join(" ") || null,
-                p.year,
-                p.owner,
-                town(p.city, p.state),
-                p.cancel_date && `canceled ${day(p.cancel_date)}`,
-                p.export_country && `exported to ${p.export_country}`,
-              )}
-              data-testid="airplane-past-registration"
-            />
-          ))}
-        </ListGroup>
+        <FirstFew
+          title="Ownership History"
+          testId="airplane-history-ownership"
+          rows={[
+            ...(past.length === 0 ? [<None key="none" text="No past registrations." />] : []),
+            ...past.map((p, i) => (
+              <ListRow
+                key={`reg-${i}`}
+                title={joined(p.n_number, p.same_airframe ? "This airframe" : "Another airplane", p.status)}
+                description={joined(
+                  [p.manufacturer, p.model].filter(Boolean).join(" ") || null,
+                  p.year,
+                  p.owner,
+                  town(p.city, p.state),
+                  p.cancel_date && `canceled ${day(p.cancel_date)}`,
+                  p.export_country && `exported to ${p.export_country}`,
+                )}
+                data-testid="airplane-past-registration"
+              />
+            )),
+          ]}
+        />
       </div>
       <div data-testid="airplane-documents">
-        <ListGroup title="Documents Filed">
-          {documents.length === 0 && !reservation && <None text="None filed in the last month." />}
-          {documents.map((d, i) => (
-            <ListRow
-              key={d.document_id ?? `doc-${i}`}
-              title={d.kind ?? "Document"}
-              description={joined(d.received && `received ${day(d.received)}`, d.entered && `entered ${day(d.entered)}`)}
-            />
-          ))}
-          {reservation && (
-            <ListRow
-              title="N-Number Reserved"
-              description={joined(
-                reservation.registrant,
-                town(reservation.city, reservation.state),
-                reservation.reserved && day(reservation.reserved),
-                reservation.kind,
-                reservation.change_to && `changing to ${reservation.change_to}`,
-              )}
-            />
-          )}
-        </ListGroup>
+        <FirstFew
+          title="Documents Filed"
+          testId="airplane-history-documents"
+          rows={[
+            ...(documents.length === 0 && !reservation ? [<None key="none" text="None filed in the last month." />] : []),
+            ...documents.map((d, i) => (
+              <ListRow
+                key={d.document_id ?? `doc-${i}`}
+                title={d.kind ?? "Document"}
+                description={joined(d.received && `received ${day(d.received)}`, d.entered && `entered ${day(d.entered)}`)}
+              />
+            )),
+            ...(reservation
+              ? [
+                  <ListRow
+                    key="reserved"
+                    title="N-Number Reserved"
+                    description={joined(
+                      reservation.registrant,
+                      town(reservation.city, reservation.state),
+                      reservation.reserved && day(reservation.reserved),
+                      reservation.kind,
+                      reservation.change_to && `changing to ${reservation.change_to}`,
+                    )}
+                  />,
+                ]
+              : []),
+          ]}
+        />
       </div>
     </div>
   );

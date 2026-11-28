@@ -30,7 +30,6 @@ nonisolated struct TileTemplate: Equatable, Sendable {
         if let base = tilesBase, !base.isEmpty {
             return URL(string: "\(base)/\(cycle)/\(kind)/\(z)/\(x)/\(y)\(density).png?r=\(revision)")!
         }
-        return Config.gateway.appending(path: "/api/planner/chart-tile/\(kind)/\(z)/\(x)/\(y)\(density).png")
-            .appending(queryItems: [URLQueryItem(name: "c", value: cycle), URLQueryItem(name: "r", value: String(revision))])
+        return Planner.chartTileURL(kind: kind, z: z, x: x, y: y, density: density, cycle: cycle, revision: revision)
     }
 }

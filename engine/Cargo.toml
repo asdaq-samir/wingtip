@@ -66,3 +66,12 @@ inherits = "release"
 opt-level = "z"
 panic = "abort"
 strip = true
+
+# The geodesic (geographiclib-rs, Karney's series) at full speed in the
+# WebAssembly, every distance, course and destination the web asks going
+# through it: 20,000 legs of great_circles in Node took 23 ms where "z"
+# took 31, for 1,194 bytes (79 gzipped) more (2026-11-27). wingtip-core
+# at 3 as well took 2 ms more off and 31 KB on, past wasm_size.py's
+# budget.
+[profile.wasm.package.geographiclib-rs]
+opt-level = 3

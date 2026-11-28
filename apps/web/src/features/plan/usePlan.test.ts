@@ -321,7 +321,7 @@ describe("an altitude asked for", () => {
 
   test("as the fuel in the tanks is set, keeps the legs before it, for the gauges to be walked from at once", async () => {
     vi.mocked(api.course).mockResolvedValue({ ...courseFixture(), checkpoints_ready: true });
-    // The tanks are arg 21, as FuelSet's Done writes them.
+    // The tanks are arg 21, as an address's `tanks` gives them.
     vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[21] ? waiting() : whole(4500)));
     const { result, rerender } = renderHook((plan: PlanParams) => usePlan(plan), { wrapper, initialProps: params });
     await waitFor(() => expect(result.current.totals).not.toBeNull());

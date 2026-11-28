@@ -22,8 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.math.floor
 import kotlin.math.roundToInt
-import kotlin.math.roundToLong
 
 /**
  * The emergency assistant's one view model (the web's useEmergency): the
@@ -101,8 +101,7 @@ class EmergencyModel(
         val sections = read.getOrDefault(emptyList())
         val section = rules.checklistSection(sections.map { it.title }) ?: if (sections.isNotEmpty()) 0 else null
         // The general guidance with no airplane, and also where the pilot's
-        // own checklist could not be read, which is said (the audit's
-        // AND-4): the one screen used in an emergency never goes blank.
+        // own checklist could not be read, which is said: the one screen used in an emergency never goes blank.
         val guidance = if (this.aircraft == null || read.isFailure) rules.guidance() else emptyList()
         val problem = if (read.isFailure) "Your checklist could not be read." else null
         _state.update { it.copy(airplaneName = airplaneName, guidance = guidance, sections = sections, section = section, ticked = emptySet(), checklistProblem = problem) }
@@ -110,12 +109,15 @@ class EmergencyModel(
     }
 
     /** Each fix: the fields asked again once the airplane has moved on
-     *  about half a mile or come down 500 ft, and ranked again from it. */
+     *  about half a mile or come down 500 ft, and ranked again from it.
+     *  The height is asked rounded down to its 500 ft step, never to the
+     *  nearest, so the glide reach asked with is never more than the
+     *  airplane has. */
     fun took(fix: OwnShip.Fix?, trackMagDeg: Double?) {
         this.trackMagDeg = trackMagDeg
         _state.update { it.copy(fix = fix) }
         if (fix == null) return
-        val at = Triple(step(fix.lat), step(fix.lon), fix.altitudeFt?.let { (it / 500).roundToLong() * 500.0 })
+        val at = Triple(step(fix.lat), step(fix.lon), fix.altitudeFt?.let { floor(it / 500) * 500.0 })
         if (at != asked) {
             asked = at
             asking?.cancel()
@@ -179,7 +181,9 @@ class EmergencyModel(
         // Each field's reported visibility beside the engine's weather line
         // (EmergencyMetar's visibility_sm and visibility_plus, as the web's
         // Emergency rows say it); none where the report has no visibility.
-        val visibility = got?.fields.orEmpty().mapNotNull { f -> f.metar?.visibilitySm?.let { f.ident to Format.visibility(it, f.metar.visibilityPlus == true) } }.toMap()
+        // TODO(services): the planner's EmergencyMetar sends no
+        // visibility_minus yet, so an M1/4SM reads as ¼ sm here until it does.
+        val visibility = got?.fields.orEmpty().mapNotNull { f -> f.metar?.visibilitySm?.let { Format.visibility(it, f.metar.visibilityPlus == true) }?.let { f.ident to it } }.toMap()
         _state.update { it.copy(ranked = ranked ?: it.ranked, picked = picked ?: it.picked, phone = field?.phone, metar = field?.metar?.raw, visibility = visibility) }
         refill()
     }

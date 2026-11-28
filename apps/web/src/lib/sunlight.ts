@@ -8,7 +8,10 @@ import { usePreferences, type ChartLight } from "./preferences";
  * and a sectional's pale inks wash out, so the whole page goes to a
  * high-contrast scheme -- the chart's tiles at more contrast, the
  * course and the rings thicker, every sheet and the figure strip solid
- * white with black figures (index.css, `html[data-chart-light="bright"]`).
+ * white with black figures by day (index.css, `html[data-chart-light="bright"]`;
+ * tokens.css). At night the sheets keep the look's dark grounds with only
+ * the grey words and edges lifted, never white (AIM 8-1-6, dark
+ * adaptation).
  *
  * Switched on by itself from the phone's ambient light sensor where the
  * browser has one (the Generic Sensor API's AmbientLightSensor: behind a

@@ -1,6 +1,5 @@
-import type { Briefing, Leg, NavLogAltitude } from "../../lib/api/types";
+import type { Briefing, Leg } from "../../lib/api/types";
 import type { BriefingState } from "../plan";
-import { feetRange } from "../../lib/format";
 
 /** What each weather source is called when a pilot is told it could
  *  not be checked. */
@@ -43,15 +42,6 @@ export function windStretches(legs: Leg[]): Stretch[] {
     else stretches.push({ from: leg.from, to: leg.to, altitudeFt: leg.altitude_ft, wind, oatC });
   }
   return stretches;
-}
-
-/** The altitudes a plan flies as the nav log's header gives them: one
- *  figure, or its lowest and highest. */
-export function altitudeRange(nav: NavLogAltitude): string {
-  const chosen = nav.options.find((o) => o.kind === nav.flown);
-  const alts = chosen ? chosen.steps.map((s) => s.altitude_ft) : nav.altitude_ft != null ? [nav.altitude_ft] : [];
-  if (alts.length === 0) return "No altitude";
-  return feetRange(alts);
 }
 
 /** What the briefing's parts say while it is not in: that it follows the

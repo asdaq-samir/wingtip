@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, sideDrawer, frontSheet, grabberTo } from "./helpers";
+import { settle, sideDrawer, sheetFoot, frontSheet, grabberTo } from "./helpers";
+import { watchFor } from "./pacing";
 
 /**
  * A phone's sheet going from the pill to half way and back keeps what it
@@ -30,7 +31,8 @@ async function frames(page: Page, move: () => Promise<void>): Promise<Frame[]> {
       const foot = Math.min(box.bottom, window.innerHeight);
       const panel = { top: box.top, height: foot - box.top };
       const at = (selector: string) => {
-        const r = document.querySelector(`[data-slot=map-panel] ${selector}`)?.getBoundingClientRect();
+        // On a phone the figures are in the foot bar drawn beside the sheet's popup.
+        const r = document.querySelector(`[data-slot=map-panel] ${selector}, [data-foot-bar] ${selector}`)?.getBoundingClientRect();
         return r && r.height > 0 ? { top: r.top - panel.top, bottom: r.bottom - panel.top } : null;
       };
       w.__frames.push({ height: panel.height, bar: at("[role=search]"), figures: at("[data-testid=flight-line]") });
@@ -39,7 +41,7 @@ async function frames(page: Page, move: () => Promise<void>): Promise<Frame[]> {
     requestAnimationFrame(tick);
   });
   await move();
-  await page.waitForTimeout(1400);
+  await watchFor(page, 1400);
   return page.evaluate(() => (window as unknown as { __frames: Frame[] }).__frames);
 }
 
@@ -78,10 +80,10 @@ test("on a phone a route's figures stay in sight at the sheet's foot from half a
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
   // At the pill the figures are the pill, in the route's row's place (the
   // owner, 2026-11-11, the canvas's b; sheet-page-toggle.spec), and from half on.
-  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
   await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
   for (const key of ["ArrowUp", "ArrowDown"] as const) {
     const seen = await frames(page, () => step(page, key));
     for (const f of seen) {

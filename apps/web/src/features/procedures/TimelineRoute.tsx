@@ -10,10 +10,12 @@ import { TimelineLine } from "./TimelineLine";
 import { TimelineMark } from "./TimelineMark";
 import type { TimelinePoint } from "./lineModel";
 import { listedPoints } from "./stopsRow";
-import { AddStopRow, StopsRow, TIMELINE_CARD } from "./TimelineRows";
+import { TIMELINE_CARD } from "./TimelineRows";
+import { AddStopRow, StopsRow } from "./TimelineStopRows";
 import { visitRow } from "./visits";
 import type { ProceduresRouteProps } from "./routeProps";
-import { toggleField, useProceduresRoute } from "./useProceduresRoute";
+import { toggleField } from "./fieldsOpen";
+import { useProceduresRoute } from "./useProceduresRoute";
 
 export type { TimelinePoint } from "./lineModel";
 
@@ -60,10 +62,12 @@ export default function TimelineRoute({
   points,
   head,
   tail,
-  foot,
+  building = false,
+  lastTrailing,
   addTrailing,
   allStops,
   onAllStops,
+  half = false,
   ...props
 }: ProceduresRouteProps & {
   points: TimelinePoint[];
@@ -71,15 +75,22 @@ export default function TimelineRoute({
    *  end still to pick (EndRow), the line running on to and from it. */
   head?: ReactNode;
   tail?: ReactNode;
-  /** The card's last row where it is not Add a Stop: before the route is
-   *  whole, the route typed or pasted (TypeRouteRow). */
-  foot?: ReactNode;
+  /** Before the route is whole: no Add a Stop row, the card ending in its
+   *  points or its end still to pick (`tail`). */
+  building?: boolean;
+  /** A control at the last point's end where no `tail` follows it: half a
+   *  route's box's toggle (TypeRouteButton) at the card's bottom right. */
+  lastTrailing?: ReactNode;
   /** A control at Add a Stop's end (RouteTimeline's fuel stops' pill). */
   addTrailing?: ReactNode;
   /** Every stop its own row: the sheet at full, or the route read. */
   allStops: boolean;
   /** The sheet taken all the way up, where every stop is listed. */
   onAllStops: () => void;
+  /** The sheet at half: every field's line folded, its ident and its
+   *  figures alone, and one opened takes the sheet up (the owner,
+   *  2026-11-24: "In half card, all airports should fold"). */
+  half?: boolean;
 }) {
   const vm = useProceduresRoute(props);
   const { airports, routePoints, stopsFull } = vm;
@@ -89,11 +100,15 @@ export default function TimelineRoute({
   useEffect(() => {
     if (useOpenLine.getState().route !== route) useOpenLine.setState({ route, key: null });
   }, [route]);
+  // Down to half, the open line folds.
+  useEffect(() => {
+    if (half) useOpenLine.setState({ key: null });
+  }, [half]);
   const stops = points.slice(1, -1);
   // A pilot's one open stop keeps them listed; the specs' fields, each
   // open at first (openAtFirst), list them all as they work on them; a
   // stop that cannot be flown to keeps its why in sight (decision 0043).
-  const all = allStops || vm.openAtFirst || stops.some((p) => p.problem || p.caution || openKey === keyOf(p));
+  const all = allStops || vm.openAtFirst || stops.some((p) => p.problem || openKey === keyOf(p));
   const shown = listedPoints(points, all);
   const folded = shown.includes(null);
   // A point moved, from its menu or by a drop beside an end, in among
@@ -107,6 +122,11 @@ export default function TimelineRoute({
     },
   };
   const moving = { ...vm, edit };
+  // Opened at half, the sheet goes up to show it whole.
+  const openLine = (key: string, next: boolean) => {
+    useOpenLine.setState({ key: next ? key : null, route });
+    if (next && half) onAllStops();
+  };
   const open = points.find((p) => keyOf(p) === openKey) ?? null;
   // The map: the route's points alone and the open line's centred.
   const focus = open && edit ? open.ident : null;
@@ -176,13 +196,12 @@ export default function TimelineRoute({
           mark={edit ? end.menu(mark, true) : mark}
           first={i === 0 && !head}
           last={i === shown.length - 1 && !tail}
+          trailing={i === shown.length - 1 && !tail ? lastTrailing : undefined}
           // The browser specs' fields open at first, each its own
           // (useProceduresRoute's openAtFirst), as they work on their
           // runways and procedures; a pilot's one at a time.
           open={vm.openAtFirst ? vm.isOpen(key) : openKey === key}
-          onOpen={(next) =>
-            vm.openAtFirst ? toggleField(key, point.ident, next) : useOpenLine.setState({ key: next ? key : null, route })
-          }
+          onOpen={(next) => (vm.openAtFirst ? toggleField(key, point.ident, next) : openLine(key, next))}
         />
       ),
     };
@@ -192,10 +211,9 @@ export default function TimelineRoute({
       {head}
       <RouteGrid items={items} onMove={edit?.onMove} canMove={edit?.canDrop} />
       {tail}
-      {foot ??
-        (edit && routePoints.length > 1 && (
-          <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} trailing={addTrailing} />
-        ))}
+      {!building && edit && routePoints.length > 1 && (
+        <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} trailing={addTrailing} />
+      )}
     </div>
   );
   // Read in a dry run, the list read under it has the sheets.

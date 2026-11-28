@@ -58,18 +58,19 @@ const decoder = new TextDecoder();
 /** The module compiled from the network, streaming where the server
  *  says application/wasm, else from its bytes: Safari and some servers
  *  (a file:// shell, a CDN with the wrong type) refuse the streaming
- *  compile, and the bytes always work. */
+ *  compile, and the bytes always work. One fetch: the stream reads a
+ *  copy of the answer (clone), the bytes the answer itself, where a
+ *  refused stream fetched the 1.2 MB file again. */
 async function fromNetwork(url: string): Promise<WebAssembly.Instance> {
-  const response = fetch(url);
+  const response = await fetch(url);
   if (typeof WebAssembly.instantiateStreaming === "function") {
     try {
-      return (await WebAssembly.instantiateStreaming(response, {})).instance;
+      return (await WebAssembly.instantiateStreaming(response.clone(), {})).instance;
     } catch {
-      // Fall through to the bytes, fetched again (the first body is used).
+      // Fall through to the bytes of the same answer.
     }
   }
-  const bytes = await (await fetch(url)).arrayBuffer();
-  return (await WebAssembly.instantiate(bytes, {})).instance;
+  return (await WebAssembly.instantiate(await response.arrayBuffer(), {})).instance;
 }
 
 /**
@@ -121,17 +122,14 @@ export function callEngine<N extends WebRule>(name: N, input: EngineInput<N>): E
     throw new Error(
       `The engine is not loaded yet, so ${name} cannot be worked out: draw the part that asks it inside an EngineGate (lib/engine/engineGate).`,
     );
-  const nameBytes = encoder.encode(name);
-  const inputBytes = encoder.encode(JSON.stringify(input));
-  const namePtr = e.wt_alloc(nameBytes.length);
-  const inputPtr = e.wt_alloc(inputBytes.length);
+  const nameAt = written(e, name);
+  let inputAt: Written | null = null;
   let out = 0;
   try {
+    inputAt = written(e, JSON.stringify(input));
+    out = e.wt_call(nameAt.ptr, nameAt.len, inputAt.ptr, inputAt.len);
     // The memory's buffer is taken afresh after each call into the
     // module: an allocation that grows the memory detaches the old one.
-    new Uint8Array(e.memory.buffer, namePtr, nameBytes.length).set(nameBytes);
-    new Uint8Array(e.memory.buffer, inputPtr, inputBytes.length).set(inputBytes);
-    out = e.wt_call(namePtr, nameBytes.length, inputPtr, inputBytes.length);
     const head = new DataView(e.memory.buffer, out, 8);
     const status = head.getUint32(0, true),
       len = head.getUint32(4, true);
@@ -140,7 +138,31 @@ export function callEngine<N extends WebRule>(name: N, input: EngineInput<N>): E
     return JSON.parse(text) as EngineAnswer<N>;
   } finally {
     if (out) e.wt_result_free(out);
-    e.wt_free(namePtr, nameBytes.length);
-    e.wt_free(inputPtr, inputBytes.length);
+    e.wt_free(nameAt.ptr, nameAt.room);
+    if (inputAt) e.wt_free(inputAt.ptr, inputAt.room);
   }
+}
+
+/** Text written into the module's memory: where, its length in bytes and
+ *  the room taken for it (what wt_free is given back). */
+interface Written {
+  ptr: number;
+  len: number;
+  room: number;
+}
+
+/** `text` as UTF-8 straight into room the module gives (encodeInto), not
+ *  encoded into a buffer of its own first and copied across: a route's
+ *  input is tens of kilobytes on every call. Room for a byte a UTF-16
+ *  unit holds ASCII, the usual JSON; text it does not hold (a name with
+ *  an accent) is written again into room for three bytes a unit, the most
+ *  UTF-8 takes for one. */
+function written(e: Exports, text: string): Written {
+  for (const room of [text.length, text.length * 3]) {
+    const ptr = e.wt_alloc(room);
+    const done = encoder.encodeInto(text, new Uint8Array(e.memory.buffer, ptr, room));
+    if (done.read === text.length) return { ptr, len: done.written, room };
+    e.wt_free(ptr, room);
+  }
+  throw new Error("The engine's input could not be written as UTF-8.");
 }

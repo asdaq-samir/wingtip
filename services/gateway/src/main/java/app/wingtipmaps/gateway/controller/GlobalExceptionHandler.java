@@ -128,7 +128,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * already has ({@value #TAIL_CONSTRAINT}) is said as that; any other --
      * a nav log's checkpoint sequence, a foreign key, a missing value -- is
      * no fault of what the pilot typed, and was answered "That tail number
-     * is already registered" all the same (the 6 Nov audit's S9).
+     * is already registered" all the same.
      *
      * @param ex the underlying constraint failure, logged by the
      *     constraint's name only: the database's own text quotes the row's

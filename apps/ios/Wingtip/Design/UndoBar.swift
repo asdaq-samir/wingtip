@@ -3,7 +3,8 @@ import SwiftUI
 /// A step the pilot can take back, offered for a moment after it is made
 /// (the web's per-edit Undo toast, e401f646d): what it took away in the
 /// UndoManager's own words ("KMSN removed", "Route cleared", "Route
-/// replaced"), each offer its own so the same words twice are two.
+/// replaced"), each offer its own so the same words twice are two. The
+/// step is in the plan's one history (Plan.undoManager), every window's.
 struct UndoOffer: Equatable, Identifiable, Sendable {
     let id: UUID
     let words: String
@@ -22,14 +23,13 @@ struct UndoOffer: Equatable, Identifiable, Sendable {
 /// The undo bar at the plan's foot, over the figures strip: the change's
 /// words and Undo, in the glass that floats over the map, as iOS offers
 /// an undo after a delete (Mail's "Undo", Photos' and Files' bars) and the
-/// web's toast does. Undo is the window's UndoManager's, the same step
+/// web's toast does. Undo is the plan's UndoManager's, the same step
 /// shake and ⌘Z take (Plan.remember registered it), so the bar holds no
 /// state of the route's; it goes after `UndoOffer.shown`, on Undo, or when
 /// another change takes its place. VoiceOver hears the change as it is
 /// made (Plan.remember's announcement), and Undo is the bar's one button.
 struct UndoBar: View {
     @Environment(Plan.self) private var plan
-    @Environment(\.undoManager) private var undoManager
 
     var body: some View {
         if let offer = plan.undoOffer {
@@ -41,13 +41,13 @@ struct UndoBar: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Button {
                     plan.dismissUndo(offer)
-                    undoManager?.undo()
+                    plan.undoManager.undo()
                 } label: {
                     Text("Undo").font(WingtipType.row.weight(.semibold))
                 }
                 .buttonStyle(.borderless)
                 .hitArea()
-                .disabled(!(undoManager?.canUndo ?? false))
+                .disabled(!plan.undoManager.canUndo)
                 .accessibilityLabel("Undo \(offer.words)")
                 .accessibilityIdentifier("undo-bar-undo")
             }

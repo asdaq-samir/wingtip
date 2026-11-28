@@ -14,7 +14,7 @@ export function picksOf(params: URLSearchParams, also: readonly string[] = []): 
 
 /** A saved flight back on the planner: its route, through its stops, at
  *  its altitude and the ones the pilot set at its points, with the picks
- *  it was filed with, and for its own departure time while that is still
+ *  it was filed with (its rules among them), and for its own departure time while that is still
  *  ahead -- from its own pilot's Flights, or their instructor's review of
  *  it. One filed before its picks were kept flies its altitude, as before. */
 export function planHrefOf(
@@ -33,6 +33,9 @@ export function planHrefOf(
     ...(Number.isFinite(planned) && planned > now ? { depart: f.plannedFor! } : {}),
   });
   for (const [key, value] of picks) if (KEPT_KEYS.includes(key)) params.set(key, value);
+  // Its rules, VFR where none was written: the connector writes only IFR,
+  // and the app's setting would otherwise keep the last flight's.
+  if (!params.has("rules")) params.set("rules", "vfr");
   return `/plan?${params}`;
 }
 
@@ -45,14 +48,18 @@ export function recentHrefOf(route: { dep: string; dest: string; stops: string[]
   return `/plan?${params}`;
 }
 
-/** A kept airport as a link to send (its card's own Share's). */
+/** An airport as a link to send: its card's Share and a kept one's, the one link. */
 export const placeLink = (airport: { ident: string; name?: string | null }) => ({
   title: airport.name || airport.ident,
   url: `${location.origin}/app/plan?place=${airport.ident}`,
 });
 
-/** A kept airplane as a link to send (its card's own Share's). */
-export const planeLink = (aircraft: { hex: string; name: string }) => ({
+/** An airplane as a link to send, the same link for the same airplane from
+ *  its card, a Favorite or a Recent: by its ICAO address where it is known
+ *  (`flight=`), which opens the one card by either, else by its N-number
+ *  (`airplane=`, one the registry gives no address). The card said
+ *  `airplane=` and a Favorite `flight=` for the same airplane. */
+export const planeLink = (aircraft: { hex?: string | null; tail?: string | null; name: string }) => ({
   title: aircraft.name,
-  url: `${location.origin}/app/plan?flight=${aircraft.hex}`,
+  url: `${location.origin}/app/plan?${aircraft.hex ? `flight=${aircraft.hex}` : `airplane=${aircraft.tail ?? aircraft.name}`}`,
 });

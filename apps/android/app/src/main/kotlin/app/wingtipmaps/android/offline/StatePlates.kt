@@ -110,7 +110,7 @@ class StatePlatesStore(val root: File) {
 
 /**
  * The FAA's plates kept a state at a time, as ForeFlight and Garmin Pilot
- * download them (the market-gap audit's 3; the web's statePlates): the
+ * download them (the web's statePlates): the
  * planner lists a state's open fields and their charts of the cycle in
  * force (wingtip.plate_sets), and each chart is kept as this phone opens
  * it (ChartKeeper). From its cycle's replacement a kept state is fetched

@@ -1,3 +1,4 @@
+import { cn } from "cn";
 import type { MouseEvent, ReactNode } from "react";
 import type { PanelState } from "../../lib/mapChrome";
 import type { SheetPages } from "../../lib/sheetPages";
@@ -29,6 +30,9 @@ export interface SheetLayout {
   onPhone: boolean;
   desktop: boolean;
   footShown: boolean;
+  /** The foot is FPL's fixed bar beside the Drawer's popup (sheet/FootBar),
+   *  not drawn in the sheet. */
+  footBar: boolean;
   cardsUp: boolean;
   barShown: boolean;
   toEdge: boolean;
@@ -46,7 +50,30 @@ export const ROW_PAD = "pt-2.5";
  *  darker on it for WCAG's 4.5:1 (design/tokens.json's -shade tokens). */
 export const SHEET_BELOW = "[--muted-foreground:var(--muted-foreground-shade)] [--tint:var(--tint-shade)] print:bg-transparent";
 
+/** What on the sheet is a control, which takes its own tap rather than
+ *  the pill's: one list for the pill's tap rules. The two classes are the
+ *  same list written out whole, as Tailwind finds a class only as written
+ *  (sheetLayout.test keeps them the same). */
+export const CONTROLS = "button,a,input,[role=button],[role=combobox]";
+/** The controls take taps where their ground takes none (FootBar). */
+export const CONTROLS_TAPPABLE = "[&_:is(button,a,input,[role=button],[role=combobox])]:pointer-events-auto";
+/** No control takes a tap, the row's own tap rules (a pill's band). */
+export const CONTROLS_UNTAPPED = "[&_:is(button,a,input,[role=button],[role=combobox])]:pointer-events-none";
+
 /** A tap on a pill's row raises the sheet, but not one on a control in it. */
 export function tapOpens(event: MouseEvent, open: () => void) {
-  if (!(event.target instanceof Element) || !event.target.closest("button, a, input, [role=button]")) open();
+  if (!(event.target instanceof Element) || !event.target.closest(CONTROLS)) open();
 }
+
+/** The band all the way up: frosted only settled there, where the body
+ *  scrolls under it, and the sheet's solid ground while it moves -- a
+ *  finger on it (Base UI's data-swiping) and on till it has settled
+ *  (data-risen, SheetDrawer). Picked by the settled size alone, a slow
+ *  drag down from all the way up kept the frost, the backdrop-filter
+ *  Safari redraws under the card every frame of a slide, the stripes'
+ *  cause (the owner's list, 2026-11-18). */
+export const FULL_BAND = cn(
+  "frost-head",
+  "group-data-swiping/sheet:bg-(--sheet) group-data-swiping/sheet:[-webkit-backdrop-filter:none] group-data-swiping/sheet:[backdrop-filter:none]",
+  "group-data-risen/sheet:bg-(--sheet) group-data-risen/sheet:[-webkit-backdrop-filter:none] group-data-risen/sheet:[backdrop-filter:none]",
+);

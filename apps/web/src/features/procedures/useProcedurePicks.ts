@@ -4,18 +4,17 @@ import type { Address, SetAddress } from "../../lib/address";
 import type { ProcedureDrawing } from "../../lib/api/types";
 import { altitudesOf, altitudesParam } from "../../lib/identSchema";
 import { feel } from "../../lib/haptics";
-import { showError } from "../../lib/problems";
 import {
   approachRunway,
+  procedureTitle,
   proceduresOf,
   proceduresParam,
   sameField,
   transitionWords,
-  typedProcedure,
   type PickedProcedure,
   type TypedProcedure,
 } from "../../lib/procedures";
-import { procedureQuery, proceduresQuery, queryClient } from "../../lib/queryClient";
+import { procedureQuery } from "../../lib/queryClient";
 import type { TrafficPattern } from "../../lib/trafficPattern";
 import type { OpenFix } from "./FixCard";
 import type { ProcedureAirport, ProceduresAt } from "./ProceduresRoute";
@@ -72,31 +71,11 @@ export function useProcedurePicks({
     [setAddress],
   );
   // A SID or a STAR typed in the route box among its points ("KMSP BAEE1
-  // BAE ... OSHH2 KATW", as a clearance or a filed route is written):
-  // picked as its field's departure or arrival, by its transition where the
-  // point beside it is one, in place of that field's pick of the kind; one
-  // neither field publishes said in an alert, as a failed tap is.
+  // BAE ... OSHH2 KATW"), picked as its field's (typedPicks): asked for at
+  // the typing, on a chunk of its own, off the first load.
   const typeProcedures = useCallback(
-    async (typed: TypedProcedure[], route: { dep: string; dest: string }) => {
-      const list = (ident: string) => queryClient.fetchQuery(proceduresQuery(ident));
-      const found = await Promise.all(typed.map((t) => typedProcedure(t, route, list)));
-      // Onto the picks as the address has them once the lists are in.
-      const hits = found.flatMap((hit) => (hit ? [hit] : []));
-      const last = hits.at(-1)?.picked ?? null;
-      const withHits = (now: PickedProcedure[]) =>
-        hits.reduce((next, hit) => {
-          const kindOf = (id: string) => hit.list.procedures.find((p) => p.id === id)?.kind;
-          return [...next.filter((p) => !(sameField(p.ident, hit.picked.ident) && kindOf(p.id) === hit.kind)), hit.picked];
-        }, now);
-      if (last) pickProcedures(withHits, last);
-      const missed = typed.filter((_, i) => !found[i]).map((t) => t.name);
-      if (missed.length) {
-        showError(
-          `${missed.join(" and ")} ${missed.length > 1 ? "are" : "is"} not a departure from ${route.dep || "the departure"} or an arrival into ${route.dest || "the destination"}`,
-          "A SID is typed after the departure and a STAR before the destination, as in a filed route.",
-        );
-      }
-    },
+    async (typed: TypedProcedure[], route: { dep: string; dest: string }) =>
+      (await import("./typedPicks")).pickTyped(typed, route, pickProcedures),
     [pickProcedures],
   );
   // Theirs as the planner draws them (wingtip.procedures), for the route's
@@ -120,7 +99,10 @@ export function useProcedurePicks({
           id: d.id,
           runway: d.kind === "approach" ? approachRunway(d.name) : null,
           name: d.name,
-          label: `${d.name.replace(/ RWY /, " ")}${direct ? ` · direct ${direct}` : d.transition ? ` · ${d.transition}` : ""}`,
+          // Its transition after a dot, "RNAV (GPS) -B · OBK" (the owner,
+          // 2026-11-24: "No need for the word from, instead a dot is fine").
+          label: `${procedureTitle(d.name).replace(/ RWY /, " ")}${direct ? ` · direct ${direct}` : d.transition ? ` · ${d.transition}` : ""}`,
+          transition: d.transition ?? null,
           spoken: `${d.name}, ${direct ? `direct ${direct}` : transitionWords(d.kind, d.transition ?? null, true)}`,
           direct,
           fixes: d.fixes

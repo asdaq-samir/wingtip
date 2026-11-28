@@ -38,19 +38,21 @@ export interface TrafficMarkProps {
   alt_m: number;
 }
 
-/** How big the chevron is drawn, points (icons.ts TRAFFIC_MARK): 16, at
- *  the owner's ask ("Can traffic arrows be smaller?", 2026-10-28). */
-const MARK = 16;
+/** How big the chevron is drawn, points: 24, half as big again as the 16
+ *  the owner asked for on 2026-10-28 ("Can traffic arrows be smaller?"),
+ *  now "too small to see" (the owner, 2026-11-26). */
+const MARK = 24;
 /** The picture's box, points: room for the tracked ring (7 out from the
- *  chevron's box, 2.5 wide) and its shadow round the 16. */
-const BOX = 34;
+ *  chevron's box, 2.5 wide) and its shadow round the chevron. */
+const BOX = MARK + 18;
 /** The words' size and line, points (the map's smallest, map.label.kind.traffic;
  *  14 a line). */
 const TAG_SIZE = MAP_LABEL.kind.traffic.size;
 const TAG_LINE = 14;
-/** The tag's top under the airplane's middle, and how far its box is
- *  drawn inside MapLibre's line box, points. */
-const TAG_TOP = 22;
+/** The tag's top under the airplane's middle, 14 points under the
+ *  chevron's half, and how far its box is drawn inside MapLibre's line
+ *  box, points. */
+const TAG_TOP = MARK / 2 + 14;
 const TAG_INSET = 4;
 
 /** A target's picture's id: its colour, a chevron where it reports a
@@ -137,8 +139,8 @@ export function trafficLayers(ids: { marks: string; tags: string; trends: string
     },
   };
   // Its words under the chevron, the tracked one's under its ring: the
-  // tag's top 22 points under the middle, 28 when ringed, where the HTML
-  // tag stood (measured in WebKit, 2026-11-12). MapLibre's line box is a
+  // tag's top TAG_TOP under the middle, 6 more when ringed, as the HTML
+  // tag stood round the 16-point chevron (measured in WebKit, 2026-11-12). MapLibre's line box is a
   // few points taller than the page's 14, so the box is drawn 4 in.
   const tags: SymbolLayerSpecification = {
     id: ids.tags,

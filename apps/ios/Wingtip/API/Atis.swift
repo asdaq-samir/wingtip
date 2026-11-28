@@ -55,7 +55,7 @@ extension Atis {
         var rows: [(label: String, value: String)] = []
         if let information { rows.append(("Information", timeZ.map { "\(information) · \($0)" } ?? information)) } else if let timeZ { rows.append(("Observed", timeZ)) }
         if let wind { rows.append(("Wind", Self.windWords(wind))) }
-        if let visibilitySm { rows.append(("Visibility", Self.visibilityWords(visibilitySm))) }
+        if let words = visibilitySm.flatMap(Self.visibilityWords) { rows.append(("Visibility", words)) }
         if !sky.isEmpty { rows.append(("Sky", Self.skyWords(sky))) }
         if let tempC { rows.append(("Temperature", "\(tempC) °C" + (dewpointC.map { ", dew point \($0) °C" } ?? ""))) }
         if let altimeterInhg { rows.append(("Altimeter", "\(Format.number(altimeterInhg, decimals: 2)) inHg")) }
@@ -83,9 +83,11 @@ extension Atis {
     }
 
     /// "10 sm", "2½ sm", "¾ sm", "1 5/8 sm": to the reportable step at or
-    /// below (Format.reportedVisibility); an eighth was ".125 sm".
-    static func visibilityWords(_ sm: Double) -> String {
-        let (whole, fraction) = Format.reportedVisibility(sm)
+    /// below (Format.reportedVisibility); an eighth was ".125 sm". None
+    /// where the engine refused it (logged), rather than a figure guessed.
+    static func visibilityWords(_ sm: Double) -> String? {
+        guard let reported = try? Format.reportedVisibility(sm) else { return nil }
+        let (whole, fraction) = reported
         let glyph = ["1/4": "¼", "1/2": "½", "3/4": "¾"]
         let part = fraction.map { glyph[$0] ?? "\(whole > 0 ? " " : "")\($0)" } ?? ""
         return "\(whole > 0 || part.isEmpty ? String(whole) : "")\(part) sm"
@@ -104,7 +106,7 @@ extension Atis {
         let found = try? Engine.ceilingVisibility(layers: sky.map { .init(cover: metarCover[$0.cover] ?? $0.cover, baseFt: $0.baseFt.map(Double.init)) })
         let ceiling = found?.ceilingFt.flatMap { ft in sky.lastIndex { $0.baseFt.map(Double.init) == ft } }
         let layers = sky.enumerated().map { k, l in
-            let cover = l.cover.prefix(1).uppercased() + l.cover.dropFirst()
+            let cover = Format.capital(l.cover)
             let base = l.baseFt.map { " \(Format.altitude(Double($0)))" } ?? ""
             return cover + base + (k == ceiling ? " (ceiling)" : "")
         }

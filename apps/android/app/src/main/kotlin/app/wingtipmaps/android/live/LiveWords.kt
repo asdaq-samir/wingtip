@@ -54,7 +54,7 @@ object LiveWords {
         if (sky.isEmpty()) return Format.NONE
         val ceiling = if (ceilingFt == null) null else sky.lastOrNull { it.baseFt?.toDouble() == ceilingFt }
         return sky.joinToString(" · ") { l ->
-            val cover = l.cover.replaceFirstChar { it.uppercase() }
+            val cover = Format.capital(l.cover)
             val base = l.baseFt?.let { " " + Format.altitude(it.toDouble()) }.orEmpty()
             "$cover$base${if (l === ceiling) " (ceiling)" else ""}"
         }
@@ -100,7 +100,8 @@ object LiveWords {
             r.timeZ != null -> add(LiveRow("Observed", r.timeZ))
         }
         r.wind?.let { add(LiveRow("Wind", windWords(it, calm))) }
-        r.visibilitySm?.let { add(LiveRow("Visibility", Format.visibility(it))) }
+        // A broadcast's "less than" (M1/4SM, the engine's visibility_minus) said as such, never the figure alone.
+        r.visibilitySm?.let { Format.visibility(it, plus = false, minus = r.visibilityMinus) }?.let { add(LiveRow("Visibility", it)) }
         if (r.sky.isNotEmpty()) add(LiveRow("Sky", skyWords(r.sky, ceilingFt)))
         r.tempC?.let { t -> add(LiveRow("Temperature", Format.temperature(t.toDouble()) + (r.dewpointC?.let { ", dew point ${Format.temperature(it.toDouble())}" } ?: ""))) }
         r.altimeterInhg?.let { add(LiveRow("Altimeter", Format.altimeter(it))) }
@@ -111,7 +112,7 @@ object LiveWords {
 
     /** A broadcast's heading: "Arrival D-ATIS, information K". */
     fun atisTitle(which: String?, letter: String?): String {
-        val name = which?.let { "${it.replaceFirstChar { c -> c.uppercase() }} D-ATIS" } ?: "D-ATIS"
+        val name = which?.let { "${Format.capital(it)} D-ATIS" } ?: "D-ATIS"
         return name + (letter?.let { ", information $it" } ?: "")
     }
 
@@ -154,7 +155,7 @@ object LiveWords {
     fun programLine(p: FlowProgram): String? {
         val program = p.program
         if (p.restriction == true || program.isNullOrEmpty()) return null
-        val name = program.replaceFirstChar { it.uppercase() }
+        val name = Format.capital(program)
         val until = p.ends?.let { " until ${zulu(it)}" }.orEmpty()
         val delay = p.averageDelayMin?.let { ", delays average $it min" }.orEmpty()
         return "$name at ${p.airport}$until$delay"

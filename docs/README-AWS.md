@@ -14,7 +14,7 @@
 The app runs on one small server behind CloudFront. What is the same for
 every pilot is drawn ahead of time and served from the edge.
 
-**Status:** written and checked, not deployed. The template passes
+**Status:** written and checked, not deployed. Both templates pass
 `cfn-lint`, every image builds, and the server's files are checked in CI
 (the `infra` job); what remains is the owner's AWS account and domain,
 then `aws cloudformation deploy` ([The first deploy](#the-first-deploy),
@@ -96,10 +96,23 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
   reads on the server. The `TileRateLimit` web ACL (AWS WAF, on the
   distribution) answers 429 to an address past 3,000 requests to
   `/api/planner/chart-tile/` and `/api/planner/terrain-tile/` in five
-  minutes, ten a second held; a pilot's session is some 200 tiles, and
-  the rest of the site is not limited by it. WAF's CloudFront scope
-  exists only in us-east-1, where the stack is deployed. Its cost is in
+  minutes, ten a second held; a pilot's session is some 200 tiles. A
+  second rule in it does the same for every other `/api/planner/` path
+  (a plan, a nav log, the FAA's PDFs, the overlay tiles), counted apart
+  from the tiles (the round 4 security review's M4). The rest of the
+  site is not limited by it. WAF's CloudFront scope
+  exists only in us-east-1, so the web ACL is `edge.yaml`'s, the small
+  us-east-1 stack beside the main one (decision 0064). Its cost is in
   the table below; to raise or lower the limit, change its `Limit`.
+  **Off at launch** (`EdgeRateLimit`, default `off`; the owner,
+  2026-11-27, decision 0063): the web ACL is not made, so N5 and M4 are
+  open, and nothing limits an address's tile or planner requests. Turn
+  it on when the server's load or the tile requests show abuse
+  (RUNBOOKS.md, "The server under load"): `edge.yaml` deployed with
+  `EdgeRateLimit=on`, then the main stack with its `WebAclArn` output.
+  An AWS project account offers no WAF on CloudFront until its advanced
+  features are activated (AWS's
+  [Regions for your projects](https://docs.aws.amazon.com/accounts/latest/reference/project-regions.html)).
 - **Only CloudFront reaches the server.** The security group admits
   port 443 from CloudFront's origin-facing addresses alone, and Caddy
   answers 404 to any request without the secret header CloudFront adds
@@ -142,7 +155,10 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
   server (t4g) would save about $3 a month and need every image built
   for both architectures.
 
-Every resource is in [`infra/cloudformation/template.yaml`](../infra/cloudformation/template.yaml);
+Every resource is in [`infra/cloudformation/template.yaml`](../infra/cloudformation/template.yaml),
+deployed in any Region, but CloudFront's certificate and its web ACL,
+which AWS takes only from us-east-1, in
+[`infra/cloudformation/edge.yaml`](../infra/cloudformation/edge.yaml);
 the server's own files are in [`infra/server/`](../infra/server/) and
 [`infra/docker-compose.prod.yml`](../infra/docker-compose.prod.yml).
 
@@ -160,7 +176,8 @@ offers one.
 
 ## What it costs
 
-Prices in us-east-1, October 2026, at today's traffic:
+Prices in us-east-1, October 2026, at today's traffic (us-east-2's are
+the same for every line):
 
 | Item | A month |
 |---|---|
@@ -168,22 +185,25 @@ Prices in us-east-1, October 2026, at today's traffic:
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
 | S3 tiles: a few dozen archives a cycle (cents; they were 2.2 million tile uploads, about $11), and up to three cycles stored (some 36 GB a cycle with the @2x tiles) | ~$2.50 |
-| Secrets Manager, four secrets | $1.60 |
+| Secrets Manager, five secrets (the follow share key the fifth, 2026-11-23) | $2.00 |
 | Route 53 hosted zone | $0.50 |
 | Daily snapshots of the data disk, seven kept | ~$1 |
-| The health check (HTTPS, every 30 s), the server's logs in CloudWatch, and its eight alarms and seven figures (`health.sh`, the gateway's alerts; within CloudWatch's free ten of each) | ~$1.60 |
+| The health check (HTTPS, every 30 s; made only in a stack in us-east-1, about $1.50), the server's logs in CloudWatch, and its eight alarms and seven figures (`health.sh`, the gateway's alerts; within CloudWatch's free ten of each) | ~$1.60 |
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
-| AWS WAF, the tiles' rate rule (`TileRateLimit`): $5 the web ACL, $1 the rule, $0.60 a million requests it sees (every request to the distribution, about 0.3 million) | ~$6.20 |
+| AWS WAF, the planner's two rate rules (`TileRateLimit`), off at launch (`EdgeRateLimit=off`). On: $5 the web ACL, $1 each rule, $0.60 a million requests it sees (every request to the distribution, about 0.3 million), ~$7.20 | $0 |
 | SES | $0.10 per 1,000 sign-in emails |
-| **Total** | **about $41** |
+| **Total** | **about $35** (about $42 with `EdgeRateLimit=on`) |
 
 With `ServerPricing=on-demand`, for a server AWS never takes back, it
-is about $77, or about $51 with a one-year Savings Plan. The template's
+is about $71, or about $45 with a one-year Savings Plan. On an AWS
+project account (the new AWS experience, decision 0064), which denies
+Spot, the stack is on demand in us-east-2 without the health check:
+about $70. The template's
 default is a t3a.large (8 GB) since 2026-11-21 (the owner, on the
 prelaunch audit): the services take about 3.5 GB, which a t3a.medium's
 4 GB barely holds. `InstanceType=t3a.medium` (and `SpareInstanceType=t3.medium`)
-still deploys the smaller server, at about $33. On the large one each service is
+still deploys the smaller server, at about $26. On the large one each service is
 held to its share (infra/docker-compose.prod.yml): the planner 3 GB, the
 gateway 1.5 GB, Postgres 1 GB, weather 768 MB, ingest 384 MB, the shares
 the after-merge campaign's stress run is held to. The next
@@ -218,9 +238,9 @@ the launch size, and the template's default.
 | S3, three cycles of archives (~90 GB) | ~$2.10 | ~$2.10 | ~$2.10 |
 | CloudFront (data, requests) | $0 (8 GB, 0.3 M) | $0 (80 GB, 3 M) | ~$20 (800 GB free, 30 M requests) |
 | SES, Secrets Manager, Route 53, logs, ECR, the cycle's Fargate task | ~$5 | ~$5 | ~$9 |
-| AWS WAF, the tiles' rate rule ($6, and $0.60 a million requests) | ~$6.20 | ~$7.80 | ~$24 |
-| **Total, Spot (on demand)** | **~$41 ($77)** | **~$43 ($79)** | **~$107 ($177)** |
-| Per pilot | $0.41 | $0.043 | $0.011 |
+| AWS WAF, the planner's two rate rules, off at launch (with `EdgeRateLimit=on`: ~$7.20, ~$8.80, ~$25) | $0 | $0 | $0 |
+| **Total, Spot (on demand)** | **~$35 ($71)** | **~$35 ($71)** | **~$83 ($153)** |
+| Per pilot | $0.35 | $0.035 | $0.008 |
 
 The server is the cost until some 10,000 pilots; the CDN's bill is its
 requests, not its bytes, and the always-free terabyte holds about 12,000
@@ -300,31 +320,88 @@ What only the owner can do (issue #115):
 
 ### The stack
 
-The server's image is named, not looked up, so that a later stack update
-never replaces the server because Amazon published a newer one. Find the
-current one, then create the stack (us-east-1 only: CloudFront's
-certificate must be there):
+Two stacks (decision 0064). CloudFront takes its certificate, and its
+WAF web ACL, only from us-east-1, so those come first, from us-east-1;
+everything else is the main stack, in the account's own Region. An AWS
+project account (the new AWS experience) keeps its regional resources in
+one Region, us-east-2 for a US address, and in us-east-1 allows only
+ACM, CloudFront, Route 53, WAF, Budgets and a few more, not
+CloudFormation itself (AWS's
+[managed policies](https://docs.aws.amazon.com/accounts/latest/reference/scps-and-rcps-for-projects.html),
+`UsEast1Partitional`). The commands below use us-east-2; another
+Region works the same.
+
+**1. The certificate, in us-east-1.** On a project account, with the
+AWS CLI, which ACM and Route 53 allow there. The validation record stays
+in the zone, so ACM renews the certificate by itself:
 
 ```bash
-AMI=$(aws ssm get-parameter --region us-east-1 \
+CERT=$(aws acm request-certificate --region us-east-1 \
+  --domain-name app.example.com --validation-method DNS \
+  --query CertificateArn --output text)
+sleep 10   # ACM names the validation record a few seconds after the request
+read -r NAME VALUE <<< "$(aws acm describe-certificate --region us-east-1 \
+  --certificate-arn "$CERT" \
+  --query 'Certificate.DomainValidationOptions[0].ResourceRecord.[Name,Value]' --output text)"
+aws route53 change-resource-record-sets --hosted-zone-id Z0123456789ABC \
+  --change-batch "{\"Changes\":[{\"Action\":\"UPSERT\",\"ResourceRecordSet\":{\"Name\":\"$NAME\",\"Type\":\"CNAME\",\"TTL\":300,\"ResourceRecords\":[{\"Value\":\"$VALUE\"}]}}]}"
+aws acm wait certificate-validated --region us-east-1 --certificate-arn "$CERT"
+```
+
+On an account that may run CloudFormation in us-east-1 (an ordinary one,
+or a project account with its advanced features on), `edge.yaml` makes
+the certificate and, with `EdgeRateLimit=on`, the web ACL:
+
+```bash
+aws cloudformation deploy --region us-east-1 --stack-name wingtip-edge \
+  --template-file infra/cloudformation/edge.yaml \
+  --parameter-overrides PublicHost=app.example.com HostedZoneId=Z0123456789ABC
+
+CERT=$(aws cloudformation describe-stacks --region us-east-1 --stack-name wingtip-edge \
+  --query "Stacks[0].Outputs[?OutputKey=='CertificateArn'].OutputValue" --output text)
+```
+
+**2. The main stack, in us-east-2.** The server's image is named, not
+looked up, so that a later stack update never replaces the server
+because Amazon published a newer one. Find the current one in the
+stack's Region, then create the stack:
+
+```bash
+AMI=$(aws ssm get-parameter --region us-east-2 \
   --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
   --query Parameter.Value --output text)
 
-aws cloudformation deploy --region us-east-1 --stack-name wingtip \
+aws cloudformation deploy --region us-east-2 --stack-name wingtip \
   --template-file infra/cloudformation/template.yaml \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides \
     PublicHost=app.example.com HostedZoneId=Z0123456789ABC \
-    ServerImageId="$AMI" BudgetEmail=you@example.com
+    CertificateArn="$CERT" ServerImageId="$AMI" BudgetEmail=you@example.com \
+    ServerPricing=on-demand CreateGitHubOidcProvider=none
 
-aws cloudformation describe-stacks --region us-east-1 --stack-name wingtip \
+aws cloudformation describe-stacks --region us-east-2 --stack-name wingtip \
   --query 'Stacks[0].Outputs' --output table
 ```
 
-It takes about 20 minutes, most of it the certificate's DNS validation
-and CloudFront. Pass `CreateGitHubOidcProvider=false` if the account
-already trusts GitHub's OIDC provider. `MailDomain` sends sign-in mail
-from another domain than `PublicHost`.
+It takes about 20 minutes, most of it CloudFront. On a project account,
+`ServerPricing=on-demand` and `CreateGitHubOidcProvider=none` are
+needed: its policies deny Spot (`DenySpotMarketType`) and making an
+OIDC provider (`DenyIAMRestrictedActions`) until its advanced features
+are activated, so the stack makes no deploy role and the GitHub deploys
+(below) wait for those too, the images pushed and `deploy.sh` run by
+hand meanwhile. Drop both on an ordinary account
+(`CreateGitHubOidcProvider=false` there if it already trusts GitHub's
+OIDC provider). `MailDomain`
+sends sign-in mail from another domain than `PublicHost`;
+`CloudFrontPrefixListId` defaults to us-east-2's list of CloudFront's
+addresses (its description gives the command for another Region's).
+`WebAclArn` takes `edge.yaml`'s output when the rate limit is on.
+
+Route 53's health check and ACM's expiry warning report to us-east-1
+alone, so a stack elsewhere has neither (`UsEast1Alerts`): there
+`ChecksMissingAlarm` and `ServicesAlarm` see the server, not the path
+through CloudFront, and AWS Health's own mail to the account warns of a
+certificate that cannot renew.
 
 The outputs name everything the steps below need.
 
@@ -335,7 +412,7 @@ its settings, but has no images to run until the first push to ECR.
 
 1. In GitHub, Settings → Secrets and variables → Actions → Variables,
    add `AWS_ROLE_ARN` (the `DeployRoleArn` output), `AWS_REGION`
-   (`us-east-1`) and `AWS_SERVER_NAME` (the `ServerName` output).
+   (the stack's Region, `us-east-2`) and `AWS_SERVER_NAME` (the `ServerName` output).
 2. In GitHub, Settings → Environments, create `production` and under
    "Deployment branches and tags" choose "Selected branches and tags"
    with `main` alone. The deploy role trusts only a job in this
@@ -349,7 +426,7 @@ its settings, but has no images to run until the first push to ECR.
    [`infra/server/env.example`](../infra/server/env.example) lists them:
 
    ```bash
-   aws secretsmanager put-secret-value --region us-east-1 \
+   aws secretsmanager put-secret-value --region us-east-2 \
      --secret-id <AppSecretArn> --secret-string file://app-secret.json
    rm app-secret.json
    ```
@@ -361,7 +438,7 @@ its settings, but has no images to run until the first push to ECR.
    (`deploy`). To deploy without waiting for one:
 
    ```bash
-   aws ssm send-command --region us-east-1 --targets Key=tag:Name,Values=<ServerName> \
+   aws ssm send-command --region us-east-2 --targets Key=tag:Name,Values=<ServerName> \
      --document-name AWS-RunShellScript \
      --parameters 'commands=["/srv/wingtip/repo/infra/server/deploy.sh"]'
    ```
@@ -433,10 +510,10 @@ keeps the last 20 images of each service.
 ### On the server
 
 ```bash
-SERVER=$(aws ec2 describe-instances --region us-east-1 \
+SERVER=$(aws ec2 describe-instances --region us-east-2 \
   --filters Name=tag:Name,Values=<ServerName> Name=instance-state-name,Values=running \
   --query 'Reservations[0].Instances[0].InstanceId' --output text)
-aws ssm start-session --region us-east-1 --target "$SERVER"
+aws ssm start-session --region us-east-2 --target "$SERVER"
 sudo -i
 cd /srv/wingtip/repo
 docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml ps
@@ -450,11 +527,13 @@ with ingest and weather,
 
 ### When something goes wrong
 
-- **The app down:** Route 53 asks `https://<domain>/actuator/health`
-  every 30 seconds from round the world, through CloudFront, and three
-  minutes without an answer emails `BudgetEmail` (confirm the SNS
-  subscription mail once); another follows when it is back. A Spot
-  interruption's few minutes may send one pair.
+- **The app down:** in a stack in us-east-1, Route 53 asks
+  `https://<domain>/actuator/health` every 30 seconds from round the
+  world, through CloudFront, and three minutes without an answer emails
+  `BudgetEmail` (confirm the SNS subscription mail once); another
+  follows when it is back. A Spot interruption's few minutes may send
+  one pair. Elsewhere (us-east-2) the server's own checks below are the
+  alarm.
 - **A failed backup** emails the same address (`backup.sh`), and so does
   a night with no backup at all (`BackupLateAlarm`).
 - **The server's own checks** (`infra/server/health.sh`, every five
@@ -463,8 +542,9 @@ with ingest and weather,
   restart policy never does), the origin certificate's days left and the
   last backup's age; the stack's alarms on them email the same address,
   as do the chart refresh task stopping without finishing, ACM's
-  certificate warnings and every `ALERT` line of the gateway's monitor
-  (counted from its log, so they arrive when SES is what has failed).
+  certificate warnings (a stack in us-east-1) and every `ALERT` line of
+  the gateway's monitor (counted from its log, so they arrive when SES
+  is what has failed).
   [RUNBOOKS.md](RUNBOOKS.md) has each alert and what to do.
 - **The logs:** every service's, in CloudWatch under `/<stack>/server`,
   a stream per container, kept a month, one JSON object a line with the
@@ -473,7 +553,7 @@ with ingest and weather,
   ([RUNBOOKS.md](RUNBOOKS.md), "Reading the logs"):
 
   ```bash
-  aws logs tail /wingtip/server --region us-east-1 --follow --log-stream-name-prefix wingtip-gateway
+  aws logs tail /wingtip/server --region us-east-2 --follow --log-stream-name-prefix wingtip-gateway
   ```
 
 - **Faults on pilots' devices** (the web's uncaught errors, the iPhone's
@@ -570,9 +650,12 @@ stack's `DataVolume`), or from the nightly dump as above.
 ### Teardown
 
 ```bash
-aws cloudformation delete-stack --region us-east-1 --stack-name wingtip
+aws cloudformation delete-stack --region us-east-2 --stack-name wingtip
+aws cloudformation delete-stack --region us-east-1 --stack-name wingtip-edge   # or, made by the CLI:
+aws acm delete-certificate --region us-east-1 --certificate-arn "$CERT"        # and its CNAME in the zone
 ```
 
+The main stack first: CloudFront holds the certificate until it is gone.
 Empty the tiles bucket first (or the delete fails on it). The server
 bucket, with the backups, is kept on purpose, and the data disk leaves
 a final snapshot: delete them by hand when they are no longer wanted.

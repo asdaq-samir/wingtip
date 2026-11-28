@@ -79,7 +79,9 @@ struct LogbookReviewView: View {
     }
 
     private func log() async {
-        let done = await model.logConfirmed { try await Gateway.addLogbookEntry($0) }
+        // The logbook's airplanes, for each row's category, class and gear.
+        let entries = try? await Gateway.logbook()
+        let done = await model.logConfirmed(entries: entries) { try await Gateway.addLogbookEntry($0) }
         await onLogged()
         if done {
             model.close()

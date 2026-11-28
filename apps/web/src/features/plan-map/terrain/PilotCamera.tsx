@@ -46,8 +46,7 @@ export default function PilotCamera() {
       shownAt: number | null = null,
       tintFt: number | null = null;
     // Moved in the frame after the run's clock moves, not in a loop of
-    // every frame that found nothing new while the run was paused (the
-    // waste audit of 2026-11-21, item 15).
+    // every frame that found nothing new while the run was paused.
     const step = () => {
       frame = 0;
       const { at, points } = usePastFlight.getState();
@@ -55,9 +54,11 @@ export default function PilotCamera() {
       const here = positionAt(points, at);
       if (!here) return;
       shownAt = at;
-      const altFt = here.alt_ft ?? 0;
+      // No height is on the ground (lib/replay/replayed carries an
+      // airborne report's last good one): over it, never at 0 ft.
       const ground = map.queryTerrainElevation([here.lon, here.lat]) ?? 0;
-      const altM = Math.max(altFt * M_PER_FT, ground + OVER_GROUND_M);
+      const altM = here.alt_ft == null ? ground + OVER_GROUND_M : Math.max(here.alt_ft * M_PER_FT, ground + OVER_GROUND_M);
+      const altFt = altM / M_PER_FT;
       map.jumpTo(
         map.calculateCameraOptionsFromCameraLngLatAltRotation([here.lon, here.lat], altM, here.track_deg ?? map.getBearing(), PILOT_PITCH),
       );

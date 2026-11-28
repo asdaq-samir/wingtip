@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { usePreferences, type Brand } from "./preferences";
+import { useSunlightOn } from "./sunlight";
 
 const INK: Brand = "ink";
 
@@ -12,7 +13,7 @@ const INK: Brand = "ink";
  *  out of the box, shadcn's own theme, corners, type and states (2026-11-10:
  *  "Native means how they come out of the box, look and behavior wise").
  *  Their colours are tokens on <html data-brand> (design/tokens.json's
- *  color.look); their typefaces load here. */
+ *  color.look); their typefaces load here (followKeptBrand). */
 export const BRANDS: { value: Brand; label: string }[] = [
   { value: "wingtip", label: "Wingtip" },
   { value: "cockpit", label: "Glass Cockpit" },
@@ -41,18 +42,32 @@ export function useInkLook(): boolean {
   return usePreferences((s) => s.brand) === INK;
 }
 
-/** Puts the pilot's look on <html> (data-brand), and its typeface in,
- *  and the browser's bar in the page's own ground (followThemeColor). */
-export function BrandLook() {
-  const brand = usePreferences((s) => s.brand);
-  const theme = useTheme().resolvedTheme;
-  useEffect(() => {
+/** The one writer of the pilot's look on <html> (data-brand) and of its
+ *  typeface, started by main.tsx before React draws and following every
+ *  change of the look from then on. The first frame is already in the kept
+ *  look, put there by first-frame.js (lib/prefs/firstFrame) before the body paints (else Chart ink and Glass Cockpit flashed Wingtip's blue on every load); this starts Chart ink's Barlow Condensed at once,
+ *  not after the first render's effects. Returns the unsubscribe. */
+export function followKeptBrand(): () => void {
+  const apply = (brand: Brand) => {
     document.documentElement.dataset.brand = brand;
     void FONTS[brand]?.()?.catch(() => {
       /* the system's face meanwhile */
     });
-  }, [brand]);
-  useEffect(() => followThemeColor(), [brand, theme]);
+  };
+  apply(usePreferences.getState().brand);
+  return usePreferences.subscribe((s, before) => {
+    if (s.brand !== before.brand) apply(s.brand);
+  });
+}
+
+/** The browser's bar in the page's own ground (followThemeColor), as the
+ *  look, the theme or sunlight change it. */
+export function BrandLook() {
+  const brand = usePreferences((s) => s.brand);
+  const theme = useTheme().resolvedTheme;
+  // Sunlight changes the page's ground by day (white), so the bar follows it too.
+  const sunlight = useSunlightOn();
+  useEffect(() => followThemeColor(), [brand, theme, sunlight]);
   return null;
 }
 

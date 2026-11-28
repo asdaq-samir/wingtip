@@ -164,8 +164,8 @@ final nonisolated class OfflineStore: Sendable {
     /// The newest kept cycle later than `cycle` that has taken over by
     /// `now`, nil where none has: the phone offline across a changeover,
     /// its chart answer still the old cycle's, draws the next cycle where
-    /// a region of it is kept, from 0901Z on its date (the data-cycles
-    /// audit's 14, the owner's word 2026-11-21). Past the region the old
+    /// a region of it is kept, from 0901Z on its date (the owner's word 2026-11-21).
+    /// Past the region the old
     /// chart stays, and Ready to Fly says it is out of date.
     func keptInForce(after cycle: String, now: Date = .now) -> String? {
         let later = Set(all().map(\.cycle).filter { $0.reversedDate > cycle.reversedDate }).sorted { $0.reversedDate > $1.reversedDate }

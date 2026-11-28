@@ -70,6 +70,24 @@ import Testing
         }
     }
 
+    /// An arrival's day where it is not the day the flight left, counted in
+    /// each end's own zone (the web's time.test.ts arrivalDay cases).
+    @Test func anArrivalSaysItsDayOnlyWhereItIsNotTheDepartures() throws {
+        let chicago = try #require(TimeZone(identifier: "America/Chicago"))
+        let denver = try #require(TimeZone(identifier: "America/Denver"))
+        let iso = ISO8601DateFormatter()
+        func at(_ s: String) throws -> Date { try #require(iso.date(from: s)) }
+        // 14:27 CST on Monday 23 November 2026.
+        let left = try at("2026-11-23T20:27:00Z")
+        #expect(Format.arrivalDay(try at("2026-11-24T05:59:00Z"), left: left, zone: chicago, leftZone: chicago) == nil)
+        #expect(Format.arrivalDay(left.addingTimeInterval(1527 * 60), left: left, zone: chicago, leftZone: chicago) == "Tue")
+        // Chicago's midnight, 06:00Z, turns the day, not UTC's.
+        #expect(Format.arrivalDay(try at("2026-11-24T06:01:00Z"), left: left, zone: chicago, leftZone: chicago) == "Tue")
+        // 23:30 MST on the Monday is still Monday where it lands.
+        #expect(Format.arrivalDay(try at("2026-11-24T06:30:00Z"), left: left, zone: denver, leftZone: chicago) == nil)
+        #expect(Format.arrivalDay(try at("2026-11-30T20:00:00Z"), left: left, zone: chicago, leftZone: chicago) == "11/30")
+    }
+
     /// The forms the audit found written other ways on the iPhone.
     @Test func theAuditsFiguresAreTheTablesForms() {
         #expect(Format.cruiseAltitude(2500) == "FL-025")
@@ -102,5 +120,25 @@ import Testing
         #expect(Format.words(-0.02, decimals: 1) == "zero")
         #expect(Format.words(3.25, decimals: 2) == "three point two five")
         #expect(Format.spokenAltitude(1) == "one foot")
+    }
+
+    /// A visibility as a report writes it, the engine's FMH-1 Table 6-1
+    /// value at or below it: no report writes 11/16, nor rounds up.
+    @Test func aVisibilityIsTheReportableOneBelowIt() throws {
+        let (whole, fraction) = try Format.reportedVisibility(0.7456)
+        #expect(whole == 0 && fraction == "5/8")
+        let mile = try Format.reportedVisibility(1.625), four = try Format.reportedVisibility(4.97)
+        #expect(mile.whole == 1 && mile.fraction == "5/8")
+        #expect(four.whole == 4 && four.fraction == nil)
+    }
+
+    /// A report's "less than" (M1/4SM, FMH-1 chapter 6) said as such, in
+    /// the report's own fraction, never the figure alone (round 7's N13).
+    @Test func aLessThanVisibilityIsSaidSo() {
+        #expect(AirportWords.miles(0.25, plus: false, minus: true) == "less than 1/4 sm")
+        #expect(AirportWords.miles(1.5, plus: nil, minus: true) == "less than 1 1/2 sm")
+        #expect(AirportWords.miles(0.25, plus: false) == "0.25 sm")
+        #expect(AirportWords.miles(10, plus: true, minus: false) == "10+ sm")
+        #expect(AirportWords.miles(nil, plus: nil, minus: true) == nil)
     }
 }

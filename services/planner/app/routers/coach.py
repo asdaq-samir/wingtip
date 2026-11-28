@@ -34,10 +34,11 @@ def coach_plan(ask: CoachAsk) -> ProficiencyPlan:
     WINGS flight activity (AC 61-91K 7.3)."""
     given = {
         "today": ask.today.isoformat(),
-        "entries": [e.model_dump(mode="json") for e in ask.entries],
+        "entries": [e.model_dump(mode="json", by_alias=True) for e in ask.entries],
         "flight_review_on": ask.flightReviewOn.isoformat() if ask.flightReviewOn else None,
         "medical_expires_on": ask.medicalExpiresOn.isoformat() if ask.medicalExpiresOn else None,
         "ipc_on": ask.ipcOn.isoformat() if ask.ipcOn else None,
+        "flying": ask.flying.model_dump(by_alias=True) if ask.flying else None,
         "ratings": ask.ratings,
         "held": [h.model_dump(mode="json") for h in ask.held],
         "debriefs": [d.model_dump(mode="json", by_alias=True) for d in ask.debriefs],

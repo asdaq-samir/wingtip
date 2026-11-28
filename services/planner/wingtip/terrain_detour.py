@@ -21,9 +21,11 @@ is, its floor read along each leg at full resolution (wingtip.terrain).
 
 from __future__ import annotations
 
+import json
 import threading
 
 import numpy as np
+import wingtip_native
 from cachetools import FIFOCache
 
 from . import elevation, fixes, fuelstops, geo, geo_boxes
@@ -47,6 +49,16 @@ def heights_ft(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
         row = np.minimum(size - 1, ((fy[at] - y) * size).astype(int))
         out[at] = tile[row, col]
     return np.maximum(out, 0.0) * M_TO_FT
+
+
+def ask_with_terrain(name: str, terrain_ft: np.ndarray, **given):
+    """The engine's rule `name` (engine.ask) with its "terrain_ft" handed
+    over as a buffer of the heights rounded to the foot, not as JSON
+    (wingtip_native.call_numbers): 100,000 to 200,000 heights a frame,
+    which json.dumps and the engine's parse took tens of milliseconds over.
+    The rule reads the same numbers either way."""
+    heights = np.ascontiguousarray(np.rint(terrain_ft), dtype=np.float64).ravel()
+    return json.loads(wingtip_native.call_numbers(name, json.dumps(given), "terrain_ft", heights))
 
 
 def way_round(start: tuple, end: tuple, ceiling_ft: float, fields=None) -> list[dict] | None:
@@ -91,12 +103,12 @@ def _way_round(start: tuple, end: tuple, ceiling_ft: float, fields=None) -> list
     heights = heights_ft(*np.meshgrid(lats, lons, indexing="ij"))
     table = fields if fields is not None else fuelstops.fields_with_fuel()
     near = table[geo_boxes.in_box(frame["data_box"], table["lat"].to_numpy(dtype=float), table["lon"].to_numpy(dtype=float))]
-    stones = engine(
+    stones = ask_with_terrain(
         "terrain_way_round",
+        heights,
         start=list(start),
         end=list(end),
         ceiling_ft=ceiling_ft,
-        terrain_ft=np.rint(heights).astype(int).ravel().tolist(),
         fields=[
             {"ident": str(r["ident"]), "name": str(r["name"]), "lat": float(r["lat"]), "lon": float(r["lon"])}
             for r in near.to_dict("records")

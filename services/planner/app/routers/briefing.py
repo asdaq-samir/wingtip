@@ -177,4 +177,4 @@ def icing_on_the_route(fixes: str, alt_ft: str, leg_min: str, ground_min: str = 
     except ValueError as err:
         raise HTTPException(422, str(err)) from err
     except icing_forecast.IcingForecastUnavailable as err:
-        raise HTTPException(502, "aviationweather.gov did not answer, so the forecast icing could not be checked.") from err
+        raise HTTPException(502, "No icing forecast has come in, so the icing on the route could not be checked.") from err

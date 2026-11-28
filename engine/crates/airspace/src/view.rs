@@ -76,9 +76,8 @@ pub fn tolerance_for(south: f64, north: f64) -> f64 {
     MIN_TOLERANCE_DEG.max((north - south) * TOLERANCE_PER_BOX)
 }
 
-/// wingtip.fixes' VOR_KINDS and NAVAID_KINDS, the likelier to fly to first.
-const VOR_KINDS: &[&str] = &["VORTAC", "VOR/DME", "VOR"];
-const NAVAID_KINDS: &[&str] = &["VORTAC", "VOR/DME", "VOR", "DME", "TACAN", "NDB/DME", "NDB"];
+// The VORs and every navaid kind, the likelier to fly to first.
+pub(crate) use crate::navaid_kinds::{NAVAID_KINDS, VOR_KINDS};
 /// wingtip.fixes' SAME_FACILITY_NM: two navaids by one ident this close are
 /// one facility filed twice.
 const SAME_FACILITY_NM: f64 = 1.0;

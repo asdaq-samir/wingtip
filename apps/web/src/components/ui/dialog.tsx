@@ -55,7 +55,7 @@ function DialogContent({
   ...props
 }: DialogPrimitive.Popup.Props & {
   /** Liquid Glass with an iOS alert's round corners, over a light dim,
-   *  at the owner's pick of the sheets audit (D3, 2026-10-17); false for
+   *  at the owner's pick (2026-10-17); false for
    *  what fills the screen (an airport's diagram), opaque and square. */
   glass?: boolean;
 }) {

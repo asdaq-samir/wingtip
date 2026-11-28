@@ -118,6 +118,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -293,6 +294,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -390,22 +392,15 @@
       "readOnlyHint": true,
       "title": "Airplane performance"
     },
-    "description": "The pilot's own airplane at a field: its weight and balance at takeoff and landing against its POH's limits and envelope (14 CFR 91.9), and its short-field takeoff and landing distances on the runway the wind favours, from the field's pressure and density altitude and reported wind, against the runway's length (91.103(b)). Needs one of the pilot's airplanes (my_airplanes); says which figures are missing.",
+    "description": "The pilot's own airplane at a field: its weight and balance at takeoff and landing against its POH's limits and envelope (14 CFR 91.9), and its short-field takeoff and landing distances on the runway the wind favours, from the field's pressure and density altitude and reported wind, against the runway's length (91.103(b)). Needs one of the pilot's airplanes (my_airplanes); says which figures are missing. A field NASR lists as closed is labelled Closed.",
     "inputSchema": {
       "properties": {
         "airplane_tail": {
-          "anyOf": [
-            {
-              "maxLength": 8,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The pilot's airplane by tail number.",
-          "title": "Airplane Tail"
+          "description": "The pilot's airplane by tail number (my_airplanes lists them).",
+          "maxLength": 8,
+          "minLength": 2,
+          "title": "Airplane Tail",
+          "type": "string"
         },
         "airport": {
           "description": "An airport's identifier: KDLH, DLH, C81.",
@@ -492,7 +487,8 @@
         }
       },
       "required": [
-        "airport"
+        "airport",
+        "airplane_tail"
       ],
       "title": "airplane_performanceArguments",
       "type": "object"
@@ -829,6 +825,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -1000,7 +997,7 @@
       "readOnlyHint": true,
       "title": "Flight briefing"
     },
-    "description": "The Go / No-Go briefing for a planned flight, as Wingtip's Brief gives it: the line over the findings and each finding -- weather at the fields and along the route, TFRs and special-use airspace, the altitude, fuel, runways, weight and balance -- in words, and the risk assessment's score, level and factors.",
+    "description": "The Go / No-Go briefing for a planned flight, as Wingtip's Brief gives it: the line over the findings and each finding -- weather at the fields and along the route, TFRs and special-use airspace, the altitude, fuel, runways, weight and balance -- in words, and the risk assessment's score, level and factors, with the airplane's inspections, VOR check and open squawks. Weight and balance is the pilot's own load: give stations_lb (and fuel_gal), else it is said not worked.",
     "inputSchema": {
       "properties": {
         "airplane_tail": {
@@ -1059,15 +1056,47 @@
           "title": "Destination",
           "type": "string"
         },
+        "fuel_gal": {
+          "anyOf": [
+            {
+              "maximum": 2000,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fuel at engine start, gal; full usable when omitted.",
+          "title": "Fuel Gal"
+        },
         "rules": {
           "default": "vfr",
-          "description": "VFR or IFR.",
+          "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
           "enum": [
             "vfr",
             "ifr"
           ],
           "title": "Rules",
           "type": "string"
+        },
+        "stations_lb": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 12,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pounds at each loading station, in the POH's order (airplane_performance names them).",
+          "title": "Stations Lb"
         },
         "stops": {
           "default": [],
@@ -1214,6 +1243,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -1384,9 +1414,33 @@
       "readOnlyHint": true,
       "title": "Nearest airports"
     },
-    "description": "The landing fields nearest a position or an airport, nearest first: distance (nm) and true bearing, longest open runway, a frequency to call inbound, flight category where it reports, and the class of airspace at the surface. Filter by runway length, towered fields, or public-use fields.",
+    "description": "The landing fields nearest a position or an airport, nearest first: distance (nm) and true bearing, longest open runway, a frequency to call inbound, flight category where it reports, and the class of airspace at the surface, the fuels sold and whether it has an instrument approach. Filter by runway length, fuel, an instrument approach, towered fields, or public-use fields. Only the nearest 25 are searched: `searched_nm` says how far that reached.",
     "inputSchema": {
       "properties": {
+        "fuel": {
+          "anyOf": [
+            {
+              "enum": [
+                "100LL",
+                "Jet A",
+                "UL94"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Only fields that sell this fuel: 100LL, Jet A, UL94.",
+          "title": "Fuel"
+        },
+        "instrument_approach_only": {
+          "default": false,
+          "description": "Only fields with an instrument approach (CIFP).",
+          "title": "Instrument Approach Only",
+          "type": "boolean"
+        },
         "lat": {
           "anyOf": [
             {
@@ -1498,7 +1552,7 @@
       "readOnlyHint": true,
       "title": "Open a saved flight"
     },
-    "description": "Opens one of the pilot's saved flights in Wingtip's live view, to read or change it: its route, altitude, procedures, airplane and time, as the flight the edit tools take.",
+    "description": "Opens one of the pilot's saved flights in Wingtip's live view, to read or change it: its route, altitude, procedures, fuel stops, fuel on board, VFR or IFR, airplane and time, as the flight the edit tools take.",
     "inputSchema": {
       "properties": {
         "flight_id": {
@@ -1636,6 +1690,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -1724,7 +1779,7 @@
       "readOnlyHint": true,
       "title": "Plan a route"
     },
-    "description": "Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, wind, ground speed, time and fuel, the totals with the reserve and the fuel margin, and the cautions. Times and fuel need one of the pilot's airplanes by tail number. Answers the nav log as data; show_flight plans the same route in Wingtip's live view, where the edit tools change it.",
+    "description": "Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, wind, ground speed, time and fuel, the totals with the reserve and the fuel margin (each flight's in hops where it lands on the way), and the cautions. Times and fuel need one of the pilot's airplanes by tail number. Answers the nav log as data; show_flight plans the same route in Wingtip's live view, where the edit tools change it.",
     "inputSchema": {
       "properties": {
         "airplane_tail": {
@@ -1785,7 +1840,7 @@
         },
         "rules": {
           "default": "vfr",
-          "description": "VFR or IFR.",
+          "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
           "enum": [
             "vfr",
             "ifr"
@@ -1938,6 +1993,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -2113,6 +2169,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -2271,7 +2328,7 @@
         },
         "rules": {
           "default": "vfr",
-          "description": "VFR or IFR.",
+          "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
           "enum": [
             "vfr",
             "ifr"
@@ -2399,7 +2456,7 @@
         },
         "rules": {
           "default": "vfr",
-          "description": "VFR or IFR.",
+          "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
           "enum": [
             "vfr",
             "ifr"
@@ -2452,7 +2509,7 @@
       "readOnlyHint": false,
       "title": "Save flight to Wingtip"
     },
-    "description": "Saves a route, given by its airports, altitude, airplane and time, to the signed-in pilot's Wingtip account, so it is in the app's Flights to open, brief and fly. It plans the route first, as plan_route does, and saves that plan. Adds a new flight; changes nothing already saved. A flight shown or changed with show_flight and the edit tools (its fuel stops, approaches, fuel on board) is saved whole by save_flight_plan instead.",
+    "description": "Saves a route, given by its airports, altitude, airplane and time, to the signed-in pilot's Wingtip account, so it is in the app's Flights to open, brief and fly. It plans the route first, as plan_route does, and saves that plan with its altitude, VFR or IFR and time. Adds a new flight; changes nothing already saved. A flight shown or changed with show_flight and the edit tools is saved by save_flight_plan instead, which keeps its procedures, fuel stops and fuel on board too.",
     "inputSchema": {
       "properties": {
         "airplane_tail": {
@@ -2513,7 +2570,7 @@
         },
         "rules": {
           "default": "vfr",
-          "description": "VFR or IFR.",
+          "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
           "enum": [
             "vfr",
             "ifr"
@@ -2667,6 +2724,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -2755,6 +2813,7 @@
         "offset": {
           "default": 0,
           "description": "How many to skip, for the next page: the last answer's next_offset.",
+          "maximum": 500,
           "minimum": 0,
           "title": "Offset",
           "type": "integer"
@@ -2900,6 +2959,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -3090,6 +3150,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -3279,6 +3340,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -3476,6 +3538,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -3550,7 +3613,7 @@
       "readOnlyHint": true,
       "title": "Sun and night"
     },
-    "description": "Sunrise, sunset and civil twilight at an airport or a place on a date (UTC times), and when night begins and ends from that evening by each rule that reads it: 14 CFR 1.1's night (civil twilight; the VFR night reserve), 61.57(b)'s period an hour after sunset to an hour before sunrise (night currency and passengers) and 91.209(a)'s position lights from sunset. Where the sun does not set or rise, says so.",
+    "description": "Sunrise, sunset and civil twilight at an airport or a place on its local date (each time in UTC and in the place's own time zone), and when night begins and ends from that evening by each rule that reads it: 14 CFR 1.1's night (civil twilight; the VFR night reserve), 61.57(b)'s period an hour after sunset to an hour before sunrise (night currency and passengers) and 91.209(a)'s position lights from sunset. Where the sun does not set or rise, says so.",
     "inputSchema": {
       "properties": {
         "airport": {
@@ -3608,7 +3671,7 @@
             }
           ],
           "default": null,
-          "description": "The local date, yyyy-mm-dd; today (UTC) when omitted.",
+          "description": "The place's local date, yyyy-mm-dd; its own today (tonight's night) when omitted.",
           "title": "On"
         }
       },
@@ -3648,7 +3711,7 @@
       "readOnlyHint": false,
       "title": "Replace a saved flight"
     },
-    "description": "Replaces the saved flight this flight came from (its saved_flight_id) with the flight as now planned: its route, altitude, procedures, airplane, time and nav log. Its name, notes and share link are kept, so whoever holds the link sees the new plan. A plan between other airports than the saved flight's is refused unless replace_route is true, which is for when the pilot has said to put this route over that flight.",
+    "description": "Replaces the saved flight this flight came from (its saved_flight_id) with the flight as now planned: its route, altitude, procedures, fuel stops, fuel on board, VFR or IFR, airplane, time and nav log. Its name, notes and share link are kept, so whoever holds the link sees the new plan. A plan between other airports than the saved flight's is refused unless replace_route is true, which is for when the pilot has said to put this route over that flight.",
     "inputSchema": {
       "$defs": {
         "Flight": {
@@ -3746,6 +3809,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -3931,6 +3995,7 @@
             },
             "rules": {
               "default": "vfr",
+              "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
               "enum": [
                 "vfr",
                 "ifr"
@@ -4005,7 +4070,7 @@
       "readOnlyHint": true,
       "title": "Winds aloft"
     },
-    "description": "The wind and temperature aloft, from the forecast Wingtip's nav log flies, with its valid time: at a place (an airport, or lat and lon) and altitude, or along a route at its cruise (give departure and destination instead), each leg at the time the airplane flies it. Not observed winds.",
+    "description": "The wind and temperature aloft, from the forecast Wingtip's nav log flies, with its valid time: at a place (an airport, or lat and lon) and altitude, or along a route at its cruise (give departure and destination instead, and rules: an IFR cruise is not a VFR one), each leg at the time the airplane flies it. Not observed winds.",
     "inputSchema": {
       "properties": {
         "airplane_tail": {
@@ -4047,7 +4112,7 @@
             }
           ],
           "default": null,
-          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "description": "Feet MSL. Needed at a place; along a route, the cruise (the legal fastest when omitted).",
           "title": "Altitude Ft"
         },
         "at_time": {
@@ -4121,6 +4186,16 @@
           "default": null,
           "description": "And longitude, degrees east (west negative).",
           "title": "Lon"
+        },
+        "rules": {
+          "default": "vfr",
+          "description": "VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167).",
+          "enum": [
+            "vfr",
+            "ifr"
+          ],
+          "title": "Rules",
+          "type": "string"
         },
         "stops": {
           "default": [],

@@ -15,10 +15,10 @@ import { TEXT } from "../../lib/text";
  *  that can be easily accessed"). */
 const ROWS = [
   // In the search field's accessible name (searchPlaceholder: "Search airports and airplanes"; its
-  // visible word is "Search" since 2026-11-20), so the welcome promises what the field finds (UI audit C17).
+  // visible word is "Search" since 2026-11-20), so the welcome promises what the field finds.
   { icon: Search, title: "Search, Like Maps", line: "Search airports and airplanes the way you would in Apple or Google Maps." },
   // FPL's own mark: the page toggle (PageToggle) now says the word FPL at the search's start
-  // (the owner, 2026-11-20), where it was a round route glyph (the web audit's WEB-42).
+  // (the owner, 2026-11-20), where it was a round route glyph.
   {
     icon: Route,
     title: "FPL, Like Your EFB",

@@ -90,8 +90,7 @@ export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
   // A procedure's miles (a pattern, a departure, an approach) are flown
   // at the leg's ground speed and burn, and in its time and fuel
   // (LegProcedure's more_*): said as their own, not as climb, which they
-  // were taken for -- "Climb, added 2 min" on a leg with none to climb
-  // (the FPL audit's A4).
+  // were taken for -- "Climb, added 2 min" on a leg with none to climb.
   const p = leg.procedure;
   const procedure = p && p.more_nm > 0.05 ? { nm: p.more_nm, min: p.more_min ?? 0, gal: p.more_gal ?? 0 } : null;
   const climbMin = leg.ete_min - ete - (procedure?.min ?? 0);

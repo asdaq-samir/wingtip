@@ -29,7 +29,7 @@ object AiSources {
             listOfNotNull(
                 it.flightCategory,
                 it.windDirTrueDeg?.let { d -> "wind ${Format.heading(d)} true at ${Format.speed(it.windSpeedKt)}" + (it.windGustKt?.let { g -> ", gusts ${Format.speed(g)}" } ?: "") },
-                it.visibilitySm?.let { v -> "visibility ${Format.visibility(v)}" },
+                it.visibilitySm?.let(Format::visibility)?.let { v -> "visibility $v" },
                 it.ceilingFt?.let { c -> "ceiling ${Format.altitude(c)} above the field" },
                 it.tempC?.let { t -> "temperature ${Format.temperature(t)}" },
                 it.dewpointC?.let { d -> "dew point ${Format.temperature(d)}" },

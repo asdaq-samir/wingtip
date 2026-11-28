@@ -29,6 +29,16 @@ class AirplaneClient(TestClient):
 
 
 @pytest.fixture(autouse=True)
+def _usage_days_of_its_own(tmp_path, monkeypatch):
+    """Each test's daily totals (app.usage_days) in a file of its own,
+    never the planner's data folder."""
+    from app import usage_days
+
+    monkeypatch.setattr(usage_days, "STORE", tmp_path / "usage.sqlite")
+    usage_days._PENDING.clear()
+
+
+@pytest.fixture(autouse=True)
 def _weather_store_of_its_own(tmp_path_factory, monkeypatch):
     """Each test's weather store an empty folder of its own: none reads the
     copies the weather service keeps in data/raw/weather, or leaves the
@@ -60,10 +70,13 @@ def _fresh_caches():
 
 
 @pytest.fixture(autouse=True)
-def _settings_from_this_tests_environment():
+def _settings_from_this_tests_environment(monkeypatch):
     """wingtip.config.get_settings() reads the environment once and keeps
     it; a test that sets a variable clears it after (get_settings.cache_clear()),
-    and this clears it either side of every test so none sees another's."""
+    and this clears it either side of every test so none sees another's.
+    The followed airplanes' share key is a test's own, as the planner
+    starts with none unset (wingtip.traffic.recorded)."""
+    monkeypatch.setenv("FOLLOW_SHARE_KEY", "test-follow-share-key-0123456789abcdef")
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()

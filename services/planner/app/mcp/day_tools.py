@@ -10,17 +10,17 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 from typing import Annotated, Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
-from wingtip import utc
-from wingtip.aircraft import UnknownAircraft, aircraft_profile
+from wingtip import field_use, time_zone, utc
 from wingtip.engine import ask as engine_ask
 
 from ..generated.planner_calls import airport_place, briefing
 from ..gonogo.runways import runway_checks
-from ..gonogo.weight_balance import balance, default_load
+from ..gonogo.weight_balance import balance
 from . import airplane
 from .airport_tools import Ident
 from .calls import METAR_SOURCE, editions, ident as ident_of, pick, pilot, rounded
@@ -28,60 +28,52 @@ from .tool_meta import READS, read_only
 
 SUN_SOURCE = {"source": "Wingtip engine: NOAA's solar calculation, sunrise and sunset as the Naval Observatory defines them"}
 POH_SOURCE = {"source": "The airplane's POH loading and short-field tables (its Wingtip profile), and its weight and balance record"}
-#: What each period is, as the rules read it.
-PERIODS = {
-    "night": "14 CFR 1.1's night: end of evening civil twilight to beginning of morning civil twilight "
-    "(91.151(a)(2)'s 45-minute VFR reserve, 91.205(c)'s equipment, night flight time)",
-    "passenger_night": "14 CFR 61.57(b): 1 hour after sunset to 1 hour before sunrise; carrying passengers in it "
-    "needs three takeoffs and landings to a full stop made in it in the preceding 90 days",
-    "lights": "14 CFR 91.209(a): position lights on from sunset to sunrise",
-}
 
 
-def _at(s: float | None) -> str | None:
-    return None if s is None else utc.iso(s)
-
-
-def _period(p: dict, what: str) -> dict:
-    return {"from": _at(p["from_s"]), "until": _at(p["until_s"]), "all_day": p["all_day"], "rule": PERIODS[what]}
-
-
-def _profile(a: dict) -> dict:
-    """The airplane as the planner flies it (PlanQuery.profile): its stock
-    type's profile with its own figures over it, or its own figures alone."""
-    fields = airplane.plan_fields(a)
+def zone_of(name: str | None) -> ZoneInfo | None:
     try:
-        return aircraft_profile(fields.pop("aircraft"), **fields)
-    except UnknownAircraft as err:
-        raise ToolError(f"{err} Add them to {airplane.label(a)} in Wingtip's Setup, Airplanes.") from err
+        return ZoneInfo(name) if name else None
+    except (ZoneInfoNotFoundError, ValueError):
+        return None
 
 
-def _load(a: dict, loading: dict, stations_lb, fuel_gal, empty) -> tuple[dict | None, list[str]]:
-    """What is aboard, as the engine's gonogo_balance takes it, or what is
-    missing for it. The empty weight and moment are the pilot's (theirs
-    given, else the airplane's weight and balance record), read to an arm
-    by the engine's own default_load in the sample airplane's place."""
-    figures = a.get("figures") or {}
-    weight = empty[0] if empty[0] is not None else figures.get("emptyWeightLb")
-    moment = empty[1] if empty[1] is not None else figures.get("emptyMomentLbIn")
-    names = [s["name"] for s in loading.get("stations") or []]
-    missing = []
-    if weight is None or moment is None:
-        missing.append("empty_weight_lb and empty_moment_lb_in, from the airplane's weight and balance record")
-    if stations_lb is None:
-        missing.append(f"stations_lb, the pounds at each station in order: {', '.join(names)}")
-    elif len(stations_lb) != len(names):
-        raise ToolError(f"stations_lb takes {len(names)} weights, one a station in order: {', '.join(names)}.")
-    if missing:
-        return None, missing
-    own = {**loading, "sample_empty_weight_lb": weight, "sample_empty_moment_lb_in": moment}
-    return {**default_load(own, fuel_gal), "stations_lb": list(stations_lb)}, []
+def today(zone: ZoneInfo | None, now: datetime | None = None) -> date:
+    """The place's own date now, the date the engine reads (its local one):
+    a US evening is already tomorrow in UTC. tzfpy names a zone for every
+    point, the oceans' Etc/GMT ones included; where it names none the UTC
+    date is taken, rather than a mean solar time worked out here (the
+    engine owns the sun's maths)."""
+    now = now or datetime.now(timezone.utc)
+    return now.astimezone(zone or timezone.utc).date()
+
+
+def _at(s: float | None, zone: ZoneInfo | None) -> dict | None:
+    """An instant in UTC and in the field's own clock, its zone's name
+    with it ("2026-11-23 16:21 CST"), so the model need not work out the
+    offset or whether daylight saving time is in force."""
+    if s is None:
+        return None
+    local = datetime.fromtimestamp(s, zone).strftime("%Y-%m-%d %H:%M %Z") if zone else None
+    return {"utc": utc.iso(s), "local": local}
+
+
+def _period(p: dict, zone: ZoneInfo | None) -> dict:
+    """A period's times in both clocks and its rule, the engine's words."""
+    return {"from": _at(p["from_s"], zone), "until": _at(p["until_s"], zone), "all_day": p["all_day"], "rule": p["rule"]}
+
+
+def field_status(ident: str) -> dict:
+    """Whether a field is open, the engine's field_status of NASR APT_BASE's
+    ARPT_STATUS: a closed one is labelled wherever it appears (decision
+    0043), `closed` its label ("Closed indefinitely")."""
+    return engine_ask("field_status", status=(field_use.record_of(ident) or {}).get("status"))
 
 
 def register(server: MCPServer) -> None:
     @server.tool(
         name="sun_times",
-        description="Sunrise, sunset and civil twilight at an airport or a place on a date (UTC times), and when "
+        description="Sunrise, sunset and civil twilight at an airport or a place on its local date (each time in "
+        "UTC and in the place's own time zone), and when "
         "night begins and ends from that evening by each rule that reads it: 14 CFR 1.1's night (civil twilight; "
         "the VFR night reserve), 61.57(b)'s period an hour after sunset to an hour before sunrise (night currency "
         "and passengers) and 91.209(a)'s position lights from sunset. Where the sun does not set or rise, says so.",
@@ -93,7 +85,9 @@ def register(server: MCPServer) -> None:
         airport: Annotated[str | None, Field(max_length=7, description="The field: KDLH, C81.")] = None,
         lat: Annotated[float | None, Field(ge=-90, le=90, description="Or a place's latitude, degrees north.")] = None,
         lon: Annotated[float | None, Field(ge=-180, le=180, description="And longitude, degrees east (west negative).")] = None,
-        on: Annotated[date | None, Field(description="The local date, yyyy-mm-dd; today (UTC) when omitted.")] = None,
+        on: Annotated[
+            date | None, Field(description="The place's local date, yyyy-mm-dd; its own today (tonight's night) when omitted.")
+        ] = None,
     ) -> dict[str, Any]:
         pilot()
         where = None
@@ -102,21 +96,24 @@ def register(server: MCPServer) -> None:
             lat, lon, where = card["lat"], card["lon"], card["ident"]
         elif lat is None or lon is None:
             raise ToolError("Give an airport, or lat and lon.")
-        day = on or datetime.now(timezone.utc).date()
+        zone_name = time_zone.at(lat, lon)
+        zone = zone_of(zone_name)
+        day = on or today(zone)
         sun = engine_ask("sun_times", lat=lat, lon=lon, date=day.isoformat())
         return {
             "airport": where,
             "lat": lat,
             "lon": lon,
             "date": day.isoformat(),
+            "time_zone": zone_name if zone else None,
             "sun": sun["sun"],
             "civil_twilight": sun["civil_twilight"],
-            "solar_noon": _at(sun["solar_noon_s"]),
-            "sunrise": _at(sun["sunrise_s"]),
-            "sunset": _at(sun["sunset_s"]),
-            "civil_dawn": _at(sun["civil_dawn_s"]),
-            "civil_dusk": _at(sun["civil_dusk_s"]),
-            **{what: _period(sun[what], what) for what in PERIODS},
+            "solar_noon": _at(sun["solar_noon_s"], zone),
+            "sunrise": _at(sun["sunrise_s"], zone),
+            "sunset": _at(sun["sunset_s"], zone),
+            "civil_dawn": _at(sun["civil_dawn_s"], zone),
+            "civil_dusk": _at(sun["civil_dusk_s"], zone),
+            **{what: _period(sun[what], zone) for what in ("night", "passenger_night", "lights")},
             "sources": [SUN_SOURCE],
         }
 
@@ -125,14 +122,18 @@ def register(server: MCPServer) -> None:
         description="The pilot's own airplane at a field: its weight and balance at takeoff and landing against "
         "its POH's limits and envelope (14 CFR 91.9), and its short-field takeoff and landing distances on the "
         "runway the wind favours, from the field's pressure and density altitude and reported wind, against the "
-        "runway's length (91.103(b)). Needs one of the pilot's airplanes (my_airplanes); says which figures are missing.",
+        "runway's length (91.103(b)). Needs one of the pilot's airplanes (my_airplanes); says which figures are missing. "
+        "A field NASR lists as closed is labelled Closed.",
         title="Airplane performance",
         annotations=read_only("Airplane performance"),
         meta=READS,
     )
     async def airplane_performance(
         airport: Ident,
-        airplane_tail: Annotated[str | None, Field(max_length=8, description="The pilot's airplane by tail number.")] = None,
+        # Required: Wingtip assumes no airplane (the owner, 2026-11-09).
+        airplane_tail: Annotated[
+            str, Field(min_length=2, max_length=8, description="The pilot's airplane by tail number (my_airplanes lists them).")
+        ],
         stations_lb: Annotated[
             list[float] | None, Field(max_length=12, description="Pounds at each loading station, in the POH's order.")
         ] = None,
@@ -144,13 +145,8 @@ def register(server: MCPServer) -> None:
         empty_moment_lb_in: Annotated[float | None, Field(gt=0, description="Basic empty moment; the record's when omitted.")] = None,
     ) -> dict[str, Any]:
         who = pilot()
-        if not airplane_tail:
-            raise ToolError(
-                "Weight and balance and runway distances are the pilot's own airplane's, and Wingtip assumes none: "
-                "give airplane_tail (my_airplanes lists them; pick_airplane flies a flight on one)."
-            )
         a = await airplane.find(who, airplane_tail)
-        profile = _profile(a)
+        profile = airplane.profile(a)
         loading, missing = profile.get("loading"), []
         if not loading:
             missing.append("the POH's loading (stations, arms, limits and envelope): none in this airplane's Wingtip profile")
@@ -159,12 +155,13 @@ def register(server: MCPServer) -> None:
             missing.append("fuel_gal, the fuel at engine start: the airplane has no usable fuel on record")
         load, lacking = (None, [])
         if loading and fuel is not None:
-            load, lacking = _load(a, loading, stations_lb, fuel, (empty_weight_lb, empty_moment_lb_in))
+            load, lacking = airplane.load(a, loading, stations_lb, fuel, (empty_weight_lb, empty_moment_lb_in))
         missing += lacking
         loaded = balance(loading, load, trip_fuel_gal) if load else None
         if not profile.get("takeoff") or not profile.get("landing"):
             missing.append("the POH's short-field takeoff and landing tables: none in this airplane's Wingtip profile")
         field = ident_of(airport)
+        status = field_status(field)
         brief = await briefing(dep=field, dest=field)
         ends = [{"ident": i, "elevation_ft": (brief["airports"].get(i) or {}).get("elevation_ft")} for i in brief["airports"]]
         checks = runway_checks(
@@ -175,8 +172,13 @@ def register(server: MCPServer) -> None:
             loaded["landing"]["weight_lb"] if loaded else None,
         )
         runway = ("role", "end", "pressure_alt_ft", "density_alt_ft", "temp_c", "reported", "headwind_kt", "crosswind_kt")
-        distance = ("kind", "end", "ground_roll_ft", "total_ft", "over", "unknown", "beyond", "caveats")
+        distance = ("kind", "end", "ground_roll_ft", "total_ft", "over", "close", "unknown", "beyond", "caveats")
         return {
+            # A closed field first, so it is said before any distance is
+            # (decision 0043): the figures are its runways' as recorded.
+            "closed": f"{status['closed']}: NASR lists {field} as closed, not a field to use; the distances are its runways' as recorded"
+            if status["closed"]
+            else None,
             "airplane": airplane.label(a),
             "airport": field,
             "balance": rounded({k: v for k, v in loaded.items() if k != "takeoff_words"}) if loaded else None,
@@ -186,6 +188,10 @@ def register(server: MCPServer) -> None:
                 rounded(pick(c, runway))
                 | {"runway": (c["runway"] or {}).get("ends"), "length_ft": (c["runway"] or {}).get("length_ft")}
                 | {"crosswind_over_demonstrated": c["crosswind_over"], "unchecked": c["unchecked"]}
+                # The engine's finding for the field, the one the Brief's
+                # runway row shows (stop, caution, unknown or ok), and its
+                # reason, the worst first (gonogo_runway_checks).
+                | {"finding": c["finding"], "finding_reason": c["fit"]}
                 | {"distances": [rounded(pick(d, distance)) for d in c["distances"]]}
                 for c in checks
             ],

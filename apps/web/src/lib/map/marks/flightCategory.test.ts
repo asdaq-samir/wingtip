@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { categoryOf, chipFillOf, colourOf } from "./flightCategory";
+import { DOT_RING, categoryOf, chipFillOf, colourOf, inkOf } from "./flightCategory";
 import { inkOn } from "../../scoreScale";
 
 // Each bound of AIM 7-1-7's categories, from either side: LIFR "ceiling
@@ -54,5 +54,24 @@ describe("a category chip with its name on it", () => {
     // The map keeps the lighter magenta for its pips, which carry no words.
     expect(colourOf("LIFR")).toBe("#a371f7");
     expect(chipFillOf(null)).toBe(colourOf(null));
+  });
+});
+
+describe("a category's dot", () => {
+  /** Ringed in the chart's casing by day as at night: LIFR's #a371f7 is
+   *  2.75:1 on Chart ink's muted and 2.89:1 on Sunlight's, 3.35:1 against
+   *  the white ring (looksContrast's discs on white). */
+  it("is ringed in every scheme, not only the dark", () => {
+    expect(DOT_RING).toBe("ring-1 ring-(--chart-casing)");
+  });
+});
+
+describe("a category set as words", () => {
+  it("is the scheme's ink, so it lightens at night where the dot keeps the FAA's colour", () => {
+    expect(inkOf("MVFR")).toBe("var(--category-mvfr-ink)");
+    expect(inkOf("LIFR")).toBe("var(--category-lifr-ink)");
+    // No report, or a word that is no category, is the unknown ink.
+    expect(inkOf(null)).toBe("var(--category-unknown-ink)");
+    expect(inkOf("XYZ")).toBe("var(--category-unknown-ink)");
   });
 });

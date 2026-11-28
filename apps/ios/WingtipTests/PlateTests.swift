@@ -52,21 +52,28 @@ struct PlateTests {
         #expect(renderer.look.opacity == 0.4)
     }
 
+    @Test func aPlateFollowsTheAppearanceUntilThePilotPicks() {
+        // Dark adaptation (AIM 8-1-6): white on black at night unless picked.
+        #expect(PageLook.inverted(kept: nil, dark: true))
+        #expect(!PageLook.inverted(kept: nil, dark: false))
+        #expect(!PageLook.inverted(kept: false, dark: true))
+    }
+
     @Test func invertAndAnnotationsReachTheRenderer() {
         let renderer = PlateRenderer(overlay: page(), look: PlateLook())
-        #expect(!renderer.look.inverted && renderer.look.annotations)
-        renderer.show(PlateLook(inverted: true, annotations: false))
-        #expect(renderer.look.inverted)
+        #expect(!renderer.look.page.inverted && renderer.look.annotations)
+        renderer.show(PlateLook(annotations: false, page: PageLook(inverted: true)))
+        #expect(renderer.look.page.inverted)
         #expect(!renderer.look.annotations)
     }
 
     @Test func theLayerHandsTheCardsLookToItsPages() {
         let layer = PlateLayer()
         let map = MKMapView()
-        layer.update(map, picks: [], look: PlateLook(opacity: 0.3, inverted: true, annotations: false), tiles: nil)
-        #expect(layer.look == PlateLook(opacity: 0.3, inverted: true, annotations: false))
+        layer.update(map, picks: [], look: PlateLook(opacity: 0.3, annotations: false, page: PageLook(inverted: true)), tiles: nil)
+        #expect(layer.look == PlateLook(opacity: 0.3, annotations: false, page: PageLook(inverted: true)))
         let renderer = layer.renderer(for: page()) as? PlateRenderer
-        #expect(renderer?.look.inverted == true)
+        #expect(renderer?.look.page.inverted == true)
         #expect(abs((renderer?.alpha ?? 0) - 0.3) < 1e-9)
     }
 

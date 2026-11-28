@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { PREFERENCES_KEY } from "./prefs/firstFrame";
 import { persist } from "zustand/middleware";
 import { NO_MINIMUMS } from "./minimums";
 import { AIRPLANE_KEPT, airplaneChosen, airplaneSlice, NO_AIRPLANE } from "./prefs/airplaneSlice";
@@ -8,7 +9,7 @@ import type { RecentAirport } from "./prefs/keptTypes";
 import { LOOK_KEPT, lookSlice } from "./prefs/lookSlice";
 import { MAP_KEPT, mapSlice } from "./prefs/mapSlice";
 import type { Preferences } from "./prefs/state";
-import { keptTheme, migratePreferences } from "./prefs/migrate";
+import { keptAsIs } from "./storage";
 
 export { BASE_CHARTS, HEIGHT_STRETCHES } from "./prefs/mapSlice";
 export type { BaseChart, HazardSetting, HeightStretch, ChartLight, MapOverlay, OverlayStrength } from "./prefs/mapTypes";
@@ -32,13 +33,14 @@ export function keptPreferences(s: Preferences): Kept {
 
 export const usePreferences = create<Preferences>()(
   persist((...a) => ({ ...mapSlice(...a), ...lookSlice(...a), ...airplaneSlice(...a), ...keptSlice(...a), ...alertsSlice(...a) }), {
-    name: "wingtip.preferences",
+    name: PREFERENCES_KEY,
     // Nothing is launched yet, so a browser's preferences from an older
-    // version are read as they are (the owner: break freely until launch;
-    // see keptAsIs), but for Appearance's Dark + Bright, which became the
-    // Dimmer's dark value of 0 in version 12 (prefs/migrate).
+    // version are read as they are (the owner: break freely until launch,
+    // no shims; see keptAsIs): Appearance's Dark + Bright (chartNight) of
+    // before version 12 is not carried into the Dimmer, and goes at the
+    // next write.
     version: 12,
-    migrate: (kept, version) => migratePreferences(kept, version, keptTheme()),
+    migrate: (kept) => keptAsIs<Preferences>(kept),
     partialize: keptPreferences,
   }),
 );
@@ -50,7 +52,7 @@ export const useAirplaneChosen = (): boolean => usePreferences((s) => airplaneCh
  *  they sign out (useLogout): their Home, Favorites and recents, their
  *  personal minimums and loads, the airplanes they follow and their
  *  alerts, and the airplane they fly. The next person on the device had
- *  them all, the tail number and its figures too (the audit's finding).
+ *  them all, the tail number and its figures too.
  *  How the map is drawn stays, the device's. */
 export function forgetPilot() {
   usePreferences.setState({

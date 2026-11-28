@@ -16,13 +16,13 @@ from wingtip import planning as planning_module
 
 from . import ask as engine_ask
 from . import live as live_reports
-from .icing import freezing_precip, icing_at_altitude, icing_line, icing_unchecked, icing_words
-from .minimums import ceiling_unknown_at, under_minimums
-from .pass_times import pass_time, sua_when, tfr_when
+from .icing import forecast_icing, freezing_precip, icing_at_altitude, icing_line, icing_unchecked, icing_words
+from .minimums import under_minimums
+from .pass_times import pass_time, sua_when, us_of
 from .runways import runway_checks
 from .schemas import GoNoGoAsk
-from .weight_balance import balance, default_load
-from .words import PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, sigmet_hazard
+from .weight_balance import balance
+from .words import gairmet_title, sigmet_hazard
 from .. import route_briefing
 from ..plan_query import PlanQuery, named_checkpoints
 
@@ -78,6 +78,9 @@ class Planned:
     legs: list[dict]
     totals: dict | None
     problem: str | None = None
+    #: The legs' ends in order, (lat, lon), one more than the legs: the
+    #: forecast icing is read along them (app.gonogo.icing).
+    fixes: list[tuple[float, float]] | None = None
 
 
 def _as_dict(value) -> dict:
@@ -118,7 +121,9 @@ def plan_for(q: PlanQuery, r) -> Planned:
     outcome, flown = fp.flown_as_picked(r, runs, outcome, asked)
     legs = [_as_dict(leg) for leg in flown]
     totals = fp.totals_of(r, runs, outcome, asked)
-    return Planned(nav=nav, legs=legs, totals=totals)
+    # Each hop's fixes, a stop once (wingtip.flight_legs.flown_legs joins them so).
+    fixes = [(float(f["lat"]), float(f["lon"])) for k, run in enumerate(runs) for f in (run.fixes if k == 0 else run.fixes[1:])]
+    return Planned(nav=nav, legs=legs, totals=totals, fixes=fixes)
 
 
 def brief_for(q: PlanQuery, ete_min: float | None) -> dict:
@@ -126,34 +131,15 @@ def brief_for(q: PlanQuery, ete_min: float | None) -> dict:
     return _as_dict(route_briefing.briefing(q.dep, q.dest, q.stops, q.depart, ete_min))
 
 
-def alternate_for(dest: str, eta: datetime, tas_kt: float, filed: str) -> dict | None:
-    """The IFR alternate's check (/api/alternate); None where it could not
-    be made, as the web's query that failed."""
+def alternate_for(dest: str, eta: datetime, tas_kt: float, filed: str) -> dict:
+    """The IFR alternate's check (/api/alternate); {"failed": True} where it
+    could not be made, which the engine says is an alternate not checked,
+    never ok (14 CFR 91.169(b) excuses one only where the destination's
+    forecasts show it)."""
     try:
         return _as_dict(route_briefing.alternate(dest, eta, tas_kt, filed))
     except HTTPException:
-        return None
-
-
-def _altitude_range(nav: dict) -> str:
-    """The altitudes a plan flies as the nav log's header gives them: one
-    figure, or its lowest and highest (FlightBriefingView altitudeRange)."""
-    chosen = next((o for o in nav["options"] if o["kind"] == nav["flown"]), None)
-    alts = [s["altitude_ft"] for s in chosen["steps"]] if chosen else [nav["altitude_ft"]] if nav["altitude_ft"] is not None else []
-    if not alts:
-        return "No altitude"
-    low, high = min(alts), max(alts)
-    return f"{alt_ft(low)} ft" if low == high else f"{alt_ft(low)}–{alt_ft(high)} ft"
-
-
-def _flown_words(nav: dict) -> str:
-    if nav["flown"] == "custom":
-        # A cruising altitude as the owner asked it written, "FL-045"
-        # (the engine's words_flight_level, lib/format flightLevel).
-        return f"{engine_ask('words_flight_level', ft=nav['altitude_ft'])}, your own"
-    chosen = next((o for o in nav["options"] if o["kind"] == nav["flown"]), None)
-    plan = f" · {PLAN_NAME[chosen['kind']]} plan" if chosen else ""
-    return f"{_altitude_range(nav)}{plan}"
+        return {"failed": True}
 
 
 def briefing_or_failure(q: PlanQuery, ete_min: float | None) -> tuple[dict | None, str | None]:
@@ -206,33 +192,11 @@ def findings_for(
     dest = r.idents[-1]
     selection = (nav or {}).get("selection") or {}
 
-    def unchecked(source: str) -> bool:
-        return bool(briefing) and source in (briefing.get("weather_unavailable") or [])
-
-    # Under IFR "VFR flight not recommended" is no reason not to go: its
-    # weather check is the destination's and the alternate's (14 CFR
-    # 91.169), not VFR's minimums.
-    vnr = [] if ifr else list((briefing or {}).get("vfr_not_recommended") or [])
     under_mine = under_minimums(ask.minimums.model_dump(), briefing, landings, dest) if briefing else []
-    unknown_ceilings = ceiling_unknown_at(briefing, landings) if briefing else []
 
     def pass_at(along_nm: float):
         return pass_time(legs, depart, along_nm)
 
-    # The TFRs the route goes through while they are in force: the
-    # briefing's word on it where it placed the TFR on the legs
-    # (`on_route`, app.exposure: in it at any time from entering to
-    # leaving, half an hour either way), else in force when the flight
-    # gets there, or at some time during the flight where that time is not
-    # known (FlightBriefingView's tfrInForce).
-    def tfr_in_force(t: dict) -> bool:
-        when = (t.get("on_route") or {}).get("when")
-        if when:
-            return when == "during"
-        at = pass_at(t["along_track_nm"])
-        return not at or tfr_when(t, at) == "in-force"
-
-    tfrs_crossed = [t for t in (briefing or {}).get("tfrs") or [] if t.get("crosses") and tfr_in_force(t)]
     special_use = []
     areas = selection.get("special_use") or []
     # SFDPS's word where it holds at the pass, as the web's Brief says it.
@@ -242,24 +206,6 @@ def findings_for(
         scheduled = sua_when(area.get("times_of_use"), at, area.get("time_zone")) if at else "unknown"
         special_use.append({"name": area["name"], "when": live_reports.live_when(scheduled, status_now.get(area["name"]), at)})
 
-    # The route's fuel and TFR figures, the engine's one copy the web's Brief
-    # asks too (gonogo_route_figures; the aviation audit's AV-12).
-    route_figures = engine_ask(
-        "gonogo_route_figures",
-        totals=totals or None,
-        tfr_count=len((briefing or {}).get("tfrs") or []),
-        crossed=[t["notam_id"] for t in tfrs_crossed],
-    )
-    flown_ft = [leg["altitude_ft"] for leg in legs]
-    icing = icing_at_altitude(selection, flown_ft, briefing.get("pireps") or []) if ifr and nav and briefing else None
-    # The weather's one icing caution: under IFR, icing at an altitude flown
-    # or, where the freezing level is not known, that it was not checked;
-    # on any flight, freezing rain or drizzle reported or forecast on the
-    # route, which ices an airplane out of cloud (AIM 7-1-20).
-    icing_said = icing_words(
-        icing_line(icing) if icing else (icing_unchecked(selection, flown_ft) if ifr and nav and briefing else None),
-        freezing_precip(briefing) if briefing else None,
-    )
     hazard_names = (
         (
             [sigmet_hazard(h.get("hazard"), h.get("type") or "SIGMET") for h in briefing.get("hazards") or []]
@@ -268,13 +214,45 @@ def findings_for(
         if briefing
         else []
     )
+    # The route's own figures, the engine's one copy the web's Brief asks
+    # too (gonogo_route_figures): the fuel's,
+    # the TFRs crossed while in force as the flight passes them (14 CFR
+    # 91.137-91.145), VFR not recommended's reasons -- none under IFR,
+    # whose check is 91.169's -- and the hazards the risk counts.
+    route_figures = engine_ask(
+        "gonogo_route_figures",
+        totals=totals or None,
+        tfrs=(briefing or {}).get("tfrs") or [],
+        legs=[{"distance_nm": leg["distance_nm"], "ete_min": leg.get("ete_min")} for leg in legs],
+        depart_us=us_of(depart),
+        ifr=ifr,
+        vfr_not_recommended=(briefing or {}).get("vfr_not_recommended") or [],
+        hazards=hazard_names,
+        weather_unavailable=(briefing or {}).get("weather_unavailable") or [],
+    )
+    flown_ft = [leg["altitude_ft"] for leg in legs]
+    icing = icing_at_altitude(selection, flown_ft, briefing.get("pireps") or []) if ifr and nav and briefing else None
+    # Under IFR, the forecast icing on each leg at the altitude flown, for
+    # the hour it is flown (wingtip.icing_forecast; AIM 7-1-4), as the web
+    # asks /api/icing/route: its line, or that it could not be had.
+    forecast_line, forecast_unchecked = forecast_icing(planned.fixes, legs, depart) if ifr and briefing else (None, False)
+    # The weather's one icing caution: under IFR, icing at an altitude flown
+    # or, where the freezing level is not known, that it was not checked,
+    # then the forecast icing's; on any flight, freezing rain or drizzle
+    # reported or forecast on the route, which ices an airplane out of
+    # cloud (AIM 7-1-20).
+    icing_said = icing_words(
+        icing_line(icing) if icing else (icing_unchecked(selection, flown_ft) if ifr and nav and briefing else None),
+        forecast_line,
+        freezing_precip(briefing) if briefing else None,
+    )
     risk_in = None
     if briefing:
         risk_in = {
-            "vfr_not_recommended": bool(vnr),
+            "vfr_not_recommended": bool(route_figures["vfr_not_recommended"]),
             "under_minimums": under_mine,
-            "tfr_on_route": bool(tfrs_crossed),
-            "hazards": 0 if unchecked("hazards") and unchecked("gairmets") else len(hazard_names),
+            "tfr_on_route": bool(route_figures["tfrs_in_force"]),
+            "hazards": route_figures["hazard_count"],
             "night": (totals or {}).get("night") is True,
             "night_passengers": (totals or {}).get("night_passengers"),
             "lights": (totals or {}).get("lights"),
@@ -290,25 +268,22 @@ def findings_for(
             risk_in["inspections"] = own.inspections.model_dump() if own.inspections else None
             risk_in["squawks"] = [s.model_dump() for s in own.squawks]
 
-    # The loading (lib/weightBalance): the pilot's, else the POH's sample
-    # airplane with the fuel aboard at engine start -- the pilot's own on
-    # FPL's gauge (the totals' on_board_gal), else the usable fuel.
-    # With no airplane (no `aircraft` asked) there is no loading to balance.
+    # The loading (lib/weightBalance) is balanced only with the pilot's own
+    # load: the weight and balance is this flight's load against the POH's
+    # limits (its section 6; 14 CFR 91.9(a), 91.103), so with none given
+    # it is not worked and said so ("give your load", the engine's
+    # no_load), never the POH's sample airplane answered as the flight's.
+    # The runways are then read at the POH table's heaviest weight, the
+    # longest distance. With no airplane there is no loading to balance.
     airplane = q.profile()
     profile = (nav or {}).get("aircraft") or ({"name": q.aircraft, **airplane} if airplane else {})
     loading = profile.get("loading")
-    # A pilot's 0 is their figure, not "unset": `or` took it for full tanks.
-    on_board = (totals or {}).get("on_board_gal")
-    usable = on_board if on_board is not None else profile.get("usable_fuel_gal")
-    load = (
-        ask.load.model_dump()
-        if ask.load
-        else (default_load(loading, usable if usable is not None else loading["fuel_max_gal"]) if loading else None)
-    )
+    load = ask.load.model_dump() if ask.load else None
     loaded = balance(loading, load, (totals or {}).get("fuel_gal")) if loading and load else None
-    # The row's "2,407 lb at 41.2 in" is the engine's words (takeoff_words),
-    # not written again here; the loading's answer goes on without them.
-    takeoff_words = loaded.pop("takeoff_words") if loaded else None
+    # The row's "2,407 lb at 41.2 in" is the engine's words (gonogo_input
+    # writes them); the loading's answer goes on without them.
+    if loaded:
+        loaded.pop("takeoff_words")
     # The verdict's balance and runways as the web's, which wait on the nav log.
     nav_loaded = loaded if nav else None
     checks = runway_checks(
@@ -320,68 +295,41 @@ def findings_for(
         ask.runway_picks.model_dump() if ask.runway_picks else None,
     )
 
-    verdict = {
-        "weather": {
-            "pending": not briefing and not failed,
-            "failed": failed,
-            "vfr_not_recommended": vnr,
-            "under_minimums": under_mine,
-            "icing": icing_said,
-            "hazards": hazard_names,
-            "unchecked": [WEATHER_SOURCE_LABEL[w] for w in (briefing or {}).get("weather_unavailable") or [] if w != "tfrs"]
-            # A ceiling reported or forecast with no height is not checked
-            # against the minimums, the pilot's or 91.155's: not met, not
-            # missed (minimums.ceiling_unknown_at).
-            + ([f"the ceiling at {', '.join(unknown_ceilings)}"] if unknown_ceilings else []),
-            "worst": ceiling_and_visibility(briefing["forecast"].get("min_ceiling_ft"), briefing["forecast"].get("min_visibility_sm"))
-            if briefing
-            and (briefing["forecast"].get("min_ceiling_ft") is not None or briefing["forecast"].get("min_visibility_sm") is not None)
-            else None,
-            # What SWIM says now at the route's airports (app.gonogo.live).
-            "terminal_alerts": live_reports.itws_lines(landings) if live else [],
-            "flow_programs": live_reports.program_lines(landings) if ifr and live else [],
-            "ifr": ifr,
-        },
-        "airspace": {
-            "pending": not briefing and not failed,
-            "unchecked": bool(failed) or unchecked("tfrs"),
-            "in_force": route_figures["tfrs_in_force"],
-            "near": route_figures["tfrs_near"],
-            "special_use": special_use,
-        },
-        "altitude": {
-            "pending": not nav,
-            "problem": planned.problem,
-            "cautions": [reason for c in (nav or {}).get("cautions") or [] for reason in c["reasons"]],
-            "flown": _flown_words(nav) if nav else None,
-            # The engine's oxygen finding (14 CFR 91.211(a)): the highest leg, and the airplane's oxygen.
-            "highest_ft": max((leg["altitude_ft"] for leg in legs), default=None),
-            "oxygen": bool(profile.get("supplemental_oxygen") or profile.get("pressurized")),
-        },
-        "fuel": {
-            "pending": not totals,
-            "margin_gal": route_figures["least_margin_gal"],
-            "required_gal": route_figures["required_gal"],
-            "reserve_min": route_figures["reserve_min"],
-            "ifr": ifr,
-        },
-        "runways": {
-            "pending": not nav or not briefing,
-            "worked": not nav or (bool((nav["aircraft"] or {}).get("takeoff")) and bool((nav["aircraft"] or {}).get("landing"))),
-            "short": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["over"] for d in c["distances"]))),
-            "crosswind": list(dict.fromkeys(c["field"]["ident"] for c in checks if c["crosswind_over"])),
-            "beyond": list(dict.fromkeys(c["field"]["ident"] for c in checks if any(d["beyond"] for d in c["distances"]))),
-            "unchecked": list(
-                dict.fromkeys(c["field"]["ident"] for c in checks if c["unchecked"] or any(d["unknown"] for d in c["distances"]))
-            ),
-        },
-        "balance": {
-            "pending": not nav,
-            "worked": bool(nav_loaded),
-            "problems": nav_loaded["problems"] if nav_loaded else [],
-            "takeoff": takeoff_words if nav_loaded else None,
-        },
-    }
+    verdict = engine_ask(
+        "gonogo_input",
+        briefed=bool(briefing),
+        failed=failed,
+        ifr=ifr,
+        weather_unavailable=(briefing or {}).get("weather_unavailable") or [],
+        forecast=briefing["forecast"] if briefing else None,
+        vfr_not_recommended=route_figures["vfr_not_recommended"],
+        under_minimums=under_mine,
+        icing=[icing_said] if icing_said else [],
+        # Under IFR, the forecast icing not had is said unchecked.
+        icing_unchecked=forecast_unchecked,
+        # A ceiling reported or forecast with no height is not checked
+        # against the minimums, the pilot's or 91.155's: not met, not
+        # missed; the engine finds them in the METARs of the fields landed
+        # at and the forecast's stations (gonogo_input).
+        landings=landings,
+        metars=(briefing or {}).get("metars") or {},
+        hazards=hazard_names,
+        # What SWIM says now at the route's airports (app.gonogo.live).
+        terminal_alerts=live_reports.itws_lines(landings) if live else [],
+        flow_programs=live_reports.program_lines(landings) if ifr and live else [],
+        route_figures=route_figures,
+        special_use=special_use,
+        nav=nav or None,
+        problem=planned.problem,
+        legs_ft=flown_ft,
+        totals=bool(totals),
+        # The runways' tables are the nav log's airplane; with no nav log
+        # the oxygen finding has the profile asked for.
+        aircraft=(nav["aircraft"] or None) if nav else (profile or None),
+        runway_checks=[{**c, "ident": c["field"]["ident"]} for c in checks],
+        loading=bool(loading),
+        loaded=loaded,
+    )
     return Findings(verdict=verdict, risk_in=risk_in, loading=loading, load=load, loaded=loaded)
 
 

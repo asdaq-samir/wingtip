@@ -31,8 +31,8 @@ let zoneFormat: Intl.DateTimeFormat | null = null;
 const zones = new Map<number, string>();
 /** This device's time zone as a clock time is read in it, "CST" (or
  *  "GMT-6" where the browser has no short name): said beside a clock
- *  time, which was a bare "03:58" where flight plans and reports use Z
- *  (the FPL audit's A19). One formatter, made the first time, and one
+ *  time, which was a bare "03:58" where flight plans and reports use Z.
+ * One formatter, made the first time, and one
  *  answer kept per offset from UTC (see above for what they cost). */
 export function zoneName(at: Date = new Date()): string {
   const offset = at.getTimezoneOffset();
@@ -45,25 +45,72 @@ export function zoneName(at: Date = new Date()): string {
   return name;
 }
 
-const fieldZones = new Map<string, Intl.DateTimeFormat | null>();
-/** A zone's wall clock and short name at an instant, or null where the
- *  browser does not know the zone. One formatter a zone, made the first
- *  time. */
-function wallIn(at: Date, timeZone: string): { time: string; zone: string } | null {
-  if (!fieldZones.has(timeZone)) {
+const zoneFormats = new Map<string, Intl.DateTimeFormat | null>();
+/** One Intl formatter for a zone and its options, made the first time it
+ *  is asked for and kept (making one is costly, the note above); null
+ *  where the browser does not know the zone. Every per-zone formatter in
+ *  the app is this one cache's. */
+export function formatIn(timeZone: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat | null {
+  const key = `${timeZone} ${JSON.stringify(options)}`;
+  if (!zoneFormats.has(key)) {
+    let format: Intl.DateTimeFormat | null = null;
     try {
-      fieldZones.set(
-        timeZone,
-        new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", hour: "2-digit", minute: "2-digit", timeZoneName: "short" }),
-      );
+      format = new Intl.DateTimeFormat("en-US", { ...options, timeZone });
     } catch {
-      fieldZones.set(timeZone, null);
+      // RangeError: a zone this browser's time-zone data does not have.
     }
+    zoneFormats.set(key, format);
   }
-  const format = fieldZones.get(timeZone);
+  return zoneFormats.get(key) ?? null;
+}
+
+const WALL = { hourCycle: "h23", hour: "2-digit", minute: "2-digit", timeZoneName: "short" } as const;
+/** A zone's wall clock and short name at an instant, or null where the
+ *  browser does not know the zone. */
+function wallIn(at: Date, timeZone: string): { time: string; zone: string } | null {
+  const format = formatIn(timeZone, WALL);
   if (!format) return null;
   const parts = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
   return { time: `${parts.hour}:${parts.minute}`, zone: parts.timeZoneName ?? timeZone };
+}
+
+/** This device's zone, read once and again when the page comes back in
+ *  sight (a flight across a zone line, the device set to the new zone):
+ *  read at every point of the route's timeline, it was one Intl lookup a
+ *  point at every draw. */
+let zone: string | null = null;
+function deviceZone(): string {
+  zone ??= Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return zone;
+}
+if (typeof document !== "undefined") document.addEventListener("visibilitychange", () => (zone = null));
+
+const DAY = { year: "numeric", month: "numeric", day: "numeric", weekday: "short" } as const;
+/** An instant's calendar day in a zone, this device's without one: a count
+ *  of days to tell two apart, its weekday ("Tue") and "11/24". */
+function dayIn(at: Date, timeZone: string | null | undefined) {
+  const format = formatIn(timeZone || deviceZone(), DAY);
+  const parts = format ? Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value])) : null;
+  if (!parts) return { count: Math.floor((at.getTime() - at.getTimezoneOffset() * 60_000) / 86_400_000), weekday: "", monthDay: "" };
+  return {
+    count: Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)) / 86_400_000,
+    weekday: parts.weekday ?? "",
+    monthDay: `${parts.month}/${parts.day}`,
+  };
+}
+
+/** The day an arrival is written with where it is not the day the flight
+ *  left, as the departure picker writes a day not today (leaveWhen): "Tue"
+ *  within the week, "11/30" further on, each day in its own zone (the
+ *  arrival's field's, the departure's; this device's where one has none);
+ *  null on the same day. A flight Chicago to Las Vegas and back left at
+ *  14:27 and said "15:54" at KORD, the next day's, read as 87 minutes
+ *  later for 2,700 nm (the owner's iPhone, 2026-11-23). */
+export function arrivalDay(at: Date, left: Date, zone?: string | null, leftZone?: string | null): string | null {
+  const there = dayIn(at, zone);
+  const days = there.count - dayIn(left, leftZone).count;
+  if (days === 0) return null;
+  return (days > 0 && days < 7 ? there.weekday : there.monthDay) || null;
 }
 
 /** A clock time in a field's own zone (an IANA name, the planner's
@@ -89,7 +136,7 @@ export function clockElsewhere(
  *  keeps another zone than the departure's (the owner, 2026-11-20: "When
  *  the time zone changes then show it on all the stops"). */
 export function clockIn(at: Date, timeZone: string | null | undefined): { time: string; zone: string } | null {
-  return wallIn(at, timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+  return wallIn(at, timeZone || deviceZone());
 }
 
 /** UTC hours and minutes in four figures, as a flight plan's item 13

@@ -1,22 +1,22 @@
 import { lazy, Suspense } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraduationCap, Target, Users } from "lucide-react";
-import { cn } from "cn";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { DateField as StockDateField } from "../../components/ui/date-field";
 import SwitchRow from "../../components/SwitchRow";
 import { api } from "../../lib/api/client";
-import type { Currency } from "../../lib/api/types";
 import CheckridePage from "./CheckridePage";
 import InstructorPage from "./InstructorPage";
 import ComingUp from "./ComingUp";
+import { PassengerRows, Until } from "./PassengerCurrency";
 import LogbookFile from "./LogbookFile";
 import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
 import { pilotQuery } from "../../lib/queryClient";
-import { RECORDS_FRESH_MS, currencyQuery, logbookQuery, trainingQuery } from "../../lib/queryClientRecords";
+import { RECORDS_FRESH_MS, logbookQuery, trainingQuery } from "../../lib/queryClientRecords";
+import { useCurrency } from "../../lib/useCurrency";
 import LogbookFlights from "./logbook/LogbookFlights";
 import { refreshLogbook } from "./logbook/logbookEntry";
 
@@ -26,23 +26,7 @@ const today = () => localDay();
 // Its own chunk: it reads the saved flights' debriefs only when opened.
 const CoachPage = lazy(() => import("./coach/CoachPage"));
 
-/** "To 19 Dec 2026" in the tint's green, or "Not current" in red; with a
- *  `from` still to come (instrument currency from approaches flown this
- *  month, 61.57(c)(1)), "From 1 Nov 2026" in amber, as not current yet. */
-function Until({ date, from, what }: { date: string | null | undefined; from?: string | null; what: string }) {
-  const current = !!date && date >= today();
-  const notYet = current && from && from > today() ? from : null;
-  return (
-    <span
-      className={cn("tabular-nums", notYet ? FINDING_TONE.caution : current ? FINDING_TONE.ok : FINDING_TONE.stop)}
-      data-testid={`currency-${what}`}
-    >
-      {!date ? "Not current" : notYet ? `From ${said(notYet)}` : current ? `To ${said(date)}` : `Ended ${said(date)}`}
-    </span>
-  );
-}
-
-/** A currency date (the flight review's, the medical's, the IPC's), saved
+/** A currency date, saved
  *  as it is picked: a whole day at a time, from the calendar. */
 function DateField({
   value,
@@ -78,7 +62,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
   // Signed out, the logbook is You's Sign In, said once, and nothing of it
   // is asked for: opened by a link (?open=logbook) past You's greyed row it
   // fetched five of the pilot's lists to 401s and read "could not be
-  // fetched" in red and "Not current" from no data (the web audit's WEB-40).
+  // fetched" in red and "Not current" from no data.
   const { data: pilot, isPending } = useQuery(pilotQuery);
   if (isPending) return null;
   if (!pilot)
@@ -97,16 +81,15 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
   const queryClient = useQueryClient();
   // The file's export reads the flights too (LogbookFlights' own query).
   const { data: entries } = useQuery(logbookQuery);
-  const { data: currency } = useQuery(currencyQuery);
+  const { data: currency } = useCurrency();
   const { data: training } = useQuery(trainingQuery);
   const refresh = () => void refreshLogbook(queryClient);
   const dates = useMutation({
     mutationFn: (next: { flightReviewOn: string | null; medicalExpiresOn: string | null; ipcOn: string | null }) =>
       api.logbook.setCurrencyDates(next),
-    onSuccess: (c: Currency) => {
-      queryClient.setQueryData(["currency"], c);
-      void queryClient.invalidateQueries({ queryKey: ["paperwork"] });
-    },
+    // Asked again rather than set: the answer is judged for no airplane,
+    // and the logbook's is judged for the one picked.
+    onSuccess: () => Promise.all(["currency", "paperwork"].map((key) => queryClient.invalidateQueries({ queryKey: [key] }))),
   });
   // Emailed 30 and 7 days before each of these runs out (ReminderService),
   // at the pilot's ask.
@@ -174,14 +157,9 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
 
         {/* From the logbook and the two dates above it, no one's sign-off: 61.57
           counts takeoffs and landings in the same category and class; at
-          night, to a full stop. */}
+          night, to a full stop; judged for the airplane picked in FPL. */}
         <ListGroup title="Currency">
-          <ListRow title="Passengers by Day" description="3 takeoffs and landings in 90 days">
-            <Until date={currency?.dayPassengersUntil} what="day" />
-          </ListRow>
-          <ListRow title="Passengers at Night" description="3 to a full stop at night in 90 days">
-            <Until date={currency?.nightPassengersUntil} what="night" />
-          </ListRow>
+          <PassengerRows currency={currency} />
           <ListRow
             title="Flight Review"
             description={

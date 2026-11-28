@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { api } from "../../../lib/api/client";
 import { slotId, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
+import { DIM_BY_COLOUR, DIM_WARNING } from "../../../lib/map/gl/mapDim";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { CHART } from "../../../lib/tokens";
 import { usePreferences } from "../../../lib/preferences";
@@ -14,21 +15,39 @@ import { useHazardView } from "./useHazardView";
 
 const TINT = "terrain-hazard";
 const OBSTACLES = "obstacles-hazard";
-/** The obstacles the colouring rings, under the chart's own symbols' size. */
-const OBSTACLE_LAYER: CircleLayerSpecification = {
-  id: OBSTACLES,
-  type: "circle",
-  source: OBSTACLES,
-  minzoom: glZoom(9),
-  paint: {
-    "circle-color": ["match", ["get", "level"], "warning", LEVEL_COLOUR.warning, LEVEL_COLOUR.caution],
-    "circle-radius": ["interpolate", ["linear"], ["zoom"], glZoom(9), 3, glZoom(13), 6],
-    "circle-stroke-color": CHART.casing,
-    "circle-stroke-width": 1,
-  },
-};
+/** The dark ring's width, px: half a pixel more than the white one it
+ *  replaced, so it reads round a 3 px dot. */
+const OBSTACLE_RING = 1.5;
+/** The obstacles the colouring rings, under the chart's own symbols' size,
+ *  a layer for each level so each colour is a constant, each on a dark
+ *  ring in the course's edge colour (CHART.routeEdge), day and night: the
+ *  white ring it was dimmed to the paper at night and vanished on the
+ *  sectional's white by day (1.00:1), and the amber, lighter than the
+ *  dimmed paper, read 1.60:1 on it. Dimmed by colour at night (the owner, 2026-11-27, "Dim by
+ *  colour"): the red as a warning (mapDim's DIM_WARNING), 3:1 or more over
+ *  the paper across the Contrast at the default Dimmer; the amber and its
+ *  ring with the chart (DIM_BY_COLOUR), the amber 3.17:1 on its ring and
+ *  the ring 5:1 or more on the paper (mapContrast.test). A colour by
+ *  feature would have the Dimmer lay the source out again at each step. */
+function obstacleLayer(level: keyof typeof LEVEL_COLOUR): CircleLayerSpecification {
+  return {
+    id: `${OBSTACLES}-${level}`,
+    type: "circle",
+    source: OBSTACLES,
+    metadata: level === "warning" ? DIM_WARNING : DIM_BY_COLOUR,
+    minzoom: glZoom(9),
+    filter: ["==", ["get", "level"], level],
+    paint: {
+      "circle-color": LEVEL_COLOUR[level],
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], glZoom(9), 3, glZoom(13), 6],
+      "circle-stroke-color": CHART.routeEdge,
+      "circle-stroke-width": OBSTACLE_RING,
+    },
+  };
+}
 const SOURCES = { [OBSTACLES]: { type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } } };
-const LAYERS = [OBSTACLE_LAYER];
+// The warning over the caution.
+const LAYERS = [obstacleLayer("caution"), obstacleLayer("warning")];
 
 /**
  * Hazard colouring, ForeFlight's Hazard Advisor on the chart: the ground
@@ -67,6 +86,9 @@ export default function HazardGl({ cruiseFt }: { cruiseFt: number | null }) {
         id: TINT,
         type: "color-relief",
         source: DEM,
+        // Never dimmed with the chart at night: it is a terrain warning, and
+        // dimming it took its amber from about 1.6:1 to 1.3:1 against the
+        // paper; a warning stays conspicuous, as own ship does.
         paint: { "color-relief-opacity": 1, "color-relief-color": colours },
       };
       map.addLayer(tint, slotId("imagery"));

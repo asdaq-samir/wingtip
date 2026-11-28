@@ -11,6 +11,7 @@ import httpx2
 import pytest
 
 from app.mcp import calls, flight_view, records, view_resource
+from app.mcp.flight_state import from_saved
 from app.settings import get_settings
 
 from .mcp_harness import call, session
@@ -199,3 +200,26 @@ def test_the_views_channel_is_the_pilot_s_and_this_connector_s_alone():
     assert flight_view.channel_of("7") == flight_view.channel_of("7")
     assert flight_view.channel_of("7") != flight_view.channel_of("8")
     assert len(flight_view.channel_of("7")) == 32
+
+
+def test_a_saved_flight_keeps_its_fuel_stops_tanks_and_rules(_account):
+    """The mcp audit of 2026-11-23, M5 (the owner took the rec): an IFR
+    flight with fuel stops and its own fuel on board opens again as it was
+    saved, not as VFR on full tanks with its fuel stops plain stops."""
+    flight = {**FLIGHT, "saved_flight_id": None, "fuel_stops": ["KMSN"], "fuel_on_board": {"C81": 30, "KMSN": 0}, "rules": "ifr"}
+    answer(call("save_flight_plan", {"flight": flight}))
+    picks = _account[0][2]["picks"]
+    assert picks == "fuel=KMSN&tanks=C81%3A30%2CKMSN%3A0&rules=ifr"
+    reopened = from_saved({**SAVED, "picks": picks})
+    assert reopened.fuel_stops == ["KMSN"] and reopened.fuel_on_board == {"C81": 30.0, "KMSN": 0.0} and reopened.rules == "ifr"
+    assert from_saved(SAVED).rules == "vfr" and from_saved(SAVED).fuel_stops == []
+
+
+def test_a_saved_flight_whose_time_has_passed_says_so(monkeypatch):
+    async def flights(pilot_id):
+        return [{**SAVED, "plannedFor": "2026-01-02T15:00:00Z"}]
+
+    monkeypatch.setattr(records, "flights", flights)
+    result = call("open_saved_flight", {"flight_id": 12})
+    text = " ".join(c.text for c in result.content if hasattr(c, "text"))
+    assert "which has passed: set_departure_time to fly it now" in text

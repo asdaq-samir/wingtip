@@ -61,8 +61,7 @@ export function dataWarning(cycles: readonly DataCycle[] | null | undefined): st
  * `data_cycle` (the FAA's 28 and 56 Day Product Schedule) on the edition the
  * planner said it holds. The planner's `state` is as of when it answered:
  * a phone that kept that answer and flew on with no signal past the
- * edition's last day still read "in force" (the offline audit of
- * 2026-11-21), and an expired chart read as current is what 14 CFR 91.103
+ * edition's last day still read "in force", and an expired chart read as current is what 14 CFR 91.103
  * asks a pilot to rule out. Where the engine cannot answer, the planner's
  * own judgement stands.
  */

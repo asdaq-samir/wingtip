@@ -69,6 +69,12 @@ class AirplaneInspections(BaseModel):
     static_check_good_through: str | None = None
     transponder_check_good_through: str | None = None
     hundred_hour_due_at_hours: float | None = None
+    for_hire: bool | None = Field(
+        None,
+        description="The owner's word that the airplane carries anyone for hire or gives flight instruction for hire: "
+        "only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; "
+        "null weighs a due given.",
+    )
     hours_now: float | None = None
 
 
@@ -151,8 +157,8 @@ class GoNoGoAsk(BaseModel):
     #: day when not given.
     day: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     minimums: PersonalMinimums = PersonalMinimums()
-    #: The loading; the POH's sample airplane, a pilot of 170 lb and full
-    #: usable fuel when not given (lib/weightBalance defaultLoad).
+    #: The pilot's own load; with none the weight and balance is not
+    #: worked ("give your load"), never the POH's sample airplane.
     load: AirplaneLoad | None = None
     #: The risk assessment's own checks the pilot ticked, by key
     #: (GoNoGo.self_checks).
@@ -221,8 +227,8 @@ class LoadCondition(BaseModel):
 
 
 class LoadBalance(BaseModel):
-    """The weight and balance for the load used: the pilot's, or the
-    POH's sample airplane where none was sent."""
+    """The weight and balance for the pilot's own load (null where none
+    was sent: it is never balanced at the POH's sample airplane)."""
 
     load: AirplaneLoad
     takeoff: LoadCondition

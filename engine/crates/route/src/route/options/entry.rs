@@ -55,6 +55,24 @@ pub(super) fn frame(a: &Ask) -> String {
     out
 }
 
+/// route_options or terrain_way_round with the ground's heights handed
+/// over as numbers (the facade's call_with_numbers), not as the input's
+/// "terrain_ft" JSON list: 100,000 to 200,000 heights a frame that would
+/// otherwise each become a JSON value before the rule copied them back.
+/// `v` holds the rest of the input; the answer is the same as with the
+/// heights in it.
+pub fn call_with_terrain(name: &str, v: &Value, terrain_ft: &[f64]) -> Result<String, String> {
+    match name {
+        "route_options" => {
+            let mut a = Reader { name }.ask(v)?;
+            a.terrain_ft = Some(terrain_ft.to_vec());
+            options(&wrap::unwrapped(a))
+        }
+        "terrain_way_round" => terrain::call(name, v, Some(terrain_ft)),
+        _ => Err(format!("{name}: takes no heights handed over")),
+    }
+}
+
 /// A rule of this module by its name, JSON in and out (crate::call).
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let r = Reader { name };
@@ -63,7 +81,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         // frame's lon0 and boxes may pass -180 or 180, the answer's do not.
         "route_options_frame" => Ok(frame(&wrap::unwrapped(r.ask(v)?))),
         "route_options" => options(&wrap::unwrapped(r.ask(v)?)),
-        "terrain_way_frame" | "terrain_way_round" => terrain::call(name, v),
+        "terrain_way_frame" | "terrain_way_round" => terrain::call(name, v, None),
         "fuel_stops" | "fields_along" => fuel::call(name, v),
         "class_b_entered" | "class_b_detours" => classb::call(name, v),
         "frd_near" => {

@@ -28,6 +28,8 @@ final nonisolated class ChartTileOverlay: NSObject, MKOverlay, Sendable {
     let template: TileTemplate
     /// The day's lift (ChartLift) put on each tile as it is decoded.
     let lift: Bool
+    /// The Map card's Contrast offset (ChartLook), on the lift's own.
+    let contrast: Double
     /// The pyramid's levels: none is drawn coarser than a level above the
     /// first, and past the last the last is enlarged.
     let minZoom: Int
@@ -50,9 +52,11 @@ final nonisolated class ChartTileOverlay: NSObject, MKOverlay, Sendable {
     // none close in (CloseImagery); its points of interest are off (ChartMap).
     func canReplaceMapContent() -> Bool { false }
 
-    init(template: TileTemplate, minZoom: Int, maxZoom: Int, lift: Bool = true, store: TileStore = .shared, cache: TileCache = .shared) {
+    init(template: TileTemplate, minZoom: Int, maxZoom: Int, lift: Bool = true, contrast: Double = 0,
+         store: TileStore = .shared, cache: TileCache = .shared) {
         self.template = template
         self.lift = lift
+        self.contrast = contrast
         self.minZoom = minZoom
         self.maxZoom = maxZoom
         self.store = store
@@ -150,11 +154,11 @@ nonisolated enum ChartTileMath {
 /// plain 32-bit bitmap (#547's 256 colours Core Graphics would otherwise
 /// expand at every draw), with the day's lift (ChartLift) where asked.
 nonisolated enum ChartTileImage {
-    static func decode(_ data: Data, lift: Bool) -> CGImage? {
+    static func decode(_ data: Data, lift: Bool, contrast: Double = 0) -> CGImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let decoded = CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
         else { return nil }
-        if lift, let lifted = ChartLift.apply(decoded) { return lifted }
+        if lift || contrast != 0, let lifted = ChartLift.apply(decoded, lift: lift, contrast: contrast) { return lifted }
         let width = decoded.width, height = decoded.height
         guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
                                       space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
@@ -214,7 +218,8 @@ final nonisolated class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendabl
         self.chart = chart
         self.session = session
         let t = chart.template
-        prefix = TileCache.prefix(cycle: t.cycle + (t.keptInForce.map { "+\($0)" } ?? ""), kind: t.kind + (chart.lift ? "+lift" : ""), scale: t.scale)
+        prefix = TileCache.prefix(cycle: t.cycle + (t.keptInForce.map { "+\($0)" } ?? ""), kind: t.kind + (chart.lift ? "+lift" : "") + (ChartLook.steps(chart.contrast) != 0 ? "+c\(ChartLook.steps(chart.contrast))" : ""),
+                                  scale: t.scale)
         super.init(overlay: chart)
     }
 
@@ -300,7 +305,7 @@ final nonisolated class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendabl
         let cancelled = Task.isCancelled
         // A tile the chart has none of (the sea, past the country's edge)
         // stays clear: no error on the map.
-        let image = data.flatMap { ChartTileImage.decode($0, lift: chart.lift) }
+        let image = data.flatMap { ChartTileImage.decode($0, lift: chart.lift, contrast: chart.contrast) }
         if let image { chart.cache.keep(image, for: key(tile)) }
         signposter.endInterval("tile", interval, "\(cancelled ? "cancelled" : (image == nil ? "none" : source), privacy: .public)")
         loads.withLock { state in
@@ -350,25 +355,36 @@ final nonisolated class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendabl
     }
 }
 
-/// The day chart's lift, the web map's (glStyle.ts chartPaint, DAY_CONTRAST
-/// and DAY_SATURATION 0.1): MapLibre's raster-contrast c scales each
-/// channel about the middle grey by 1 / (1 - c), and its raster-saturation
+/// The day chart's lift, the web map's (glStyle.ts chartPaint), from
+/// design/tokens.json's chart-paint group (WingtipChartPaint): MapLibre's
+/// raster-contrast c scales each channel about the middle grey by
+/// 1 / (1 - c), and its raster-saturation
 /// s moves each away from the pixel's grey by 1 / (1 - s); Core Image's
 /// colour controls do both, the grey by luminance rather than the plain
 /// mean, a difference under a step of the eye on the chart's inks.
+///
+/// The Map card's Contrast (ChartLook) adds its offset to the lift's
+/// by day, to none at night, as the web adds it to the look's own
+/// raster-contrast: MapLibre's c over 0 is 1 / (1 - c), under 0 1 + c.
 nonisolated enum ChartLift {
-    static let contrast = 1 / (1 - 0.1)
-    static let saturation = 1 / (1 - 0.1)
+    static let base = WingtipChartPaint.dayContrast
+    static let saturation = 1 / (1 - WingtipChartPaint.daySaturation)
+
+    /// Core Image's contrast for MapLibre's raster-contrast c.
+    static func factor(_ c: Double) -> Double {
+        let c = min(0.99, max(-1, c))
+        return c > 0 ? 1 / (1 - c) : 1 + c
+    }
     /// One context for every tile, as Core Image asks: making one is the
     /// costly part.
     private static let context = CIContext(options: [.cacheIntermediates: false])
 
-    static func apply(_ image: CGImage) -> CGImage? {
+    static func apply(_ image: CGImage, lift: Bool = true, contrast offset: Double = 0) -> CGImage? {
         let input = CIImage(cgImage: image)
         guard let filter = CIFilter(name: "CIColorControls") else { return nil }
         filter.setValue(input, forKey: kCIInputImageKey)
-        filter.setValue(contrast, forKey: kCIInputContrastKey)
-        filter.setValue(saturation, forKey: kCIInputSaturationKey)
+        filter.setValue(factor((lift ? base : 0) + offset), forKey: kCIInputContrastKey)
+        filter.setValue(lift ? saturation : 1, forKey: kCIInputSaturationKey)
         guard let output = filter.outputImage else { return nil }
         return context.createCGImage(output, from: input.extent, format: .BGRA8, colorSpace: CGColorSpace(name: CGColorSpace.sRGB))
     }

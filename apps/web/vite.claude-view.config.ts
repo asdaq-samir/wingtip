@@ -8,6 +8,9 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 // none (its Content-Security-Policy has no wasm-unsafe-eval), and inlined
 // it was 1.7 MB of the page. What the view draws comes worked out by the
 // planner (app/mcp/flight_view: the strip's fuel among it).
+// The app's own source folder, wherever the repo is checked out or mounted.
+const appSrc = fileURLToPath(new URL("./src/", import.meta.url));
+
 const noEngine: Plugin = {
   name: "claude-view-no-engine",
   enforce: "pre",
@@ -45,8 +48,11 @@ export const claudeViewConfig: InlineConfig = {
       // tripFigures) kept every module it re-exports for their top-level
       // lazy() calls, and with them each lazy part's chunk -- MapLibre and
       // its worker, recharts, React Aria, the route box. The page was
-      // 4.0 MB with them, 1.08 MB without (rev-perf, 2026-11-22).
-      treeshake: { moduleSideEffects: (id: string) => /\.css($|\?)/.test(id) || !id.includes("/apps/web/src/") },
+      // 4.0 MB with them, 1.08 MB without (rev-perf, 2026-11-22). The
+      // app's folder is found from this file, not a repo path: the live
+      // stack builds it mounted at /w, where "/apps/web/src/" never matched
+      // and the view grew past its limit, failing the build.
+      treeshake: { moduleSideEffects: (id: string) => /\.css($|\?)/.test(id) || !id.startsWith(appSrc) },
       // A warning fails it, as the app's build (strictBuild), but one: a
       // dynamic import beside a static one, which says only that the
       // module stays in its chunk -- and here every module is in the one.

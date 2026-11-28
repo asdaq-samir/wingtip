@@ -840,6 +840,17 @@
             ],
             "title": "Last Action"
           },
+          "make_short": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Make Short"
+          },
           "manufacturer": {
             "anyOf": [
               {
@@ -894,6 +905,17 @@
               }
             ],
             "title": "Model Code"
+          },
+          "model_short": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Short"
           },
           "n_number": {
             "title": "N Number",
@@ -1163,6 +1185,18 @@
             ],
             "title": "Elt Inspection Good Through"
           },
+          "for_hire": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The owner's word that the airplane carries anyone for hire or gives flight instruction for hire: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null weighs a due given.",
+            "title": "For Hire"
+          },
           "hours_now": {
             "anyOf": [
               {
@@ -1389,6 +1423,17 @@
             "title": "Lat",
             "type": "number"
           },
+          "leg_caution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leg Caution"
+          },
           "lon": {
             "title": "Lon",
             "type": "number"
@@ -1396,6 +1441,17 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "outside_caution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outside Caution"
           },
           "pattern_altitude_ft": {
             "anyOf": [
@@ -2780,6 +2836,11 @@
             ],
             "title": "Ceiling Ft"
           },
+          "closed": {
+            "default": false,
+            "title": "Closed",
+            "type": "boolean"
+          },
           "distance_nm": {
             "anyOf": [
               {
@@ -3709,6 +3770,55 @@
         "title": "ApproachFacts",
         "type": "object"
       },
+      "ApproachFindAsk": {
+        "description": "A field's approaches as drawn, each from vectors or with the\ntransition picked, the track, the approach picked for the flight and\nthe pilot's minimums (DA or MDA, ft MSL) where typed.",
+        "properties": {
+          "drawings": {
+            "items": {
+              "$ref": "#/components/schemas/ProcedureDrawing"
+            },
+            "maxItems": 120,
+            "title": "Drawings",
+            "type": "array"
+          },
+          "minimums_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimums Ft"
+          },
+          "picked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Picked"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TrackPoint"
+            },
+            "maxItems": 20000,
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "drawings",
+          "points"
+        ],
+        "title": "ApproachFindAsk",
+        "type": "object"
+      },
       "ApproachRunway": {
         "description": "The approach's runway as the CIFP's runway record gives it: its\nthreshold (`ident` \"RW36\"), the threshold's elevation (ARINC 424-18\n5.68) and the threshold crossing height (5.67), ft; and its touchdown\nzone elevation, ft MSL to a tenth, from NASR (APT_RWY_END's TDZ_ELEV),\nNone where NASR has none.",
         "properties": {
@@ -3752,6 +3862,131 @@
           "tch_ft"
         ],
         "title": "ApproachRunway",
+        "type": "object"
+      },
+      "ApproachTaught": {
+        "description": "The lesson: the briefing (approach_brief), the steps flown fix by\nfix at the ground speed (approach_coaching), each with `way`, the\nprocedure's line from the step before's place to its own (the way the\nlesson's airplane flies it), the quiz (approach_quiz) and the side\nview (approach_profile).",
+        "properties": {
+          "brief": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Brief",
+            "type": "array"
+          },
+          "profile": {
+            "additionalProperties": true,
+            "title": "Profile",
+            "type": "object"
+          },
+          "quiz": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Quiz",
+            "type": "array"
+          },
+          "steps": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "brief",
+          "steps",
+          "quiz",
+          "profile"
+        ],
+        "title": "ApproachTaught",
+        "type": "object"
+      },
+      "ApproachTransitionAsk": {
+        "description": "An approach found from vectors (its final approach fix's time and\nthe way-in fixes it passed) and its transitions as drawn, with the\ntrack: which transition it came in by.",
+        "properties": {
+          "drawings": {
+            "items": {
+              "$ref": "#/components/schemas/ProcedureDrawing"
+            },
+            "maxItems": 120,
+            "title": "Drawings",
+            "type": "array"
+          },
+          "faf_at": {
+            "title": "Faf At",
+            "type": "number"
+          },
+          "minimums_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimums Ft"
+          },
+          "passed": {
+            "minimum": 0.0,
+            "title": "Passed",
+            "type": "integer"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TrackPoint"
+            },
+            "maxItems": 20000,
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "faf_at",
+          "passed",
+          "drawings",
+          "points"
+        ],
+        "title": "ApproachTransitionAsk",
+        "type": "object"
+      },
+      "BorderLine": {
+        "description": "The Brief's one line for the route's borders (app.route_borders):\nthe finding alone (`lead`), with what to do (`line`), and its parts.",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "cite": {
+            "title": "Cite",
+            "type": "string"
+          },
+          "lead": {
+            "title": "Lead",
+            "type": "string"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lead",
+          "line",
+          "action",
+          "why",
+          "cite"
+        ],
+        "title": "BorderLine",
         "type": "object"
       },
       "Briefing": {
@@ -5036,6 +5271,17 @@
             ],
             "title": "Flightreviewon"
           },
+          "flying": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Flying"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The airplane to be flown (14 CFR 61.57(a)(1)(ii)); none judges the newest flight's."
+          },
           "held": {
             "default": [],
             "items": {
@@ -5451,6 +5697,28 @@
             "title": "Approaches",
             "type": "integer"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class"
+          },
           "crossCountryHours": {
             "default": 0,
             "title": "Crosscountryhours",
@@ -5471,6 +5739,17 @@
             "format": "date",
             "title": "Flownon",
             "type": "string"
+          },
+          "fullStopLandings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fullstoplandings"
           },
           "holding": {
             "default": false,
@@ -5497,6 +5776,17 @@
             "default": 0,
             "title": "Solohours",
             "type": "number"
+          },
+          "tailwheel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tailwheel"
           },
           "totalHours": {
             "default": 0,
@@ -6097,6 +6387,16 @@
       "Course": {
         "description": "The course: the departure, the stops it lands at on the way (in\norder; none for a route flown straight), the destination, the whole\ndistance stop by stop, the bearing out of the departure, and the line\nthrough every stop.",
         "properties": {
+          "adiz": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BorderLine"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "bearing_deg": {
             "title": "Bearing Deg",
             "type": "number"
@@ -6168,6 +6468,16 @@
             "title": "Min Zoom",
             "type": "integer"
           },
+          "outside": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BorderLine"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "stops": {
             "default": [],
             "items": {
@@ -6203,6 +6513,18 @@
             "title": "Crosscountryhours",
             "type": "number"
           },
+          "dayPassengersUnknown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the logbook doesn't say, where the pilot would be current by day if it were so: \"Can't tell: ...\".",
+            "title": "Daypassengersunknown"
+          },
           "dayPassengersUntil": {
             "anyOf": [
               {
@@ -6213,7 +6535,7 @@
                 "type": "null"
               }
             ],
-            "description": "90 days after the third most recent landing (14 CFR 61.57(a)).",
+            "description": "90 days after the third most recent landing the logbook proves counts for the airplane judged (14 CFR 61.57(a)(1)).",
             "title": "Daypassengersuntil"
           },
           "due": {
@@ -6328,6 +6650,18 @@
             "title": "Nighthours",
             "type": "number"
           },
+          "nightPassengersUnknown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The same at night (61.57(b)(1)).",
+            "title": "Nightpassengersunknown"
+          },
           "nightPassengersUntil": {
             "anyOf": [
               {
@@ -6338,8 +6672,51 @@
                 "type": "null"
               }
             ],
-            "description": "90 days after the third most recent night full-stop landing (61.57(b)).",
+            "description": "90 days after the third most recent night full-stop landing the logbook proves counts (61.57(b)(1)).",
             "title": "Nightpassengersuntil"
+          },
+          "passengerClass": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The category and class judged: the airplane to be flown's, else the newest flight's (61.57(a)(1)).",
+            "title": "Passengerclass"
+          },
+          "passengerClassUnknown": {
+            "default": false,
+            "description": "Neither the airplane to be flown nor the newest flight says the class.",
+            "title": "Passengerclassunknown",
+            "type": "boolean"
+          },
+          "passengerTailwheel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether the airplane judged has a tailwheel; null not said, judged as one.",
+            "title": "Passengertailwheel"
+          },
+          "tailwheelPassengersUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A tailwheel's own, for a pilot judged in a tricycle who has flown one in the class (61.57(a)(1)(ii)).",
+            "title": "Tailwheelpassengersuntil"
           },
           "totalHours": {
             "title": "Totalhours",
@@ -6374,7 +6751,7 @@
         "type": "object"
       },
       "CurrencyAsk": {
-        "description": "The logbook, the dates the pilot gives and the day it is asked for\n(the pilot's own calendar's).",
+        "description": "The logbook, the dates the pilot gives, the airplane to be flown\nwhere known, and the day it is asked for (the pilot's own calendar's).",
         "properties": {
           "entries": {
             "items": {
@@ -6394,6 +6771,17 @@
               }
             ],
             "title": "Flightreviewon"
+          },
+          "flying": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Flying"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The airplane to be flown (61.57(a)(1)(ii)); none judges the newest flight's."
           },
           "ipcOn": {
             "anyOf": [
@@ -8977,6 +9365,11 @@
             ],
             "title": "Temp C"
           },
+          "visibility_minus": {
+            "default": false,
+            "title": "Visibility Minus",
+            "type": "boolean"
+          },
           "visibility_plus": {
             "default": false,
             "title": "Visibility Plus",
@@ -9269,6 +9662,18 @@
             },
             "title": "Held",
             "type": "array"
+          },
+          "makeModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it; none and the checks can't tell.",
+            "title": "Makemodel"
           }
         },
         "required": [
@@ -10598,6 +11003,48 @@
           "words"
         ],
         "title": "FlownSegment",
+        "type": "object"
+      },
+      "Flying": {
+        "description": "The airplane to be flown, which 14 CFR 61.57(a)(1)(ii) judges\npassenger currency for: its category and class, and whether it has a\ntailwheel (null: not said, judged as one, the stricter).",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 category, \"Airplane\".",
+            "title": "Category"
+          },
+          "class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 class, \"Single-engine land\".",
+            "title": "Class"
+          },
+          "tailwheel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tailwheel"
+          }
+        },
+        "title": "Flying",
         "type": "object"
       },
       "Forecast": {
@@ -12000,7 +12447,7 @@
         "type": "object"
       },
       "IcingForecast": {
-        "description": "GET /api/icing/route: the AWC's forecast icing (its GFA's, from CIP\nand FIP; AIM 7-1-4) on each leg at the altitude flown, the worst of it\nand the Go / No-Go's line (the engine's icing_forecast_route); the\nlegs it had no forecast for; the hour the forecast was issued.",
+        "description": "GET /api/icing/route: the NWS's current and forecast icing (the CIP\nanalysis and the IFI forecast grids the weather service keeps; AIM\n7-1-4) on each leg at the altitude flown, the worst of it\nand the Go / No-Go's line (the engine's icing_forecast_route); the\nlegs it had no forecast for; the hour the forecast was issued.",
         "properties": {
           "issued": {
             "title": "Issued",
@@ -12053,7 +12500,7 @@
         "type": "object"
       },
       "IcingForecastLeg": {
-        "description": "One leg's forecast icing (wingtip.icing_forecast): the worst\nseverity at the altitude flown, null where the AWC had no forecast for\nit; the share of the leg in icing there; the layer icing is in over\nthe leg at any level; and the time it was read for, the leg's middle.",
+        "description": "One leg's forecast icing (wingtip.icing_forecast): the worst\nseverity at the altitude flown, null where the grids had no forecast for\nit; the share of the leg in icing there; the layer icing is in over\nthe leg at any level; and the time it was read for, the leg's middle.",
         "properties": {
           "altitude_ft": {
             "title": "Altitude Ft",
@@ -12081,7 +12528,7 @@
                   "trace",
                   "light",
                   "moderate",
-                  "heavy"
+                  "severe"
                 ],
                 "type": "string"
               },
@@ -12146,7 +12593,7 @@
               "trace",
               "light",
               "moderate",
-              "heavy"
+              "severe"
             ],
             "title": "Severity",
             "type": "string"
@@ -12364,9 +12811,15 @@
             "title": "Elton"
           },
           "forHire": {
-            "default": false,
-            "title": "Forhire",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forhire"
           },
           "hundredHourAtHours": {
             "anyOf": [
@@ -13267,6 +13720,14 @@
             "default": null,
             "title": "Final At"
           },
+          "fix_min": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "default": {},
+            "title": "Fix Min",
+            "type": "object"
+          },
           "ft": {
             "items": {
               "anyOf": [
@@ -13359,6 +13820,60 @@
           "more_gal"
         ],
         "title": "LegProcedure",
+        "type": "object"
+      },
+      "LessonAsk": {
+        "description": "An approach as drawn (GET /api/airport/{ident}/procedures/{id}),\nthe field's radio from its card, the airplane's VREF or landing\nconfiguration's stall speed where its figures carry either (its\napproach category, 14 CFR 97.3), and the ground speed it is flown at.",
+        "properties": {
+          "drawing": {
+            "$ref": "#/components/schemas/ProcedureDrawing"
+          },
+          "frequencies": {
+            "items": {
+              "$ref": "#/components/schemas/Frequency"
+            },
+            "maxItems": 200,
+            "title": "Frequencies",
+            "type": "array"
+          },
+          "gs_kt": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 400.0,
+            "title": "Gs Kt",
+            "type": "number"
+          },
+          "vref_kt": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 400.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vref Kt"
+          },
+          "vso_kt": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 400.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vso Kt"
+          }
+        },
+        "required": [
+          "drawing",
+          "gs_kt"
+        ],
+        "title": "LessonAsk",
         "type": "object"
       },
       "Library": {
@@ -13632,7 +14147,7 @@
         "type": "object"
       },
       "LoadBalance": {
-        "description": "The weight and balance for the load used: the pilot's, or the\nPOH's sample airplane where none was sent.",
+        "description": "The weight and balance for the pilot's own load (null where none\nwas sent: it is never balanced at the POH's sample airplane).",
         "properties": {
           "landing": {
             "$ref": "#/components/schemas/LoadCondition"
@@ -13971,6 +14486,30 @@
             "title": "Approaches",
             "type": "integer"
           },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 category, \"Airplane\".",
+            "title": "Category"
+          },
+          "class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.5 class, \"Single-engine land\".",
+            "title": "Class"
+          },
           "crossCountryHours": {
             "default": 0,
             "title": "Crosscountryhours",
@@ -13996,6 +14535,18 @@
             "format": "date",
             "title": "Flownon",
             "type": "string"
+          },
+          "fullStopLandings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Landings to a full stop, day and night, where logged.",
+            "title": "Fullstoplandings"
           },
           "holding": {
             "default": false,
@@ -14027,6 +14578,18 @@
             "default": 0,
             "title": "Solohours",
             "type": "number"
+          },
+          "tailwheel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A tailwheel airplane (61.57(a)(1)(ii)); null where not said.",
+            "title": "Tailwheel"
           },
           "totalHours": {
             "default": 0,
@@ -14488,6 +15051,11 @@
             ],
             "title": "Temp C"
           },
+          "visibility_minus": {
+            "default": false,
+            "title": "Visibility Minus",
+            "type": "boolean"
+          },
           "visibility_plus": {
             "default": false,
             "title": "Visibility Plus",
@@ -14536,6 +15104,27 @@
               }
             ],
             "title": "Wind Speed Kt"
+          },
+          "wind_variable_deg": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Variable Deg"
           }
         },
         "title": "Metar",
@@ -16907,6 +17496,39 @@
             ],
             "title": "Alt Ft"
           },
+          "alt_held": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alt Held"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "ground": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ground"
+          },
           "gs_kt": {
             "anyOf": [
               {
@@ -16951,6 +17573,17 @@
               }
             ],
             "title": "Vrate Fpm"
+          },
+          "vs_fpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vs Fpm"
           }
         },
         "required": [
@@ -16987,8 +17620,15 @@
             "type": "boolean"
           },
           "max_alt_ft": {
-            "title": "Max Alt Ft",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Alt Ft"
           },
           "off": {
             "title": "Off",
@@ -17007,6 +17647,17 @@
                 "type": "null"
               }
             ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
           }
         },
         "required": [
@@ -17014,8 +17665,7 @@
           "off",
           "on",
           "landed",
-          "in_air",
-          "max_alt_ft"
+          "in_air"
         ],
         "title": "PastFlightSummary",
         "type": "object"
@@ -19875,6 +20525,33 @@
       "RankedNotam": {
         "description": "One NOTAM or TFR, ranked: its place in the list and score, whether it\nis one of the top three said first, whether its score is shared\n(`tied`), what was read of it, and its text as sent (`raw`).",
         "properties": {
+          "affects": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Affects"
+          },
+          "card": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card"
+          },
           "closed": {
             "title": "Closed",
             "type": "boolean"
@@ -19965,6 +20642,18 @@
             "title": "Raw",
             "type": "string"
           },
+          "reading": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reading"
+          },
           "reasons": {
             "items": {
               "$ref": "#/components/schemas/NotamReason"
@@ -20004,6 +20693,18 @@
               }
             ],
             "title": "Starts"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
           },
           "tfr": {
             "anyOf": [
@@ -21229,6 +21930,11 @@
             ],
             "title": "Ceiling Ref"
           },
+          "ceiling_varies": {
+            "default": false,
+            "title": "Ceiling Varies",
+            "type": "boolean"
+          },
           "crosses": {
             "title": "Crosses",
             "type": "boolean"
@@ -21280,6 +21986,11 @@
               }
             ],
             "title": "Floor Ref"
+          },
+          "floor_varies": {
+            "default": false,
+            "title": "Floor Varies",
+            "type": "boolean"
           },
           "kind": {
             "anyOf": [
@@ -23405,6 +24116,11 @@
             ],
             "title": "Ceiling Ref"
           },
+          "ceiling_varies": {
+            "default": false,
+            "title": "Ceiling Varies",
+            "type": "boolean"
+          },
           "effective": {
             "anyOf": [
               {
@@ -23452,6 +24168,11 @@
               }
             ],
             "title": "Floor Ref"
+          },
+          "floor_varies": {
+            "default": false,
+            "title": "Floor Varies",
+            "type": "boolean"
           },
           "geometry": {
             "additionalProperties": true,
@@ -23586,6 +24307,11 @@
             ],
             "title": "Ceiling Ref"
           },
+          "ceiling_varies": {
+            "default": false,
+            "title": "Ceiling Varies",
+            "type": "boolean"
+          },
           "contact": {
             "anyOf": [
               {
@@ -23647,6 +24373,11 @@
               }
             ],
             "title": "Floor Ref"
+          },
+          "floor_varies": {
+            "default": false,
+            "title": "Floor Varies",
+            "type": "boolean"
           },
           "instructions": {
             "default": [],
@@ -23748,6 +24479,11 @@
             ],
             "title": "Ceiling Ref"
           },
+          "ceiling_varies": {
+            "default": false,
+            "title": "Ceiling Varies",
+            "type": "boolean"
+          },
           "effective": {
             "anyOf": [
               {
@@ -23795,6 +24531,11 @@
               }
             ],
             "title": "Floor Ref"
+          },
+          "floor_varies": {
+            "default": false,
+            "title": "Floor Varies",
+            "type": "boolean"
           },
           "kind": {
             "anyOf": [
@@ -24404,6 +25145,45 @@
         "title": "Totals",
         "type": "object"
       },
+      "TrackPoint": {
+        "description": "A point of a flown track: when, ms since 1970; GPS altitude, feet\nabove sea level, where it has one.",
+        "properties": {
+          "alt_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alt Ft"
+          },
+          "lat": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lon",
+            "type": "number"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon"
+        ],
+        "title": "TrackPoint",
+        "type": "object"
+      },
       "Traffic": {
         "description": "The airplanes ADS-B receivers hear near a point, from adsb.lol's\nopen data, under the Open Database License 1.0, which asks that the\nmap say so where it draws them.",
         "properties": {
@@ -24746,6 +25526,56 @@
           "message"
         ],
         "title": "TrainingReadiness",
+        "type": "object"
+      },
+      "UsageDay": {
+        "description": "One route's calls on one finished UTC day (app.usage_days): its\ntemplate and method, the status answered, and how many. Nothing of a\npilot, a device or an address.",
+        "properties": {
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "day": {
+            "title": "Day",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "route",
+          "method",
+          "status",
+          "calls"
+        ],
+        "title": "UsageDay",
+        "type": "object"
+      },
+      "UsageDays": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/UsageDay"
+            },
+            "title": "Days",
+            "type": "array"
+          }
+        },
+        "required": [
+          "days"
+        ],
+        "title": "UsageDays",
         "type": "object"
       },
       "UsualBase": {
@@ -26305,7 +27135,7 @@
     },
     "/api/airport/{ident}/notams": {
       "get": {
-        "description": "One field's own NOTAMs (the FAA's feed, by any ident it goes by)\nand the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks\na route's: the field read as a stop from an hour ago to three hours\nahead (14 CFR 91.103 asks for the NOTAMs of every field a flight\nuses). With no flight there is no runway in use or cruise altitude to\nweigh. `unchecked` names the TFRs when their list could not be had;\n`time_zone` is the field's, for its NOTAMs' local times.",
+        "description": "One field's own NOTAMs (the FAA's feed, by any ident it goes by)\nand the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks\na route's: the field read as a stop from an hour ago to three hours\nahead (14 CFR 91.103 asks for the NOTAMs of every field a flight\nuses). With no flight there is no runway in use or cruise altitude to\nweigh. `unchecked` names the TFRs when their list could not be had;\n`time_zone` is the field's, for its NOTAMs' local times. Each NOTAM\ncomes read for the card: its `reading`, `card` and `subject`\n(app.notam_reading).",
         "operationId": "airport_notams_api_airport__ident__notams_get",
         "parameters": [
           {
@@ -27379,6 +28209,149 @@
         "x-gateway": {
           "access": "public",
           "cache": true
+        }
+      }
+    },
+    "/api/approach/debriefs": {
+      "post": {
+        "description": "The approaches a track flew, one for each time it came down a final:\nof the field's approaches drawn, the one whose final it fitted best,\nthe one picked where it fits as well, each fix by fix against the\nprocedure (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) in the engine's\nApproachDebrief. A POST for the drawings and the track; it changes\nnothing.",
+        "operationId": "approach_debriefs_api_approach_debriefs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproachFindAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Approach Debriefs Api Approach Debriefs Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approach Debriefs",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
+        }
+      }
+    },
+    "/api/approach/debriefs/transition": {
+      "post": {
+        "description": "Of an approach's transitions drawn, the one the track came in by:\nevery fix of it before the final passed, the closest to it on the way;\nnull where none was flown, so the approach stays from vectors.",
+        "operationId": "approach_transition_api_approach_debriefs_transition_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproachTransitionAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": true,
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Approach Transition Api Approach Debriefs Transition Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approach Transition",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
+        }
+      }
+    },
+    "/api/approach/lesson": {
+      "post": {
+        "description": "An approach taught as an instructor teaches it, from the FAA's coded\nprocedure (FAA-H-8083-16B, chapter 4): the briefing, the steps flown\nfix by fix at `gs_kt` with the way to each, the quiz, and the side\nview. What the coded data does not hold, the minimums above all, is\n\"See the plate\", never a figure made up. A POST for the drawing; it\nchanges nothing.",
+        "operationId": "approach_lesson_api_approach_lesson_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApproachTaught"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approach Lesson",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
         }
       }
     },
@@ -33651,7 +34624,7 @@
     },
     "/api/traffic/flight/{hex_id}": {
       "get": {
-        "description": "An airplane being tracked: what it is, the field it took off from\nand its track today (wingtip.traffic.flight); no track where its trace\ncannot be had.",
+        "description": "An airplane being tracked: what it is, the field it took off from\nand its track today (wingtip.traffic.flight); no track where its trace\ncannot be had. Followed from now on, its flights recorded, only where\na signed-in pilot opened it (X-Pilot-Id, set by the gateway).",
         "operationId": "traffic_flight_api_traffic_flight__hex_id__get",
         "parameters": [
           {
@@ -33662,6 +34635,22 @@
               "pattern": "^~?[0-9a-fA-F]{6}$",
               "title": "Hex Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Pilot-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Pilot-Id"
             }
           }
         ],
@@ -33689,7 +34678,8 @@
         },
         "summary": "Traffic Flight",
         "x-gateway": {
-          "access": "public"
+          "access": "public",
+          "pilot": true
         }
       }
     },
@@ -33777,7 +34767,7 @@
     },
     "/api/traffic/flight/{hex_id}/history/{flight_id}": {
       "get": {
-        "description": "One of those flights' reports, for its track log and its replay\n(wingtip.traffic.past_flight); 404 where it is not one of them.",
+        "description": "One of those flights' reports, for its track log and its replay\n(wingtip.traffic.past_flight), made ready to replay by the engine\n(wingtip.traffic.replay_ready: gaps, a held or missing height carried at\nthe last good one); 404 where it is not one of them.",
         "operationId": "traffic_past_flight_api_traffic_flight__hex_id__history__flight_id__get",
         "parameters": [
           {
@@ -34015,6 +35005,50 @@
         "x-gateway": {
           "access": "public"
         }
+      }
+    },
+    "/api/usage/daily": {
+      "get": {
+        "description": "Every route's calls on each finished UTC day from `since` on, today\nleft out until it is over: totals by route template, method and status,\ntied to no pilot (docs/privacy-inventory.md).",
+        "operationId": "usage_daily_api_usage_daily_get",
+        "parameters": [
+          {
+            "description": "The first UTC day wanted, YYYY-MM-DD",
+            "in": "query",
+            "name": "since",
+            "required": true,
+            "schema": {
+              "description": "The first UTC day wanted, YYYY-MM-DD",
+              "format": "date",
+              "title": "Since",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageDays"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Usage Daily",
+        "x-internal": "gateway"
       }
     },
     "/api/waypoints/in-view": {

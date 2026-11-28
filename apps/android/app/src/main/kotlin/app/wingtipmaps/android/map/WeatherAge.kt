@@ -12,8 +12,8 @@ import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 
 /**
- * How old the airport weather marks on the map are (the offline audit's
- * gap 7: they were kept with no signal and never said how old). A field's
+ * How old the airport weather marks on the map are (they were kept with no signal and never said how old).
+ * A field's
  * mark is stale once its METAR was heard longer ago than the engine's
  * freshness for a METAR (kept_age's "weather": the routine report's
  * hour, AIM 7-1-28); a stale mark is greyed (AirportWeatherMarks.STALE)

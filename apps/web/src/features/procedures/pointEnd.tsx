@@ -81,7 +81,7 @@ export function pointEnd(
   const { pointAltitude, directTo, routePoints, positioned, onDirectTo, setEditing, onInfo, stopsFull, setFixFrom, holdOn, edit } = vm;
   const asked = at.to ? pointAltitude(ident, at.waypoint, at.visit) : undefined;
   // A waypoint's cruise to it is this row's own leg's: a fix flown twice
-  // read the first visit's at both (the audit's WEB-2). The pilot's own
+  // read the first visit's at both. The pilot's own
   // is the visit's where the route is at it more than once (at.visit).
   const legFt = at.waypoint && at.row ? legOf(at.row)?.altitude_ft : undefined;
   const altitude = asked && !asked.own && legFt != null ? { ...asked, feet: legFt } : asked;
@@ -90,13 +90,12 @@ export function pointEnd(
   const direct = directTo !== null && sameField(directTo, ident);
   const typed = routePoints.some((p) => sameField(p, ident));
   // Direct to a round trip's end on the ground, with no position, is from
-  // the field to itself: a local flight, not a direct (the audit's).
+  // the field to itself: a local flight, not a direct.
   const homeward = routePoints.length > 1 && sameField(routePoints[0]!, ident) && !positioned;
   const kind = own !== null ? "set" : at.waypoint ? "cruise" : "elev";
   // With no airplane picked every time is a dash: the one ask for an
   // airplane is the N-number field and the strip's dashes, where the
-  // arrival's row had a "Pick an airplane" of its own (the UI audit's C3,
-  // the owner's word 2026-11-17).
+  // arrival's row had a "Pick an airplane" of its own (the owner's word 2026-11-17).
   return {
     direct,
     figures: <PointFigures time={at.time} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
@@ -131,6 +130,9 @@ export function pointEnd(
         // its ident a link to its card (FieldHead; the owner, 2026-11-17:
         // "Can we make the airports/stops tappable as the navlog does?").
         onChange={edit && at.index !== undefined ? () => askChange(vm, ident, at.index!, at.stop, at.stop || at.waypoint) : undefined}
+        // A stop asked for on the flight into it, as on the one out of it:
+        // not before the departure, which leaves no flight to stop on.
+        onAddBefore={edit && at.index !== undefined && at.index > 0 && !stopsFull ? () => edit.onAddAt(at.index!) : undefined}
         onAddAfter={
           edit && at.index !== undefined && at.index < routePoints.length - 1 && !stopsFull ? () => edit.onAddAt(at.index! + 1) : undefined
         }

@@ -77,6 +77,10 @@
             "null"
           ]
         },
+        "visibility_minus": {
+          "type": "boolean",
+          "description": "Less than visibility_sm: \"less than one quarter\", a METAR's M1/4SM (FMH-1 chapter 6), said \"less than 1/4 sm\", never 1/4."
+        },
         "sky": {
           "type": "array",
           "items": {
@@ -165,6 +169,7 @@
         "time_z",
         "wind",
         "visibility_sm",
+        "visibility_minus",
         "sky",
         "temp_c",
         "dewpoint_c",

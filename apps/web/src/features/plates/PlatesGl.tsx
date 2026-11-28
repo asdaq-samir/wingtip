@@ -6,12 +6,15 @@ import { TAP } from "../../lib/map/gl/layers/common";
 import { useGlLayer, useGlMap, useGlPaint, useGlTap } from "../../lib/map/gl/glLayer";
 import { useGlLines, type GlRun } from "../../lib/map/gl/useGlLines";
 import { pictureLayer } from "../../lib/map/gl/markLayers";
+import { glZoom } from "../../lib/map/gl/glStyle";
+import { PROCEDURE_WORDS_FROM_ZOOM } from "../../lib/map/marks/procedureMarks";
 import { useGlSymbols, type GlSymbol } from "../../lib/map/gl/useGlSymbols";
 import { usePreferences } from "../../lib/preferences";
 import { plateQuery } from "../../lib/queryClient";
 import { CHART } from "../../lib/tokens";
 import { PlateCard, type ChartViewer } from "./PlateCard";
-import { plateKey, useHiddenPlates, usePlateLook } from "./plateLook";
+import { plateKey, useHiddenPlates, usePlateInverted, usePlateLook } from "./plateLook";
+import { useChartBrightness } from "../../lib/map/gl/useChartLook";
 import { PLATE_TAG_PLACE, plateTag } from "./plateTag";
 import { tagViews } from "./plateTags";
 
@@ -111,7 +114,12 @@ function Plate({
   onTap: (openCard: ReturnType<typeof useGlMap>["openCard"]) => void;
 }) {
   const { openCard } = useGlMap();
-  const { opacity, inverted } = usePlateLook();
+  const opacity = usePlateLook((s) => s.opacity);
+  const inverted = usePlateInverted();
+  // The plate no brighter than the chart under it: the Map card's Dimmer
+  // (raster-brightness-max) caps the page's light too, so a plate opened at
+  // night is not the brightest thing in a dark cockpit (AIM 8-1-6).
+  const bright = useChartBrightness();
   useGlLayer(
     "lines",
     {
@@ -128,10 +136,18 @@ function Plate({
   );
   // The page's own white is its paper; the plan view's sheet is drawn
   // under it, dark when the colours are inverted.
-  useGlPaint([`${id}-sheet`], { "fill-opacity": whole ? 0 : 0.8 * opacity, "fill-color": inverted ? CHART.tag : CHART.casing });
+  useGlPaint([`${id}-sheet`], {
+    "fill-opacity": whole ? 0 : 0.8 * opacity * (inverted ? 1 : bright),
+    "fill-color": inverted ? CHART.tag : CHART.casing,
+  });
   // Inverted by swapping the raster's brightness ends: white is drawn
-  // black and black white, the night's plate (MapLibre's raster paint).
-  useGlPaint([id], { "raster-opacity": opacity, "raster-brightness-min": inverted ? 1 : 0, "raster-brightness-max": inverted ? 0 : 1 });
+  // black and black white, the night's plate (MapLibre's raster paint);
+  // the light end at the Dimmer's cap either way.
+  useGlPaint([id], {
+    "raster-opacity": opacity,
+    "raster-brightness-min": inverted ? bright : 0,
+    "raster-brightness-max": inverted ? 0 : bright,
+  });
   useGlTap([`${id}-sheet`], 1, PLATE_RANK, () => onTap(openCard));
   return null;
 }
@@ -164,7 +180,13 @@ function PlateTagsGl({ drawing }: { drawing: ProcedureDrawing }) {
     [answer, drawing],
   );
   const source = `plate-tags-${drawing.airport}-${drawing.id}`;
-  const layers = useMemo(() => [pictureLayer(source, source, {}, PLATE_TAG_PLACE)], [source]);
+  // From the procedures' words' zoom, as the procedure's own tags: farther
+  // out every tag of an approach piled on its field, over the fields round
+  // it (the owner's iPhone screenshot, 2026-11-23: KLAS's over KSLC).
+  const layers = useMemo(
+    () => [{ ...pictureLayer(source, source, {}, PLATE_TAG_PLACE), minzoom: glZoom(PROCEDURE_WORDS_FROM_ZOOM) }],
+    [source],
+  );
   useGlSymbols(source, layers, marks);
   return null;
 }

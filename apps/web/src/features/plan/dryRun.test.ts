@@ -115,6 +115,7 @@ describe("a leg the planner flies by the procedures picked", () => {
     more_nm: moreNm,
     more_min: moreMin,
     more_gal: moreGal,
+    fix_min: {},
   });
   const flownLeg = (p: LegProcedure) => ({ ...leg, ete_min: 36 + moreMin, fuel_gal: 5 + moreGal, procedure: p }) as Leg;
   const legRows = navLogRows({ departure: airport("C81", 42, 800), destination: airport("KDLH", 43, 500) }, [], [flownLeg(procedure())]);

@@ -88,3 +88,13 @@ def test_the_record_says_whether_an_airplane_lands_there(tmp_path, monkeypatch):
     assert field_use.record_of("IL72", tmp_path)["airplane"] is False
     assert field_use.record_of("LOT", tmp_path)["airplane"] is False
     assert field_use.record_of("3CK", tmp_path)["airplane"] is True
+
+
+def test_a_blank_status_is_a_code_the_engine_rules_closed(tmp_path, monkeypatch):
+    # Decision 0043: any ARPT_STATUS but O is closed, a blank one too; only
+    # a file without the column leaves the status None.
+    path = tmp_path / "APT_BASE.csv"
+    path.write_text("SITE_TYPE_CODE,ARPT_ID,ICAO_ID,ARPT_NAME,ARPT_STATUS\nA,IL11,,GADE,\nA,3CK,,LAKE IN THE HILLS,O\n")
+    monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: path)
+    assert field_use.record_of("IL11", tmp_path)["status"] == ""
+    assert field_use.record_of("3CK", tmp_path)["status"] == "O"

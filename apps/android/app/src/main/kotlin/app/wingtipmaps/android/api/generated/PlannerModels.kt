@@ -350,6 +350,9 @@ data class AircraftRegistration (
     @SerialName("last_action")
     val lastAction: String? = null,
 
+    @SerialName("make_short")
+    val makeShort: String? = null,
+
     val manufacturer: String? = null,
 
     @SerialName("mode_s_hex")
@@ -362,6 +365,9 @@ data class AircraftRegistration (
 
     @SerialName("model_code")
     val modelCode: String? = null,
+
+    @SerialName("model_short")
+    val modelShort: String? = null,
 
     @SerialName("n_number")
     val nNumber: String,
@@ -681,6 +687,9 @@ data class Metar (
     @SerialName("temp_c")
     val tempC: Double? = null,
 
+    @SerialName("visibility_minus")
+    val visibilityMinus: Boolean? = null,
+
     @SerialName("visibility_plus")
     val visibilityPlus: Boolean? = null,
 
@@ -694,7 +703,10 @@ data class Metar (
     val windGustKt: Double? = null,
 
     @SerialName("wind_speed_kt")
-    val windSpeedKt: Double? = null
+    val windSpeedKt: Double? = null,
+
+    @SerialName("wind_variable_deg")
+    val windVariableDeg: List<Double>? = null
 )
 
 /**
@@ -1318,6 +1330,9 @@ data class TfrHere (
     @SerialName("ceiling_ref")
     val ceilingRef: String? = null,
 
+    @SerialName("ceiling_varies")
+    val ceilingVaries: Boolean? = null,
+
     val effective: String? = null,
     val expires: String? = null,
 
@@ -1326,6 +1341,9 @@ data class TfrHere (
 
     @SerialName("floor_ref")
     val floorRef: String? = null,
+
+    @SerialName("floor_varies")
+    val floorVaries: Boolean? = null,
 
     val kind: String? = null,
 
@@ -1442,6 +1460,8 @@ data class AlternateCheck (
     @SerialName("ceiling_ft")
     val ceilingFt: Double? = null,
 
+    val closed: Boolean? = null,
+
     @SerialName("distance_nm")
     val distanceNm: Double? = null,
 
@@ -1489,6 +1509,261 @@ data class DestinationCheck (
 
     @SerialName("visibility_sm")
     val visibilitySm: Double? = null
+)
+
+/**
+ * A field's approaches as drawn, each from vectors or with the
+ * transition picked, the track, the approach picked for the flight and
+ * the pilot's minimums (DA or MDA, ft MSL) where typed.
+ */
+@Serializable
+data class ApproachFindAsk (
+    val drawings: List<ProcedureDrawing>,
+
+    @SerialName("minimums_ft")
+    val minimumsFt: Double? = null,
+
+    val picked: String? = null,
+    val points: List<TrackPoint>
+)
+
+/**
+ * One procedure drawn with the transition picked (wingtip.procedures):
+ * its lines, holds and fixes, from the CIFP of `cycle`.
+ */
+@Serializable
+data class ProcedureDrawing (
+    val airport: String,
+    val approach: ApproachFacts? = null,
+    val cycle: String,
+
+    @SerialName("final_course_deg")
+    val finalCourseDeg: Int? = null,
+
+    val fixes: List<ProcedureFix>,
+
+    @SerialName("glidepath_deg")
+    val glidepathDeg: Double? = null,
+
+    val holds: List<ProcedureHold>,
+    val id: String,
+    val kind: String,
+    val lines: List<ProcedureLine>,
+
+    @SerialName("missed_legs")
+    val missedLegs: List<ProcedureMissedLeg>? = null,
+
+    val name: String,
+
+    @SerialName("runway_path")
+    val runwayPath: ProcedureRunwayPath? = null,
+
+    val stale: Boolean? = null,
+    val transition: String? = null
+)
+
+/**
+ * What the CIFP says of an approach besides its legs
+ * (wingtip.approach_facts): its runway, the altitudes coded beside its
+ * fixes' limits, and the levels of service it authorises (ARINC 424-19
+ * 5.275, 5.276: "LPV", "LNAV/VNAV", "LNAV", ...). No decision altitude or
+ * MDA: those are the plate's minimums alone.
+ */
+@Serializable
+data class ApproachFacts (
+    val coded: List<ApproachCoded>? = null,
+    val levels: List<String>? = null,
+    val runway: ApproachRunway? = null
+)
+
+/**
+ * An altitude a final codes beside a fix's limits (ARINC 424-18 5.29,
+ * its second altitude): `code` "G" or "H" the glide slope's at the final
+ * approach fix, "I" or "J" the glide slope's intercept at the final
+ * approach course fix, "V" the vertical path's at a step-down fix.
+ */
+@Serializable
+data class ApproachCoded (
+    val code: String,
+    val fix: String,
+    val ft: Int
+)
+
+/**
+ * The approach's runway as the CIFP's runway record gives it: its
+ * threshold (`ident` "RW36"), the threshold's elevation (ARINC 424-18
+ * 5.68) and the threshold crossing height (5.67), ft; and its touchdown
+ * zone elevation, ft MSL to a tenth, from NASR (APT_RWY_END's TDZ_ELEV),
+ * None where NASR has none.
+ */
+@Serializable
+data class ApproachRunway (
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+
+    @SerialName("tch_ft")
+    val tchFt: Int,
+
+    @SerialName("tdze_ft")
+    val tdzeFt: Double? = null,
+
+    @SerialName("threshold_ft")
+    val thresholdFt: Int
+)
+
+/**
+ * A fix of a drawn procedure: its `roles` on an approach (IAF, IF,
+ * FAF, MAP, hold), the altitudes it is crossed at -- at or above
+ * `min_ft`, at or below `max_ft`, at both where they are one -- and the
+ * speed it is crossed at, `speed_limit` saying whether that is the
+ * speed ("at"), a minimum ("min") or a maximum ("max"; ARINC 424-18
+ * 5.261). `missed` where it is on the missed
+ * approach alone.
+ */
+@Serializable
+data class ProcedureFix (
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+
+    @SerialName("max_ft")
+    val maxFt: Int? = null,
+
+    @SerialName("min_ft")
+    val minFt: Int? = null,
+
+    val missed: Boolean,
+    val roles: List<String>,
+
+    @SerialName("speed_kt")
+    val speedKt: Int? = null,
+
+    @SerialName("speed_limit")
+    val speedLimit: String? = null,
+
+    @SerialName("vertical_angle_deg")
+    val verticalAngleDeg: Double? = null
+)
+
+/**
+ * A holding pattern of a drawn procedure, or its procedure turn: at `fix`, its inbound
+ * course `inbound_deg` true, its turns right or left (`turn`), drawn to
+ * a light airplane's size (the engine's paths.rs, HOLD_SPEED_KT).
+ */
+@Serializable
+data class ProcedureHold (
+    val fix: String,
+
+    @SerialName("inbound_deg")
+    val inboundDeg: Int,
+
+    val kind: String? = null,
+    val missed: Boolean,
+    val points: List<List<Double>>,
+    val turn: String
+)
+
+/**
+ * A line of a drawn procedure, its points latitude and longitude:
+ * an approach's `transition`, its `final` and its `missed` approach; an
+ * arrival's or departure's enroute `transition`, `common` route, or a
+ * `runway` transition, `name` the transition's ("RW08").
+ */
+@Serializable
+data class ProcedureLine (
+    val name: String? = null,
+    val points: List<List<Double>>,
+    val role: String
+)
+
+/**
+ * A leg of an approach's missed approach, in the order flown, as its
+ * words are made: `path` its ARINC 424-18 path and terminator (5.21: CA
+ * a course to an altitude, VA a heading to one, VI a heading to an
+ * intercept, CF and TF to a fix, DF direct to one, HM, HA and HF a
+ * hold), `fix` the fix it goes to, `course_deg` its course or heading
+ * magnetic, `turn` which way it turns, and the altitudes it climbs to
+ * (at or above `min_ft`, at or below `max_ft`).
+ */
+@Serializable
+data class ProcedureMissedLeg (
+    @SerialName("course_deg")
+    val courseDeg: Int? = null,
+
+    val fix: String? = null,
+
+    @SerialName("max_ft")
+    val maxFt: Int? = null,
+
+    @SerialName("min_ft")
+    val minFt: Int? = null,
+
+    val path: String,
+    val turn: String? = null
+)
+
+/**
+ * The path an approach's final comes down, placed (wingtip.procedures):
+ * `deg` below level, into `fix`, its runway's threshold at `lat`/`lon`,
+ * crossed at `ft` MSL -- the threshold's elevation and its crossing
+ * height (ARINC 424-18 5.70).
+ */
+@Serializable
+data class ProcedureRunwayPath (
+    val deg: Double,
+    val fix: String,
+    val ft: Int,
+    val lat: Double,
+    val lon: Double
+)
+
+/**
+ * A point of a flown track: when, ms since 1970; GPS altitude, feet
+ * above sea level, where it has one.
+ */
+@Serializable
+data class TrackPoint (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val t: Double
+)
+
+/**
+ * The lesson: the briefing (approach_brief), the steps flown fix by
+ * fix at the ground speed (approach_coaching), each with `way`, the
+ * procedure's line from the step before's place to its own (the way the
+ * lesson's airplane flies it), the quiz (approach_quiz) and the side
+ * view (approach_profile).
+ */
+@Serializable
+data class ApproachTaught (
+    val brief: JsonArray,
+    val profile: JsonObject,
+    val quiz: JsonArray,
+    val steps: JsonArray
+)
+
+/**
+ * An approach found from vectors (its final approach fix's time and
+ * the way-in fixes it passed) and its transitions as drawn, with the
+ * track: which transition it came in by.
+ */
+@Serializable
+data class ApproachTransitionAsk (
+    val drawings: List<ProcedureDrawing>,
+
+    @SerialName("faf_at")
+    val fafAt: Double,
+
+    @SerialName("minimums_ft")
+    val minimumsFt: Double? = null,
+
+    val passed: Int,
+    val points: List<TrackPoint>
 )
 
 /**
@@ -1807,6 +2082,9 @@ data class RouteTfr (
     @SerialName("ceiling_ref")
     val ceilingRef: String? = null,
 
+    @SerialName("ceiling_varies")
+    val ceilingVaries: Boolean? = null,
+
     val crosses: Boolean,
     val effective: String? = null,
     val expires: String? = null,
@@ -1816,6 +2094,9 @@ data class RouteTfr (
 
     @SerialName("floor_ref")
     val floorRef: String? = null,
+
+    @SerialName("floor_varies")
+    val floorVaries: Boolean? = null,
 
     val kind: String? = null,
 
@@ -2014,8 +2295,15 @@ data class AirportEnd (
     val ident: String,
     val kind: String? = null,
     val lat: Double,
+
+    @SerialName("leg_caution")
+    val legCaution: String? = null,
+
     val lon: Double,
     val name: String,
+
+    @SerialName("outside_caution")
+    val outsideCaution: String? = null,
 
     @SerialName("pattern_altitude_ft")
     val patternAltitudeFt: Double? = null
@@ -2172,6 +2460,12 @@ data class CoachAsk (
     val debriefs: List<CoachDebrief>? = null,
     val entries: List<CoachLogbookEntry>,
     val flightReviewOn: String? = null,
+
+    /**
+     * The airplane to be flown (14 CFR 61.57(a)(1)(ii)); none judges the newest flight's.
+     */
+    val flying: Flying? = null,
+
     val held: List<CoachEndorsement>? = null,
 
     /**
@@ -2264,6 +2558,11 @@ data class CoachProfilePoint (
 @Serializable
 data class CoachLogbookEntry (
     val approaches: Int? = null,
+    val category: String? = null,
+
+    @SerialName("class")
+    val airspaceClass: String? = null,
+
     val crossCountryHours: Double? = null,
 
     /**
@@ -2273,6 +2572,7 @@ data class CoachLogbookEntry (
 
     val dualHours: Double? = null,
     val flownOn: String,
+    val fullStopLandings: Int? = null,
     val holding: Boolean? = null,
     val instrumentHours: Double? = null,
     val nightHours: Double? = null,
@@ -2283,8 +2583,30 @@ data class CoachLogbookEntry (
     val nightLandings: Int? = null,
 
     val soloHours: Double? = null,
+    val tailwheel: Boolean? = null,
     val totalHours: Double? = null,
     val tracking: Boolean? = null
+)
+
+/**
+ * The airplane to be flown, which 14 CFR 61.57(a)(1)(ii) judges
+ * passenger currency for: its category and class, and whether it has a
+ * tailwheel (null: not said, judged as one, the stricter).
+ */
+@Serializable
+data class Flying (
+    /**
+     * 14 CFR 61.5 category, "Airplane".
+     */
+    val category: String? = null,
+
+    /**
+     * 14 CFR 61.5 class, "Single-engine land".
+     */
+    @SerialName("class")
+    val airspaceClass: String? = null,
+
+    val tailwheel: Boolean? = null
 )
 
 /**
@@ -2398,6 +2720,9 @@ data class EmergencyMetar (
     @SerialName("temp_c")
     val tempC: Double? = null,
 
+    @SerialName("visibility_minus")
+    val visibilityMinus: Boolean? = null,
+
     @SerialName("visibility_plus")
     val visibilityPlus: Boolean? = null,
 
@@ -2447,6 +2772,8 @@ data class CopilotItws (
  */
 @Serializable
 data class Course (
+    val adiz: BorderLine? = null,
+
     @SerialName("bearing_deg")
     val bearingDeg: Double,
 
@@ -2480,7 +2807,21 @@ data class Course (
     @SerialName("min_zoom")
     val minZoom: Int,
 
+    val outside: BorderLine? = null,
     val stops: List<AirportEnd>? = null
+)
+
+/**
+ * The Brief's one line for the route's borders (app.route_borders):
+ * the finding alone (`lead`), with what to do (`line`), and its parts.
+ */
+@Serializable
+data class BorderLine (
+    val action: String,
+    val cite: String,
+    val lead: String,
+    val line: String,
+    val why: String
 )
 
 /**
@@ -2497,7 +2838,14 @@ data class Currency (
     val crossCountryHours: Double,
 
     /**
-     * 90 days after the third most recent landing (14 CFR 61.57(a)).
+     * What the logbook doesn't say, where the pilot would be current by day if it were so:
+     * "Can't tell: ...".
+     */
+    val dayPassengersUnknown: String? = null,
+
+    /**
+     * 90 days after the third most recent landing the logbook proves counts for the airplane
+     * judged (14 CFR 61.57(a)(1)).
      */
     val dayPassengersUntil: String? = null,
 
@@ -2540,9 +2888,37 @@ data class Currency (
     val nightHours: Double,
 
     /**
-     * 90 days after the third most recent night full-stop landing (61.57(b)).
+     * The same at night (61.57(b)(1)).
+     */
+    val nightPassengersUnknown: String? = null,
+
+    /**
+     * 90 days after the third most recent night full-stop landing the logbook proves counts
+     * (61.57(b)(1)).
      */
     val nightPassengersUntil: String? = null,
+
+    /**
+     * The category and class judged: the airplane to be flown's, else the newest flight's
+     * (61.57(a)(1)).
+     */
+    val passengerClass: String? = null,
+
+    /**
+     * Neither the airplane to be flown nor the newest flight says the class.
+     */
+    val passengerClassUnknown: Boolean? = null,
+
+    /**
+     * Whether the airplane judged has a tailwheel; null not said, judged as one.
+     */
+    val passengerTailwheel: Boolean? = null,
+
+    /**
+     * A tailwheel's own, for a pilot judged in a tricycle who has flown one in the class
+     * (61.57(a)(1)(ii)).
+     */
+    val tailwheelPassengersUntil: String? = null,
 
     val totalHours: Double,
     val trackingInWindow: Boolean
@@ -2574,13 +2950,19 @@ data class PaperworkDue (
 )
 
 /**
- * The logbook, the dates the pilot gives and the day it is asked for
- * (the pilot's own calendar's).
+ * The logbook, the dates the pilot gives, the airplane to be flown
+ * where known, and the day it is asked for (the pilot's own calendar's).
  */
 @Serializable
 data class CurrencyAsk (
     val entries: List<LogbookEntry>,
     val flightReviewOn: String? = null,
+
+    /**
+     * The airplane to be flown (61.57(a)(1)(ii)); none judges the newest flight's.
+     */
+    val flying: Flying? = null,
+
     val ipcOn: String? = null,
     val medicalExpiresOn: String? = null,
     val today: String
@@ -2593,6 +2975,18 @@ data class CurrencyAsk (
 @Serializable
 data class LogbookEntry (
     val approaches: Int? = null,
+
+    /**
+     * 14 CFR 61.5 category, "Airplane".
+     */
+    val category: String? = null,
+
+    /**
+     * 14 CFR 61.5 class, "Single-engine land".
+     */
+    @SerialName("class")
+    val airspaceClass: String? = null,
+
     val crossCountryHours: Double? = null,
 
     /**
@@ -2603,6 +2997,12 @@ data class LogbookEntry (
     val distanceNm: Double? = null,
     val dualHours: Double? = null,
     val flownOn: String,
+
+    /**
+     * Landings to a full stop, day and night, where logged.
+     */
+    val fullStopLandings: Int? = null,
+
     val holding: Boolean? = null,
     val instrumentHours: Double? = null,
     val longestLegNm: Double? = null,
@@ -2614,6 +3014,12 @@ data class LogbookEntry (
     val nightLandings: Int? = null,
 
     val soloHours: Double? = null,
+
+    /**
+     * A tailwheel airplane (61.57(a)(1)(ii)); null where not said.
+     */
+    val tailwheel: Boolean? = null,
+
     val totalHours: Double? = null,
     val toweredLandings: Int? = null,
     val tracking: Boolean? = null
@@ -3176,6 +3582,14 @@ data class AirplaneInspections (
 
     @SerialName("elt_inspection_good_through")
     val eltInspectionGoodThrough: String? = null,
+
+    /**
+     * The owner's word that the airplane carries anyone for hire or gives flight instruction
+     * for hire: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves
+     * hundred_hour_due_at_hours unweighed; null weighs a due given.
+     */
+    @SerialName("for_hire")
+    val forHire: Boolean? = null,
 
     @SerialName("hours_now")
     val hoursNow: Double? = null,
@@ -4202,8 +4616,8 @@ data class GoNoGo (
 )
 
 /**
- * The weight and balance for the load used: the pilot's, or the
- * POH's sample airplane where none was sent.
+ * The weight and balance for the pilot's own load (null where none
+ * was sent: it is never balanced at the POH's sample airplane).
  */
 @Serializable
 data class LoadBalance (
@@ -4514,8 +4928,9 @@ data class HoldLeg (
 )
 
 /**
- * GET /api/icing/route: the AWC's forecast icing (its GFA's, from CIP
- * and FIP; AIM 7-1-4) on each leg at the altitude flown, the worst of it
+ * GET /api/icing/route: the NWS's current and forecast icing (the CIP
+ * analysis and the IFI forecast grids the weather service keeps; AIM
+ * 7-1-4) on each leg at the altitude flown, the worst of it
  * and the Go / No-Go's line (the engine's icing_forecast_route); the
  * legs it had no forecast for; the hour the forecast was issued.
  */
@@ -4530,7 +4945,7 @@ data class IcingForecast (
 
 /**
  * One leg's forecast icing (wingtip.icing_forecast): the worst
- * severity at the altitude flown, null where the AWC had no forecast for
+ * severity at the altitude flown, null where the grids had no forecast for
  * it; the share of the leg in icing there; the layer icing is in over
  * the leg at any level; and the time it was read for, the leg's middle.
  */
@@ -4766,6 +5181,27 @@ data class ItwsAlert (
     val valueKt: Double? = null,
 
     val words: String
+)
+
+/**
+ * An approach as drawn (GET /api/airport/{ident}/procedures/{id}),
+ * the field's radio from its card, the airplane's VREF or landing
+ * configuration's stall speed where its figures carry either (its
+ * approach category, 14 CFR 97.3), and the ground speed it is flown at.
+ */
+@Serializable
+data class LessonAsk (
+    val drawing: ProcedureDrawing,
+    val frequencies: List<Frequency>? = null,
+
+    @SerialName("gs_kt")
+    val gsKt: Double,
+
+    @SerialName("vref_kt")
+    val vrefKt: Double? = null,
+
+    @SerialName("vso_kt")
+    val vsoKt: Double? = null
 )
 
 /**
@@ -6013,6 +6449,9 @@ data class LegProcedure (
     @SerialName("final_at")
     val finalAt: Int? = null,
 
+    @SerialName("fix_min")
+    val fixMin: Map<String, Double>? = null,
+
     val ft: List<Double?>,
     val landing: Boolean,
 
@@ -6397,6 +6836,8 @@ data class NotamsRanked (
  */
 @Serializable
 data class RankedNotam (
+    val affects: JsonArray? = null,
+    val card: JsonObject? = null,
     val closed: Boolean,
     val ends: String? = null,
     val field: String? = null,
@@ -6417,11 +6858,13 @@ data class RankedNotam (
 
     val rank: Int,
     val raw: String,
+    val reading: JsonObject? = null,
     val reasons: List<NotamReason>,
     val role: String? = null,
     val runways: List<String>,
     val score: Int,
     val starts: String? = null,
+    val subject: JsonObject? = null,
     val tfr: TfrFacts? = null,
     val tied: Boolean,
     val top: Boolean
@@ -6452,6 +6895,9 @@ data class TfrFacts (
     @SerialName("ceiling_ref")
     val ceilingRef: String? = null,
 
+    @SerialName("ceiling_varies")
+    val ceilingVaries: Boolean? = null,
+
     val contact: TfrContact? = null,
     val edge: TfrPoint? = null,
     val facility: TfrContact? = null,
@@ -6462,6 +6908,9 @@ data class TfrFacts (
 
     @SerialName("floor_ref")
     val floorRef: String? = null,
+
+    @SerialName("floor_varies")
+    val floorVaries: Boolean? = null,
 
     val instructions: List<String>? = null,
     val kind: String? = null,
@@ -6699,6 +7148,12 @@ data class PastFlightPoint (
     @SerialName("alt_ft")
     val altFt: Double? = null,
 
+    @SerialName("alt_held")
+    val altHeld: Boolean? = null,
+
+    val gap: Boolean? = null,
+    val ground: Boolean? = null,
+
     @SerialName("gs_kt")
     val gsKt: Double? = null,
 
@@ -6710,7 +7165,10 @@ data class PastFlightPoint (
     val trackDeg: Double? = null,
 
     @SerialName("vrate_fpm")
-    val vrateFpm: Double? = null
+    val vrateFpm: Double? = null,
+
+    @SerialName("vs_fpm")
+    val vsFpm: Double? = null
 )
 
 /**
@@ -6747,11 +7205,12 @@ data class PastFlightSummary (
     val landed: Boolean,
 
     @SerialName("max_alt_ft")
-    val maxAltFt: Double,
+    val maxAltFt: Double? = null,
 
     val off: Double,
     val on: Double,
-    val origin: PastFlightField? = null
+    val origin: PastFlightField? = null,
+    val source: String? = null
 )
 
 @Serializable
@@ -7151,197 +7610,6 @@ data class PlateStateSet (
 )
 
 /**
- * One procedure drawn with the transition picked (wingtip.procedures):
- * its lines, holds and fixes, from the CIFP of `cycle`.
- */
-@Serializable
-data class ProcedureDrawing (
-    val airport: String,
-    val approach: ApproachFacts? = null,
-    val cycle: String,
-
-    @SerialName("final_course_deg")
-    val finalCourseDeg: Int? = null,
-
-    val fixes: List<ProcedureFix>,
-
-    @SerialName("glidepath_deg")
-    val glidepathDeg: Double? = null,
-
-    val holds: List<ProcedureHold>,
-    val id: String,
-    val kind: String,
-    val lines: List<ProcedureLine>,
-
-    @SerialName("missed_legs")
-    val missedLegs: List<ProcedureMissedLeg>? = null,
-
-    val name: String,
-
-    @SerialName("runway_path")
-    val runwayPath: ProcedureRunwayPath? = null,
-
-    val stale: Boolean? = null,
-    val transition: String? = null
-)
-
-/**
- * What the CIFP says of an approach besides its legs
- * (wingtip.approach_facts): its runway, the altitudes coded beside its
- * fixes' limits, and the levels of service it authorises (ARINC 424-19
- * 5.275, 5.276: "LPV", "LNAV/VNAV", "LNAV", ...). No decision altitude or
- * MDA: those are the plate's minimums alone.
- */
-@Serializable
-data class ApproachFacts (
-    val coded: List<ApproachCoded>? = null,
-    val levels: List<String>? = null,
-    val runway: ApproachRunway? = null
-)
-
-/**
- * An altitude a final codes beside a fix's limits (ARINC 424-18 5.29,
- * its second altitude): `code` "G" or "H" the glide slope's at the final
- * approach fix, "I" or "J" the glide slope's intercept at the final
- * approach course fix, "V" the vertical path's at a step-down fix.
- */
-@Serializable
-data class ApproachCoded (
-    val code: String,
-    val fix: String,
-    val ft: Int
-)
-
-/**
- * The approach's runway as the CIFP's runway record gives it: its
- * threshold (`ident` "RW36"), the threshold's elevation (ARINC 424-18
- * 5.68) and the threshold crossing height (5.67), ft; and its touchdown
- * zone elevation, ft MSL to a tenth, from NASR (APT_RWY_END's TDZ_ELEV),
- * None where NASR has none.
- */
-@Serializable
-data class ApproachRunway (
-    val ident: String,
-    val lat: Double,
-    val lon: Double,
-
-    @SerialName("tch_ft")
-    val tchFt: Int,
-
-    @SerialName("tdze_ft")
-    val tdzeFt: Double? = null,
-
-    @SerialName("threshold_ft")
-    val thresholdFt: Int
-)
-
-/**
- * A fix of a drawn procedure: its `roles` on an approach (IAF, IF,
- * FAF, MAP, hold), the altitudes it is crossed at -- at or above
- * `min_ft`, at or below `max_ft`, at both where they are one -- and the
- * speed it is crossed at, `speed_limit` saying whether that is the
- * speed ("at"), a minimum ("min") or a maximum ("max"; ARINC 424-18
- * 5.261). `missed` where it is on the missed
- * approach alone.
- */
-@Serializable
-data class ProcedureFix (
-    val ident: String,
-    val lat: Double,
-    val lon: Double,
-
-    @SerialName("max_ft")
-    val maxFt: Int? = null,
-
-    @SerialName("min_ft")
-    val minFt: Int? = null,
-
-    val missed: Boolean,
-    val roles: List<String>,
-
-    @SerialName("speed_kt")
-    val speedKt: Int? = null,
-
-    @SerialName("speed_limit")
-    val speedLimit: String? = null,
-
-    @SerialName("vertical_angle_deg")
-    val verticalAngleDeg: Double? = null
-)
-
-/**
- * A holding pattern of a drawn procedure, or its procedure turn: at `fix`, its inbound
- * course `inbound_deg` true, its turns right or left (`turn`), drawn to
- * a light airplane's size (the engine's paths.rs, HOLD_SPEED_KT).
- */
-@Serializable
-data class ProcedureHold (
-    val fix: String,
-
-    @SerialName("inbound_deg")
-    val inboundDeg: Int,
-
-    val kind: String? = null,
-    val missed: Boolean,
-    val points: List<List<Double>>,
-    val turn: String
-)
-
-/**
- * A line of a drawn procedure, its points latitude and longitude:
- * an approach's `transition`, its `final` and its `missed` approach; an
- * arrival's or departure's enroute `transition`, `common` route, or a
- * `runway` transition, `name` the transition's ("RW08").
- */
-@Serializable
-data class ProcedureLine (
-    val name: String? = null,
-    val points: List<List<Double>>,
-    val role: String
-)
-
-/**
- * A leg of an approach's missed approach, in the order flown, as its
- * words are made: `path` its ARINC 424-18 path and terminator (5.21: CA
- * a course to an altitude, VA a heading to one, VI a heading to an
- * intercept, CF and TF to a fix, DF direct to one, HM, HA and HF a
- * hold), `fix` the fix it goes to, `course_deg` its course or heading
- * magnetic, `turn` which way it turns, and the altitudes it climbs to
- * (at or above `min_ft`, at or below `max_ft`).
- */
-@Serializable
-data class ProcedureMissedLeg (
-    @SerialName("course_deg")
-    val courseDeg: Int? = null,
-
-    val fix: String? = null,
-
-    @SerialName("max_ft")
-    val maxFt: Int? = null,
-
-    @SerialName("min_ft")
-    val minFt: Int? = null,
-
-    val path: String,
-    val turn: String? = null
-)
-
-/**
- * The path an approach's final comes down, placed (wingtip.procedures):
- * `deg` below level, into `fix`, its runway's threshold at `lat`/`lon`,
- * crossed at `ft` MSL -- the threshold's elevation and its crossing
- * height (ARINC 424-18 5.70).
- */
-@Serializable
-data class ProcedureRunwayPath (
-    val deg: Double,
-    val fix: String,
-    val ft: Int,
-    val lat: Double,
-    val lon: Double
-)
-
-/**
  * A field's instrument procedures, approaches first, from the CIFP
  * of the AIRAC cycle that took effect on `cycle` (YYMMDD); none for a
  * field with none.
@@ -7559,7 +7827,13 @@ data class RecordsBatchAsk (
 @Serializable
 data class EndorsementsAsk (
     val flightOn: String? = null,
-    val held: List<HeldEndorsement>
+    val held: List<HeldEndorsement>,
+
+    /**
+     * The solo cross-country's make and model: 61.93(d)(4), (5) and 61.87(n) hold the
+     * endorsements to it; none and the checks can't tell.
+     */
+    val makeModel: String? = null
 )
 
 /**
@@ -8472,6 +8746,9 @@ data class Tfr (
     @SerialName("ceiling_ref")
     val ceilingRef: String? = null,
 
+    @SerialName("ceiling_varies")
+    val ceilingVaries: Boolean? = null,
+
     val effective: String? = null,
     val expires: String? = null,
 
@@ -8480,6 +8757,9 @@ data class Tfr (
 
     @SerialName("floor_ref")
     val floorRef: String? = null,
+
+    @SerialName("floor_varies")
+    val floorVaries: Boolean? = null,
 
     val geometry: JsonObject,
     val kind: String? = null,
@@ -8521,6 +8801,25 @@ data class TrafficFound (
     val license: String? = null,
     val registered: AircraftRegistration? = null,
     val source: String? = null
+)
+
+@Serializable
+data class UsageDays (
+    val days: List<UsageDay>
+)
+
+/**
+ * One route's calls on one finished UTC day (app.usage_days): its
+ * template and method, the status answered, and how many. Nothing of a
+ * pilot, a device or an address.
+ */
+@Serializable
+data class UsageDay (
+    val calls: Int,
+    val day: String,
+    val method: String,
+    val route: String,
+    val status: Int
 )
 
 @Serializable

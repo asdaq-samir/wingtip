@@ -59,8 +59,13 @@ class TfrFacts(BaseModel):
     title: str | None = None
     floor_ft: float | None = None
     floor_ref: str | None = None
+    #: Its areas' floors given some AGL and some MSL, so the lowest one
+    #: depends on the ground under it (tfr_detail_read); floor_ft is then
+    #: only the smaller figure, and the card says it varies.
+    floor_varies: bool = False
     ceiling_ft: float | None = None
     ceiling_ref: str | None = None
+    ceiling_varies: bool = False
     instructions: list[str] = []
     text: str | None = None
     facility: TfrContact | None = None
@@ -94,6 +99,17 @@ class RankedNotam(BaseModel):
     starts: str | None
     ends: str | None
     tfr: TfrFacts | None = None
+    #: On a field's card (/api/airport/{ident}/notams), the NOTAM read by
+    #: the engine here, as the web once read it (app.notam_reading): its
+    #: notam_read, its notam_card and its notam_subject's badges against
+    #: the card's own lists (engine/contract/engine.schema.json gives each
+    #: answer's shape). None on a route's.
+    reading: dict | None = None
+    card: dict | None = None
+    subject: dict | None = None
+    #: The plan's roles it reaches (notam_affects, asked for all four),
+    #: in the engine's order: the card keeps those its field plays.
+    affects: list[dict] | None = None
 
 
 class NotamsRanked(BaseModel):

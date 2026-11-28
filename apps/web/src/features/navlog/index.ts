@@ -5,7 +5,6 @@
  */
 
 export { default as ProfileCard } from "./ProfileCard";
-export { default as TripFigures } from "./TripFigures";
 export { clearanceAt } from "./altitude/clearance";
 export { loadFlightChart } from "./loadFlightChart";
 export { useLegSheet } from "./useLegSheet";
@@ -27,3 +26,13 @@ export const loadPastFlightChart = () => import("./PastFlightChart");
 
 /** RouteLegCard, on a chunk of its own, as its importer loads it. */
 export const loadRouteLegCard = () => import("./RouteLegCard");
+
+/** TripFigures (with FigureStrip and the trip's figures), on a chunk of its
+ *  own, drawn from its module once in (fromChunk): the strip waits for the
+ *  engine anyway (FlightFoot's EngineGate), so it comes beside the .wasm,
+ *  asked for at the start (main.tsx), not in the entry the page waits for
+ *  (8.7 KB of it). */
+export const { Part: TripFigures, prefetch: prefetchTripFigures } = fromChunk(
+  () => import("./TripFigures"),
+  (m) => m.default,
+);

@@ -1,21 +1,15 @@
 """What every router starts from: the route's idents, the airports
 behind them, and the on-disk paths a corridor's data lives at."""
 
-import logging
 import re
 from dataclasses import dataclass
 from itertools import pairwise
 
 from fastapi import HTTPException
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from wingtip import airports, airways, fixes, geo, places, weather
+from wingtip import airports, airways, fixes, geo, places
 from wingtip.config import PROCESSED_DIR  # noqa: F401  (re-exported for the routers)
 from wingtip.config import corridor_paths as paths  # noqa: F401  (the routers' name for it)
 
-from wingtip.planning import StillComputing
-
-log = logging.getLogger(__name__)
 
 #: How many stops a route may make between its ends: each is a flight of
 #: its own to read the chart along and plan. Sixteen, where it was eight:
@@ -54,17 +48,31 @@ CHART_CACHE = "public, max-age=60"
 DIAGRAM_CACHE = f"public, max-age={28 * 24 * 3600}, immutable"
 
 
-def near_points(near: str) -> tuple:
-    """ "42.2,-88.1;46.8,-92.2" as ((42.2, -88.1), (46.8, -92.2)); what is
-    not a pair of numbers left out."""
-    points = []
-    for pair in near.split(";"):
-        try:
-            lat, lon = (float(v) for v in pair.split(","))
-        except ValueError:
+def points(text: str, on_bad: str | None = None, off_globe: str | None = None) -> list[tuple[float, float]]:
+    """ "lat,lon;lat,lon;..." as its points, [] where none was sent (empty
+    pieces between semicolons are passed over). Strict, a piece that is
+    not a pair of numbers is a 422 saying `on_bad`, and a point off the
+    globe one saying `off_globe` (else `on_bad`): each route words its
+    own. Lenient (no `on_bad`), such a piece is left out, a point off the
+    globe too: "nan,nan" and "inf,1" parse as floats, and are never passed
+    on as a place."""
+    found = []
+    for piece in text.split(";"):
+        if not piece.strip():
             continue
-        points.append((lat, lon))
-    return tuple(points)
+        try:
+            lat, lon = (float(v) for v in piece.split(","))
+        except ValueError as err:
+            if on_bad is None:
+                continue
+            raise HTTPException(422, on_bad) from err
+        # NaN fails every comparison, so it is off the globe here too.
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            if on_bad is None and off_globe is None:
+                continue
+            raise HTTPException(422, off_globe or on_bad)
+        found.append((lat, lon))
+    return found
 
 
 def route_key(dep: str, dest: str) -> tuple:
@@ -360,40 +368,3 @@ def _published(segment: "airways.Segment") -> dict:
         "moca_ft": segment.moca_ft,
         "maa_ft": segment.maa_ft,
     }
-
-
-def line(message: BaseModel) -> str:
-    """One NDJSON line, serialised through the message's own model so
-    the stream can only ever carry the shapes app.schemas declares."""
-    return message.model_dump_json(by_alias=True) + "\n"
-
-
-def ndjson(lines, on_error) -> StreamingResponse:
-    """One JSON object per line, sent as each is produced. The headers keep
-    any proxy in between (nginx, the Spring gateway) from buffering lines
-    until the stream ends, which would defeat streaming entirely.
-
-    `on_error` builds the stream's "error" message. Once the first line
-    is out the status is fixed at 200, so a failure after that -- a
-    weather fetch, the corridor read -- cannot become a
-    502 any more; left alone it would simply truncate the body, which a
-    browser cannot tell from a stream still loading. It becomes the last
-    line instead, and the page ends with a message rather than a spinner.
-    """
-    return StreamingResponse(
-        _ending_in_an_error_line(lines, on_error),
-        media_type="application/x-ndjson",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
-
-
-def _ending_in_an_error_line(lines, on_error):
-    try:
-        yield from lines
-    except HTTPException as err:
-        yield line(on_error(detail=str(err.detail)))
-    except (weather.WeatherServiceError, StillComputing) as err:
-        yield line(on_error(detail=str(err)))
-    except Exception as err:  # noqa: BLE001 -- the stream is committed; the client gets the line, the log gets the trace
-        log.exception("stream failed after the response had started")
-        yield line(on_error(detail=f"{type(err).__name__}: {err}"))

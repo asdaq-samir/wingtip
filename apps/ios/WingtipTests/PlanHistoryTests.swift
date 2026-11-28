@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Wingtip
 
-/// The route's undo and redo, the window's UndoManager's: the cleared
+/// The route's undo and redo, the plan's one UndoManager's: the cleared
 /// route given back whole and cleared again, no step for the same route,
 /// at most PlanHistory.limit steps, and the Undo's words the web app's
 /// (lib/planHistory).
@@ -13,13 +13,12 @@ struct PlanHistoryTests {
         ProcedurePick(ident: ident, id: id, kind: "IAP", name: id, transition: nil)
     }
 
-    /// A plan on `route`, its undo steps on a manager of its own, one step
-    /// per group as a test makes them (the window groups by event).
+    /// A plan on `route`, its undo steps on its own manager, one step per
+    /// group as a test makes them (the app groups by event).
     @MainActor
     private func planned() -> (Plan, UndoManager) {
-        let plan = Plan(), undo = UndoManager()
+        let plan = Plan(), undo = plan.undoManager
         undo.groupsByEvent = false
-        plan.undoManager = undo
         plan.dep = route.dep; plan.dest = route.dest; plan.stops = route.stops
         plan.forgetHistory()
         return (plan, undo)
@@ -60,9 +59,8 @@ struct PlanHistoryTests {
     /// takes away, and its Undo, which the ✕'s question promises, brings
     /// them back (SheetPageToggleTests' testTheRoutesCloseAsksBeforeClearing).
     @Test @MainActor func aTypedRouteNotYetPlannedComesBackFromClear() throws {
-        let plan = Plan(), undo = UndoManager()
+        let plan = Plan(), undo = plan.undoManager
         undo.groupsByEvent = false
-        plan.undoManager = undo
         plan.forgetHistory()
         // Typed into the fields: the bindings set the ends, nothing planned.
         plan.dep = "KMSN"; plan.dest = "KOSH"
@@ -71,6 +69,35 @@ struct PlanHistoryTests {
         #expect(offer.words == "Route Cleared")
         undo.undo()
         #expect(plan.dep == "KMSN" && plan.dest == "KOSH")
+        // Put back as typed: the planner is not asked for a route the
+        // pilot had not yet planned.
+        #expect(!plan.planning && plan.course == nil)
+    }
+
+    /// Two windows over the one plan (the iPad's): one history, so an
+    /// Undo in the first window after an edit in the second takes back the
+    /// second's edit, the latest, and never puts back a route from before
+    /// it; each window's own manager forwards to the plan's.
+    @Test @MainActor func twoWindowsShareOneHistory() throws {
+        let (plan, history) = planned()
+        let first = UndoManager(), second = UndoManager()
+        first.groupsByEvent = false
+        second.groupsByEvent = false
+        plan.windowUndo = first
+        first.beginUndoGrouping()
+        step(history) { plan.clear() }
+        first.endUndoGrouping()
+        plan.windowUndo = second
+        second.beginUndoGrouping()
+        // Planned, not only typed: the fields set the ends without a step
+        // (Plan.clear), so the second window's edit is the route planned.
+        step(history) { plan.dep = "KMSN"; plan.dest = "KOSH"; plan.plan() }
+        second.endUndoGrouping()
+        #expect(first.canUndo && second.canUndo)
+        first.undo()
+        #expect(plan.routeState == RouteState())
+        history.undo()
+        #expect(plan.routeState == route)
     }
 
     @Test @MainActor func aLaterOfferStaysWhenTheEarlierTimesOut() throws {

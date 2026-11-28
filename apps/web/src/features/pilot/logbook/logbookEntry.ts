@@ -31,6 +31,12 @@ export function blankEntry(aircraft = ""): LogbookEntryRequest {
     touchAndGoes: 0,
     fromTrack: false,
     flightId: null,
+    // Not said until the pilot says (14 CFR 61.57(a)(1)(ii)): none, which
+    // the engine counts toward no passenger currency.
+    category: null,
+    aircraftClass: null,
+    tailwheel: null,
+    fullStopLandings: null,
   };
 }
 

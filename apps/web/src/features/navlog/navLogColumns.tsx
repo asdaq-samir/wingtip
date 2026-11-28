@@ -1,7 +1,7 @@
 import type { CellData, ColumnDef, RowData, TableFeatures } from "@tanstack/react-table";
 import { tableFeatures } from "@tanstack/react-table";
 import { altFt, bearing, etaAt, flownNmOf, isLegPoint, legOf, one, windAloft, type NavLogRow } from "../plan";
-import type { Leg, NavLogAltitude } from "../../lib/api/types";
+import type { NavLogAltitude } from "../../lib/api/types";
 import { magneticVariation, windCorrection, zoneName } from "../../lib/format";
 import { PointMark } from "./PointMark";
 import { Heading } from "./ColumnHeading";
@@ -9,6 +9,7 @@ import FigureWait from "../../components/FigureWait";
 import { WaypointName } from "./WaypointName";
 import { cn } from "cn";
 import { TEXT } from "../../lib/text";
+import { tas } from "./legTas";
 
 // TanStack Table's own extension point for arbitrary per-column data --
 // used below to carry each numeric column's shared className (bordered,
@@ -37,14 +38,6 @@ const DESK = new Set(["waypoint", "alt", "dist", "tc", "wind", "mh", "gs", "ete"
 /** The columns only an airplane gives (decision 0011: none assumed): its
  *  heading, groundspeed, time and fuel, which need its airspeed and burn. */
 const AIRPLANE = new Set(["mh", "gs", "ete", "fuel"]);
-
-/** The leg's true airspeed, in its own air (the engine's
- *  wingtip_flight::performance): it varies with the altitude and the forecast
- *  temperature, so each leg has its own. A dash from a planner that did
- *  not say. */
-export function tas(leg: Leg): string {
-  return leg.tas_kt == null ? "—" : String(Math.round(leg.tas_kt));
-}
 
 /** A column's own class: the paper's alone columns keep their `hidden print:table-cell`
  *  except on a desktop's side panel, where they are not drawn at all. */
@@ -122,7 +115,7 @@ export function navLogColumns({
       // than pushing the figures off the drawer's edge: with a
       // departure time's ETA as a sixth column, "Subdivision" alone was
       // wider than the room left. At a syllable where the browser can
-      // hyphenate; where it cannot (no dictionary: CI's audit found the
+      // hyphenate; where it cannot (no dictionary: CI found the
       // log seven points past an iPhone 16 Pro's panel for "Meadowbrook"
       // at 10,500 ft), broken at the column's edge as a last resort. The
       // column is never narrower than 5.5 rem, its mark and some ten

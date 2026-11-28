@@ -4,8 +4,9 @@ import Observation
 /// The airport card's NOTAMs, its view model (the web's fieldNotams and
 /// notamBadges): the field's own NOTAMs and the TFRs within 5 nm of it,
 /// best first as the engine ranks them (/api/airport/{ident}/notams), each
-/// read once by the engine for a pilot (notam_read, tfr_read), and what
-/// each one in force addresses on the card (notam_subject). 14 CFR 91.103
+/// read for a pilot by the engine on the planner (notam_read, notam_card,
+/// notam_subject, notam_affects; app.notam_reading), a TFR here by tfr_read
+/// from its facts, as the web reads them. 14 CFR 91.103
 /// asks for the NOTAMs of every field a flight uses; a card is where a
 /// pilot looks at one field. Nothing here is a rule: every word and every
 /// badge is the engine's.
@@ -30,6 +31,10 @@ final class FieldNotams {
     var opened: OpenNotams?
     private(set) var readings: [String: EngineContract.NotamReadAnswer] = [:]
     private(set) var tfrs: [String: EngineContract.TfrReadAnswer] = [:]
+    /// Each NOTAM's own card as the engine reads it from its parts
+    /// (notam_card): what happened, its category, its effect, the
+    /// procedures it takes away; none where the engine could not read it.
+    private(set) var cards: [String: EngineContract.NotamCardAnswer] = [:]
     private(set) var marks = NotamMarks()
     private var place: AirportPlace?
 
@@ -51,9 +56,9 @@ final class FieldNotams {
         }
     }
 
-    /// The answer read: each NOTAM by notam_read, each TFR by tfr_read,
-    /// once, off the main actor (a busy field has dozens), and taken while
-    /// the card still shows the field.
+    /// The answer read: each NOTAM's reading and card as the planner sent
+    /// them, each TFR by tfr_read, once, off the main actor (a busy field
+    /// has dozens), and taken while the card still shows the field.
     private func take(_ fresh: APINotamsRanked, for ident: String) async {
         let names: [String]
         do {
@@ -62,29 +67,35 @@ final class FieldNotams {
             problem = Problems.say("Its NOTAMs could not be read, so closures and TFRs aren't shown", error)
             return
         }
-        let read = await Self.read(fresh.notams, idents: names)
+        let read = await Self.read(fresh.notams)
         guard ident == self.ident else { return }
         idents = names
         ranked = fresh
         problem = nil
         readings = read.readings
         tfrs = read.tfrs
+        cards = read.cards
         remark()
     }
 
     @concurrent
-    private nonisolated static func read(_ notams: [APIRankedNotam], idents: [String]) async
-        -> (readings: [String: EngineContract.NotamReadAnswer], tfrs: [String: EngineContract.TfrReadAnswer]) {
+    private nonisolated static func read(_ notams: [APIRankedNotam]) async
+        -> (readings: [String: EngineContract.NotamReadAnswer], tfrs: [String: EngineContract.TfrReadAnswer],
+            cards: [String: EngineContract.NotamCardAnswer]) {
         var readings: [String: EngineContract.NotamReadAnswer] = [:]
         var tfrs: [String: EngineContract.TfrReadAnswer] = [:]
+        var cards: [String: EngineContract.NotamCardAnswer] = [:]
         for notam in notams {
             if notam.kind == "tfr" {
                 tfrs[notam.id] = try? FieldNotamWords.readTfr(notam)
             } else {
-                readings[notam.id] = try? Engine.notamRead(text: notam.raw, idents: idents)
+                readings[notam.id] = FieldNotamWords.planner(notam.reading)
+                // Read with the feed's end there: a firm one keeps a permanent
+                // NOTAM from reading "until the charts are updated".
+                cards[notam.id] = FieldNotamWords.planner(notam.card)
             }
         }
-        return (readings, tfrs)
+        return (readings, tfrs, cards)
     }
 
     /// What the empty list says of a field outside the NOTAM system: a
@@ -104,16 +115,44 @@ final class FieldNotams {
     }
 
     private func remark() {
-        marks = FieldNotamWords.marks(notams, idents: idents, place: place)
+        marks = FieldNotamWords.marks(notams, place: place)
     }
 
     func reading(_ notam: APIRankedNotam) -> EngineContract.NotamReadAnswer? { readings[notam.id] }
     func tfr(_ notam: APIRankedNotam) -> EngineContract.TfrReadAnswer? { tfrs[notam.id] }
+    func card(_ notam: APIRankedNotam) -> EngineContract.NotamCardAnswer? { notam.kind == "tfr" ? nil : cards[notam.id] }
 
-    /// Its first line: what it is and its condition in our words (notam_read's
-    /// what), else its words written out; a TFR's kind and rule (tfr_read).
+    /// Which part of the planned flight a NOTAM of this field affects, the
+    /// chip on its page: the roles the field plays in the plan (by any of
+    /// its idents), as the planner sends it read for every role (its
+    /// `affects`, the engine's notam_affects: which each reaches, and
+    /// whether it takes a procedure that role flies, in the engine's
+    /// order), the first of those the field plays, as the web's. Only one in force affects the flight; none where the field
+    /// plays no part or the engine could not say.
+    func affects(_ notam: APIRankedNotam, dep: String, stops: [String], dest: String, alternate: String?)
+        -> EngineContract.NotamAffectsAnswerAffectsItem? {
+        guard notam.kind != "tfr", notam.inForce != false else { return nil }
+        let upper = idents.map { $0.uppercased() }
+        func its(_ field: String?) -> Bool { field.map { !$0.isEmpty && upper.contains($0.uppercased()) } ?? false }
+        let plays: [(String, Bool)] = [("departure", its(dep)), ("stop", stops.contains { its($0) }), ("arrival", its(dest)),
+                                       ("alternate", its(alternate))]
+        let roles = Set(plays.filter(\.1).map(\.0))
+        guard !roles.isEmpty, let affects: [EngineContract.NotamAffectsAnswerAffectsItem] = FieldNotamWords.planner(notam.affects) else { return nil }
+        return affects.first { roles.contains($0.role) }
+    }
+
+    /// The field's own time zone, the planner's, for a NOTAM card's times;
+    /// nil where it is not known (the times are then UTC).
+    var zone: TimeZone? { ranked?.timeZone.flatMap(TimeZone.init(identifier:)) }
+    /// The field's name, under a NOTAM card's title.
+    var fieldName: String? { place?.name }
+
+    /// Its first line: what happened in our words (notam_card's title:
+    /// notam_read's what, else what its parts say, as the web's whatOf),
+    /// else its words written out; a TFR's kind and rule (tfr_read).
     func what(_ notam: APIRankedNotam) -> String {
         if notam.kind == "tfr" { return tfr(notam)?.what ?? "TFR" }
+        if let title = card(notam)?.title { return title }
         guard let read = reading(notam) else { return NotamRows.summary(notam) }
         return read.what ?? read.words
     }
@@ -129,9 +168,11 @@ final class FieldNotams {
         notam.kind == "tfr" ? (tfr(notam)?.heading ?? "TFR") : (reading(notam)?.heading ?? "NOTAM")
     }
 
-    /// Its time lines (FieldNotamWords.timeLines), now.
+    /// Its time lines (FieldNotamWords.timeLines), now, on its row and on
+    /// its own card alike: its end "Permanent" where the engine's
+    /// notam_card says it runs until the charts are updated.
     func times(_ notam: APIRankedNotam, now: Date = .now) -> [FieldNotamWords.TimeLine] {
-        FieldNotamWords.timeLines(notam, read: reading(notam), now: now)
+        FieldNotamWords.timeLines(notam, read: reading(notam), untilCharts: card(notam)?.untilCharts ?? false, zone: zone, now: now)
     }
 
     /// The NOTAMs by what they are about, the engine's heading (Runway,

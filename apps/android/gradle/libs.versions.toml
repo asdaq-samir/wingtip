@@ -13,7 +13,7 @@
 # construction and carry no version of their own here -- all but
 # Material 3, below.
 [versions]
-agp = "9.6.0-alpha05"
+agp = "9.6.0-alpha06"
 kotlin = "2.5.0-RC"
 # core-ktx's alpha, the newest on Google Maven on 2026-11-21; its core
 # carries AtomicFile, which the app's own files are written through

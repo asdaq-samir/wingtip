@@ -87,6 +87,61 @@
       "text": "Direct To",
       "about": "Flies straight to the point picked, the avionics' own name."
     },
+    "fly_here": {
+      "kind": "label",
+      "text": "Fly Here",
+      "about": "A new route from the airplane to the airport shown (design/card-actions.json)."
+    },
+    "depart_from": {
+      "kind": "label",
+      "text": "Depart From",
+      "about": "The airport shown the route's departure, the rest of the route kept."
+    },
+    "hold_here": {
+      "kind": "label",
+      "text": "Hold Here",
+      "about": "A hold at the point shown (AIM 5-3-8)."
+    },
+    "call": {
+      "kind": "label",
+      "text": "Call",
+      "about": "The airport's own telephone, from the FAA's airport file."
+    },
+    "favorite": {
+      "kind": "label",
+      "text": "Favorite",
+      "about": "The airport or airplane shown in the Favorites or out, a switch in a card's row."
+    },
+    "address": {
+      "kind": "label",
+      "text": "Address",
+      "about": "The place shown in the maps app, by its street address where the FAA lists one."
+    },
+    "copy": {
+      "kind": "label",
+      "text": "Copy",
+      "about": "A frequency or an ident to the clipboard."
+    },
+    "fly_this": {
+      "kind": "label",
+      "text": "Fly This",
+      "about": "The airplane card's first tile: the airplane shown the one the plan flies."
+    },
+    "track": {
+      "kind": "label",
+      "text": "Track",
+      "about": "The airplane card's first tile while it flies: the map keeps it in sight."
+    },
+    "alerts": {
+      "kind": "label",
+      "text": "Alerts",
+      "about": "The airplane card's menu of alerts as it takes off and lands, by its ICAO address."
+    },
+    "figures": {
+      "kind": "label",
+      "text": "Figures",
+      "about": "The airplane card's tile that opens its book figures."
+    },
     "enter_route": {
       "kind": "label",
       "text": "Enter Route",

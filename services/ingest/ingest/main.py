@@ -9,6 +9,10 @@
   wingtip.notams' store beside the feed's.
 - The followed airplanes asked of adsb.lol each half minute
   (wingtip.traffic.follow_job, a job every FOLLOW_EVERY_S), their tracks recorded in the live store.
+- Their flights of yesterday and their paths asked of the OpenSky Network
+  once a UTC day, after its batch at night (wingtip.traffic.opensky.
+  prefetch, a job every PREFETCH_EVERY_S), kept in the live store, where
+  the planner reads them before asking OpenSky itself.
 - The history (ingest.history): each hour the day's NOTAMs and
   TFRs archived, and each month the NTSB's database read.
 
@@ -29,7 +33,7 @@ import time
 
 from wingtip import log_lines, schedule, traffic, tracing
 from wingtip.config import get_settings as wingtip_settings
-from wingtip.traffic import store
+from wingtip.traffic import opensky_prefetch, store
 
 from . import history, nms, swim
 from .settings import get_settings
@@ -58,6 +62,8 @@ def run(stop: threading.Event) -> None:
     # The full NOTAM set, where the FAA has given access (decision 0059).
     log.info("NMS-API: %s", "on" if nms.start(on) else "off (NMS_API_CLIENT_ID and NMS_API_CLIENT_SECRET unset)")
     schedule.every(on, traffic.FOLLOW_EVERY_S, traffic.follow_job, name="adsb-follow")
+    # Off without OpenSky's client (OPENSKY_CLIENT_ID and _SECRET).
+    schedule.every(on, opensky_prefetch.PREFETCH_EVERY_S, opensky_prefetch.prefetch, name="opensky-prefetch", now=False)
     if get_settings().history:
         history.jobs(on)
     # A beat that fails is logged by the scheduler; the health check sees the long gap.

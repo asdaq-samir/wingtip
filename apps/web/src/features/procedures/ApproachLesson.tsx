@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -8,7 +8,7 @@ import Segmented from "../../components/Segmented";
 import { Button } from "../../components/ui/button";
 import { Skeleton } from "../../components/ui/skeleton";
 import { useIsMobile } from "../../hooks/use-mobile";
-import { approachBrief, coachingSteps, lessonPath, pathBetween, type LessonInput } from "../../lib/approachLesson";
+import { lessonQuery, type Lesson as Taught, type LessonInput } from "../../lib/approachLesson";
 import { useGeo } from "../../lib/geo";
 import { endLessonMap, useLessonMap } from "../../lib/map/route/lessonMap";
 import type { PickedProcedure } from "../../lib/procedures";
@@ -91,11 +91,7 @@ export default function ApproachLesson({
         {error ? (
           <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>The approach could not be fetched: {error.message}</FieldError>
         ) : isPending || !input ? (
-          <div role="status" className="flex flex-col gap-2 py-1">
-            <span className="sr-only">Fetching the approach…</span>
-            <Skeleton aria-hidden className="h-4 w-3/5" />
-            <Skeleton aria-hidden className="h-3 w-2/5" />
-          </div>
+          <Fetching />
         ) : (
           <Lesson key={`${input.drawing.airport}:${input.drawing.id}:${input.drawing.transition ?? ""}`} input={input} from={from} />
         )}
@@ -104,9 +100,23 @@ export default function ApproachLesson({
   );
 }
 
+/** The approach, or its lesson, on its way: the card's skeleton lines. */
+function Fetching() {
+  return (
+    <div role="status" className="flex flex-col gap-2 py-1">
+      <span className="sr-only">Fetching the approach…</span>
+      <Skeleton aria-hidden className="h-4 w-3/5" />
+      <Skeleton aria-hidden className="h-3 w-2/5" />
+    </div>
+  );
+}
+
 function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) {
   const [page, setPage] = useState<Page>("brief");
   const [gs, setGs] = useState<number>(90);
+  // The lesson at the speed picked, the planner's (lib/approachLesson).
+  // The last speed's shown while the next one's comes, so the page never blanks.
+  const { data: lesson, error } = useQuery({ ...lessonQuery(input, gs), placeholderData: keepPreviousData });
   // The approach on the chart while the lesson is open; each page says what of it its step shows (its effects run before this one).
   useEffect(() => {
     useLessonMap.setState({ drawing: input.drawing });
@@ -122,9 +132,47 @@ function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) 
         testId="approach-lesson-steps"
       />
       {from?.problem && <FieldError className={cn(FINDING_TONE.stop, TEXT.note)}>{from.problem}</FieldError>}
+      {error ? (
+        <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>The lesson could not be fetched: {error.message}</FieldError>
+      ) : !lesson ? (
+        <Fetching />
+      ) : (
+        <LessonPage
+          page={page}
+          lesson={lesson}
+          glidepathDeg={input.drawing.glidepath_deg}
+          from={from}
+          gs={gs}
+          onGs={setGs}
+          onPage={setPage}
+        />
+      )}
+    </>
+  );
+}
+
+function LessonPage({
+  page,
+  lesson,
+  glidepathDeg,
+  from,
+  gs,
+  onGs,
+  onPage: setPage,
+}: {
+  page: Page;
+  lesson: Taught;
+  glidepathDeg: number | null | undefined;
+  from?: FromInstructor;
+  gs: number;
+  onGs: (gs: number) => void;
+  onPage: (page: Page) => void;
+}) {
+  return (
+    <>
       {page === "brief" && (
         <BriefPage
-          input={input}
+          items={lesson.brief}
           from={from}
           onDone={() => {
             from?.onBriefed();
@@ -132,14 +180,15 @@ function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) 
           }}
         />
       )}
-      {page === "fly" && <FlyPage input={input} from={from} gs={gs} onGs={setGs} onDone={() => setPage("quiz")} />}
-      {page === "quiz" && <QuizPage input={input} from={from} gs={gs} />}
+      {page === "fly" && (
+        <FlyPage lesson={lesson} glidepathDeg={glidepathDeg} from={from} gs={gs} onGs={onGs} onDone={() => setPage("quiz")} />
+      )}
+      {page === "quiz" && <QuizPage questions={lesson.quiz} from={from} />}
     </>
   );
 }
 
-function BriefPage({ input, from, onDone }: { input: LessonInput; from?: FromInstructor; onDone: () => void }) {
-  const items = useMemo(() => approachBrief(input), [input]);
+function BriefPage({ items, from, onDone }: { items: Taught["brief"]; from?: FromInstructor; onDone: () => void }) {
   const [at, setAt] = useState(0);
   const item = items[Math.min(at, items.length - 1)]!;
   useEffect(() => {
@@ -163,22 +212,24 @@ function BriefPage({ input, from, onDone }: { input: LessonInput; from?: FromIns
 }
 
 function FlyPage({
-  input,
+  lesson,
+  glidepathDeg,
   from,
   gs,
   onGs,
   onDone,
 }: {
-  input: LessonInput;
+  lesson: Taught;
+  glidepathDeg: number | null | undefined;
   from?: FromInstructor;
   gs: number;
   onGs: (gs: number) => void;
   onDone: () => void;
 }) {
-  const steps = useMemo(() => coachingSteps(input, gs), [input, gs]);
-  // Where each step is and what it shows, alike at any speed: the airplane stays put.
-  const places = useMemo(() => coachingSteps(input, SPEEDS[1]).map((s) => ({ at: s.at, focus: s.focus })), [input]);
-  const path = useMemo(() => lessonPath(input.drawing), [input.drawing]);
+  const steps = lesson.steps;
+  // Where each step is, the way to it and what it shows, alike at any
+  // speed: held as the page opened, so the airplane stays put as it changes.
+  const [places] = useState(() => steps.map((s) => ({ way: s.way, focus: s.focus })));
   const [at, setAt] = useState(0);
   const step = steps[Math.min(at, steps.length - 1)];
   const geo = useGeo();
@@ -187,9 +238,7 @@ function FlyPage({
   useEffect(() => {
     const place = places[at];
     if (!place) return;
-    const from = at > 0 ? (places[at - 1]?.at ?? null) : null;
-    const to = place.at;
-    const way = to ? (from ? pathBetween(path, from, to) : [to]) : [];
+    const way = place.way;
     const a = way.at(-2),
       b = way.at(-1);
     useLessonMap.setState((s) => ({
@@ -198,7 +247,7 @@ function FlyPage({
         ? { path: way, track: geo && a && b ? geo.bearingDeg(a, b) : (s.flight?.track ?? null), id: (s.flight?.id ?? 0) + 1 }
         : s.flight,
     }));
-  }, [at, path, places, geo]);
+  }, [at, places, geo]);
   // Flown to its last step: the instructor told, once a lesson.
   const flownToEnd = steps.length > 0 && at >= steps.length - 1;
   const onFlown = from?.onFlown;
@@ -231,7 +280,7 @@ function FlyPage({
         />
         <InstructorNote from={from} fix={step.focus.fix} />
       </ListGroup>
-      <LessonProfile drawing={input.drawing} steps={steps} at={at} />
+      <LessonProfile profile={lesson.profile} glidepathDeg={glidepathDeg} steps={steps} at={at} />
       <div className="flex gap-2">
         {last ? (
           <>

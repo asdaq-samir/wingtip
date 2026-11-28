@@ -5,7 +5,7 @@ that reads the beat back."""
 import threading
 
 from wingtip import traffic
-from wingtip.traffic import store
+from wingtip.traffic import opensky_prefetch, store
 
 from ingest import health, main, swim
 
@@ -68,3 +68,5 @@ def test_the_followed_airplanes_are_a_job(monkeypatch):
     monkeypatch.setattr(main.schedule, "scheduler", Scheduler)
     main.run(stop)
     assert ("adsb-follow", traffic.FOLLOW_EVERY_S, traffic.follow_job) in jobs
+    # The followed airplanes' past flights from OpenSky, into the store the planner reads.
+    assert ("opensky-prefetch", opensky_prefetch.PREFETCH_EVERY_S, opensky_prefetch.prefetch) in jobs

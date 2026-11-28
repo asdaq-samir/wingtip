@@ -126,7 +126,10 @@ public class TrainingService {
                 codesOf(pilot),
                 java.util.stream.IntStream.range(0, paper.size())
                         .mapToObj(i -> new EndorsementDto(
-                                paper.get(i).getKey().code(), paper.get(i).getEndorsedOn(), paperUntil.get(i)))
+                                paper.get(i).getKey().code(),
+                                paper.get(i).getEndorsedOn(),
+                                paperUntil.get(i),
+                                paper.get(i).getMakeModel()))
                         .toList(),
                 theirs,
                 planner.endorsementKinds(),
@@ -160,16 +163,21 @@ public class TrainingService {
         for (CrossCountryReview r : reviewed) {
             asked.add(EndorsementRecords.dto(r, List.of(), e -> EndorsementRecords.dto(e, null)));
             // 61.93(d)'s checks once a day flown, not once a review.
+            // 61.93(d)(4), (5): in the make and model the review names.
             checksOf.add(asks.endorsements(
-                    List.of("checks", r.getFlightOn()), () -> EndorsementRecords.held(paper, theirs), r.getFlightOn()));
+                    List.of("checks", r.getFlightOn(), r.getMakeModel()),
+                    () -> EndorsementRecords.held(paper, theirs),
+                    r.getFlightOn(),
+                    r.getMakeModel()));
         }
         int paperUntil = paper.isEmpty()
                 ? -1
                 : asks.endorsements(
                         "paper",
                         () -> paper.stream()
-                                .map(e -> PlannerAsks.held(e.getKey().code(), e.getEndorsedOn(), null))
+                                .map(e -> PlannerAsks.held(e.getKey().code(), e.getEndorsedOn(), e.getMakeModel()))
                                 .toList(),
+                        null,
                         null);
         return new Read(
                 paper,
@@ -198,13 +206,14 @@ public class TrainingService {
     }
 
     @Transactional
-    public void endorse(Pilot pilot, String code, LocalDate endorsedOn) {
+    public void endorse(Pilot pilot, String code, LocalDate endorsedOn, String makeModel) {
         Endorsement.Key key = new Endorsement.Key(pilot.getId(), code);
+        String mm = Typed.text(makeModel);
         endorsements
                 .findById(key)
                 .ifPresentOrElse(
-                        e -> e.endorsedOn(endorsedOn),
-                        () -> endorsements.save(new Endorsement(pilot.getId(), code, endorsedOn)));
+                        e -> e.endorsedOn(endorsedOn, mm),
+                        () -> endorsements.save(new Endorsement(pilot.getId(), code, endorsedOn, mm)));
     }
 
     /** @return true if the endorsement was there to take out */

@@ -60,7 +60,7 @@ internal fun PhoneSheetLayout(
     var searchRowPx by remember { mutableIntStateOf(0) }
     // Over the navigation bar (edge to edge): its peek is the handle and
     // the search's row as measured, above the bar, so the bar fits at
-    // every font scale (the sheet audit's S-1).
+    // every font scale.
     val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val searchHeight = with(LocalDensity.current) { searchRowPx.toDp() }.takeIf { it > 0.dp } ?: WingtipSize.TapTarget
     // At the peek, the first row of the carousel's page in view: the

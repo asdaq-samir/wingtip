@@ -155,24 +155,6 @@ struct FieldWeatherMarksTests {
         #expect(off.style == .off && !off.station(zoom: 12) && !off.windBarbs && !off.worse)
     }
 
-    @Test func aKeptLookComesOverToTheMenu() throws {
-        func kept(_ values: [String: Any]) throws -> AirportWeather {
-            let name = "airport-weather-\(UUID().uuidString)"
-            let defaults = try #require(UserDefaults(suiteName: name))
-            defer { defaults.removePersistentDomain(forName: name) }
-            for (key, value) in values { defaults.set(value, forKey: key) }
-            return AirportWeather.kept(defaults)
-        }
-        #expect(try kept([:]) == .wind)
-        #expect(try kept([AirportWeather.Legacy.style: "off"]) == .off)
-        #expect(try kept([AirportWeather.Legacy.style: "station"]) == .station)
-        #expect(try kept([AirportWeather.Legacy.style: "halo"]) == .wind)
-        #expect(try kept([AirportWeather.Legacy.style: "halo", AirportWeather.Legacy.windArrows: false]) == .category)
-        #expect(try kept([AirportWeather.Legacy.style: "dot"]) == .category)
-        // The menu's own pick wins over what was kept before it.
-        #expect(try kept([AirportWeather.key: "off", AirportWeather.Legacy.style: "station"]) == .off)
-    }
-
     @Test func aReportHeardOverAnHourAgoSaysItsAge() {
         let now = Date(timeIntervalSince1970: 1_762_700_000)
         let mark = FieldWeatherMark(category: "VFR", spoken: "VFR, wind calm")

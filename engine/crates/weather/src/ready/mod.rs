@@ -139,7 +139,7 @@ fn plan_items(plan: Option<&Value>, out: &mut Vec<Item>) -> bool {
         altitude.is_some(),
         match altitude {
             // FL-145, as FPL's altitude field writes it (the owner's FL
-            // everywhere), not "14,500 ft" beside it (the UI audit's C6).
+            // everywhere), not "14,500 ft" beside it.
             Some(ft) => format!("Cruise at {}", flight_level(&((ft / 100.0).round() as i64).to_string())),
             None => "Set the cruise altitude".into(),
         },
@@ -242,7 +242,7 @@ pub fn call(_name: &str, v: &Value) -> R<String> {
     let line = match todo.len() {
         0 => "Ready to fly: all on this device".to_owned(),
         // What is left, plainly: "while you have a signal" said neither what
-        // nor when (the UI audit's C6, 2026-11-17).
+        // nor when.
         1 => "1 thing left to do before you go".to_owned(),
         n => format!("{n} things left to do before you go"),
     };

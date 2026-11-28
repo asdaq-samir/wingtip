@@ -81,7 +81,8 @@ const routePanel = panelChunk(importRoutePanel);
 const placePanel = panelChunk(importPlacePanel);
 const cardsPanel = panelChunk(importCardsPanel);
 export const loadRoutePanel = routePanel.load;
-/** The chunks drawn only at a tap, and the Brief's airport sections,
+/** The chunks drawn only at a tap, the Brief's card, pages and airport sections,
+ *  and the nav log's table and the procedures' sheet read in flight,
  *  asked for some seconds after the page is idle (usePrefetchWhenIdle),
  *  once a route has had its time to draw, so a tap still opens its card
  *  at once. */
@@ -90,14 +91,19 @@ export function prefetchTapCards() {
   void cardsPanel.load().catch(() => {});
   void routePanel
     .load()
-    .then((m) => m.prefetchAirportSections())
+    .then((m) => {
+      m.prefetchAirportSections();
+      m.prefetchBriefPages();
+      m.prefetchNavLogTable();
+      m.prefetchProcedureMenu();
+    })
     .catch(() => {});
 }
 const fromRoutePanel = routePanel.part;
 export const NavLogView = fromRoutePanel("NavLogView");
 // FPL's route list, drawn only inside the nav log's view (its `route`),
 // which waits on this chunk already: 61 KB off the first load, which
-// stood 10 KB under its 1.10 MB budget (the 20 Oct audit).
+// stood 10 KB under its 1.10 MB budget.
 export const ProceduresRoute = fromRoutePanel("ProceduresRoute");
 // The Routes row, under the folded route's figures (FplRoute).
 export const RouteLine = fromRoutePanel("RouteLine");
@@ -120,7 +126,6 @@ export const BriefCard = fromRoutePanel("BriefCard");
 // The cards for an airplane or a point held on the map are drawn only at a
 // tap, so they are on chunks of their own rather than the first load.
 export const AirspaceCard = placePanel.part("AirspaceCard");
-export const FlightCard = cardsPanel.part("FlightCard");
 export const PastFlightCard = cardsPanel.part("PastFlightCard");
 // An airport's card and the dry run's panel too, each drawn at a tap: with
 // the React Compiler on, the first load was 11 KB past CI's 1.10 MB; and

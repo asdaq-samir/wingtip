@@ -47,7 +47,8 @@ class FlightSession @Inject constructor(@param:ApplicationContext private val co
     /** A fix taken by the engine for the instruments, and the Live Update
      *  on the status bar (LiveFlight) told the figures it gives. */
     fun took(fix: OwnShip.Fix?, plan: Plan.State) {
-        inFlight.took(fix, plan)
+        // The engine's flying speed for this fix as OwnShip asked it, not asked again.
+        inFlight.took(fix, plan, known = fix?.let(ownShip::underwayOf))
         LiveFlight.took(context, inFlight.state.value, plan)
     }
 

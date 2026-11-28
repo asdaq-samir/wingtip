@@ -52,7 +52,7 @@ jobs:
   # crate. The committed WebAssembly is what engine/ builds, where its
   # inputs changed. The engine's lint and layout are the guards job's.
   test-engine:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.test-engine == 'true'
     steps:
@@ -113,7 +113,7 @@ jobs:
   # screens, icons). Its tsc, ESLint, Prettier and knip are the guards job's.
   test-web:
     name: test-web (${{ matrix.part }})
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.test-web == 'true'
     strategy:
@@ -159,7 +159,7 @@ jobs:
   # The gateway's JUnit suite, Testcontainers' Postgres on the runner's
   # Docker.
   test-gateway:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.test-gateway == 'true'
     steps:
@@ -195,7 +195,7 @@ jobs:
   # unchanged, seconds; built only when it changed.
   engine-wheel:
     name: Engine wheel
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     # Every change but words alone: flight-critical imports it (test-python's
     # `flight` leg, or the planner's own suite when that runs).
@@ -215,7 +215,7 @@ jobs:
   # None to run skips the job, which counts as passed.
   test-python:
     name: test-${{ matrix.service }}
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes, engine-wheel]
     if: needs.changes.outputs.python != '[]'
     strategy:
@@ -271,7 +271,7 @@ jobs:
   # The test flight's ruff and unit tests (scripts/ci/sim_suite.sh, in
   # Docker), when tools/sim-flight or what its tests read changed.
   test-sim:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.sim == 'true'
     timeout-minutes: 10
@@ -286,7 +286,7 @@ jobs:
   # everything since the last green commit (a failed run publishes nothing,
   # so the next one builds what it did not); by hand or first, everything.
   changes:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     # pull-requests: read for paths-filter; actions and checks: read for the last green run, or a rerun's red one.
     permissions:
       contents: read
@@ -382,7 +382,7 @@ jobs:
                 - apps/ios/**
                 - scripts/build/ios-strings.sh
                 - scripts/ci/content-mtimes.py
-                - scripts/ci/ios_test.sh
+                - scripts/ci/ios_*
                 - .github/workflows/native-ios.yml
               android-app:
                 - apps/android/**
@@ -452,17 +452,6 @@ jobs:
                 - scripts/build/api-models-apps.*
                 - scripts/build/engine-contract-apps.*
                 - design/**
-                - scripts/build/design-tokens.sh
-                - scripts/build/design_tokens*.py
-                - scripts/build/screens.*
-                - docs/navigation.md
-                - apps/ios/Wingtip/Navigation/Generated/**
-                - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/**
-                - apps/ios/Wingtip/Design/Generated/**
-                - scripts/build/wording.sh
-                - scripts/build/wording.py
-                - docs/design/rules.md
-                - apps/android/app/src/main/res/values/wording_strings.xml
                 - apps/ios/Wingtip/Assets.xcassets/**
                 - docs/brand/**
                 - scripts/build/app-icons.sh
@@ -474,13 +463,36 @@ jobs:
                 - apps/android/app/src/main/res/values*/brand_colors.xml
                 - apps/site/assets/**
                 - docs/store/*.png
-                - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
-                - services/jobs/charts/map_zoom.py
                 - apps/ios/Wingtip/API/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
                 - apps/ios/Wingtip/Engine/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
                 - engine/licences/**
+                - scripts/build/design-tokens.sh
+                - scripts/build/design_tokens*.py
+                - scripts/build/emit.py
+                - apps/ios/Wingtip/Design/Generated/Tokens.swift
+                - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/Tokens.kt
+                - services/jobs/charts/map_zoom.py
+                - engine/crates/core/src/map_dim_figures.rs
+                - scripts/build/map-style.sh
+                - scripts/build/map_style*.py
+                - apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/generated/OverlayStyle.kt
+                - scripts/build/screens.*
+                - apps/ios/Wingtip/Navigation/Generated/Screens.swift
+                - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/Screens.kt
+                - apps/android/app/src/main/res/xml/shortcuts.xml
+                - apps/android/app/src/main/res/values/screens_strings.xml
+                - docs/navigation.md
+                - scripts/build/wording.*
+                - apps/ios/Wingtip/Design/Generated/Wording.swift
+                - apps/android/app/src/main/res/values/wording_strings.xml
+                - docs/design/rules.md
+                - scripts/build/card-actions.sh
+                - scripts/build/card_actions.py
+                - apps/ios/Wingtip/Design/Generated/CardActions.swift
+                - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/CardActions.kt
+                - docs/design/icons.md
               test-wingtip:
                 - services/planner/wingtip/**
                 - engine/**
@@ -550,7 +562,7 @@ jobs:
                 - design/**
                 - scripts/ci/content-mtimes.py
                 - scripts/build/ios-strings.sh
-                - scripts/ci/ios_test.sh
+                - scripts/ci/ios_*
                 - .github/workflows/native-ios.yml
               android:
                 - apps/android/**
@@ -584,17 +596,13 @@ jobs:
                 - '**/*.swift'
                 - '**/*.kt'
                 - '**/*.java'
-                - scripts/ci/file_sizes.py
                 - scripts/ci/file_sizes_allow.txt
-                - scripts/ci/brand_guard.py
                 - scripts/ci/brand_guard_allow.txt
                 - design/tokens.json
-                - scripts/ci/shared_parts_guard.py
                 - scripts/ci/shared_parts_guard_allow.txt
                 - apps/web/src/*.css
                 - apps/web/src/**/*.css
                 - scripts/ci/dead_python.sh
-                - scripts/ci/vulture_allow.py
                 - .tool-versions
                 - rust-toolchain.toml
                 - engine/rust-toolchain.toml
@@ -631,14 +639,17 @@ jobs:
           FAILED: ${{ steps.base.outputs.failed }}
         run: python3 scripts/ci/plan.py
 
-  # Which browser specs e2e runs (scripts/ci/browser_specs.py; decision
-  # 0048): on a pull request, every spec its change reaches, which "CI
-  # passed" waits for; on main's push the smoke set, at night everything.
+  # Which browser specs e2e runs (scripts/ci/browser_specs.py; decision 0048): on a pull request, every spec its change
+  # reaches, which "CI passed" waits for; on main's push the smoke set, at night everything. A wave's are dealt by the
+  # seconds of its last whole validation (actions: read, spec_seconds.py latest) where the night's are not cached.
   specs:
     name: Browser specs reached
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.e2e == 'true'
+    permissions:
+      actions: read
+      contents: read
     outputs:
       run: ${{ steps.plan.outputs.run }}
       args: ${{ steps.plan.outputs.args }}
@@ -661,7 +672,7 @@ jobs:
         working-directory: apps/web
         run: npm ci --no-audit --no-fund
       # Each spec's seconds, the night's merge of the last day's runs (flake-report), to deal them to the shards by time.
-      - if: github.event_name == 'pull_request' || contains(fromJSON('["rerun", "check"]'), needs.changes.outputs.mode)
+      - if: github.event_name == 'pull_request' || inputs.wave
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: /tmp/spec-seconds
@@ -673,19 +684,12 @@ jobs:
           SPEC_SECONDS: /tmp/spec-seconds/seconds.json
           BASE: ${{ needs.changes.outputs.base }}
           RERUN: ${{ needs.changes.outputs.rerun }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: python3 scripts/ci/browser_specs.py
 
-  # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
-  # uses: the gateway, planner and weather images e2e-images built for this
-  # commit's keys, Postgres and Mailpit (infra/docker-compose.ci.yml). It
-  # catches what no unit test can: a lost tap, a drawer that opens empty.
-  #
-  # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's push runs the @smoke and
-  # @flight-critical tests on the phone project and the iPad's WebKit, over three; the night everything over ten. A
-  # pull request runs every spec its change reaches, and "CI passed" waits for them (decision 0048, after #585
-  # merged with three red); a failure on main is one issue (nightly-issue.yml). Each shard pulls its images
-  # and restores its caches in the background and starts each service the moment it can (setup is about a
-  # minute and a half); not after e2e-images, which it would wait on: it pulls the image once it is pushed.
+  # The browser suite (apps/web/e2e) on the stack built from this commit (infra/docker-compose.ci.yml), the specs the
+  # `specs` job picks (above); each shard starts each service as soon as its image is pulled, not after e2e-images.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
     needs: [changes, specs]
@@ -693,9 +697,7 @@ jobs:
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
-    # packages: read -- the images are private, like the registry cache a
-    # pull request's shards build from; actions: read, to ask after the
-    # job that pushes them (below).
+    # packages: read -- the images are private, as is the registry cache a pull request's shards build from.
     permissions:
       contents: read
       packages: read
@@ -852,11 +854,10 @@ jobs:
             sh -c "timeout 600 npm ci --no-audit --no-fund 2>&1 | tail -20 | tee /out/npm.log"
       - name: Browser tests
         id: tests
-        # CI=1 doubles playwright.config.ts's waits; the github reporter puts
-        # each failure on the commit's checks. At night the whole iOS audit
-        # (WebKit, every device) and WCAG 2.2 too.
+        # CI=1 doubles playwright.config.ts's waits. At night, by hand and in a wave's validation (the owner,
+        # 2026-11-27: "Add it"), the whole iOS audit (WebKit, every device), on shards of its own.
         env:
-          IOS_AUDIT: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
+          IOS_AUDIT: ${{ (inputs.wave || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '1' || '' }}
           SCREENSHOTS: /out/screens
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.
@@ -977,23 +978,18 @@ jobs:
             data/raw/chart_tiles.nosync
           key: ${{ steps.cycle.outputs.key }}
 
-  # The browser suite's images (.github/ci-images.hcl: gateway, planner,
-  # weather), the page, and the slim Playwright copy, each built once per key
-  # (.github/e2e-keys.sh) and pushed as `e2e-<key>` and `e2e`; never
-  # `latest`, which only Promote gives. Most commits change no key, so this
-  # is a checkout and a few lookups.
-  e2e-images:
-    name: build (e2e)
-    # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
-    # images go to AWS's x86 machines, and e2e tests the same images.
+  # The browser suite's images (.github/ci-images.hcl: gateway, planner, weather), the page and the slim Playwright
+  # copy, each built once per key (.github/e2e-keys.sh), pushed as `e2e-<key>` and `e2e`, never `latest`; most commits
+  # change no key. No job holding packages: write runs the branch's npm code (security review 2026-11-23, H2): BuildKit
+  # builds the images in its own sandbox; the page is built read-only by e2e-page and pushed by e2e-page-push.
+  e2e-page:
+    name: page (e2e)
     runs-on: ubuntu-26.04
-    # With e2e (above): after merge, at night, and for a pull request that
-    # changes the web app or an API document.
     needs: [changes]
     if: needs.changes.outputs.e2e == 'true'
-    permissions:
-      contents: read
-      packages: write
+    permissions: { contents: read, packages: read }
+    outputs:
+      page: ${{ steps.keys.outputs.page }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -1018,19 +1014,63 @@ jobs:
         if: steps.keys.outputs.page != ''
         with:
           node-version-file: .tool-versions
-      # Before setup-buildx, whose builder would otherwise be the one
-      # `docker build` uses, and would leave the image out of Docker.
-      - name: The page, built and pushed
+      - name: The page, built
         if: steps.keys.outputs.page != ''
         working-directory: apps/web
-        env:
-          PAGE: ${{ steps.keys.outputs.page }}
         run: |
           [ -d node_modules ] || npm ci --no-audit --no-fund
           npm run types
           npx vite build --outDir dist --emptyOutDir
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: steps.keys.outputs.page != ''
+        with: { name: e2e-page, path: apps/web/dist, retention-days: 1 }
+
+  # Its files into an image and pushed: nothing of the branch runs here.
+  e2e-page-push:
+    name: build (e2e page)
+    runs-on: ubuntu-26.04
+    needs: [e2e-page]
+    if: needs.e2e-page.outputs.page != ''
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with: { name: e2e-page, path: dist }
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: The page, pushed
+        env:
+          PAGE: ${{ needs.e2e-page.outputs.page }}
+        run: |
           printf 'FROM scratch\nCOPY . /page/\n' | docker build -q -t "$PAGE" -f - dist
           docker push -q "$PAGE"
+
+  e2e-images:
+    name: build (e2e)
+    # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
+    # images go to AWS's x86 machines, and e2e tests the same images.
+    runs-on: ubuntu-26.04
+    needs: [changes]
+    if: needs.changes.outputs.e2e == 'true'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: The keys nothing has been built for yet
+        id: keys
+        env:
+          REGISTRY: ghcr.io/${{ github.repository }}
+        run: scripts/ci/e2e_missing_keys.sh
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
         if: steps.keys.outputs.missing != '' || steps.keys.outputs.playwright != ''
         # Docker Hub through Google's mirror first (Hub's pull limit failed
@@ -1060,13 +1100,9 @@ jobs:
           BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
         run: docker buildx bake -f .github/ci-images.hcl playwright
 
-  # Every image whose inputs changed, in one job by one BuildKit
-  # (.github/images.hcl), after merge (docs/CI.md, "The tiers"): on main
-  # pushed as `:sha-<commit>`, which Promote names `latest` once the run
-  # passes; at night built without pushing. The layer cache is in the registry (`:buildcache`, written from
-  # main), as the ML images' layers evicted each other from the Actions
-  # cache. Each Python image imports its own code last, so a missing
-  # dependency fails here.
+  # Every image whose inputs changed (.github/images.hcl), after merge: on main
+  # pushed as `:sha-<commit>`, which Promote names `latest`; at night built
+  # only. Its layer cache is the registry's `:buildcache`, written from main.
   build-images:
     name: build (images)
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
@@ -1111,7 +1147,7 @@ jobs:
     needs: [changes]
     # Needs Advanced Security on a private repository.
     if: github.event_name == 'pull_request' && !github.event.repository.private && needs.changes.outputs.deps == 'true'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     permissions:
       contents: read
       pull-requests: write
@@ -1124,18 +1160,13 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
 
-  # The quick checks, three legs on a runner each, each leg's checks all
-  # started at once (scripts/ci/guards.sh lists them). `repo`: no aviation
-  # rule outside the engine (#482), CI's own rules (docs/CI.md, "Rules"),
-  # links, file sizes, versions, brand tokens, ruff, the phones' lint.
-  # `web`: tsc, ESLint, Prettier, knip. `engine`: rustfmt, clippy, machete.
-  # And flight-critical (the owner, 2026-11-09), on every change but words
-  # alone: the engine's FAA examples here (`engine`), or test-engine's where
-  # the engine changed, so they build once; the planner's nav log is
-  # test-python's, which has the engine's wheel, so no leg waits for it.
+  # The quick checks, three legs (`repo`, `web`, `engine`), each leg's checks
+  # all at once (scripts/ci/guards.sh lists them), and the engine's
+  # flight-critical FAA examples (the owner, 2026-11-09) where test-engine
+  # does not build them; the planner's are test-python's.
   guards:
     name: Guards (${{ matrix.part }})
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     timeout-minutes: 15
     strategy:
@@ -1203,7 +1234,7 @@ jobs:
   # docs (pdoc imports every module, so one that no longer imports fails
   # here).
   docs:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes, engine-wheel]
     if: needs.changes.outputs.docs == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     steps:
@@ -1258,7 +1289,7 @@ jobs:
   # else runs them before a deploy; their shell scripts are the guards
   # job's, with every other one (scripts/ci/shellcheck.sh).
   infra:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.infra == 'true'
     steps:
@@ -1270,11 +1301,11 @@ jobs:
         with:
           python-version-file: .tool-versions
       - run: pip install cfn-lint==1.60.0
-      - run: cfn-lint infra/cloudformation/template.yaml
+      - run: cfn-lint infra/cloudformation/*.yaml
       - name: docker compose config (infra/docker-compose.prod.yml)
         run: |
           printf '%s\n' IMAGE_REGISTRY=registry.example/wingtip PUBLIC_HOST=app.example.com \
-            ORIGIN_HOST=origin.app.example.com ORIGIN_SECRET=x POSTGRES_PASSWORD=x APP_DB_PASSWORD=x \
+            ORIGIN_HOST=origin.app.example.com ORIGIN_SECRET=x POSTGRES_PASSWORD=x APP_DB_PASSWORD=x FOLLOW_SHARE_KEY=x \
             MAIL_HOST=smtp.example.com MAIL_FROM=no-reply@example.com > "$RUNNER_TEMP"/prod.env
           docker compose --env-file "$RUNNER_TEMP"/prod.env -f infra/docker-compose.prod.yml config --quiet
       - name: caddy validate (infra/server/Caddyfile)
@@ -1304,6 +1335,9 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.ios == 'true'
     uses: ./.github/workflows/native-ios.yml
+    permissions:
+      actions: read
+      contents: read
     with:
       unit_only: ${{ needs.changes.outputs.ios-full != 'true' }}
 
@@ -1313,7 +1347,7 @@ jobs:
   # .github/api-breaks.txt (docs/CI.md). Pull requests that change one.
   api-compat:
     name: API compatibility
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: github.event_name == 'pull_request' && needs.changes.outputs.api == 'true'
     env:
@@ -1354,7 +1388,7 @@ jobs:
     name: Standards
     needs: [e2e]
     if: always() && (github.event_name == 'schedule' || inputs.standards)
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     permissions:
       contents: read
       issues: write
@@ -1426,7 +1460,7 @@ jobs:
     name: Flake hunt (${{ matrix.suite }})
     needs: [engine-wheel]
     if: github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -1482,7 +1516,7 @@ jobs:
   flake-hunt-web:
     name: Flake hunt (web)
     if: github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 30
     defaults:
       run:
@@ -1518,7 +1552,7 @@ jobs:
     name: Flake report
     needs: [flake-hunt-python, flake-hunt-web, e2e]
     if: always() && github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     permissions:
       contents: read
       issues: write
@@ -1564,7 +1598,7 @@ jobs:
   sources:
     name: Sources still answer
     if: github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -1573,12 +1607,25 @@ jobs:
           sparse-checkout: scripts/ci
       - run: python3 scripts/ci/sources_answer.py
 
+  # The night on the open claude/integration too, one issue each (scripts/ci/night_integration.sh).
+  night-integration:
+    name: Night on integration
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 2
+    permissions: { contents: read, actions: write }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: { persist-credentials: false, sparse-checkout: scripts/ci }
+      - env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" }
+        run: scripts/ci/night_integration.sh
+
   # A dump of the stack's database restored whole, as the owner's nightly
   # backup is (scripts/ci/backup_restore.sh): never tried before.
   backup-restore:
     name: Backup restores
     if: github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -1591,9 +1638,9 @@ jobs:
   # (ci_budget.py): last, never failing, and on a run `halt` cancelled too.
   budget:
     name: CI budget
-    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, specs, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, halt, passed]
+    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, specs, e2e, e2e-page, e2e-page-push, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, night-integration, backup-restore, halt, passed]
     if: always()
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
     continue-on-error: true
     # The run's jobs and their annotations, read with the run's own token.
@@ -1617,8 +1664,8 @@ jobs:
   # the run is cancelled, so "CI passed" fails at once. Pull requests only.
   halt:
     name: Stop on red
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-images, e2e]
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-page, e2e-page-push, e2e-images, e2e]
     if: ${{ failure() && github.event_name == 'pull_request' }}
     timeout-minutes: 2
     # actions: write, to cancel this run and nothing else.
@@ -1632,18 +1679,13 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: gh run cancel "$RUN_ID"
 
-  # The one check main requires (its ruleset); auto-merge-agents.yml merges
-  # on it. Tier 1, about three minutes (the owner, 2026-11-10), and the
-  # browser specs a web change reaches (decision 0048, the owner,
-  # 2026-11-19: "make it a hard rule"): every job a pull request runs, each
-  # passed or skipped as not needed. The smoke set on main's push and the
-  # stack's image builds run after merge, a failure there one issue
-  # (nightly-issue.yml), fixed forward. scripts/ci/test_tiers.py holds this
-  # list to the tiers.
+  # The one check main requires (its ruleset), which auto-merge waits on: every
+  # job a pull request runs passed or skipped as not needed, tier 1 and the
+  # browser specs a change reaches (decision 0048). test_tiers.py holds the list.
   passed:
     name: CI passed
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-images, e2e, android, ios]
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-page, e2e-page-push, e2e-images, e2e, android, ios]
     if: always()
     steps:
       - name: Every job passed or was not needed

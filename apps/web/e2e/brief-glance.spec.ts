@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { settle, sideDrawer, slow, openBrief } from "./helpers";
 import { pickAirplane } from "./startState";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { hold, steady } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -156,11 +157,9 @@ test("the Brief opens at its size, and asking its weather again moves nothing", 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // The route's lines in first: they come in their own chunk once the page
-  // has painted (routePanelParts), taller than the room held for them, and
-  // the pill's figures under them are moved down in the layout and held
-  // where they were by their transform (sheet/pinAtFoot), which Chromium
-  // counts as a shift though nothing is seen to move. The Brief's opening
-  // is what is timed here, not the page's load.
+  // has painted (routePanelParts), taller than the room held for them,
+  // which moves what is under them in the sheet. The Brief's opening is
+  // what is timed here, not the page's load.
   await expect(sideDrawer(page).getByTestId("timeline-line")).toHaveCount(2, { timeout: slow(30_000) });
   // Opened: the verdict's line from the first frame, the hours' tiles in
   // their own shape, so neither the verdict's "Still checking" going from
@@ -176,7 +175,9 @@ test("the Brief opens at its size, and asking its weather again moves nothing", 
   await expect(glance.getByTestId("ready-todo")).toBeVisible({ timeout: slow(30_000) });
   await expect(glance.getByTestId("brief-notams-row")).not.toContainText("Ranking", { timeout: slow(30_000) });
   await expect(glance.getByTestId("departure-window-pending")).toHaveCount(0, { timeout: slow(30_000) });
-  await page.waitForTimeout(3000);
+  // And the card at rest, its size and words the same a second apart:
+  // the ask again is what is recorded, not the last answer coming in.
+  await steady(async () => [await glance.boundingBox(), await glance.innerText()], { gap: 1000, timeout: slow(20_000) });
   // The connection lost and back, as the phone does in a hangar: every
   // query asked again (TanStack's reconnect), and each keeps what it shows
   // till its answer is in -- nothing blanks, nothing moves.
@@ -184,7 +185,7 @@ test("the Brief opens at its size, and asking its weather again moves nothing", 
     page,
     async () => {
       await context.setOffline(true);
-      await page.waitForTimeout(500);
+      await hold(page, 500);
       await context.setOffline(false);
     },
     { maxMoves: 0, shiftBudget: 0, settleMs: 4000 },

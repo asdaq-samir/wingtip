@@ -14,8 +14,13 @@ times out is not retried either: each caller's own timeout is how long
 it can wait, and a second try would double it. urllib3's Retry does all
 of it (urllib3 2.8.0), on one pool of kept-alive connections per host.
 
-Live traffic opts out (`session(retries=False)`, or plain requests):
-a position a few seconds late is a wrong one. Calls to our own services
+A source a card's request waits on opts out too (`once_get`, one try on
+a session of its own): the card's timeout is the most it waits, and the
+caller holds the source after a failure (wingtip.ratelimit) where the
+shared session would ask again up to 30 s inside the request (Planespotters.net, the USGS's aerials, Wikimedia).
+
+Live traffic opts out (`live_get`, one kept-alive session that does not
+retry): a position a few seconds late is a wrong one. Calls to our own services
 keep their own clients."""
 
 from __future__ import annotations
@@ -74,3 +79,36 @@ def get(url: str, **kwargs) -> requests.Response:
 def head(url: str, **kwargs) -> requests.Response:
     """requests.head through the shared, retrying session."""
     return _shared().head(url, **kwargs)
+
+
+@functools.cache
+def _live() -> requests.Session:
+    # The traffic sources' (wingtip.traffic): kept-alive connections, no
+    # retry. A position a few seconds late is a wrong one, and each source
+    # keeps its own manners on a refusal (wingtip.ratelimit), which
+    # urllib3 asking again on a 429 would spend: OpenSky names its wait in
+    # a header of its own, adsb.lol's back-off is the planner's.
+    return session(retries=False)
+
+
+def live_get(url: str, **kwargs) -> requests.Response:
+    """requests.get on the traffic sources' kept-alive session, one try;
+    the caller's timeout and headers as before, where a plain requests.get
+    made a new connection and TLS handshake each time."""
+    return _live().get(url, **kwargs)
+
+
+@functools.cache
+def _once() -> requests.Session:
+    return session(retries=False)
+
+
+def once_get(url: str, **kwargs) -> requests.Response:
+    """requests.get on a kept-alive session that does not retry, for a
+    source a pilot's request waits on; the caller's timeout and headers."""
+    return _once().get(url, **kwargs)
+
+
+def live_post(url: str, **kwargs) -> requests.Response:
+    """requests.post on the same session (OpenSky's token)."""
+    return _live().post(url, **kwargs)

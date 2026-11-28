@@ -50,6 +50,25 @@ fn the_wind_barb_is_the_fixtures() {
     }
 }
 
+/// The list form answers each field as the two rules do alone: the
+/// arrow cases asked at once, each with its barb, and a field with no wind
+/// with none.
+#[test]
+fn wind_marks_is_the_arrow_and_the_barb_of_each_field() {
+    let cases = fixture()["windArrow"].as_array().unwrap().clone();
+    let fields: Vec<Value> = cases.iter().map(|c| c["input"].clone()).collect();
+    let answers = ask("wind_marks", &json!({ "fields": fields }));
+    for (case, got) in cases.iter().zip(answers.as_array().unwrap()) {
+        assert_eq!(got["shown"], case["answer"]["shown"], "{}", case["why"]);
+        assert_eq!(got["over"], case["answer"]["over"], "{}", case["why"]);
+        let expected = match case["input"]["speed_kt"].as_f64() {
+            Some(kt) => ask("wind_barb", &json!({ "speed_kt": kt })),
+            None => Value::Null,
+        };
+        assert_eq!(got["barb"], expected, "{}", case["why"]);
+    }
+}
+
 #[test]
 fn the_worse_badge_is_weather_worse_from_now_to_the_eta() {
     for case in fixture()["worseByArrival"].as_array().unwrap() {

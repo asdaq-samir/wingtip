@@ -43,6 +43,17 @@ export async function settle(page: Page) {
  *  Its `data-panel` is its own size, under a card too (a card's is on its
  *  own drawer, frontSheet): peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
+/** The panel with its foot -- FPL's figures and its tab bar (Brief, Nav
+ *  Log, Routes, More), the figures in flight and in a dry run: on a phone's
+ *  bottom sheet the foot is a fixed bar beside the sliding popup, not in it
+ *  (sheet/FootBar, SheetFoot's BesideSheet; data-foot-bar), elsewhere the
+ *  panel's own foot. */
+export const sheetFoot = (page: Page) => page.locator('[data-slot="map-panel"], [data-foot-bar]');
+/** A card with its floating tab bar (CardTabBar): on a phone's bottom
+ *  sheet the bar stands in the card's foot slot, fixed at the screen's
+ *  foot beside the sliding cards (sheet/CardFoot, data-card-foot), not in
+ *  the card; elsewhere in it. */
+export const withFoot = (card: Locator) => card.or(card.page().locator("[data-card-foot]:not([hidden])"));
 /** Where the cards open: over the side panel, or, on a touch screen as
  *  wide as an iPad on its side, in the inspector at the map's right
  *  (MapPanel, useInspector), the plan staying in the side panel. */
@@ -78,6 +89,11 @@ const RANK = { peek: 0, half: 1, full: 2 } as const;
 export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
   const panel = frontSheet(page);
   await panel.waitFor();
+  // A card in the inspector's column (a wide iPad, MapPanel) is the
+  // window's height and has no grabber, as inSheet says: nothing to raise
+  // or lower, where the wait on its size ran out (the night's iOS audit,
+  // 2026-11-27: "card all the way up" on the 13-inch iPad on its side).
+  if (await panel.evaluate((el) => !!el.closest("[data-slot=map-inspector]"))) return;
   const grabber = page.getByTestId("sidebar-trigger-button");
   const size = async () => (await panel.getAttribute("data-panel")) as keyof typeof RANK;
   for (let steps = 0; steps < 6; steps++) {
@@ -124,15 +140,28 @@ export async function inSheet(page: Page, locator: Locator) {
   await settled(panel);
   const under = await locator.evaluate((el) => {
     const sheet = el.closest("[data-sheet-card], [data-slot=map-panel]");
-    if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
+    // A card in the inspector's column (a wide iPad, MapPanel) is the
+    // window's height with no grabber: scrolled to, never raised (the
+    // night's iOS audit, 2026-11-24: Practice's pages waited on a grabber
+    // that is not there).
+    if (!sheet || sheet.getAttribute("data-panel") === "full" || sheet.closest("[data-slot=map-inspector]")) return false;
     const box = sheet.getBoundingClientRect();
     // A bottom sheet's edge is the screen's foot; a top sheet's, its own;
     // either way above the route's figures pinned at its foot, and above
-    // FPL's floating bar, whose capsule the route runs on under (FplTabBar).
-    const foot = sheet.querySelector("[data-testid=panel-foot]")?.getBoundingClientRect();
-    // A card's floating tab bar (CardTabBar) holds at that edge too, and
+    // A phone's bottom sheet's foot bar beside the sheet (sheet/FootBar, FPL's
+    // figures over its tabs; in flight and a dry run SheetFoot's BesideSheet).
+    const foot = (
+      sheet.querySelector("[data-testid=panel-foot]") ?? document.querySelector("[data-foot-bar]:not(.invisible)")
+    )?.getBoundingClientRect();
+    // A card's floating tab bar (CardTabBar) at that edge too, on a phone's
+    // bottom sheet in the card's foot slot beside it (sheet/CardFoot), and
     // FPL's own floating bar of actions.
-    const tabs = [...sheet.querySelectorAll("[data-testid$=tab-bar] > *")].find((b) => !b.contains(el))?.getBoundingClientRect();
+    const tabs = [
+      ...sheet.querySelectorAll("[data-testid$=tab-bar] > *"),
+      ...document.querySelectorAll("[data-card-foot]:not([hidden]) > * > *"),
+    ]
+      .find((b) => !b.contains(el))
+      ?.getBoundingClientRect();
     const bar = sheet.querySelector("[data-testid=fpl-actions] [role=toolbar]")?.getBoundingClientRect();
     const edge = Math.min(
       box.top < 0 ? box.bottom : window.innerHeight,

@@ -8,10 +8,11 @@ the gateway as the app saves one."""
 import pytest
 from mcp.types import TextContent
 
-from app.mcp import calls, records
+from app.mcp import calls, flight_tools, records
+from app.settings import get_settings
 
 from .mcp_harness import call
-from .test_gonogo_api import stubbed  # noqa: F401 -- the route, plan and briefing of a quiet flight
+from .test_gonogo_api import briefing, stubbed  # noqa: F401 -- the route, plan and briefing of a quiet flight
 from .plan_world import _stubbed_world  # noqa: F401 -- the stubbed chart, altitude and air, autouse
 from .test_mcp_tools import AIRPLANE, answer
 
@@ -58,8 +59,14 @@ def test_an_airplane_the_pilot_does_not_have_is_named_with_theirs():
 
 
 def test_the_briefing_is_the_go_no_go_line_and_its_findings(stubbed):  # noqa: F811
+    # KDLH given C81's METAR: with none, the runways are judged on a
+    # standard day, a caution that is not this test's.
+    c81 = briefing()["metars"]["C81"]
+    stubbed["briefing"] = briefing(metars={"C81": c81, "KDLH": c81})
     brief = answer(call("flight_briefing", {"departure": "C81", "destination": "KDLH", "depart_at": "2026-10-06T14:00:00Z"}))
-    assert brief["line"] == {"finding": "ok", "words": "Nothing found against this flight"}
+    # No load given, so weight and balance is not worked out (30894f7fc): the
+    # line says what was not checked, never "nothing found".
+    assert brief["line"] == {"finding": "unknown", "words": "No problems found; not checked: weight & balance"}
     assert {f["key"] for f in brief["findings"]} >= {"weather", "fuel", "altitude"}
     assert brief["risk"]["line"] == "Low · 0 points"
 
@@ -74,3 +81,89 @@ def test_saving_a_flight_files_the_planned_route_for_the_pilot(_theirs):
     rows = request["checkpoints"]
     assert [r["category"] for r in rows] == ["departure", "destination"] and rows[0]["alongTrackNm"] == 0.0
     assert rows[-1]["alongTrackNm"] == round(request["totalDistanceNm"], 1)
+
+
+def _verdict_asked(monkeypatch) -> list:
+    """/api/go-no-go as flight_briefing asks it, answered with a balance
+    and a runways finding as the endpoint words them for its sample load."""
+    asked = []
+
+    async def go_no_go(body):
+        asked.append(body)
+        items = [
+            {"key": "balance", "label": "Weight and balance", "finding": "ok", "detail": "2,407 lb at 41.2 in, within limits"},
+            {"key": "runways", "label": "Runways", "finding": "ok", "detail": "Takeoff 1,200 ft of 10,162"},
+        ]
+        return {"line": {"finding": "ok", "words": "Nothing found against this flight"}, "items": items, "risk": None}
+
+    monkeypatch.setattr(flight_tools, "go_no_go", go_no_go)
+    return asked
+
+
+def test_the_briefing_asks_for_the_pilots_load_and_sends_none(monkeypatch):
+    """The mcp audit of 2026-11-23, H2, and the code audit's R5-2: without
+    the pilot's load none is sent, the planner says the balance is not
+    worked, and the connector passes its findings on as they are."""
+    asked = _verdict_asked(monkeypatch)
+    brief = answer(call("flight_briefing", {"departure": "C81", "destination": "KDLH", "airplane_tail": "N123AB"}))
+    assert "load" not in asked[0] and any("stations_lb" in m or "empty_weight_lb" in m for m in brief["missing"])
+
+
+def test_the_briefing_balances_the_pilots_own_load_and_weighs_the_airplanes_records(monkeypatch):
+    asked = _verdict_asked(monkeypatch)
+    vor = {"goodThrough": "2026-11-30", "withinLimit": True, "checkedOn": "2026-11-01"}
+    inspections = {"annualGoodThrough": "2027-03-31", "hundredHourDueAtHours": 1500.0, "hoursNow": 1490.0, "forHire": False}
+    squawk = {"text": "Nav light out", "inoperative": True, "deferredFor": "VFR_DAY"}
+    weighed = {
+        **AIRPLANE,
+        "figures": {"emptyWeightLb": 1642.0, "emptyMomentLbIn": 62600.0},
+        "vorCheck": vor,
+        "inspections": inspections,
+        "openSquawks": [squawk],
+    }
+
+    async def airplanes(pilot_id):
+        return [weighed]
+
+    monkeypatch.setattr(records, "airplanes", airplanes)
+    ask = {"departure": "C81", "destination": "KDLH", "airplane_tail": "N123AB", "stations_lb": [190, 170, 0, 40], "fuel_gal": 40}
+    brief = answer(call("flight_briefing", ask))
+    load = asked[0]["load"]
+    assert load["stations_lb"] == [190, 170, 0, 40] and load["fuel_gal"] == 40 and load["empty_weight_lb"] == 1642.0
+    assert brief["missing"] == [] and brief["findings"][0]["detail"].endswith("within limits")
+    own = asked[0]["own_airplane"]
+    assert own["vor_check"] == {"good_through": "2026-11-30", "within_limit": True}
+    # Not flown for hire: the engine leaves the 100-hour unweighed (14 CFR 91.409(b)).
+    assert own["inspections"]["annual_good_through"] == "2027-03-31" and own["inspections"]["hundred_hour_due_at_hours"] == 1500.0
+    assert own["inspections"]["for_hire"] is False
+    assert own["squawks"] == [{"text": "Nav light out", "inoperative": True, "deferred_for": "VFR_DAY"}]
+
+
+def test_an_ifr_route_saved_keeps_its_rules(_theirs):
+    answer(call("save_flight", {"departure": "C81", "destination": "KDLH", "cruise_altitude_ft": 7000, "rules": "ifr"}))
+    assert _theirs[0][1]["picks"] == "altitude_ft=7000&rules=ifr"
+
+
+def test_the_plan_names_the_winds_it_flew_and_its_link_keeps_the_time(monkeypatch):
+    """The mcp audit of 2026-11-23: one source for the winds in every tool
+    (M4), and the link opens the plan at the time it was read for (L8)."""
+    monkeypatch.setenv("MCP_ISSUER", "https://wingtip.test")
+    get_settings.cache_clear()
+    plan = answer(call("plan_route", {"departure": "C81", "destination": "KDLH", "depart_at": "2026-12-01T15:00:00Z"}))
+    assert plan["sources"][1]["source"].startswith("Aviation Weather Center GFA winds aloft and NOAA GFS temperatures")
+    assert "depart=2026-12-01T15%3A00%3A00%2B00%3A00" in plan["open_in_wingtip"]
+    # An IFR plan opens in Wingtip as IFR (lib/address's rules; L8).
+    ifr = answer(call("plan_route", {"departure": "C81", "destination": "KDLH", "rules": "ifr"}))
+    assert "rules=ifr" in ifr["open_in_wingtip"]
+
+
+def test_a_route_that_lands_on_the_way_gives_each_flight_s_fuel_check():
+    """The safety audit of 2026-11-23, M6: its totals carry no check of their
+    own (the tanks are filled at each stop), so each flight's is in hops."""
+    hop = {"usable_fuel_gal": 53.0, "fuel_required_gal": 30.04, "reserve_gal": 6.0, "fuel_margin_gal": -3.5, "ete_min": 80.0}
+    totals = {"distance_nm": 300.0, "hops": [{"departure": "C81", "destination": "KMSN", "totals": hop}]}
+    totals["no_fuel_stop"] = [{"departure": "C81", "destination": "KMSN", "on_board": False}]
+    got = flight_tools.totals_of(totals)
+    figures = {"fuel_required_gal": 30.04, "reserve_gal": 6.0, "usable_fuel_gal": 53.0, "fuel_margin_gal": -3.5}
+    assert got["hops"] == [{"departure": "C81", "destination": "KMSN", **figures}]
+    assert got["no_fuel_stop"] == [{"departure": "C81", "destination": "KMSN"}]

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { Button, GridList, GridListItem, useDragAndDrop } from "react-aria-components";
 import { feel } from "../lib/haptics";
+import { dropLine } from "./dropLine";
 
 // Apart from Favorites' strips and tiles, which the first load draws: the
 // lists in full that a pilot edits are loaded when one is opened
@@ -43,6 +44,9 @@ export function SortableRows({
       const to = (target.dropPosition === "after" ? at + 1 : at) - (from < at ? 1 : 0);
       if (to !== from) onMove(from, to);
     },
+    // The line where the row will land, as FPL's route list shows it: the
+    // default indicator was an unstyled div, so nothing showed until the drop.
+    renderDropIndicator: dropLine,
   });
   return (
     <GridList aria-label={label} dragAndDropHooks={dragAndDropHooks} className="outline-none">

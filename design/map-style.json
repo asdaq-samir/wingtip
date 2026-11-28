@@ -1,0 +1,412 @@
+{
+  "$description": "The map's overlay layers from the cycle's vector tiles (wingtip.vector_tiles), the one source for the web's and Android's MapLibre styles: each layer's id, source and source-layer, filter, layout, paint, zooms and order, bottom to top. scripts/build/map-style.sh writes the web's lib/generated/overlayLayers.ts and Android's map/generated/OverlayStyle.kt from it, and CI checks they are in step (--check). Each app keeps its own sources, pictures, runtime setters (the Dimmer, the night words, the selection, the switches) and taps. iOS draws with MapKit, not a MapLibre style, and is not generated from it. The vocabulary, resolved by the generator: \"{group.name}\" a token of design/tokens.json; {\"$zoom\": z} an app's zoom (its tiles' {z}, a token or a figure) as MapLibre's, one less; {\"$byZoom\": [[z, v], ...]} a linear interpolate over app zooms; {\"$use\": name, ...args} an expression or fragment below, {\"$arg\": name} one of its args; \"$with\" a fragment's keys merged into an object; {\"$markScale\": k} k times the app's airport pictures' scale (the web's are drawn twice as dense); \"group\" the switch a layer follows (stripped); \"$comment\" a note (stripped). Left to each app: \"$label\": kind (the words' font and size, map.label.kind, with Larger Map Labels), \"$halo\": kind (their halo), {\"$ink\": colour} (a light-haloed word's ink, turned for the night) and {\"$haloColour\": kind}.",
+  "apps": {
+    "web": { "markScale": 0.5, "font": "Inter Bold" },
+    "android": { "markScale": 1, "font": "Inter-Bold" }
+  },
+  "sources": {
+    "$comment": "The vector sources the layers draw from, each app's own to add, all on the cycle's one archive: the airports' own, so a change of the state their symbols read (each field's weather, the settings, the route's fields) lays out the airports' tiles alone; the VFR waypoints' own for the same reason.",
+    "overlays": "faa-overlays",
+    "airports": "faa-airports",
+    "waypoints": "faa-vfr-waypoints"
+  },
+  "expressions": {
+    "$comment": "Named parts of the layers, and of the apps' own layers over the same tiles (AirportsGl's open field, markLayers' idents), exported to the web as OVERLAY_EXPRESSIONS.",
+    "vorKinds": { "$comment": "The VORs a pilot tunes by NASR NAV_TYPE (NAV_BASE.csv), a VOR, VOR/DME or VORTAC: the navaids' layers and each app's query for the stations about the view (the engine's airspace::navaid_kinds the same for its rules).", "$value": ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]] },
+    "placedRing": {
+      "$comment": "A Class C's or D's ring only where its primary field is drawn (the airspace's `ident`, NASR's IDENT, the field's ARPT_ID), so no ring stands bare where its field gave way to a bigger one (the owner's iPhone recording, 2026-11-23). An opacity by feature state, set by the web's usePlacedFieldRings; a map that never sets ringsByField (the training map, Android) draws every ring. Not times the Dimmer: the rings are dimmed by their colour.",
+      "$value": ["case", ["!", ["boolean", ["global-state", "ringsByField"], false]], { "$arg": "opacity" }, ["boolean", ["feature-state", "placed"], false], { "$arg": "opacity" }, 0]
+    },
+    "militaryShown": {
+      "$comment": "No armed services' field unless the settings' Private/Military switch asks for it (a joint-use one always).",
+      "$value": ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]]
+    },
+    "privateShown": {
+      "$comment": "No private field unless the same switch asks for it.",
+      "$value": ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]]
+    },
+    "notRouteAirport": {
+      "$comment": "Not one of the fields the route draws itself, held in the map's state, none while it is unset (a map that never sets it, Android's: MapLibre Native's `in` fails on a null list).",
+      "$value": ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]]
+    },
+    "notRouteWaypoint": {
+      "$comment": "Not one of the waypoints the route draws itself.",
+      "$value": ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeWaypoints"], ["literal", []]]]]
+    },
+    "keptField": {
+      "$comment": "The fields drawn whatever their name: a Class B's (field_mark_rank's largest; the owner, 2026-11-17, \"all the class B airports show even when zoomed out\").",
+      "$value": ["==", ["get", "size"], "largest"]
+    },
+    "classCField": {
+      "$comment": "A Class C's field (field_mark_rank's larger): its own layer, placed before the other fields, as symbol-sort-key orders only within a tile and a small field across a tile's edge took a Class C's room, leaving its ring bare.",
+      "$value": ["==", ["get", "size"], "larger"]
+    },
+    "towered": {
+      "$value": ["==", ["get", "towered"], true]
+    },
+    "airportIdentInk": {
+      "$comment": "A field's ident in its symbol's colour, as the sectional sets a field's name (Chart User's Guide, Airports: towered blue, the rest magenta).",
+      "$value": ["case", { "$use": "towered" }, "{color.chart.towered}", "{color.chart.untowered}"]
+    },
+    "airportWeather": {
+      "$comment": "This field's weather colour from the map's state (ident to colour, the METARs once they are in), \"\" for none: a new METAR is one state change, not a new expression.",
+      "$value": ["string", ["get", ["to-string", ["get", "ident"]], ["object", ["global-state", "airportWeather"], ["literal", {}]]], ""]
+    },
+    "tileAirportIcon": {
+      "$comment": "A field's mark's picture (apt|ring|weather|use, each app's pictures): its ring the surface airspace's class (the tiles' `airspace`, \"\" for none), its weather disc, its use.",
+      "$value": [
+        "concat",
+        "apt|",
+        ["coalesce", ["get", "airspace"], ""],
+        "|",
+        { "$use": "airportWeather" },
+        "|",
+        ["case", ["==", ["get", "military"], "military"], "military", ["==", ["get", "use"], "private"], "private", ["==", ["get", "type"], "heliport"], "heliport", ""]
+      ]
+    },
+    "markSize": {
+      "$comment": "How much larger each of the engine's size steps is drawn (field_mark_rank's `size`): a Class B's field 1.5 times an ordinary towered field, a Class C's 1.2, a small field 0.82, as on the owner's canvas (2026-11-14, option I).",
+      "$value": ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1]
+    },
+    "airportIconSize": {
+      "$comment": "The mark's icon-size: smaller out at a state's width, a field's own size closer in, at each zoom the field's own step.",
+      "$value": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        { "$zoom": "{map.zoom.airports-farthest}" },
+        ["*", { "$markScale": 0.7 }, { "$use": "markSize" }],
+        { "$zoom": 10 },
+        ["*", { "$markScale": 1 }, { "$use": "markSize" }],
+        { "$zoom": 13 },
+        ["*", { "$markScale": 1.25 }, { "$use": "markSize" }]
+      ]
+    },
+    "namedFar": {
+      "$comment": "The fields named wherever they are drawn: the towered (NASR's TWR_TYPE_CODE) and the Class B's, from zoom 5 (decision 0052).",
+      "$value": ["any", ["==", ["get", "towered"], true], ["==", ["get", "size"], "largest"]]
+    },
+    "airportIdentFar": {
+      "$comment": "A field's ident, capped by zoom: a towered or Class B field's wherever drawn, every other from map.zoom.airport-public, where the other public fields come in. The long hard runways' fields, drawn from 7, are named a zoom later: each was an ident to shape and place where nearly all gave way (the speed audit of 2026-11-21, finding 8).",
+      "$value": ["step", ["zoom"], ["case", { "$use": "namedFar" }, ["get", "ident"], ""], { "$zoom": "{map.zoom.airport-public}" }, ["get", "ident"]]
+    },
+    "airportIconNamed": {
+      "$comment": "A field's mark at the zooms its ident is named at, so no field is drawn bare.",
+      "$value": ["step", ["zoom"], ["case", { "$use": "namedFar" }, { "$use": "tileAirportIcon" }, ""], { "$zoom": "{map.zoom.airport-public}" }, { "$use": "tileAirportIcon" }]
+    },
+    "suaRestricted": {
+      "$comment": "The FAA's TYPE_CODEs drawn in the restricted ink: prohibited, restricted, warning and danger areas (wingtip.sua TYPES); MOAs and alert areas magenta.",
+      "$value": ["in", ["get", "type"], ["literal", ["P", "R", "W", "D"]]]
+    },
+    "bandWidth": {
+      "$comment": "The band along the inside of a boundary, as ForeFlight draws the sectional's own vignette (the owner's screenshot, 2026-11-08): a few pixels at a region's zoom, wider as the map comes in.",
+      "$value": { "$byZoom": [["{map.zoom.airspace-full}", 3], [9, 6], [11, 10], [13, 16]] }
+    },
+    "bandOffset": {
+      "$comment": "The band's middle off the boundary, inwards: half the band and 1.5 px, a little over half the line, so its edge meets the line's. A positive offset is right of a line's way, and a vector tile's outer ring runs clockwise on the screen and its holes anticlockwise (the Mapbox Vector Tile spec 2.1, 4.3.4.4), so the right is always the inside.",
+      "$value": { "$byZoom": [["{map.zoom.airspace-full}", 3], [9, 4.5], [11, 6.5], [13, 9.5]] }
+    }
+  },
+  "fragments": {
+    "$comment": "Parts of layers, exported to the web as OVERLAY_FRAGMENTS where they take no args (the 3D view's tabs wear the same).",
+    "tabBox": {
+      "$comment": "An altitude tab's box, the Class B, C and D's and the special-use areas' alike: the lines close as the chart sets them, the tab hugging the words, two points kept round it.",
+      "$value": { "text-line-height": 1, "icon-text-fit": "both", "icon-text-fit-padding": [1, 3, 1, 3], "text-padding": 2 }
+    },
+    "suaTab": {
+      "$comment": "A special-use area's tab, its text and picture: the Class tabs' size and box, a restricted area's tab placed before a MOA's it lies in, as its line is drawn over the MOA's.",
+      "$value": {
+        "$label": "airspace-tab",
+        "$with": "tabBox",
+        "icon-image": ["case", { "$use": "suaRestricted" }, "sua|tab|restricted", "sua|tab|moa"],
+        "text-allow-overlap": false,
+        "icon-allow-overlap": false,
+        "symbol-sort-key": ["case", { "$use": "suaRestricted" }, 0, 1]
+      }
+    },
+    "ring": {
+      "$comment": "An airspace class's ring and band: the tiles' `airspace` polygons of that class, from its zoom, dimmed at night by colour (the course's way: the rings' opacity differs by feature, and that times the Dimmer's global state laid every overlay tile out again at each of its steps).",
+      "$value": { "type": "line", "metadata": { "wingtip:dim": "colour" }, "source": "faa-overlays", "source-layer": "airspace", "filter": ["==", ["get", "class"], { "$arg": "class" }], "group": "airspace" }
+    },
+    "navaidMark": {
+      "$comment": "A navaid's picture, always drawn, never in another's way.",
+      "$value": { "type": "symbol", "layout": { "icon-image": ["concat", "nav|", { "$arg": "kind" }], "icon-allow-overlap": true, "icon-ignore-placement": true } }
+    },
+    "navaidIdents": {
+      "$comment": "A navaid's ident beside its mark on whichever side is clear (MapLibre's variable anchor and collision): a VOR's ident and frequency on its blue tag, \"GCO (108.25)\" as ForeFlight writes it; a fix's and a waypoint's bold, dark or green on the light halo. The VFR green a step deeper for words (chart.vfr-green-text), where the sectional prints a magenta flag (Chart User's Guide, VFR waypoints; the owner, 2026-11-07).",
+      "$value": {
+        "type": "symbol",
+        "layout": {
+          "text-field": ["case", ["has", "freq"], ["concat", ["get", "ident"], " (", ["get", "freq"], ")"], ["get", "ident"]],
+          "$label": "fix-ident",
+          "text-variable-anchor": ["left", "right"],
+          "text-radial-offset": 1.1,
+          "text-justify": "auto",
+          "icon-image": ["case", ["==", { "$arg": "kind" }, "vor"], "nav|tag", ""],
+          "icon-text-fit": "both",
+          "icon-text-fit-padding": [1, 4, 1, 4]
+        },
+        "paint": {
+          "text-color": { "$ink": ["match", { "$arg": "kind" }, "vor", "{color.chart.casing}", "vfr", "{color.chart.vfr-green-text}", "{color.chart.fix-ink}"] },
+          "text-halo-color": ["match", { "$arg": "kind" }, "vor", "transparent", { "$haloColour": "fix-ident" }],
+          "text-halo-width": "{map.label.halo}"
+        }
+      }
+    },
+    "airportMarks": {
+      "$comment": "The airports' symbols: the mark, its ident beside it in bold in the field's ink, kept apart by MapLibre's collision in `rank` order (the engine's field_mark_rank: lowest placed first and winning). A field whose ident has no room is not drawn at all at that zoom, mark and name together (the owner's iPhone screenshot, 2026-11-23); a Class B's field keeps its mark, only its name giving way. On the airports' own source, so a change of the state their symbols read lays out the airports' tiles alone (the map speed audit, 2026-11-27).",
+      "$value": {
+        "type": "symbol",
+        "source": "faa-airports",
+        "source-layer": "airports",
+        "group": "airports",
+        "minzoom": { "$zoom": "{map.zoom.airports-farthest}" },
+        "filter": ["all", { "$use": "militaryShown" }, { "$use": "privateShown" }, { "$use": "notRouteAirport" }, { "$arg": "kept" }, { "$arg": "tier" }, { "$arg": "tower" }],
+        "layout": {
+          "icon-size": { "$use": "airportIconSize" },
+          "$comment": "Two px round each mark at every zoom: out at a few states the towered fields then stand side by side in rank order, as ForeFlight's do (2026-11-21).",
+          "icon-padding": 2,
+          "symbol-sort-key": ["get", "rank"],
+          "text-field": { "$use": "airportIdentFar" },
+          "$label": "airport-ident",
+          "text-anchor": "left",
+          "text-offset": [1.15, 0],
+          "icon-optional": false,
+          "text-padding": 1
+        },
+        "paint": {
+          "$comment": "One ink a layer, the towered fields' or the rest's, and the open card's field's ident hidden by its opacity alone: a colour that read the feature (its tower, its selection) and the words' night light together laid every airports tile out again at each Dimmer or Contrast commit at night (the round-7 map audit's W1); an opacity by feature state with no global state in it repaints only.",
+          "text-color": { "$ink": { "$arg": "ink" } },
+          "text-halo-color": { "$haloColour": "airport-ident" },
+          "text-halo-width": "{map.label.halo}",
+          "text-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0, 1]
+        }
+      }
+    }
+  },
+  "lines": [
+    {
+      "$comment": "The runways as ForeFlight draws them over its base map, from MapLibre's 12, where the sectional has faded into the imagery: a dark grey surface (a soft one lighter). From NASR APT_RWY and APT_RWY_END: each runway's surveyed ends and width.",
+      "id": "runway-surface",
+      "type": "fill",
+      "source": "faa-overlays",
+      "source-layer": "runways",
+      "minzoom": 12,
+      "filter": ["==", ["get", "part"], "surface"],
+      "paint": { "fill-color": ["case", ["get", "hard"], "{color.chart.runway-hard}", "{color.chart.runway-soft}"], "fill-outline-color": "{color.chart.casing}", "fill-opacity": 0.95 }
+    },
+    {
+      "$comment": "A dashed white centreline, a level closer in.",
+      "id": "runway-centreline",
+      "type": "line",
+      "source": "faa-overlays",
+      "source-layer": "runways",
+      "minzoom": 13,
+      "filter": ["==", ["get", "part"], "centreline"],
+      "paint": { "line-color": "{color.chart.casing}", "line-width": ["interpolate", ["linear"], ["zoom"], 13, 0.75, 16, 2], "line-dasharray": [4, 3] }
+    },
+    {
+      "$comment": "Each end's number in bold white on the dark halo, turned to the end's true heading, so its top points down the runway, as it is painted; offset up its own page, which is down the runway from its end.",
+      "id": "runway-ends",
+      "type": "symbol",
+      "source": "faa-overlays",
+      "source-layer": "runways",
+      "minzoom": 12.5,
+      "filter": ["==", ["get", "part"], "end"],
+      "layout": {
+        "text-field": ["get", "end_id"],
+        "$label": "runway-number",
+        "text-rotation-alignment": "map",
+        "text-rotate": ["get", "heading"],
+        "text-offset": [0, -1.1],
+        "text-allow-overlap": true
+      },
+      "paint": { "$comment": "White on the dark halo, dimmed at night by its ink with the light-haloed words, its halo whole (the round-7 themes audit's R7-5).", "text-color": { "$ink": "{color.chart.casing}" }, "$halo": "runway-number" }
+    },
+    {
+      "$comment": "The special-use areas from map.zoom.special-use (at 6 California's MOAs and restricted areas, some 160 hatched lines, hid the fields): each boundary's band of short diagonal ticks along its inside (a line pattern, which MapLibre scales with the band's width), where two areas share an edge both drawn, each on its own side. ForeFlight's colours over the sectional (the owner's screenshot over Lake Michigan, 2026-11-08): restricted, prohibited, warning and danger areas orange-brown, MOAs and alert areas magenta.",
+      "id": "sua-band",
+      "type": "line",
+      "source": "faa-overlays",
+      "source-layer": "special_use",
+      "group": "airspace",
+      "minzoom": { "$zoom": "{map.zoom.special-use}" },
+      "filter": ["in", ["get", "type"], ["literal", ["P", "R", "W", "D", "MOA", "A"]]],
+      "layout": { "line-join": "round", "line-sort-key": ["case", { "$use": "suaRestricted" }, 1, 0] },
+      "paint": { "line-pattern": ["case", { "$use": "suaRestricted" }, "sua|hatch|restricted", "sua|hatch|moa"], "line-width": { "$use": "bandWidth" }, "line-offset": { "$use": "bandOffset" } }
+    },
+    {
+      "$comment": "And its solid line, a restricted area drawn over a MOA it lies in (line-sort-key), as R-6903 over the Minnow MOA in ForeFlight's.",
+      "id": "sua-line",
+      "type": "line",
+      "source": "faa-overlays",
+      "source-layer": "special_use",
+      "group": "airspace",
+      "minzoom": { "$zoom": "{map.zoom.special-use}" },
+      "filter": ["in", ["get", "type"], ["literal", ["P", "R", "W", "D", "MOA", "A"]]],
+      "layout": { "line-join": "round", "line-cap": "round", "line-sort-key": ["case", { "$use": "suaRestricted" }, 1, 0] },
+      "paint": { "line-color": ["case", { "$use": "suaRestricted" }, "{color.chart.special-use}", "{color.chart.airspace-magenta}"], "line-width": { "$byZoom": [[7, 2], [10, 3]] } }
+    },
+    {
+      "$comment": "The airspace's inks: the sectional's symbology (Chart User's Guide, VFR Terms and Symbols, Airspace) -- Class B solid blue, C solid magenta, D dashed blue -- in ForeFlight's brighter blue and magenta, and bolder (B and C 4 px, D 3.5), so they stand off the chart's printed ring (the owner's screenshots, 2026-11-07). Each class from its own zoom (map.zoom); its band from map.zoom.airspace-full, out past which a Class C's ring is some ten pixels across, so there the line alone at half its width. Class E is in the tiles but not drawn.",
+      "id": "airspace-D-band",
+      "$with": { "$use": "ring", "class": "D" },
+      "minzoom": { "$zoom": "{map.zoom.airspace-full}" },
+      "layout": { "line-join": "round" },
+      "paint": { "line-color": "{color.chart.airspace-blue}", "line-opacity": { "$use": "placedRing", "opacity": 0.22 }, "line-width": { "$use": "bandWidth" }, "line-offset": { "$use": "bandOffset" } }
+    },
+    {
+      "$comment": "A dash of 10 px and a gap of 5, in MapLibre's units, the line's own width (3.5).",
+      "id": "airspace-D",
+      "$with": { "$use": "ring", "class": "D" },
+      "minzoom": { "$zoom": "{map.zoom.airspace-d}" },
+      "layout": { "line-join": "round", "line-cap": "butt" },
+      "paint": {
+        "line-color": "{color.chart.airspace-blue}",
+        "line-width": { "$byZoom": [["{map.zoom.airspace-b}", 1.75], ["{map.zoom.airspace-full}", 3.5]] },
+        "line-opacity": { "$use": "placedRing", "opacity": 1 },
+        "line-dasharray": [2.857142857142857, 1.4285714285714286]
+      }
+    },
+    {
+      "id": "airspace-C-band",
+      "$with": { "$use": "ring", "class": "C" },
+      "minzoom": { "$zoom": "{map.zoom.airspace-full}" },
+      "layout": { "line-join": "round" },
+      "paint": { "line-color": "{color.chart.airspace-magenta}", "line-opacity": { "$use": "placedRing", "opacity": 0.3 }, "line-width": { "$use": "bandWidth" }, "line-offset": { "$use": "bandOffset" } }
+    },
+    {
+      "id": "airspace-C",
+      "$with": { "$use": "ring", "class": "C" },
+      "minzoom": { "$zoom": "{map.zoom.airspace-c}" },
+      "layout": { "line-join": "round", "line-cap": "round" },
+      "paint": { "line-color": "{color.chart.airspace-magenta}", "line-width": { "$byZoom": [["{map.zoom.airspace-b}", 2], ["{map.zoom.airspace-full}", 4]] }, "line-opacity": { "$use": "placedRing", "opacity": 1 } }
+    },
+    {
+      "$comment": "A Class B's ring always, as its field's mark is.",
+      "id": "airspace-B-band",
+      "$with": { "$use": "ring", "class": "B" },
+      "minzoom": { "$zoom": "{map.zoom.airspace-full}" },
+      "layout": { "line-join": "round" },
+      "paint": { "line-color": "{color.chart.airspace-blue}", "line-opacity": 0.3, "line-width": { "$use": "bandWidth" }, "line-offset": { "$use": "bandOffset" } }
+    },
+    {
+      "id": "airspace-B",
+      "$with": { "$use": "ring", "class": "B" },
+      "minzoom": { "$zoom": "{map.zoom.airspace-b}" },
+      "layout": { "line-join": "round", "line-cap": "round" },
+      "paint": { "line-color": "{color.chart.airspace-blue}", "line-width": { "$byZoom": [["{map.zoom.airspace-b}", 2], ["{map.zoom.airspace-full}", 4]] }, "line-opacity": 1 }
+    },
+    {
+      "$comment": "A shelf's altitudes as the sectional writes them, the ceiling over the floor in hundreds of feet MSL: the engine's words (airspace_shelf_label), which the charts job writes into the tiles' `airspace_labels` (`tab`), so the map formats no figure of its own. White bold type in a dark tab bordered in the class's ink, the map's smallest words (the readability list's G), never on another tab or an airport's mark; where tabs compete the nearer class wins (B, C, D). Along the ring where it sits, turned with the chart, as the sectional's printed tabs are.",
+      "id": "airspace-labels",
+      "type": "symbol",
+      "source": "faa-overlays",
+      "source-layer": "airspace_labels",
+      "group": "airspace",
+      "minzoom": { "$zoom": "{map.zoom.airspace-labels}" },
+      "filter": ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "tab"]],
+      "layout": {
+        "text-field": ["get", "tab"],
+        "$label": "airspace-tab",
+        "$with": "tabBox",
+        "icon-image": ["concat", "airspace|tab|", ["get", "class"]],
+        "text-allow-overlap": false,
+        "icon-allow-overlap": false,
+        "symbol-sort-key": ["match", ["get", "class"], "B", 0, "C", 1, 2],
+        "text-rotate": ["get", "angle"],
+        "icon-rotate": ["get", "angle"],
+        "text-rotation-alignment": "map",
+        "icon-rotation-alignment": "map"
+      },
+      "paint": { "$comment": "White on the tab, dimmed at night by its ink (R7-5).", "text-color": { "$ink": "{color.chart.casing}" } }
+    },
+    {
+      "$comment": "A special-use area's tab, as ForeFlight writes it on a MOA's boundary (the owner's screenshot near Brady, TX, 2026-11-12): from the tiles' `special_use_labels`, one an area on its longest side, `tab` the engine's words (special_use_tab), `angle` its turn and `side` where the area lies; offset 1.2 em, about half its two lines, in its own turned frame, below where `side` is 1 and above where -1.",
+      "id": "sua-labels",
+      "type": "symbol",
+      "source": "faa-overlays",
+      "source-layer": "special_use_labels",
+      "group": "airspace",
+      "minzoom": { "$zoom": "{map.zoom.airspace-labels}" },
+      "layout": {
+        "$with": "suaTab",
+        "text-field": ["get", "tab"],
+        "text-rotate": ["get", "angle"],
+        "icon-rotate": ["get", "angle"],
+        "text-rotation-alignment": "map",
+        "icon-rotation-alignment": "map",
+        "text-offset": ["case", ["==", ["get", "side"], 1], ["literal", [0, 1.2]], ["literal", [0, -1.2]]]
+      },
+      "paint": { "$comment": "White on the tab, dimmed at night by its ink (R7-5).", "text-color": { "$ink": "{color.chart.casing}" } }
+    }
+  ],
+  "marks": [
+    {
+      "$comment": "Bottom to top, and MapLibre places the top first, so where words collide the higher keeps its place: the enroute fixes, the VFR waypoints, the VORs a pilot tunes and steers by, then the fields, the order the sectional gives them weight (Chart User's Guide). The low enroute chart's fixes from map.zoom.fix.",
+      "id": "fixes",
+      "$with": { "$use": "navaidMark", "kind": "fix" },
+      "source": "faa-overlays",
+      "source-layer": "fixes",
+      "group": "navaids",
+      "filter": ["all", ["==", ["get", "enroute_low"], true], ["!=", ["get", "vfr"], true]],
+      "minzoom": { "$zoom": "{map.zoom.fix}" }
+    },
+    {
+      "id": "fixes-idents",
+      "$with": { "$use": "navaidIdents", "kind": "fix" },
+      "source": "faa-overlays",
+      "source-layer": "fixes",
+      "group": "navaids",
+      "filter": ["all", ["==", ["get", "enroute_low"], true], ["!=", ["get", "vfr"], true]],
+      "minzoom": { "$zoom": "{map.zoom.fix}" }
+    },
+    {
+      "$comment": "The VFR waypoints on a source of their own, so the route's waypoints left off them lay out their tiles alone at a route's edit.",
+      "id": "vfr-waypoints",
+      "$with": { "$use": "navaidMark", "kind": "vfr" },
+      "source": "faa-vfr-waypoints",
+      "source-layer": "fixes",
+      "group": "waypoints",
+      "filter": ["all", ["==", ["get", "vfr"], true], { "$use": "notRouteWaypoint" }],
+      "minzoom": { "$zoom": "{map.zoom.fix}" }
+    },
+    {
+      "id": "vfr-waypoints-idents",
+      "$with": { "$use": "navaidIdents", "kind": "vfr" },
+      "source": "faa-vfr-waypoints",
+      "source-layer": "fixes",
+      "group": "waypoints",
+      "filter": ["all", ["==", ["get", "vfr"], true], { "$use": "notRouteWaypoint" }],
+      "minzoom": { "$zoom": "{map.zoom.fix}" }
+    },
+    {
+      "$comment": "The VORs a pilot tunes (vorKinds), from a region's zoom.",
+      "id": "navaids",
+      "$with": { "$use": "navaidMark", "kind": "vor" },
+      "source": "faa-overlays",
+      "source-layer": "navaids",
+      "group": "navaids",
+      "filter": { "$use": "vorKinds" },
+      "minzoom": { "$zoom": "{map.zoom.vor}" }
+    },
+    {
+      "$comment": "A VOR's ident on its blue tag, the tag a signed distance field tinted the towered blue and dimmed at night by its colour with the words (its white turned to the fixes' night ink at the words' light, labelInk), so the two keep their contrast, 4.76:1 at the default Dimmer, where the tag faded by its opacity under words scaled by colour read 2.65:1 (the round-7 themes audit's R7-2).",
+      "id": "navaids-idents",
+      "$with": { "$use": "navaidIdents", "kind": "vor" },
+      "metadata": { "wingtip:dim": "colour" },
+      "paint": { "icon-color": "{color.chart.towered}" },
+      "source": "faa-overlays",
+      "source-layer": "navaids",
+      "group": "navaids",
+      "filter": { "$use": "vorKinds" },
+      "minzoom": { "$zoom": "{map.zoom.vor}" }
+    },
+    {"$comment": "Every field but a Class B's or a Class C's, the untowered in magenta and, over them so placed first, the towered in blue (Chart User's Guide, Airports): MapLibre places a higher layer first, and the towered fields are field_mark_rank's first tier, so rank order holds.", "id": "airports", "$with": {"$use": "airportMarks", "kept": ["!", {"$use": "keptField"}], "tier": ["!", {"$use": "classCField"}], "tower": ["!", {"$use": "towered"}], "ink": "{color.chart.untowered}"}, "layout": {"icon-image": {"$use": "airportIconNamed"}, "icon-allow-overlap": false, "text-optional": false}},
+    {"id": "airports-towered", "$with": {"$use": "airportMarks", "kept": ["!", {"$use": "keptField"}], "tier": ["!", {"$use": "classCField"}], "tower": {"$use": "towered"}, "ink": "{color.chart.towered}"}, "layout": {"icon-image": {"$use": "airportIconNamed"}, "icon-allow-overlap": false, "text-optional": false}},
+    {"$comment": "A Class C's field, placed before the others, so its ring, drawn from zoom 5 (decision 0052), stands with its field and name.", "id": "airports-c", "$with": {"$use": "airportMarks", "kept": ["!", {"$use": "keptField"}], "tier": {"$use": "classCField"}, "tower": ["!", {"$use": "towered"}], "ink": "{color.chart.untowered}"}, "layout": {"icon-image": {"$use": "airportIconNamed"}, "icon-allow-overlap": false, "text-optional": false}},
+    {"id": "airports-c-towered", "$with": {"$use": "airportMarks", "kept": ["!", {"$use": "keptField"}], "tier": {"$use": "classCField"}, "tower": {"$use": "towered"}, "ink": "{color.chart.towered}"}, "layout": {"icon-image": {"$use": "airportIconNamed"}, "icon-allow-overlap": false, "text-optional": false}},
+    {"$comment": "A Class B's field, on top, so placed first: its mark always, only its name giving way.", "id": "airports-kept", "$with": {"$use": "airportMarks", "kept": {"$use": "keptField"}, "tier": ["literal", true], "tower": ["!", {"$use": "towered"}], "ink": "{color.chart.untowered}"}, "layout": {"icon-image": {"$use": "tileAirportIcon"}, "icon-allow-overlap": true, "text-optional": true}},
+    {"id": "airports-kept-towered", "$with": {"$use": "airportMarks", "kept": {"$use": "keptField"}, "tier": ["literal", true], "tower": {"$use": "towered"}, "ink": "{color.chart.towered}"}, "layout": {"icon-image": {"$use": "tileAirportIcon"}, "icon-allow-overlap": true, "text-optional": true}}
+  ]
+}

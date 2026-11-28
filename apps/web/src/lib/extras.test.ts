@@ -14,12 +14,11 @@ describe("the parked features' switches (Settings' Extras)", () => {
 
   it("are all off until turned on, and one turned on is kept for the next load", async () => {
     const { EXTRAS, useExtras } = await load();
-    expect(EXTRAS.map((e) => e.key)).toEqual(["atcCopilot", "otherAirplanes", "modelWeather", "threeD", "trainingTools"]);
+    expect(EXTRAS.map((e) => e.key)).toEqual(["atcCopilot", "modelWeather", "threeD", "trainingTools"]);
     for (const e of EXTRAS) expect(useExtras.getState()[e.key]).toBe(false);
     useExtras.getState().set("modelWeather", true);
     expect(JSON.parse(localStorage.getItem("wingtip.extras")!).state).toEqual({
       atcCopilot: false,
-      otherAirplanes: false,
       modelWeather: true,
       threeD: false,
       trainingTools: false,

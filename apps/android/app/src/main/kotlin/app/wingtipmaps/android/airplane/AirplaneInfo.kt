@@ -226,7 +226,7 @@ private fun FlightRow(f: PastFlightSummary, hex: String?, name: String) {
     val minutes = (f.on - f.off) / 60
     val said = stringResource(R.string.said_replay_flight, route)
     ListItem(
-        supportingContent = { Text(joined(off, Format.duration(minutes), Format.reportedAltitude(f.maxAltFt)), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        supportingContent = { Text(joined(off, Format.duration(minutes), f.maxAltFt?.let(Format::reportedAltitude)), color = MaterialTheme.colorScheme.onSurfaceVariant) },
         trailingContent = {
             if (hex != null) {
                 IconButton(onClick = { PastFlightReplay.play(hex, f.id, "$name $route") }) {

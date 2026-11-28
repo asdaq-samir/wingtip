@@ -16,8 +16,7 @@ import { keepOpenOn, TOAST } from "./ui/dismiss";
  * back on its own curve. What is the app's is the look: the solid sheet
  * (the look's --sheet, GLASS_SHEET; glass is only for what floats over the
  * map) eight points in from the screen's sides and its edge, the half sheet's
- * corners and its grabber, the dimming every sheet has (D1 of the sheets
- * audit, 2026-10-17; the sheet consolidation, 2026-10-27).
+ * corners and its grabber, the dimming every sheet has (the sheet consolidation, 2026-10-27).
  */
 export function PhoneSheet({ onOpenChange, ...props }: Drawer.Root.Props) {
   return (
@@ -130,10 +129,7 @@ export function PhoneSheetHeader({
         start={leading}
         end={end}
         middle={
-          <Drawer.Title
-            data-slot="sheet-title"
-            className={cn("max-w-full font-bold tracking-tight break-words text-foreground", TEXT.card)}
-          >
+          <Drawer.Title data-slot="sheet-title" className={cn("max-w-full font-bold break-words text-foreground", TEXT.card)}>
             {title}
           </Drawer.Title>
         }

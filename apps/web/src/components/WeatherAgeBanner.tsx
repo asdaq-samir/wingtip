@@ -5,7 +5,7 @@ import { WEATHER_AGE } from "../lib/map/marks/weatherAge";
 
 /**
  * The airport weather marks' age on the map while they are old -- "Field
- * weather 45m old" (lib/map/marks/weatherAge: past half a METAR's hour,
+ * weather 1h 5m old" (lib/map/marks/weatherAge: past a METAR's hour, the engine's weather_in_force,
  * AC 00-45H) -- in the map's banners' column (MapBanners), the map's one
  * banner (MapBanner). It is safety-relevant: a field's colour drawn from
  * an old report reads as the weather now, so it is not small print and

@@ -1,21 +1,24 @@
-import { lazy, useEffect, useEffectEvent } from "react";
+import { lazy, useEffect, useEffectEvent, useState } from "react";
 import { fromChunk } from "../../../lib/fromChunk";
 import { loadAccountPanels } from "../../pilot";
 import type { LatLon } from "../../../lib/geo";
 import { MAX_STOPS } from "../../../lib/identSchema";
 import { sameField } from "../../../lib/procedures";
+import { arrivalMin } from "../../plan";
+import { useInspector } from "../../../hooks/use-inspector";
 import { AircraftRecentRows, usePrefetchAircraftTiles, loadAircraftFavoriteGroups } from "../../aircraft-pick";
-import type { OneSearchModel } from "../search/useOneSearch";
+import { useOneSearchModel } from "../search/oneSearchModel";
+import { useOneSearchFrame } from "../search/oneSearchFrame";
+import { useSearchQuery } from "../search/searchQuery";
 import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
 import { loadRecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "../../search";
-import { AirspaceCard, FlightCard, PastFlightCard, PlaceCard } from "../routePanelParts";
+import { AirspaceCard, PastFlightCard, PlaceCard } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import type { KeptAircraft } from "../../../lib/preferences";
 import { afterRouteDrawn } from "../../../lib/routeDrawn";
 import Waits from "./Waits";
 import SearchBox from "../search/SearchBox";
-import { useAirplaneHistory } from "../../../lib/airplane/ownAirplane";
 
 /** The one search's parts on chunks of their own, out of the first load
  *  (its 1.10 MB budget, scripts/first-load.mjs): its own page, drawn once
@@ -55,17 +58,18 @@ const NearestCard = lazy(() => loadNearestCard());
  * (OneSearchResults), and its lists in full -- Favorites, Recents, Saved,
  * the routes planned, Nearest. A card -- an airport's, the airspace's, an
  * airplane's -- over the place it was opened from, its close back to it.
- * The traffic's page that was here, with its own search field, went for
- * the one search (the owner, 2026-11-14).
+ * Traffic is found through the one search, with no page or field of its
+ * own (the owner, 2026-11-14).
  */
 export default function PlanSidebar({
   vm,
-  model,
 }: {
   vm: PlanSlices<"cards" | "fpl" | "map" | "plan" | "route" | "routeList" | "search" | "stops" | "view">;
-  /** The one search's view model (useOneSearch). */
-  model: OneSearchModel;
 }) {
+  // The one search's frame (OneSearchRoot round the panel): the panel is
+  // not drawn again at each keystroke, only the parts that show the words
+  // (AskBox, TypedResults), which read the model.
+  const model = useOneSearchFrame();
   const { stripsDrawn, view } = vm.view;
   const { addStop, depart, planned, routePoints, routed } = vm.route;
   const { course, s } = vm.plan;
@@ -73,7 +77,6 @@ export default function PlanSidebar({
     airportRecentsOpen,
     approachesOf,
     cardUp,
-    closeFlight,
     closeList,
     closePlace,
     favoritesOpen,
@@ -90,29 +93,39 @@ export default function PlanSidebar({
     setApproachesOf,
     setNearFrom,
   } = vm.cards;
+  // A card in the inspector at the map's right (an iPad on its side) is
+  // beside the sheet, not over it: the search stays under its field, its
+  // results with it, as Apple Maps keeps its list in the sidebar while a
+  // place's card shows (the owner took the recommendation, 2026-11-23),
+  // where the sheet went blank under "KOSH".
+  const inspector = useInspector();
+  const covered = cardUp && !inspector;
   const { flyHere, measuredFrom } = vm.map;
   const { keepFuelStops, suggestedAt } = vm.stops;
   const { dropIntoRoute } = vm.routeList;
   const { closeNearest, closeSaved, savedOpen } = vm.fpl;
-  const { askFor, favorites, home, moveFavoriteAirport, pickAirplane, pickPlace, query, setHomeAirport, toggleFavoriteAirport } = vm.search;
+  const { askFor, favorites, home, moveFavoriteAirport, pickAirplane, pickPlace, setHomeAirport, toggleFavoriteAirport } = vm.search;
+  const typing = useSearchQuery((s) => s.query !== "");
   usePrefetchAircraftTiles();
+  // The search's own page drawn once it is the page up, or once the route
+  // the page opened on has drawn: drawn under a route link's plan, out of
+  // sight beside it, its chunk with the carousel's and Favorites' came in
+  // the route's first seconds (route-load.spec), though it waits for them.
+  const [homeDue, setHomeDue] = useState(view === "search");
+  if (view === "search" && !homeDue) setHomeDue(true);
   useEffect(() => {
     // Once the route opened has drawn (lib/routeDrawn), out of its first seconds.
     return afterRouteDrawn(() => {
+      setHomeDue(true);
       searchHome.prefetch();
       recentsPage.prefetch();
       recentRoutesPage.prefetch();
     }, 1500);
   }, []);
-  // An airplane's card, over whichever place is up, as an airport's is; a past flight's only
-  // where its history is offered (useAirplaneHistory: the pilot's own, or Other Airplanes on).
-  const history = useAirplaneHistory(flight);
+  // An airplane's past flight, over its card (the one airplane card, features/airplane, which the
+  // page holds).
   const flightCard =
-    flight && past && history ? (
-      <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
-    ) : flight ? (
-      <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={selectPlace} />
-    ) : null;
+    flight && past ? <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} /> : null;
   // A stop asked for (FPL's Add a Stop) while the card is up, opened from
   // the search's page or the map: its Add Stop is the pick, put in where
   // the pilot asked, as a row tapped in the search would be.
@@ -131,7 +144,7 @@ export default function PlanSidebar({
   }, [asked]);
   // A picker's ask draws the one search's field in the body, under the
   // ask's title in the sheet's first row (OneSearchField, Apple Maps' Add Stop).
-  const askField = model.pick && !model.pick.waiting ? <SearchBox model={model} inputRef={vm.search.searchInput} using /> : null;
+  const askField = model.pick && !model.pick.waiting ? <AskBox inputRef={vm.search.searchInput} /> : null;
   // The airport's card, in the panel's body.
   const placeCard = place && (
     <Waits>
@@ -176,7 +189,7 @@ export default function PlanSidebar({
         // stops (Totals.ground_min) after it leaves, as the figures' ETA -- for its forecast's hour.
         arrival={
           !s.local && s.totals?.ete_min != null && sameField(place, `${planned.dest}`)
-            ? { depart: depart || null, minutes: s.totals.ete_min + (s.totals.ground_min ?? 0) }
+            ? { depart: depart || null, minutes: arrivalMin(s.totals)! }
             : undefined
         }
         startOn={approachesOf === place ? "approaches" : undefined}
@@ -216,7 +229,7 @@ export default function PlanSidebar({
       )}
       {/* Always built, the sheet's first page (Search, PageToggle):
           kept while FPL is up, as it was left. */}
-      <TabKept away={cardUp || nearOpen}>
+      <TabKept away={covered || nearOpen}>
         {/* A picker's field, over whatever answers it: one field, kept as
             the body under it turns from the lists to the results. */}
         {askField && <div className="flex shrink-0 px-4 pt-2">{askField}</div>}
@@ -244,7 +257,7 @@ export default function PlanSidebar({
               />
             </Waits>
           </TabPage>
-        ) : airportRecentsOpen && !query ? (
+        ) : airportRecentsOpen && !typing ? (
           <TabPage>
             <Waits>
               <RecentsPage
@@ -271,18 +284,29 @@ export default function PlanSidebar({
               <SavedFlights onBack={closeSaved} />
             </Waits>
           </TabPage>
-        ) : model.typed || model.direct || (model.pick && model.does.length > 0) ? (
+        ) : model.listed ? (
           // A search sent, its results, else the suggestions: each its own scroll box (one scrolling rule);
           // a picker's ask with a row before anything is typed too (the departure's My Location).
           <TabPage key={model.sent ? "results" : "suggestions"}>
-            <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
+            <Waits>{model.sent ? <SearchResultsPage /> : <TypedResults />}</Waits>
           </TabPage>
         ) : (
-          stripsDrawn && (
+          stripsDrawn &&
+          homeDue && (
             <SearchHome vm={vm} pickIdent={model.pick ? model.pickIdent : undefined} refusal={model.pick ? model.refusal : undefined} />
           )
         )}
       </TabKept>
     </>
   );
+}
+
+/** The picker's field in the body, with the words typed (the model). */
+function AskBox({ inputRef }: { inputRef: PlanSlices<"search">["search"]["searchInput"] }) {
+  return <SearchBox model={useOneSearchModel()} inputRef={inputRef} using />;
+}
+
+/** The suggestions for the words typed (the model). */
+function TypedResults() {
+  return <OneSearchResults model={useOneSearchModel()} />;
 }

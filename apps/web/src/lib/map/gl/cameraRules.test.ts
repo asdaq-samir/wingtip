@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { followMs, followStep, pickHow, verdict, FOLLOW_JUMP_UNDER_PX } from "./cameraRules";
+import { followMs, followStep, pickHow, scrubGlide, verdict, FOLLOW_JUMP_UNDER_PX, SCRUB_GLIDE } from "./cameraRules";
 
 describe("the camera owner's rules", () => {
   it("lets a follow's step go by while a pick, a fit or the pilot's hand has the camera, and never holds up a pick", () => {
@@ -20,12 +20,12 @@ describe("the camera owner's rules", () => {
   it("eases each follow step over the time since the last, so the steps join at one pace", () => {
     // FL-13: the dry run's fixes a quarter second apart.
     expect(followMs(250)).toBe(250);
-    expect(followMs(null)).toBe(500);
+    expect(followMs(null)).toBe(250);
     // Not shorter than a frame-rate stream needs, nor a slow creep.
     expect(followMs(16)).toBe(100);
     expect(followMs(2000)).toBe(1500);
     // A stream begun again after a pause starts afresh.
-    expect(followMs(10_000)).toBe(500);
+    expect(followMs(10_000)).toBe(250);
   });
 
   it("eases a pick within a few screens, and flies one far off or far in", () => {
@@ -42,5 +42,13 @@ describe("the camera owner's rules", () => {
     expect(followStep("dry-run", 1)).toBe("ease");
     expect(followStep("track", 1)).toBe("ease");
     expect(followStep("replay", 1)).toBe("ease");
+  });
+
+  it("glides a scrub's press, aims the glide again for the time it has left, and lets each move jump once it is over", () => {
+    expect(scrubGlide("glide", 0, 1000)?.ends).toBe(1000 + SCRUB_GLIDE.duration);
+    expect(scrubGlide(true, 1250, 1100)).toMatchObject({ ends: 1250, timing: { duration: 150 } });
+    expect(scrubGlide(true, 1250, 1240)).toBeNull();
+    expect(scrubGlide(true, 0, 1000)).toBeNull();
+    expect(scrubGlide(false, 1250, 1100)).toBeNull();
   });
 });

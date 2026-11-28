@@ -15,6 +15,8 @@ import { squawkMeaning } from "./squawks";
 import { lasted } from "../../components/airplane/pastFlightFormat";
 import { End, EndPending } from "./FlightEnds";
 import { SkeletonLine } from "../../components/QueryState";
+import { useEngineReady } from "../../lib/engine/useEngineReady";
+import { arrivalOf } from "./arrival";
 
 /** The summary's corner: climbing, level or descending in the air; on the
  *  ground; or an emergency's code (AIM 6-2-2, 6-3-4, 6-4-2). */
@@ -37,7 +39,7 @@ type Latest = { plane: TrafficAircraft; at: number } | null;
 
 /** Where it is now, carried on from its report as the map draws it, on a
  *  clock of its own: only the parts that move each second redraw, not the
- *  card around them (the 6 Nov audit's W7, WEB-36). */
+ *  card around them. */
 function useHere(latest: Latest) {
   const geo = useGeo();
   const now = useClock(1000, !!latest);
@@ -53,7 +55,7 @@ export function FlightNow({
   fields,
   fix,
   ...rest
-}: Omit<Parameters<typeof FlightSummary>[0], "now" | "progress" | "fromYou" | "cpa"> & {
+}: Omit<Parameters<typeof FlightSummary>[0], "now" | "progress" | "fromYou" | "cpa" | "arrives"> & {
   latest: Latest;
   fields: { from: LatLon | null; to: LatLon | null; landed: boolean };
 }) {
@@ -71,6 +73,10 @@ export function FlightNow({
       ? 1
       : null;
   const cpa = fix && plane && here ? closestApproach(fix, { ...plane, ...here }) : null;
+  // When it reaches the field it is bound for, direct at its ground speed
+  // (the engine's in_flight, arrivalOf); none until the engine is in.
+  const engine = useEngineReady();
+  const arrives = engine && plane && here && fields.to ? arrivalOf(here, plane, fields.to, now) : null;
   return (
     <FlightSummary
       {...rest}
@@ -79,6 +85,7 @@ export function FlightNow({
       progress={progress}
       fromYou={geo && fix && here ? awayFrom(geo, fix, here) : null}
       cpa={cpa}
+      arrives={arrives}
     />
   );
 }
@@ -90,7 +97,7 @@ export function LiveSketch({ latest, ...props }: Omit<Parameters<typeof Airplane
 }
 
 /**
- * The flight under the actions (the owner's A2): its ends with a bar as far
+ * The flight, the airplane card's first slide (the owner's A2, then its word of 2026-11-26): its ends with a bar as far
  * along as it has flown, its height, climb, ground speed, track and time up
  * -- or, not heard now, where its last flight landed -- then an emergency's
  * code and, with own ship on, how far, which way and how near it comes.
@@ -103,18 +110,18 @@ function FlightSummary({
   from,
   to,
   progress,
-  startedAt,
   departedAt,
   now,
   fix,
   fromYou,
   cpa,
+  arrives,
   onOpenAirport,
-  airport,
   pending = false,
+  className,
 }: {
   /** Its ends, or its last flight's, still asked for: their lines held from
-   *  the first frame, so nothing under them moves (the flicker audit's FL-10). */
+   *  the first frame, so nothing under them moves. */
   pending?: boolean;
   plane: TrafficAircraft | null;
   badge: StateBadge | null;
@@ -124,25 +131,27 @@ function FlightSummary({
   to: { ident: string; place: string | null } | null;
   /** How far along, 0 to 1, where both ends and where it is are known. */
   progress: number | null;
-  startedAt: number | null;
+  /** When it took off, while it flies (useFlightLive's). */
   departedAt: number | null;
   now: number;
   fix: Fix | null;
   fromYou: string | null;
   cpa: { inMin: number; nm: number; aboveFt: number | null } | null;
+  /** When it reaches the field it is bound for, Unix seconds (arrivalOf). */
+  arrives: number | null;
   onOpenAirport?: (ident: string) => void;
-  /** The field the airport tap was for: the card's Airport tile's. */
-  airport: string | null;
+  /** Its box's look where it is laid out (the airplane card's first slide). */
+  className?: string;
 }) {
   const rate = plane?.vertical_fpm ?? 0;
   const squawk = plane?.squawk ?? null;
   const meaning = squawkMeaning(squawk);
   const climb = Math.abs(rate) >= 100 ? `${rate > 0 ? "↑" : "↓"} ${altFt(Math.abs(Math.round(rate / 100) * 100))} fpm` : "level";
-  const flown = plane && startedAt ? lasted(now / 1000 - startedAt) : null;
+  const flown = plane && departedAt ? lasted(now / 1000 - departedAt) : null;
   const open = (ident: string) => (onOpenAirport ? () => onOpenAirport(ident) : undefined);
   return (
     <div
-      className="mt-3 flex flex-col gap-2 rounded-xl bg-card px-3.5 py-3 ring-1 ring-border/60"
+      className={cn("mt-3 flex flex-col gap-2 rounded-xl bg-card px-3.5 py-3 ring-1 ring-border/60", className)}
       data-testid={plane ? "flight-now" : "flight-last"}
     >
       <div className={cn("flex items-center gap-2 font-semibold", TEXT.note)}>
@@ -163,6 +172,14 @@ function FlightSummary({
               {badge?.tone === "air" && flown && " · "}
               {flown}
             </span>
+            {/* Its everyday code on its state's line (the owner, 2026-11-27:
+                "Squawk can go to in the air card"); an emergency's is its
+                badge and its own line below. */}
+            {squawk && !meaning && (
+              <span className="text-muted-foreground tabular-nums" data-testid="flight-squawk">
+                Squawk {squawk}
+              </span>
+            )}
             {/* How long ago it was heard, greyed once the engine says its
                 position is old (LiveAge, traffic_fresh; decision 0045). */}
             <LiveAge
@@ -177,52 +194,67 @@ function FlightSummary({
           <span className="text-muted-foreground">Not heard now</span>
         )}
       </div>
-      {/* Its ends' row always there, so nothing under it moves as its ends
-          come in or come back empty (the flicker audit's FL-10; traffic.spec's
-          card opening at its size): held while they are asked for, "—" for
-          an end not known. */}
-      {from ? (
-        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3">
-          <End
-            ident={from.ident}
-            place={from.place}
-            at={departedAt ? clockTime(new Date(departedAt * 1000)) : null}
-            onOpen={from.ident !== "?" ? open(from.ident) : undefined}
-            testId={departedAt ? "flight-departed" : undefined}
-            openTestId={from.ident === airport ? "flight-airport" : undefined}
-          />
-          {/* As far along as it has flown, the stock Progress; a plain line
-              where that cannot be said (no field it is bound for). */}
-          {progress != null ? (
-            <Progress value={Math.round(progress * 100)} aria-label="Of the way flown" className="h-1 bg-foreground/15" />
-          ) : (
-            <div className="h-1 rounded-full bg-foreground/15" />
-          )}
-          <End
-            right
-            ident={to?.ident ?? "Now"}
-            place={to?.place ?? null}
-            onOpen={to ? open(to.ident) : undefined}
-            testId={plane ? "flight-bound" : undefined}
-            openTestId={to && to.ident === airport && to.ident !== from.ident ? "flight-airport" : undefined}
-          />
-        </div>
-      ) : (
-        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3" aria-hidden={pending}>
-          {pending ? <EndPending /> : <End ident="—" />}
+      {/* Its ends with the bar between only where both are known: a bar
+          from "—" to "—" said nothing (the owner's iPhone, 2026-11-27,
+          N400FJ in the air with neither field heard). Held while they are
+          asked for, so nothing under them moves as they come in. */}
+      {pending && !from ? (
+        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3" aria-hidden>
+          <EndPending />
           <div className="h-1 rounded-full bg-foreground/15" />
-          {pending ? <EndPending right /> : <End right ident="—" />}
+          <EndPending right />
         </div>
-      )}
+      ) : from || to ? (
+        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3">
+          {from ? (
+            <End
+              ident={from.ident}
+              place={from.place}
+              at={departedAt ? clockTime(new Date(departedAt * 1000)) : null}
+              onOpen={from.ident !== "?" ? open(from.ident) : undefined}
+              testId={departedAt ? "flight-departed" : undefined}
+              // The field it left, while it flies.
+              openTestId={plane ? "flight-airport" : undefined}
+            />
+          ) : (
+            <span />
+          )}
+          {/* As far along as it has flown, the stock Progress, between two
+              ends known; with one, that end alone on its side. */}
+          {from && to ? (
+            progress != null ? (
+              <Progress value={Math.round(progress * 100)} aria-label="Of the way flown" className="h-1 bg-foreground/15" />
+            ) : (
+              <div className="h-1 rounded-full bg-foreground/15" />
+            )
+          ) : (
+            <span />
+          )}
+          {to ? (
+            <End right ident={to.ident} place={to.place} onOpen={open(to.ident)} testId={plane ? "flight-bound" : undefined} />
+          ) : (
+            <span />
+          )}
+        </div>
+      ) : null}
       {plane ? (
         <span className={cn("font-semibold text-foreground tabular-nums", TEXT.detail)} data-testid="flight-altitude">
           {reportedAltitude(plane.altitude_ft)} {climb}
           {" · "}
           {plane.speed_kt == null ? "—" : knots(plane.speed_kt)}
-          {/* ADS-B's track is over the ground and true, not magnetic. */}
-          {plane.track_deg != null && ` · ${bearing(plane.track_deg)} true`}
+          {/* ADS-B's track is over the ground and true, not magnetic; "true"
+              kept on the track's line by a no-break space, where it wrapped
+              alone (the owner's screenshot, 2026-11-26). */}
+          {plane.track_deg != null && ` · ${bearing(plane.track_deg)}\u00a0true`}
         </span>
-      ) : chip ? (
+      ) : null}
+      {plane && arrives !== null && to ? (
+        // Its arrival, direct at the speed it is making (the owner's design, 2026-11-26).
+        <span className={cn("text-muted-foreground tabular-nums", TEXT.detail)} data-testid="flight-arrives">
+          {`Arrives ${to.ident} ${clockTime(new Date(arrives * 1000))} · in ${lasted(arrives - now / 1000)}`}
+        </span>
+      ) : null}
+      {plane ? null : chip ? (
         <span className={cn("font-semibold text-foreground", TEXT.detail)} data-testid="flight-chip">
           {chip}
         </span>

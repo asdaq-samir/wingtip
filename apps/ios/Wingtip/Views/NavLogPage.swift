@@ -46,7 +46,7 @@ struct NavLogPage: View {
                 ContentUnavailableView(plan.planning ? "Planning…" : "No Legs Yet", systemImage: WingtipIcon.navLog,
                                        description: Text(plan.planning ? String(localized: "The legs come in as the planner works them out.") : Wording.navLogEmpty)
                                            // The system's secondary label: the view's own grey read
-                                           // faint in the iPad's glass sidebar (the audit, 2026-11-09).
+                                           // faint in the iPad's glass sidebar.
                                            .foregroundStyle(Color(.secondaryLabel)))
             } else {
                 Section {

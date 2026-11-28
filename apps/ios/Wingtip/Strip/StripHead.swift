@@ -4,7 +4,7 @@ import SwiftUI
 /// words (Verdict, POST /api/go-no-go) -- on a paper card, the route's
 /// line under it in condensed capitals ("C81 → KJVL → KDLH · C172 ·
 /// FL-045 · leaving now"), the route's other ways in a menu, and at most
-/// three one-line findings from the glance (Glance.lines), each a row
+/// three one-line findings from the glance (Glance), each a row
 /// into the Brief. The route's menu (Share, File, Clear) at the head's
 /// corner, where the tabs' route box had it. No photo behind the
 /// verdict: of the canvas's looks the owner kept the chart's ink and the
@@ -31,7 +31,7 @@ struct StripHead: View {
             card
             ways
             if let answer = verdict.answer {
-                ForEach(Glance.lines(answer)) { glanceLine in
+                ForEach(Glance.of(answer).lines) { glanceLine in
                     Button(action: onBrief) {
                         HStack(spacing: WingtipSpace.md) {
                             Image(systemName: FindingStyle.symbol(glanceLine.finding))

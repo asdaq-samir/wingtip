@@ -17,7 +17,7 @@ from ..settings import get_settings
 from . import airplane
 from .airport_tools import Ident
 from ..generated.planner_calls import go_no_go, plan
-from .calls import ENGINE_SOURCE, METAR_SOURCE, NOTAM_SOURCE, WINDS_SOURCE, editions, pick, pilot, rounded
+from .calls import ENGINE_SOURCE, METAR_SOURCE, NOTAM_SOURCE, editions, pick, pilot, rounded, winds_source
 from .tool_meta import READS, read_only
 
 Stops = Annotated[list[str], Field(max_length=MAX_STOPS, description="Airports or waypoints landed at or flown by, in order.")]
@@ -31,12 +31,38 @@ Tail = Annotated[
     str | None, Field(description="The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.")
 ]
 Depart = Annotated[datetime | None, Field(description="Departure time, ISO 8601 (UTC when no offset); now when omitted.")]
-Rules = Annotated[Literal["vfr", "ifr"], Field(description="VFR or IFR.")]
+Rules = Annotated[
+    Literal["vfr", "ifr"],
+    Field(description="VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167)."),
+]
+StationsLb = Annotated[
+    list[float] | None,
+    Field(max_length=12, description="Pounds at each loading station, in the POH's order (airplane_performance names them)."),
+]
+FuelGal = Annotated[float | None, Field(ge=0, le=2000, description="Fuel at engine start, gal; full usable when omitted.")]
 
 LEG = ("from", "to", "distance_nm", "altitude_ft", "true_course_deg", "magnetic_course_deg", "magnetic_heading_deg", "wind")
 LEG += ("groundspeed_kt", "ete_min", "fuel_gal")
 TOTALS = ("distance_nm", "ete_min", "fuel_gal", "reserve_min", "reserve_gal", "fuel_required_gal", "usable_fuel_gal")
 TOTALS += ("fuel_margin_gal", "night", "rules", "unflyable_legs", "legs_without_wind")
+
+
+HOP = ("fuel_required_gal", "reserve_gal", "usable_fuel_gal", "fuel_margin_gal")
+
+
+def totals_of(totals: dict) -> dict:
+    """The plan's totals for the model, with each flight's fuel check where
+    the route lands on the way: its tanks are filled at every stop, so the
+    route's own totals carry no check and `hops` holds each one's
+    (wingtip.route_join.route_totals), and the flights with no field with
+    fuel in reach (`no_fuel_stop`)."""
+    out = pick(totals, TOTALS)
+    if totals.get("hops"):
+        ends = ("departure", "destination")
+        out["hops"] = [{**{k: h[k] for k in ends}, **pick(h.get("totals") or {}, HOP)} for h in totals["hops"]]
+    if totals.get("no_fuel_stop"):
+        out["no_fuel_stop"] = [{k: s.get(k) for k in ("departure", "destination")} for s in totals["no_fuel_stop"]]
+    return out
 
 
 async def route_fields(pilot_id: str, dep: str, dest: str, stops: list[str], altitude, tail, depart, rules) -> tuple:
@@ -57,12 +83,30 @@ async def route_fields(pilot_id: str, dep: str, dest: str, stops: list[str], alt
 
 
 def app_link(fields: dict) -> str | None:
-    """The plan in Wingtip (the web's lib/flightLink planHrefOf address)."""
+    """The plan in Wingtip (the web's lib/flightLink planHrefOf address):
+    its route, altitude, time and rules (lib/address PICK_KEYS' `rules`, so
+    an IFR plan opens as IFR; VFR is the default and not written). The
+    address has no key for the airplane flown, the pilot's own setting."""
     base = get_settings().mcp_issuer
     if not base:
         return None
-    query = {k: str(fields[k]) for k in ("dep", "dest", "stops", "altitude_ft") if fields.get(k) not in (None, "")}
+    query = {k: str(fields[k]) for k in ("dep", "dest", "stops", "altitude_ft", "depart") if fields.get(k) not in (None, "")}
+    if fields.get("rules") == "ifr":
+        query["rules"] = "ifr"
     return f"{base}/app/plan?{urlencode(query)}"
+
+
+async def _briefing_load(flown: dict | None, stations_lb, fuel_gal) -> tuple[dict | None, list[str]]:
+    """The pilot's own load for /api/go-no-go, or what is missing for it
+    (with no airplane, or none with a POH loading, nothing is balanced)."""
+    profile = airplane.profile(flown) if flown else {}
+    loading = profile.get("loading")
+    if not loading:
+        return None, []
+    fuel = fuel_gal if fuel_gal is not None else profile.get("usable_fuel_gal")
+    if fuel is None:
+        return None, ["fuel_gal, the fuel at engine start: the airplane has no usable fuel on record"]
+    return airplane.load(flown, loading, stations_lb, fuel)
 
 
 async def planned(fields: dict) -> dict:
@@ -78,7 +122,8 @@ def register(server: MCPServer) -> None:
         name="plan_route",
         description="Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or "
         "the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, "
-        "wind, ground speed, time and fuel, the totals with the reserve and the fuel margin, and the cautions. "
+        "wind, ground speed, time and fuel, the totals with the reserve and the fuel margin (each flight's in hops "
+        "where it lands on the way), and the cautions. "
         "Times and fuel need one of the pilot's airplanes by tail number. Answers the nav log as data; "
         "show_flight plans the same route in Wingtip's live view, where the edit tools change it.",
         title="Plan a route",
@@ -104,16 +149,18 @@ def register(server: MCPServer) -> None:
             "altitude_choice": p.get("altitude_choice"),
             "altitude_cautions": p.get("altitude_cautions", []),
             "legs": rounded([pick(leg, LEG) for leg in p["legs"]]),
-            "totals": rounded(pick(p["totals"], TOTALS)),
+            "totals": rounded(totals_of(p["totals"])),
             "open_in_wingtip": app_link(fields),
-            "sources": [ENGINE_SOURCE, WINDS_SOURCE, *editions("nasr", "dof", "charts")],
+            "sources": [ENGINE_SOURCE, winds_source(p.get("winds")), *editions("nasr", "dof", "charts")],
         }
 
     @server.tool(
         name="flight_briefing",
         description="The Go / No-Go briefing for a planned flight, as Wingtip's Brief gives it: the line over the "
         "findings and each finding -- weather at the fields and along the route, TFRs and special-use airspace, the "
-        "altitude, fuel, runways, weight and balance -- in words, and the risk assessment's score, level and factors.",
+        "altitude, fuel, runways, weight and balance -- in words, and the risk assessment's score, level and factors, "
+        "with the airplane's inspections, VOR check and open squawks. Weight and balance is the pilot's own load: "
+        "give stations_lb (and fuel_gal), else it is said not worked.",
         title="Flight briefing",
         annotations=read_only("Flight briefing"),
         meta=READS,
@@ -126,14 +173,23 @@ def register(server: MCPServer) -> None:
         airplane_tail: Tail = None,
         depart_at: Depart = None,
         rules: Rules = "vfr",
+        stations_lb: StationsLb = None,
+        fuel_gal: FuelGal = None,
     ) -> dict[str, Any]:
         who = pilot()
         fields, flown = await route_fields(who, departure, destination, stops, cruise_altitude_ft, airplane_tail, depart_at, rules)
-        verdict = await go_no_go(body={k: v for k, v in fields.items() if v is not None})
+        load, missing = await _briefing_load(flown, stations_lb, fuel_gal)
+        ask = {k: v for k, v in fields.items() if v is not None}
+        if load:
+            ask["load"] = load
+        if flown:
+            ask["own_airplane"] = airplane.own_airplane(flown)
+        verdict = await go_no_go(body=ask)
         return {
             "airplane": airplane.label(flown) if flown else None,
             "line": verdict["line"],
             "findings": [pick(i, ("key", "label", "finding", "detail")) for i in verdict["items"]],
+            "missing": missing,
             "risk": verdict.get("risk"),
             "open_in_wingtip": app_link(fields),
             "sources": [METAR_SOURCE, NOTAM_SOURCE, ENGINE_SOURCE, *editions("nasr")],

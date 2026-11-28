@@ -61,7 +61,11 @@ fun Modifier.timelineThread(thread: TimelineThread, first: Boolean, last: Boolea
         val width = WingtipSpace.Xxs.toPx()
         if (!first) drawLine(WingtipColors.Chart.Course, Offset(x, -gap.toPx()), Offset(x, centre - clear), width)
         if (!last) drawLine(WingtipColors.Chart.Course, Offset(x, centre + clear), Offset(x, size.height + gap.toPx()), width)
-        dot?.let { drawCircle(it, DOT.toPx(), Offset(x, centre)) }
+        dot?.let {
+            // Cased, so a red dot keeps its edge on the night's card (FlightCategory.RING).
+            drawCircle(FlightCategory.RING, DOT.toPx(), Offset(x, centre))
+            drawCircle(it, DOT.toPx() - FlightCategory.RING_WIDTH.toPx(), Offset(x, centre))
+        }
     }
 
 /** The leading mark's room, where the line's x is read from. */
@@ -81,17 +85,17 @@ fun TimelineMark(thread: TimelineThread, content: @Composable () -> Unit = {}) {
  * route crosses one (StopTimes).
  */
 @Composable
-fun PointTimes(at: StopTimes.At?, zone: ZoneId?, zonesSaid: Boolean, onLeave: ((Int, Int) -> Unit)?) {
+fun PointTimes(at: StopTimes.At?, zone: ZoneId?, zonesSaid: Boolean, left: StopTimes.Left, onLeave: ((Int, Int) -> Unit)?) {
     at ?: return
     var asking by rememberSaveable { mutableStateOf(false) }
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Column(horizontalAlignment = Alignment.End) {
-        at.arriveMs?.let { Text(StopTimes.words(it, zone, zonesSaid), style = MaterialTheme.typography.bodyMedium, color = muted) }
+        at.arriveMs?.let { Text(StopTimes.words(it, zone, zonesSaid, left = left), style = MaterialTheme.typography.bodyMedium, color = muted) }
         val leave = at.leaveMs
         if (leave != null && onLeave != null) {
-            TextButton(onClick = { asking = true }) { Text(stringResource(R.string.leaves_at, StopTimes.words(leave, zone, zonesSaid))) }
+            TextButton(onClick = { asking = true }) { Text(stringResource(R.string.leaves_at, StopTimes.words(leave, zone, zonesSaid, left = left))) }
         } else if (leave != null && at.arriveMs == null) {
-            Text(StopTimes.words(leave, zone, zonesSaid), style = MaterialTheme.typography.bodyMedium, color = muted)
+            Text(StopTimes.words(leave, zone, zonesSaid, left = left), style = MaterialTheme.typography.bodyMedium, color = muted)
         }
     }
     val leave = at.leaveMs

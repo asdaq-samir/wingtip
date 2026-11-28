@@ -40,8 +40,7 @@ class GatewayTokens(TokenVerifier):
         # it has not seen, which is what a gateway restarted with a new
         # development key looks like -- but at most once a minute
         # (KEY_REFETCH_S): anyone can send /mcp junk tokens with made-up key
-        # ids, and each was a fetch of the gateway's /oauth2/jwks (the
-        # security audit's L7). In between, an unknown id is refused.
+        # ids, and each was a fetch of the gateway's /oauth2/jwks. In between, an unknown id is refused.
         self._keys = jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=3600, timeout=5, cooldown_duration=KEY_REFETCH_S)
         self.issuer = issuer
         self.resource = resource

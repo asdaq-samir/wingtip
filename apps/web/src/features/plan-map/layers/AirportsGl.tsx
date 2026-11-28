@@ -1,15 +1,29 @@
 import { useWeatherAgeCredit } from "../../../lib/map/marks/weatherAge";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import type { MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
-import { useEffect, useMemo, useRef } from "react";
+import type { MapGeoJSONFeature, MapSourceDataEvent, SymbolLayerSpecification } from "maplibre-gl";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../lib/api/client";
-import { airportsQuery } from "../airportsQuery";
+import { AIRPORTS_LIMIT, airportsQuery } from "../airportsQuery";
+import { useAirportWeatherState, useSameFields, type WeatherAnswer } from "./airportWeatherState";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
-import { setAirportWeather, setOverlayExclusion, setSelectedAirport } from "../../../lib/map/gl/glOverlays";
+import { prefetchAirport } from "../../../lib/queryClient";
+import {
+  AIRPORTS_SOURCE,
+  AIRPORT_ICON_SIZE,
+  AIRPORT_SHOWN,
+  AIRPORT_TILE_LAYERS,
+  OVERLAY_SOURCE,
+  markSelectedAirport,
+  setOverlayExclusion,
+} from "../../../lib/map/gl/glOverlays";
+import { TILE_AIRPORT_ICON } from "../../../lib/map/gl/airportIcons";
+import { glZoom } from "../../../lib/map/gl/glStyle";
+import { MAP_ZOOM } from "../../../lib/tokens";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
-import { TAP, labelHalo, labelText, selectionRing } from "../../../lib/map/gl/layers/common";
+import { usePlacedFieldRings } from "../../../lib/map/gl/placedRings";
+import { TAP, labelHalo, labelInk, labelText, selectionRing } from "../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
 import { useAirportWeatherShown } from "../../../lib/map/marks/useAirportWeatherShown";
@@ -42,8 +56,29 @@ const SELECTED_IDENT: SymbolLayerSpecification = {
     "text-allow-overlap": true,
     "text-ignore-placement": true,
   },
-  paint: { "text-color": CHART.casing, ...labelHalo("airportPicked") },
+  // White on its dark rim, dimmed at night by its ink with the chart's other words, the rim whole (R7-5).
+  paint: { "text-color": labelInk(CHART.casing), ...labelHalo("airportPicked") },
 };
+/** The open card's field's mark, the tile layers' own picture and size
+ *  (glOverlays) from the tile's fields copied onto the ring's feature,
+ *  always drawn and keeping its room as a Class B's field's mark does, over
+ *  the tile's own copy, the same picture at the same size; the tile layers
+ *  hide only their ident by its feature state (markSelectedAirport), so a
+ *  tap changes no filter and lays no overlay tile out again. None where the
+ *  field wears its own chip, nor one the settings hide. */
+const SELECTED_MARK: SymbolLayerSpecification = {
+  id: "airport-selected-mark",
+  type: "symbol",
+  source: SELECTED,
+  minzoom: glZoom(MAP_ZOOM.airportsFarthest),
+  filter: ["all", ["==", ["get", "tile"], true], ["!", ["get", "chipped"]], ...AIRPORT_SHOWN],
+  layout: { "icon-image": TILE_AIRPORT_ICON, "icon-size": AIRPORT_ICON_SIZE, "icon-allow-overlap": true, "icon-padding": 2 },
+};
+/** Every layer a field's mark is drawn in, for the taps, the probes and
+ *  the rings of the fields drawn: the tiles' and the open card's field's. */
+const MARK_LAYERS = [...AIRPORT_TILE_LAYERS, SELECTED_MARK.id];
+/** The longest the open card's field's tile ident waits for the ring's to be drawn. */
+const HIDE_LATEST_MS = 300;
 /** Ten minutes, as a METAR's colour can change by the hour. */
 const WEATHER_EVERY_MS = 10 * 60_000;
 /** The marks' weather's address, as the worker marks an answer it kept. */
@@ -83,12 +118,15 @@ export function AirportsGl(props: Props) {
   return overlays ? <TileAirports {...props} /> : null;
 }
 
+/** The most reporting fields asked for along the route. */
+const ROUTE_LIMIT = 1000;
+
 /** The reporting fields along the route, for their weather. */
 function useAlongRoute(route: Props["route"]) {
   const routeKey = route ? `${route.south},${route.west},${route.north},${route.east}` : null;
   return useQuery({
     queryKey: ["airportsReporting", routeKey],
-    queryFn: () => api.airportsInView({ ...route!, limit: 1000, reporting: true }),
+    queryFn: () => api.airportsInView({ ...route!, limit: ROUTE_LIMIT, reporting: true }),
     enabled: !!route,
     staleTime: WEATHER_EVERY_MS,
     refetchInterval: WEATHER_EVERY_MS,
@@ -104,9 +142,10 @@ function useAirportTaps(
   { selected, picked, others, onSelect }: Pick<Props, "selected" | "picked" | "others" | "onSelect">,
   fields: (f: MapGeoJSONFeature) => Record<string, unknown>,
 ) {
-  useGlLayer("top", { [SELECTED]: empty() }, [...RING, SELECTED_IDENT]);
+  useGlLayer("top", { [SELECTED]: empty() }, [SELECTED_MARK, ...RING, SELECTED_IDENT]);
   const ringed = selected ?? picked ?? null;
   const chipped = !!ringed && others.some((a) => a.ident === ringed.ident);
+  const [tile, seedTile] = useTileField(ringed?.ident ?? null);
   const ring = useMemo<GeoJSON.FeatureCollection | null>(
     () =>
       ringed
@@ -115,18 +154,63 @@ function useAirportTaps(
             features: [
               {
                 type: "Feature",
-                properties: { ident: ringed.ident, chipped },
+                properties: { ...tile, tile: !!tile, ident: ringed.ident, chipped },
                 geometry: { type: "Point", coordinates: [ringed.lon, ringed.lat] },
               },
             ],
           }
         : null,
-    [ringed, chipped],
+    [ringed, chipped, tile],
   );
   useGlData(SELECTED, ring);
   useGlProbe("selected-airport", ["airport-selected"], () => ({ ring: true }));
-  useGlProbe("airport-marks", ["airports"], fields);
-  useGlTap(["airports"], TAP.mark, TAP.rank.mark, (feature) => onSelect(String(feature.properties.ident)));
+  useGlProbe("airport-marks", MARK_LAYERS, fields);
+  useGlTap(
+    MARK_LAYERS,
+    TAP.mark,
+    TAP.rank.mark,
+    (feature) => {
+      const ident = String(feature.properties.ident);
+      // The tile's own fields, copied at the tap, so its mark over the ring
+      // is drawn with the card's first frame, not a querySourceFeatures later.
+      if (AIRPORT_TILE_LAYERS.includes(feature.layer.id)) seedTile(ident, feature.properties);
+      onSelect(ident);
+    },
+    // Its card's answer asked as the finger lifts, before MapLibre's click,
+    // so the card opens on it sooner (the speed work, 2026-11-27).
+    (feature) => prefetchAirport(String(feature.properties.ident)),
+  );
+}
+
+type Found = { ident: string; fields: Record<string, unknown> };
+
+/** A field's fields as the airports' tiles have them (its airspace, use,
+ *  size, rank), for its mark drawn over its ring: those of the tapped tile
+ *  feature (`seed`, at the tap), or looked for as each airports tile comes
+ *  in until one has it (a field picked in a search or a link, far from the
+ *  tiles drawn). */
+function useTileField(ident: string | null): [Record<string, unknown> | null, (ident: string, fields: Record<string, unknown>) => void] {
+  const { map } = useGlMap();
+  const [found, setFound] = useState<Found | null>(null);
+  useEffect(() => {
+    if (!ident) return;
+    const look = (e?: MapSourceDataEvent) => {
+      if ((e && (e.sourceId !== AIRPORTS_SOURCE || !e.tile)) || !map.getSource(AIRPORTS_SOURCE)) return;
+      const f = map.querySourceFeatures(AIRPORTS_SOURCE, { sourceLayer: "airports", filter: ["==", ["get", "ident"], ident] })[0];
+      if (!f) return;
+      map.off("sourcedata", look);
+      // Kept as it was where the tap's seed has it, so the ring is not set again.
+      setFound((was) => (was?.ident === ident ? was : { ident, fields: f.properties }));
+    };
+    map.on("sourcedata", look);
+    const first = requestAnimationFrame(() => look());
+    return () => {
+      cancelAnimationFrame(first);
+      map.off("sourcedata", look);
+    };
+  }, [map, ident]);
+  const seed = (ident: string, fields: Record<string, unknown>) => setFound({ ident, fields });
+  return [found && found.ident === ident ? found.fields : null, seed];
 }
 
 /** The overlay tiles' airports: the settings' filters and the route's
@@ -140,33 +224,61 @@ function TileAirports(props: Props) {
     setOverlayExclusion(map, "airports", othersKey ? othersKey.split(",") : []);
   }, [map, othersKey]);
   useEffect(() => () => setOverlayExclusion(map, "airports", []), [map]);
-  const selectedIdent = props.selected?.ident ?? null;
+  // The Class C and D rings drawn only round a field that is (placedRings).
+  usePlacedFieldRings(
+    map,
+    OVERLAY_SOURCE,
+    AIRPORTS_SOURCE,
+    MARK_LAYERS,
+    others.map((a) => a.ident),
+  );
+  // The ringed field's tile ident hidden (its feature state) once the
+  // ring's layers have it to draw: set at the tap, it was gone two to four
+  // frames before the ring's source came back from MapLibre's worker.
+  const selectedIdent = (props.selected ?? props.picked)?.ident ?? null;
   useEffect(() => {
-    setSelectedAirport(map, selectedIdent);
+    if (!selectedIdent) return;
+    let hidden = false;
+    const hide = () => {
+      if (hidden || !map.style) return;
+      hidden = true;
+      map.off("sourcedata", drawn);
+      markSelectedAirport(map, selectedIdent, true);
+    };
+    const drawn = (e: MapSourceDataEvent) => {
+      if (e.sourceId === SELECTED && e.sourceDataType !== "metadata" && map.getSource(SELECTED) && map.isSourceLoaded(SELECTED)) hide();
+    };
+    map.on("sourcedata", drawn);
+    // However the ring's source answers, the ident is not drawn twice for long.
+    const late = setTimeout(hide, HIDE_LATEST_MS);
+    return () => {
+      clearTimeout(late);
+      map.off("sourcedata", drawn);
+      if (hidden) markSelectedAirport(map, selectedIdent, false);
+    };
   }, [map, selectedIdent]);
   const { box, level } = useGlView();
-  const { data: inView, dataUpdatedAt } = useQuery({
-    ...airportsQuery(box, level),
-    refetchInterval: WEATHER_EVERY_MS,
-    placeholderData: keepPreviousData,
-  });
+  const {
+    data: inView,
+    dataUpdatedAt,
+    isPlaceholderData,
+  } = useQuery({ ...airportsQuery(box, level), refetchInterval: WEATHER_EVERY_MS, placeholderData: keepPreviousData });
   // Their age in the map's small print once it is old (weatherAge).
   useWeatherAgeCredit(IN_VIEW_PATH, dataUpdatedAt);
   const alongRoute = useAlongRoute(route);
-  const colours = useMemo(() => {
-    const out = new Map<string, string>();
-    for (const list of [alongRoute, inView])
-      for (const a of list ?? []) if (a.flight_category) out.set(a.ident, colourOf(a.flight_category));
-    return out;
-  }, [alongRoute, inView]);
+  // Each answer with the box it answers: the view's only once it is this
+  // box's own, not the last box's held while it comes.
+  const viewAnswer = useMemo<WeatherAnswer>(
+    () => (inView && !isPlaceholderData ? { fields: inView, box: box.box, full: inView.length >= AIRPORTS_LIMIT } : null),
+    [inView, isPlaceholderData, box.box],
+  );
+  const routeAnswer = useMemo<WeatherAnswer>(
+    () => (alongRoute && route ? { fields: alongRoute, box: route, full: alongRoute.length >= ROUTE_LIMIT } : null),
+    [alongRoute, route],
+  );
   const off = useAirportWeatherShown() === "off";
-  const known = useRef(colours);
-  useEffect(() => {
-    known.current = colours;
-    // Off: no colour for any field, so each disc is the no-report grey.
-    setAirportWeather(map, off ? new Map() : colours);
-  }, [map, colours, off]);
-  const reporting = useMemo(() => [...(alongRoute ?? []), ...(inView ?? [])], [alongRoute, inView]);
+  const known = useAirportWeatherState(map, [routeAnswer, viewAnswer], off);
+  const reporting = useSameFields(alongRoute, inView);
   useAirportTaps(props, (f) => {
     const p = f.properties;
     const use = p.military === "military" ? "military" : p.use === "private" ? "private" : "";
@@ -176,7 +288,7 @@ function TileAirports(props: Props) {
       space: p.airspace ?? "",
       size: p.size ?? "",
       use,
-      weather: known.current.get(String(p.ident)) ?? colourOf(null),
+      weather: known.current.get(String(p.ident))?.colour ?? colourOf(null),
     };
   });
   // The same fields for a screen reader and a keyboard, which cannot see

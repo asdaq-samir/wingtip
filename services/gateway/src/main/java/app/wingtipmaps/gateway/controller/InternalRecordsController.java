@@ -19,7 +19,10 @@ import java.security.MessageDigest;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -96,13 +99,17 @@ public class InternalRecordsController {
                 pilot -> flights.list(pilot).stream().map(FlightSummaryDto::of).toList());
     }
 
-    /** Saved as the app saves one (FlightController), validated the same. */
+    /** Saved as the app saves one (FlightController), validated the same;
+     *  a 403 where the pilot's token was not granted wingtip:flights, as
+     *  for each change below (ConnectorGrants.mayChangeFlights). */
     @PostMapping("/flights")
     public ResponseEntity<FlightSummaryDto> save(
             @RequestHeader(value = TOKEN_HEADER, required = false) String token,
             @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
+            @RequestHeader(value = ACCESS_TOKEN_HEADER, required = false) String accessToken,
             @Valid @RequestBody SaveFlightRequest request) {
-        return asPilot(token, pilotId, pilot -> FlightSummaryDto.of(flights.save(pilot, request)));
+        return asPilot(
+                token, pilotId, pilot -> FlightSummaryDto.of(flights.save(changing(pilot, accessToken), request)));
     }
 
     /** One of the pilot's saved flights planned again (the connector's
@@ -113,11 +120,12 @@ public class InternalRecordsController {
     public ResponseEntity<FlightSummaryDto> replan(
             @RequestHeader(value = TOKEN_HEADER, required = false) String token,
             @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
+            @RequestHeader(value = ACCESS_TOKEN_HEADER, required = false) String accessToken,
             @PathVariable Long id,
             @RequestParam(defaultValue = "false") boolean replaceRoute,
             @Valid @RequestBody SaveFlightRequest request) {
         return pilot(token, pilotId)
-                .flatMap(pilot -> flights.replan(pilot, id, request, replaceRoute))
+                .flatMap(pilot -> flights.replan(changing(pilot, accessToken), id, request, replaceRoute))
                 .map(FlightSummaryDto::of)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -130,8 +138,11 @@ public class InternalRecordsController {
     public ResponseEntity<Void> delete(
             @RequestHeader(value = TOKEN_HEADER, required = false) String token,
             @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
+            @RequestHeader(value = ACCESS_TOKEN_HEADER, required = false) String accessToken,
             @PathVariable Long id) {
-        return pilot(token, pilotId).filter(pilot -> flights.delete(pilot, id)).isPresent()
+        return pilot(token, pilotId)
+                        .filter(pilot -> flights.delete(changing(pilot, accessToken), id))
+                        .isPresent()
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
     }
@@ -161,6 +172,21 @@ public class InternalRecordsController {
                 .map(answer)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** The pilot, where the token the planner was sent may change their
+     *  saved flights; else a 403 that says which box to tick. */
+    private Pilot changing(Pilot pilot, String accessToken) {
+        if (!grants.mayChangeFlights(pilot.getId(), accessToken)) {
+            throw new ErrorResponseException(
+                    HttpStatus.FORBIDDEN,
+                    ProblemDetail.forStatusAndDetail(
+                            HttpStatus.FORBIDDEN,
+                            "This connection was not allowed " + ConnectorSettings.WRITE + ": disconnect Wingtip, "
+                                    + "connect it again and approve \"Save, change and delete your saved flights\"."),
+                    null);
+        }
+        return pilot;
     }
 
     private Optional<Pilot> pilot(String token, String pilotId) {

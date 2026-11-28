@@ -42,14 +42,15 @@ from wingtip import traffic as traffic_store
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 
-from . import errors, local_guard, openapi_document, route_metrics, tracing
+from . import errors, local_guard, openapi_document, route_metrics, tracing, usage_days
 from .feeds import watch as feeds_watch
 from .request_ids import RequestIds
 from .mcp import server as mcp
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
 from .routers import airport_card, airport_charts, airport_stops, navlog
 from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
-from .routers import aircraft_form, airplanes, library, weather_flow
+from .routers import aircraft_form, airplanes, library, usage, weather_flow
+from .routers import approach_teaching
 from .routers import forecast_run, logbook_draft, notam_rank, offline, plate_sets, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
@@ -77,20 +78,30 @@ log = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
+    # No key for the followed airplanes' shares, no start: production
+    # sets FOLLOW_SHARE_KEY, the development stack FOLLOW_SHARE_KEY_FILE.
+    traffic_store.require_share_key()
     # The planner's periodic work, each a job on one scheduler (wingtip.schedule):
     # the warm-up's checks once it is done (app.warm_up), and from now
     # whether the live feeds and the weather still come in (app.feeds), a
     # check a minute. The feeds themselves are read by ingest into the
-    # stores the planner reads: none here.
+    # stores the planner reads: none here, nor the OpenSky Network's
+    # nightly prefetch of the followed airplanes' flights (ingest.main).
     on = schedule.scheduler()
     schedule.every(on, feeds_watch.CHECK_EVERY_S, feeds_watch.check, name="feed-watch")
     schedule.every(on, traffic_store.PRUNE_EVERY_S, traffic_store.prune, name="live-store-prune")
+    # Each open card's airplane asked for, where adsb.lol does not hear it, so the map's poll only reads its track
+    # (wingtip.traffic.watch_round).
+    schedule.every(on, traffic_store.WATCH_GAP_S, traffic_store.watch_round, name="watched-airplanes", now=False)
     # On AWS, older cycles' chart sheets off the data disk (chart_upkeep.prune_behind_served).
     schedule.every(on, chart_upkeep.PRUNE_EVERY_S, chart_upkeep.prune_behind_served, name="chart-sheets-prune", now=False)
+    # Each day's calls by route, to the file the gateway reads each night (app.usage_days).
+    schedule.every(on, usage_days.FLUSH_EVERY_S, usage_days.flush, name="usage-days", now=False)
     on.start()
     threading.Thread(target=warm_reference_data, args=(on,), name="reference-data-warm-up", daemon=True).start()
     yield
     on.shutdown(wait=False)
+    usage_days.flush()
 
 
 app = FastAPI(title="Wingtip Maps planner", lifespan=_lifespan)
@@ -153,7 +164,8 @@ ROUTERS = (
     (airspace_router, traffic, basemaps),
     (route_options, gonogo, figures, clearance, packs, words, weather_map, weather_flow, weather_loop, forecast_run),
     (pilot, live, feeds, terrain, window, emergency, copilot, logbook_draft, notam_rank, offline, plate_sets, coach),
-    (mcp, plates, aircraft_form, airplanes, library),
+    (mcp, plates, aircraft_form, airplanes, library, usage),
+    (approach_teaching,),
 )
 for group in ROUTERS:
     for module in group:

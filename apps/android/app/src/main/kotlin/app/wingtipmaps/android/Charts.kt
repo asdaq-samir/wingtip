@@ -11,6 +11,7 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
+import app.wingtipmaps.android.api.overlayArchive
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.tiles.TileTemplate
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -140,7 +141,7 @@ class Charts @Inject constructor(app: Application) : AndroidViewModel(app) {
         val store = Gateway.overlayStore
         withContext(Dispatchers.IO) { runCatching { store.keepOnly(tiles.name) } }
         if (store.hasWhole(tiles.name, tiles.bytes) || !unmetered()) return
-        val url = (Config.gateway + Config.plannerPath("/api/overlay-tiles/${tiles.name}.pmtiles")).toHttpUrl()
+        val url = Planner.overlayArchive(tiles.name).toHttpUrl()
         val _ = runCatching { store.download(Gateway.streaming, url, tiles.name, tiles.bytes) }
     }
 

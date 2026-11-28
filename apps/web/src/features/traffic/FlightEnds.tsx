@@ -25,7 +25,10 @@ export function End({
 }) {
   const name = <span className={cn("max-w-full truncate font-bold", TEXT.title)}>{ident}</span>;
   return (
-    <span className={cn("flex min-w-0 flex-col", right && "items-end text-right")} data-testid={testId}>
+    // Each end's lines to its own side: stretched, the ident's link button
+    // centred its ident over a town wider than it (the owner's screenshot,
+    // 2026-11-26, KCOS over "Colorado Springs, CO").
+    <span className={cn("flex min-w-0 flex-col", right ? "items-end text-right" : "items-start")} data-testid={testId}>
       {onOpen ? (
         <Button
           variant="link"

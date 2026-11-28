@@ -30,7 +30,7 @@ struct BriefSummary: Equatable, Sendable {
     /// first three findings acted on, each in its own words (Glance).
     static func engine(_ answer: GoNoGoAnswer, why: String?) -> BriefSummary {
         BriefSummary(finding: answer.line.finding, verdict: answer.line.words,
-                     actions: Glance.lines(answer).map { Action(key: $0.key, words: $0.words) }, origin: .engine, why: why)
+                     actions: Glance.of(answer).lines.map { Action(key: $0.key, words: $0.words) }, origin: .engine, why: why)
     }
 
     /// The model's draft held to the findings, or nil where it strays: a
@@ -41,15 +41,18 @@ struct BriefSummary: Equatable, Sendable {
     /// planner's line.
     static func checked(_ draft: BriefGlanceDraft, answer: GoNoGoAnswer) -> BriefSummary? {
         guard draft.finding == answer.line.finding else { return nil }
-        let acted = Glance.acted(answer)
+        let glance = Glance.of(answer)
+        let acted = glance.acted
         var kept: [Action] = []
         for action in draft.actions {
+            // No more lines than the engine's glance: at most three, the
+            // owner's look-and-go rule (2026-11-03), one a finding.
+            if kept.count == glance.lines.count { break }
             let text = action.text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty, !kept.contains(where: { $0.key == action.finding }),
                   let item = acted.first(where: { $0.key == action.finding }),
                   NumberGuard.invented(text, given: [item.label, item.detail]).isEmpty else { continue }
             kept.append(Action(key: item.key, words: text))
-            if kept.count == Glance.most { break }
         }
         if kept.isEmpty, !acted.isEmpty { return nil }
         let verdict = draft.verdict.trimmingCharacters(in: .whitespacesAndNewlines)

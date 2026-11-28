@@ -2,9 +2,9 @@ import { useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import { useStartAtTop } from "../lib/scrollPlace";
 
-/** The room between a tab page's sections, 24 points: Airport's room, less
- *  the 8 its strip kept under it besides. */
-export const TAB_PAGE_GAP = "gap-6";
+/** The room between a tab page's sections: the one gap between groups
+ *  (space.group, 16; the owner, 2026-11-23), on every tab. */
+export const TAB_PAGE_GAP = "gap-(--space-group)";
 
 /**
  * A tab's own page in the map's panel -- Airport's search, its Favorites

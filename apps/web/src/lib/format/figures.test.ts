@@ -23,13 +23,18 @@ describe("figures written as the FAA writes them", () => {
     expect(miles(null)).toBe("—");
     // A metric report's float, to the hundredth and down, not every figure.
     expect(miles(2.4854847689493362)).toBe("2.48 sm");
+    // M1/4SM, less than a quarter mile (FMH-1 chapter 6), never "0.25 sm".
+    expect(miles(0.25, false, true)).toBe("less than 1/4 sm");
   });
 
   it("writes a reported visibility to the sixteenth below 3 sm and the whole mile above, always down", () => {
     expect(reportedVisibility(0.625)).toEqual([0, "5/8"]);
     expect(reportedVisibility(0.0625)).toEqual([0, "1/16"]);
     expect(reportedVisibility(1.5)).toEqual([1, "1/2"]);
-    expect(reportedVisibility(0.7456)).toEqual([0, "11/16"]);
+    // FMH-1 Table 6-1: no 11/16; 0.7456 is reported 5/8, 2.3 is 2 1/4.
+    expect(reportedVisibility(0.7456)).toEqual([0, "5/8"]);
+    expect(reportedVisibility(0.4375)).toEqual([0, "3/8"]);
+    expect(reportedVisibility(2.3)).toEqual([2, "1/4"]);
     expect(reportedVisibility(4.97)).toEqual([4, null]);
     expect(reportedVisibility(10)).toEqual([10, null]);
   });

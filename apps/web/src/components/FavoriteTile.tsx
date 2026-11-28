@@ -1,7 +1,7 @@
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { cn } from "cn";
 import { CardAction } from "./CardAction";
-import { ACTION } from "../lib/cardActions";
+import { ACTION } from "../lib/generated/cardActions";
 import { FAVORITE_STAR_ON } from "../lib/mapChrome";
 
 /**
@@ -24,8 +24,7 @@ export function FavoriteTile({ on, disabled, onToggle, testId }: { on: boolean; 
           pressed={on}
           // Its name is its word, "Favorite", its state the toggle's own
           // (aria-pressed: "selected"), so the name holds what is in sight
-          // (WCAG 2.5.3, Label in Name; axe's label-content-name-mismatch,
-          // the iOS audit's airport and airplane cards).
+          // (WCAG 2.5.3, Label in Name; axe's label-content-name-mismatch on the airport and airplane cards).
           testId={testId}
         />
       }

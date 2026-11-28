@@ -146,6 +146,13 @@ struct StripFieldCard: View {
     @Environment(\.chartInk) private var ink
     @State private var place: AirportPlace?
 
+    /// The clock some minutes from now, its day first where it is not today's.
+    private static func eta(_ minutes: Double) -> String {
+        let now = Date()
+        let at = now.addingTimeInterval(minutes * 60)
+        return (Format.arrivalDay(at, left: now).map { "\($0) " } ?? "") + Format.time(at)
+    }
+
     private var detail: String? {
         var parts: [String] = []
         if let runway = StripData.runwayInUse(place?.runways ?? []) { parts.append("Runway \(runway)") }
@@ -173,7 +180,7 @@ struct StripFieldCard: View {
                     Spacer(minLength: 0)
                     if let minutes = point.minutesFlown {
                         VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
-                            Text(Format.time(Date().addingTimeInterval(minutes * 60)))
+                            Text(Self.eta(minutes))
                                 .font(ChartInk.text.weight(.semibold).monospacedDigit())
                             Text(atLabel).font(ChartInk.note).foregroundStyle(ink.muted)
                         }

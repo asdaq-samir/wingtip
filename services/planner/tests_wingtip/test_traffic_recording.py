@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from wingtip import airports, traffic, weather
-from wingtip.traffic import adsb_lol, common, flights, recorded, store, watched
+from wingtip.traffic import common, flights, globe, recorded, store, watched
 
 from .traffic_world import CESSNA, _answer, stand_in
 from .traffic_world import adsbx_fixture, clock_fixture  # noqa: F401 -- the fixtures, by the names the runner gives them
@@ -23,7 +23,7 @@ def test_an_airplane_whose_card_is_open_and_adsb_lol_does_not_hear_is_recorded_f
     wall = {"now": 1791800000.0}
     stand_in(monkeypatch, "_wall", lambda: wall["now"])
     stand_in(monkeypatch, "_TRACES", {})
-    stand_in(monkeypatch, "_paced", lambda url: {"ac": []})
+    stand_in(monkeypatch, "_paced", lambda url, **kw: {"ac": []})
     asked = []
 
     def adsbx(path, search=False):
@@ -55,6 +55,23 @@ def test_an_airplane_whose_card_is_open_and_adsb_lol_does_not_hear_is_recorded_f
     assert state["airborne"] and state["aircraft"]["lat"] == 42.4
 
 
+def test_the_maps_poll_asks_nothing_and_the_watch_round_asks_each_open_card_then_lets_it_go(clock, monkeypatch):
+    """Round 6's audit, N1 and N9: a poll asked adsb.lol for every watched
+    airplane in the country behind its turn; now only the planner's watch
+    round asks, the poll reads the track, and a closed card is let go."""
+    stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
+    asked = []
+    stand_in(monkeypatch, "_paced", lambda url, **kw: asked.append(url) or {"ac": [CESSNA]})
+    stand_in(monkeypatch, "_region_answer", lambda region: (clock.now, []))
+    watched._WATCHED["a128b9"] = clock.now
+    assert traffic.near(42.35, -88.15, 30)["aircraft"] == [] and asked == []
+    assert traffic.watch_round() == 1 and len(asked) == 1
+    assert [p["hex"] for p in traffic.near(42.35, -88.15, 30)["aircraft"]] == ["a128b9"] and len(asked) == 1
+    clock.now += traffic.WATCH_FOR_S
+    assert traffic.watch_round() == 0 and len(asked) == 1
+    assert watched._WATCHED == {} and watched._WATCH_ASKED == {} and watched._WATCH_SOURCE == {} and watched._ANSWERED == {}
+
+
 def test_a_followed_airplane_is_asked_of_adsb_lol_in_the_background_and_stays_followed_across_a_restart(clock, monkeypatch, tmp_path):
     """The owner's N3429J (2026-10-19): FlightAware listed its day's two
     flights, the planner nothing -- recorded only while its card was open,
@@ -66,10 +83,10 @@ def test_a_followed_airplane_is_asked_of_adsb_lol_in_the_background_and_stays_fo
     traffic.follow("a128b9")
     # A restart: the store opened again, the airplane still followed.
     store.reset()
-    assert traffic.followed() == {"a128b9"}
-    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    assert traffic.followed() == ["a128b9"]
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
     asked = []
-    stand_in(monkeypatch, "_paced", lambda url: asked.append(url) or {"ac": [CESSNA]})
+    stand_in(monkeypatch, "_paced", lambda url, **kw: asked.append(url) or {"ac": [CESSNA]})
     assert traffic.follow_round() == 1
     assert asked == ["https://api.adsb.lol/v2/hex/a128b9"]
     assert recorded._recorded("a128b9")[-1]["lat"] == pytest.approx(42.30128, abs=1e-4)
@@ -84,10 +101,10 @@ def test_a_follow_round_ends_where_adsb_lol_turns_the_planner_away(clock, monkey
     stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
     traffic.follow("a128b9")
     traffic.follow("a3c858")
-    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
     asked = []
 
-    def refused(url):
+    def refused(url, **kw):
         asked.append(url)
         raise common.TrafficUnavailable("adsb.lol did not answer")
 
@@ -106,6 +123,36 @@ def test_a_recorded_airplane_unheard_for_two_minutes_low_over_a_field_has_landed
     stand_in(monkeypatch, "_field_at", lambda point, landing: c81 if landing else None)
     state = traffic.status("a128b9")
     assert not state["airborne"] and state["arrived"]["ident"] == "C81"
+
+
+def test_an_airplane_adsb_lol_hears_on_the_ground_has_landed_where_it_is_not_unavailable(clock, monkeypatch):
+    # The globe's trace refused and nothing recorded: the API's report of it
+    # taxiing is its state (the owner's N570GJ at O'Hare, 2026-11-27).
+    stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
+    taxiing = {**CESSNA, "alt_baro": "ground", "gs": 10.2, "seen_pos": 24.0}
+    stand_in(monkeypatch, "_paced", lambda url, **kw: {"ac": [taxiing]})
+    kord = {"ident": "KORD", "name": "Chicago O'Hare Intl", "city": None, "region": None}
+    stand_in(monkeypatch, "_field_at", lambda point, landing: kord if landing else None)
+    state = traffic.status("a128b9")
+    assert not state["airborne"] and state["heard_s"] == 24.0
+    assert state["arrived"] == {**kord, "at": 1791800000.0 - 24.0}
+
+
+def test_an_airplane_nothing_hears_is_not_heard_and_one_none_can_be_asked_of_is_unavailable(clock, monkeypatch):
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: globe.UNREAD)
+    stand_in(monkeypatch, "_paced", lambda url, **kw: {"ac": []})
+    stand_in(monkeypatch, "_adsbx", lambda path, search=False: [])
+    state = traffic.status("a128b9")
+    assert state["heard_s"] is None and not state["airborne"]
+
+    def refused(*args, **kwargs):
+        raise traffic.TrafficUnavailable("turned away")
+
+    stand_in(monkeypatch, "_paced", refused)
+    stand_in(monkeypatch, "_adsbx", refused)
+    with pytest.raises(traffic.TrafficUnavailable):
+        traffic.status("a0b7d8")
 
 
 def test_a_recorded_track_begun_in_the_air_says_no_departure(clock, monkeypatch):
@@ -152,16 +199,22 @@ def test_the_faa_radars_airplanes_are_on_the_map_and_a_followed_ones_flight_reco
     traffic.heard_elsewhere(plane, wall["now"] - 2)
     stand_in(monkeypatch, "_region_answer", lambda region: (clock.now, []))
     assert [p["hex"] for p in traffic.near(42.35, -88.15, 30)["aircraft"]] == ["a3c858"]
-    # Not followed: nothing recorded.
+    # Not followed: nothing recorded by the radar itself.
     assert recorded._recorded("a3c858") == []
+    # Its card open (watched): its radar report recorded there, nothing
+    # asked of adsb.lol, once a quarter minute however often it is asked.
+    stand_in(monkeypatch, "_paced", lambda url, **kw: pytest.fail("asked adsb.lol"))
+    watched._watch("a3c858")
+    watched._watch("a3c858")
+    assert len(recorded._recorded("a3c858")) == 1
     traffic.follow("a3c858")
     for k in range(1, 7):
         wall["now"] += 5
         traffic.heard_elsewhere({**plane, "lat": 42.30 + 0.01 * k}, wall["now"])
-    # A report every five seconds, recorded every fifteen.
-    assert len(recorded._recorded("a3c858")) == 2
+    # A report every five seconds, recorded every fifteen, after the card's.
+    assert len(recorded._recorded("a3c858")) == 3
     # Heard by the radar now: nothing asked of adsb.lol or ADS-B Exchange.
-    stand_in(monkeypatch, "_paced", lambda url: pytest.fail("asked adsb.lol"))
+    stand_in(monkeypatch, "_paced", lambda url, **kw: pytest.fail("asked adsb.lol"))
     stand_in(monkeypatch, "_adsbx", lambda path, search=False: pytest.fail("asked ADS-B Exchange"))
     watched._watch("a3c858")
     # Gone quiet past STALE_S: off the map.
@@ -211,12 +264,12 @@ def test_the_globe_turning_the_planner_away_is_not_asked_again_for_a_while(clock
     stand_in(monkeypatch, "_TRACES", {})
     wall = Mock(status_code=403, headers={"content-type": "text/html"})
     with patch("requests.get", return_value=wall) as get:
-        assert adsb_lol._trace("a0b7d8") is None
-        assert adsb_lol._recent_trace("a0b7d8") is traffic.UNREAD
+        assert globe._trace("a0b7d8") is None
+        assert globe._recent_trace("a0b7d8") is traffic.UNREAD
         assert flights._day_trace("a0b7d8", __import__("datetime").date(2026, 10, 22)) is traffic.UNREAD
         assert get.call_count == 1
         clock.now += traffic.GLOBE_BACKOFF_S + 1
-        adsb_lol._trace("a0b7d8")
+        globe._trace("a0b7d8")
         assert get.call_count == 2
 
 
@@ -226,9 +279,9 @@ def test_an_address_that_is_not_six_hex_digits_is_neither_followed_nor_recorded(
     cannot grow the store; a TIS-B one's "~" and its case are set aside."""
     traffic.follow("../../escaped")
     recorded._record("../../escaped", {"lat": 1.0, "lon": 1.0})
-    assert traffic.followed() == set() and recorded._recorded("../../escaped") == []
+    assert traffic.followed() == [] and recorded._recorded("../../escaped") == []
     traffic.follow("~A1B2C3")
-    assert traffic.followed() == {"a1b2c3"}
+    assert traffic.followed() == ["a1b2c3"]
 
 
 def test_a_radar_messages_tracks_are_kept_in_one_write_and_its_followed_ones_recorded(clock, monkeypatch):
@@ -273,3 +326,13 @@ def test_a_followed_airplane_nothing_hears_is_asked_for_every_two_minutes_not_ea
         clock.now += traffic.FOLLOW_EVERY_S
         traffic.follow_round()
         assert len(urls) == 3
+
+
+def test_every_tracks_old_points_are_pruned_through_the_index_on_their_time(clock):
+    """The planner's minute-by-minute prune read the whole table, keyed by
+    (hex, t): 23.9 ms over 500,000 points, 6.3 ms by the index (round 4)."""
+    store.record("a128b9", {"t": 100.0}, 0.0)
+    store.record("a128b9", {"t": 200.0}, 0.0)
+    (plan,) = store._query("EXPLAIN QUERY PLAN DELETE FROM points WHERE t < ?", (150.0,))
+    assert "USING INDEX points_t" in plan[-1]
+    assert store.forget_points(150.0) == 1

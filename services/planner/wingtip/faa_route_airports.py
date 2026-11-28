@@ -9,11 +9,14 @@ import numpy as np
 import pandas as pd
 
 from . import field_status, geo_boxes
+from .engine import ask as engine
 from .faa_apt_base import _read_apt_base_cached
+from .fix_rows import VOR_KINDS
 from .single_flight import once
 
 
-VOR_NAV_TYPES = {"VOR", "VOR/DME", "VORTAC"}
+#: The VORs by NAV_TYPE (the engine's navaid_kinds, through fix_rows).
+VOR_NAV_TYPES = frozenset(VOR_KINDS)
 
 
 # Facility types the sectional draws as a landable airport. A heliport is
@@ -85,7 +88,7 @@ def _charted_open_airports(path: str, _mtime: float) -> tuple:
             "category": "airport",
             # The chart labels a field by name and identifier, so the
             # candidate carries both -- that is what you read off it.
-            "name": df["ARPT_NAME"].str.title() + " (" + df["ARPT_ID"] + ")",
+            "name": pd.Series(engine("title_case", texts=df["ARPT_NAME"].tolist()), index=df.index) + " (" + df["ARPT_ID"] + ")",
             "lat": lat,
             "lon": lon,
             "bbox_area_m2": 0.0,

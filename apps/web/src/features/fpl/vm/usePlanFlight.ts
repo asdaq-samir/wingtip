@@ -6,6 +6,8 @@ import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanFpl } from "./usePlanFpl";
 import type { PlanViewModel } from "./usePlanView";
+import { useKept } from "./useKept";
+import { useSteady } from "../../../lib/steady";
 
 /**
  * The flight flown: on paper from the Profile card (useDryRun), and in the
@@ -50,14 +52,20 @@ export function usePlanFlight(
     const id = setTimeout(() => void loadFlightChart(), 3000);
     return () => clearTimeout(id);
   }, [dryRunReady]);
-  return {
+  // One object while nothing in it changes (useKept), as each slice is;
+  // the run's handlers, made afresh at each render by useDryRun, the same
+  // functions (useSteady).
+  const startDryRun = useSteady(dryRun.start);
+  const stopDryRun = useSteady(dryRun.stop);
+  const goMissedNow = useSteady(dryRun.goMissedNow);
+  return useKept({
     dryRunning: dryRun.running,
     goMissed: dryRun.goMissed,
     dryRunReady,
-    startDryRun: dryRun.start,
-    stopDryRun: dryRun.stop,
-    goMissedNow: dryRun.goMissedNow,
+    startDryRun,
+    stopDryRun,
+    goMissedNow,
     flying,
     doneFlying,
-  };
+  });
 }

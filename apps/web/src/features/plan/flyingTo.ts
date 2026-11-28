@@ -71,10 +71,19 @@ export function useFlyingTo(run: DryRun | null, rows: NavLogRow[], line: CourseL
   // The next checkpoint from the fix is the engine's (in_flight): none
   // until its .wasm is there.
   const engine = useEngineReady();
-  const gps = useOwnShip((s) => {
-    if (!flying || run || !engine || !s.enabled || !s.fix) return null;
-    const next = gpsAhead(rows, line, s.fix);
-    return next === null ? null : rows[next.index]!.key;
-  });
+  const gps = useOwnShip((s) => (!flying || run || !engine || !s.enabled || !s.fix ? null : gpsNextKey(rows, line, s.fix)));
   return dry ?? gps;
+}
+
+/** The last fix asked about, with its rows, line and answer: the store's
+ *  selector runs at every change to own ship (its follow, its trail, the
+ *  page drawn again), and asked the engine's in_flight each time, where a
+ *  new answer comes only with a new fix, rows or line. By identity: each fix is a new object. */
+let asked: { rows: NavLogRow[]; line: CourseLine; fix: Fix; key: string | null } | null = null;
+function gpsNextKey(rows: NavLogRow[], line: CourseLine, fix: Fix): string | null {
+  if (asked?.rows === rows && asked.line === line && asked.fix === fix) return asked.key;
+  const next = gpsAhead(rows, line, fix);
+  const key = next === null ? null : rows[next.index]!.key;
+  asked = { rows, line, fix, key };
+  return key;
 }

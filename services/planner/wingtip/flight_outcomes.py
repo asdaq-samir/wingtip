@@ -150,8 +150,7 @@ class HopRun:
 
 
 #: The time on the ground at a stop where the pilot gave none, min: a
-#: turnaround -- taxi in, fuel, a break, taxi out -- at the owner's pick of
-#: the audit's choices (2026-10-20), the engine's (planning_figures), which
+#: turnaround -- taxi in, fuel, a break, taxi out -- at the owner's pick (2026-10-20), the engine's (planning_figures), which
 #: the web asks too for the rows it draws before the nav log's legs say
 #: each stop's (Leg.ground_min).
 TURNAROUND_MIN = float(engine("planning_figures")["turnaround_min"])

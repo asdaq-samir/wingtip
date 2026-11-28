@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../../../lib/fixtures/airspaceShelfLabel.json";
 import { flatDeg, KM_PER_DEG } from "../../../lib/geo";
-import { CHART } from "../../../lib/tokens";
+import { CHART, MAP } from "../../../lib/tokens";
 import { piecesOf } from "./airspaceVolumes";
-import { planAltitudes, shadeOf, shelfLabelsOf, shelfText } from "./airspaceShelves";
+import { planAltitudes, shadeOf, shelfFadedId, shelfLabelLayers, shelfLabelsOf, shelfText } from "./airspaceShelves";
 
 const ring = (w: number, s: number, d = 0.5) => [
   [
@@ -98,5 +98,16 @@ describe("shelfLabelsOf", () => {
         [-88, 41],
       ).features,
     ).toHaveLength(2);
+  });
+});
+
+describe("shelfLabelLayers", () => {
+  it("draws the held labels over the fainter, each its opacity a constant the Dimmer can ease", () => {
+    const [faded, held] = shelfLabelLayers("s", "s");
+    expect([faded!.id, held!.id]).toEqual([shelfFadedId("s"), "s"]);
+    expect(held!.filter).toEqual(["get", "held"]);
+    expect(faded!.filter).toEqual(["!", ["get", "held"]]);
+    expect(held!.paint?.["text-opacity"]).toBe(1);
+    expect(faded!.paint?.["icon-opacity"]).toBe(MAP.airspaceLabelFaded);
   });
 });

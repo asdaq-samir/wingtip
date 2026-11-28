@@ -52,8 +52,32 @@ PLAN_LIMIT_S = 240
 # Who wingtip says it is to the sources it downloads from. Most take the
 # project's own name; the FAA's sites (and the Census geocoder's) 403 a
 # bare python-requests User-Agent and want one that reads as a browser's.
-REQUEST_HEADERS = {"User-Agent": "wingtip-maps/0.1"}
-FAA_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; wingtip-maps/0.1)"}
+AGENT = "wingtip-maps/0.1"
+
+
+def user_agent(purpose: str | None = None, browser: bool = False) -> str:
+    """The User-Agent the planner sends: AGENT with what it asks for
+    ("wingtip-maps/0.1 (VFR flight planner; terrain floor)"), or in a
+    browser's form where a site turns a bare client away ("Mozilla/5.0
+    (compatible; wingtip-maps/0.1; terrain floor)"). Seven modules wrote
+    their own, under two names. The registry's
+    host alone wants a whole browser's (REGISTRY_HEADERS)."""
+    if browser:
+        return f"Mozilla/5.0 (compatible; {AGENT}{'; ' + purpose if purpose else ''})"
+    return f"{AGENT} ({purpose})" if purpose else AGENT
+
+
+REQUEST_HEADERS = {"User-Agent": user_agent()}
+FAA_HEADERS = {"User-Agent": user_agent(browser=True)}
+#: registry.faa.gov's host (Akamai), for the registry's download and the
+#: airmen file (wingtip.registry, ingest.airmen): it turns a plain client
+#: away (403) and a browser's agent alone too (503), and answers one with a
+#: browser's Accept and Accept-Language as well (measured 2026-10-11).
+REGISTRY_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 # Below this many labeled examples, a train/test split and 5-fold CV
 # aren't meaningful (some rating classes may have 0-1 examples), so
@@ -67,7 +91,7 @@ MIN_LABELED_ROWS = 30
 # wingtip.chart_render draws the map's tiles from them -- the chart exactly as printed, served by
 # this app, with no hosted map service in between. (Two came and went
 # before this: the FAA's own ArcGIS tile cache, which went behind a
-# login around 2026-09-03, then Texas A&M's public mirror of the same
+# login about 2026-09-03, then Texas A&M's public mirror of the same
 # data, which had no tile cache and no chart west of Duluth.)
 #
 # Each sheet's zip is under its cycle's date; the cycle is the one the
@@ -124,6 +148,11 @@ class Settings(BaseSettings):
     notam_store: Path = DATA_DIR / "raw" / "faa_notams" / "notams.sqlite"
     #: adsb.lol's API key (x-api-key), its day's quota above an address's 500 (wingtip.traffic.common).
     adsblol_api_key: str | None = None
+    #: The OpenSky Network's API client (OAuth2 client credentials), an
+    #: airplane's past flights where adsb.lol's archive is closed
+    #: (wingtip.traffic.opensky); either None turns that source off.
+    opensky_client_id: str | None = None
+    opensky_client_secret: str | None = None
     #: ADS-B Exchange's RapidAPI key; None turns that source off (wingtip.traffic).
     adsbx_rapidapi_key: str | None = None
     #: ADS-B Exchange requests a month at most, short of the plan's 10,000.
@@ -217,6 +246,20 @@ class Settings(BaseSettings):
     mcp_resource_url: str | None = None
     #: The secret the gateway's /internal/mcp records ask for (MCP_INTERNAL_TOKEN).
     mcp_internal_token: str | None = None
+    #: The one-user stack (APP_OPEN_WRITES, the gateway's app.open-writes,
+    #: "true" there too): nobody signs in, so a checkpoint note written
+    #: with no pilot named is the shared one. Off, such a write is refused
+    #: (app.routers.notes, the security review of 2026-11-23, L9).
+    app_open_writes: bool = False
+    #: The key a pilot's share of the followed airplanes is hashed with
+    #: (FOLLOW_SHARE_KEY, wingtip.traffic.recorded.share_of), 32 characters
+    #: or more; production's compose refuses to start without it. Never
+    #: logged: _named hides a _KEY's value.
+    follow_share_key: str | None = None
+    #: The development stack's alternative: a file the key is made into
+    #: once, on the planner's own secrets volume, never the live store
+    #: (FOLLOW_SHARE_KEY_FILE). With neither, the planner does not start.
+    follow_share_key_file: Path | None = None
     #: Tool calls one pilot's connector may make a minute and a day (app.mcp.limits).
     mcp_calls_per_minute: int = 30
     mcp_calls_per_day: int = 600
@@ -243,17 +286,20 @@ class Settings(BaseSettings):
         """A base address without its trailing slash, None where blank."""
         return _none_if_blank(value.rstrip("/") if isinstance(value, str) else value)
 
-    read_blank_as_unset = field_validator("chart_tiles_bucket", "chart_landmarks_dir", "mcp_internal_token", mode="before")(_none_if_blank)
+    read_blank_as_unset = field_validator(
+        "chart_tiles_bucket", "chart_landmarks_dir", "mcp_internal_token", "follow_share_key", "follow_share_key_file", mode="before"
+    )(_none_if_blank)
 
-    @field_validator("mcp_internal_token")
+    @field_validator("mcp_internal_token", "follow_share_key")
     @classmethod
-    def read_internal_token(cls, value):
-        """The connector's shared secret, 32 characters or more where set:
-        it alone opens every pilot's records on the gateway's internal
-        port, as the gateway checks at its own start (ConnectorSettings,
-        the security review of 2026-11-22)."""
+    def read_secret(cls, value):
+        """A secret, 32 characters or more where set: the connector's
+        alone opens every pilot's records on the gateway's internal port,
+        as the gateway checks at its own start (ConnectorSettings, the
+        security review of 2026-11-22), and a short follow share key could
+        be guessed."""
         if value is not None and len(value.strip()) < MIN_INTERNAL_TOKEN:
-            raise ValueError(f"is shorter than {MIN_INTERNAL_TOKEN} characters (scripts/dev/dev.sh doctor writes one)")
+            raise ValueError(f"is shorter than {MIN_INTERNAL_TOKEN} characters (openssl rand -hex 32 makes one)")
         return value
 
     @field_validator("chart_tiles_prefix", mode="before")

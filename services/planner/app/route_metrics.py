@@ -17,10 +17,10 @@ import math
 import time
 from dataclasses import dataclass
 
-from fastapi import FastAPI, Request
 from prometheus_client import CollectorRegistry, Counter, Histogram
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import Match
+
+from . import usage_days
 
 #: The histogram's upper ends in seconds: a tile's few milliseconds to a
 #: route planned past its half-minute limit (wingtip.planning).
@@ -130,14 +130,14 @@ def _ms(seconds: float | None) -> float | None:
     return None if seconds is None else round(seconds * 1000, 1)
 
 
-def route_of(app: FastAPI, request: Request) -> str:
+def route_of(scope: dict) -> str:
     """The template of the route that answered, from the scope where the
     router left it, else matched again as the router matches."""
-    route = request.scope.get("route")
+    route = scope.get("route")
     if route is not None and hasattr(route, "path"):
         return route.path
-    for candidate in app.router.routes:
-        match, _ = candidate.matches(request.scope)
+    for candidate in scope["app"].router.routes:
+        match, _ = candidate.matches(scope)
         if match == Match.FULL:
             return getattr(candidate, "path", UNMATCHED)
     return UNMATCHED
@@ -147,20 +147,34 @@ def route_of(app: FastAPI, request: Request) -> str:
 METRICS = RouteMetrics()
 
 
-class CountCalls(BaseHTTPMiddleware):
-    """Counts and times each call by its route's template; a call that
-    raised is counted a 500, as FastAPI answers it, and let through."""
+class CountCalls:
+    """Counts and times each call, to its last byte, by its route's
+    template; a call that raised before answering is counted a 500, as
+    FastAPI answers it, and let through. Plain ASGI, as RequestIds is:
+    Starlette's BaseHTTPMiddleware cost every call, each tile among them,
+    some 40 us and a task of its own."""
 
     def __init__(self, app, metrics: RouteMetrics = METRICS):
-        super().__init__(app)
+        self.app = app
         self.metrics = metrics
 
-    async def dispatch(self, request: Request, call_next):
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
         started = time.perf_counter()
+        status = 500
+
+        async def answering(message):
+            nonlocal status
+            if message["type"] == "http.response.start":
+                status = message["status"]
+            await send(message)
+
         try:
-            response = await call_next(request)
-        except Exception:
-            self.metrics.observe(route_of(request.app, request), request.method, 500, time.perf_counter() - started)
-            raise
-        self.metrics.observe(route_of(request.app, request), request.method, response.status_code, time.perf_counter() - started)
-        return response
+            await self.app(scope, receive, answering)
+        finally:
+            route = route_of(scope)
+            self.metrics.observe(route, scope["method"], status, time.perf_counter() - started)
+            # And the day's totals kept on disk (app.usage_days), by the same labels.
+            usage_days.count(route, scope["method"], status)

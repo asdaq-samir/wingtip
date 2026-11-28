@@ -1,6 +1,7 @@
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Slider, THUMB_HIT } from "../../components/ui/slider";
 import { CONTRAST_MAX, CONTRAST_MIN, DIM_MAX, LOOK_STEP, sunlightUndims } from "../../lib/map/chartLook";
+import { previewChartLook } from "../../lib/map/gl/chartLookPreview";
 import { useChartLook } from "../../lib/map/gl/useChartLook";
 import { usePreferences } from "../../lib/preferences";
 
@@ -17,7 +18,9 @@ const one = (v: number | readonly number[]) => (Array.isArray(v) ? (v[0] ?? 0) :
  * one is a menu or a segmented control (docs/design/rules.md). Each the
  * stock Slider as it comes, its thumb a 44-point reach round its 16
  * (THUMB_HIT) and named for its row; set on the chart's layers as it moves
- * (ChartGl, useGlPaint's setPaintProperty), with no style made again.
+ * (ChartGl, useGlPaint's setPaintProperty), with no style made again, in
+ * memory only (chartLookPreview), and kept, with the marks over the chart
+ * following, once committed (onValueCommitted).
  *
  * Dimmer: how far the chart's tiles are dimmed, the value kept for the
  * appearance now drawn (lib/prefs chartDim: light and dark each their own),
@@ -44,7 +47,13 @@ export default function ChartLookRows() {
           step={LOOK_STEP}
           value={dim}
           disabled={undimmed}
-          onValueChange={(v) => setDim(night ? "dark" : "light", one(v))}
+          // The chart follows each step in memory; the kept preference, and the
+          // marks over the chart with it, take the value once it is committed.
+          onValueChange={(v) => previewChartLook({ dim: one(v) })}
+          onValueCommitted={(v) => {
+            setDim(night ? "dark" : "light", one(v));
+            previewChartLook({ dim: null });
+          }}
           // Across, its own; up and down, still the sheet's.
           data-base-ui-swipe-ignore="x"
           data-testid="chart-dimmer"
@@ -58,7 +67,11 @@ export default function ChartLookRows() {
           max={CONTRAST_MAX}
           step={LOOK_STEP}
           value={contrast}
-          onValueChange={(v) => setContrast(one(v))}
+          onValueChange={(v) => previewChartLook({ contrast: one(v) })}
+          onValueCommitted={(v) => {
+            setContrast(one(v));
+            previewChartLook({ contrast: null });
+          }}
           data-base-ui-swipe-ignore="x"
           data-testid="chart-contrast"
           thumb={{ "aria-label": "Contrast", getAriaValueText: (_text, v) => signed(v), className: THUMB_HIT }}

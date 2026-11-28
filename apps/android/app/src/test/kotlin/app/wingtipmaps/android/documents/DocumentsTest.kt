@@ -9,6 +9,7 @@ import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
 import app.wingtipmaps.android.documents.model.DocumentRead
 import app.wingtipmaps.android.documents.model.HandbookFigure
 import app.wingtipmaps.android.documents.model.HandbookRead
+import app.wingtipmaps.android.logbook.AirplaneKind
 import app.wingtipmaps.android.logbook.LogbookSource
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -189,6 +190,6 @@ class DocumentsTest {
             )
         }
         override suspend fun entries() = emptyList<LogbookEntryDto>()
-        override suspend fun currency(): CurrencyDto? = null
+        override suspend fun currency(toFly: AirplaneKind?): CurrencyDto? = null
     }
 }

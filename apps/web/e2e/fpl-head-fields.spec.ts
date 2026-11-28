@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { controlsInSight, grabberTo, openProfile, settle, slow } from "./helpers";
 import { pickAirplane } from "./startState";
+import { steady, watchFor } from "./pacing";
 
 /**
  * FPL's head stays put and its two pills behave as fields (the owner,
@@ -23,15 +24,16 @@ for (const size of ["half", "full"] as const)
     const before = (await title.boundingBox())!;
     const scroller = page
       .locator("[data-sheet-scroll]")
-      .filter({ has: page.locator("[data-pin-foot]") })
+      // The scroller FPL's title is in: the foot's room is the phone's sheet's alone.
+      .filter({ has: page.getByTestId("fpl-head") })
       .first();
     // A finger's flick up, well past the end, with the wheel too.
     const box = (await scroller.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 2000);
     await scroller.evaluate((el) => el.scrollTo(0, el.scrollHeight));
-    await page.waitForTimeout(500);
-    const after = (await title.boundingBox())!;
+    // Where it is once the scroll has come to rest.
+    const after = (await steady(() => title.boundingBox()))!;
     expect(Math.abs(after.y - before.y), "the title row stays put").toBeLessThan(2);
     expect(await page.evaluate(() => document.scrollingElement!.scrollTop)).toBe(0);
     expect(await scroller.evaluate((el) => getComputedStyle(el).overscrollBehaviorY)).toBe("contain");
@@ -47,7 +49,7 @@ test("the cruise altitude can be emptied as it is typed, and left empty goes bac
   await field.click();
   for (let i = 0; i < 4; i++) await page.keyboard.press("Backspace");
   await expect(field).toHaveValue("");
-  await page.waitForTimeout(400);
+  await watchFor(page, 400);
   await expect(field, "still empty while it is typed in").toHaveValue("");
   await page.keyboard.type("08");
   await expect(field).toHaveValue("08");
@@ -120,6 +122,7 @@ test.describe("at 375 points", () => {
     for (const b of rows) expect(Math.abs(mid(b) - mid(rows[0]!)), "one line").toBeLessThan(4);
     const card = (await page.getByTestId("route-summary").boundingBox())!;
     const t = rows[1]!;
-    expect(card.x + card.width - (t.x + t.width), "at the box's right").toBeLessThan(16);
+    // TimelineRows' TIMELINE_END, pr-4, at the owner's ask, and the card's 1 pt border.
+    expect(card.x + card.width - (t.x + t.width), "16 in, inside the card's border").toBeCloseTo(17, 0);
   });
 });

@@ -178,7 +178,7 @@ function NearestRow({
       media={
         <span
           // A row's chart mark, 30 in rem as Search's and Favorites' are
-          // (size.chart-mark; the scale audit's Q5, the owner, 2026-11-21).
+          // (size.chart-mark; the owner, 2026-11-21).
           className="block size-(--size-chart-mark)"
           dangerouslySetInnerHTML={{ __html: airportMarkSvg(field.airspace_class ?? null, colourOf(category), use, "overflow-visible") }}
         />

@@ -13,6 +13,7 @@ import { playbackKey } from "../../components/playbackKeys";
 import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight, dryRunFlown, runNmAt, type DryRun } from "../plan";
 import type { Flown, RouteEnds } from "../plan";
 import { toggleReplay } from "../replay";
+import { scrub } from "../../lib/map/gl/camera";
 import { routeProfileQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import { altFt, feet, wholeNm } from "../../lib/format";
@@ -78,6 +79,7 @@ export function DryRunControls({
   const threeD = useExtra("threeD");
   const pilotView = usePilotView((s) => s.on) && threeD;
   useEffect(() => () => setPilotView(false), []);
+  useEffect(() => () => void (scrub.held = false), []);
   // The chart dragged along, at the owner's ask ("can the trace be
   // drag-able in the dry run?"): a finger or a pointer on it puts the
   // airplane where it points along the course, the run held while it does
@@ -99,11 +101,16 @@ export function DryRunControls({
   const grab = (event: PointerEvent<HTMLSpanElement>) => {
     if (event.button !== 0) return;
     held.current = { was: usePastFlight.getState().playing };
+    // The map jumps with the finger while it is down (OwnShipGl), not
+    // eased, after a glide to where the press put the airplane.
+    scrub.held = true;
+    scrub.moved = false;
     pausePastFlight();
   };
   const letGo = () => {
     if (held.current?.was) playPastFlight();
     held.current = null;
+    scrub.held = false;
   };
   // The keys are the stock slider's (Base UI, the APG's): an arrow a
   // tenth of a mile, Page Up and Down or Shift and an arrow five miles
@@ -211,8 +218,11 @@ export function DryRunControls({
             const nm = Array.isArray(v) ? v[0] : v;
             if (nm !== undefined) seekNm(nm);
           }}
-          // Across, its own; up and down, still the stock sheet's.
-          data-base-ui-swipe-ignore="x"
+          // Both axes its own, as the upright altitude slider's: the slider
+          // takes the pointer as it is pressed, so a near-upright drag given
+          // to the sheet as well moved the run and the sheet at once. The
+          // sheet still moves from its head and the rest of its body.
+          data-base-ui-swipe-ignore=""
           onPointerDown={grab}
           onPointerUp={letGo}
           onPointerCancel={letGo}

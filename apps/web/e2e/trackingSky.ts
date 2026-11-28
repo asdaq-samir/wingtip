@@ -79,6 +79,24 @@ export async function sky(page: Page, detail: object = DETAIL) {
     (url) => url.pathname.endsWith("/api/planner/traffic/find"),
     (route) => route.fulfill({ json: { aircraft: new URL(route.request().url()).searchParams.get("q") === "UAL2088" ? [UAL] : [] } }),
   );
+  // The FAA's record of it by its N-number or address, the detail's own: CI's planner has no
+  // registry (infra/docker-compose.ci.yml), where a copy seeded from the Mac's data had one and
+  // named it from the real file (PR #591's run: "Airbus A-321neo", the feed's words, on CI alone).
+  const faa = (detail as { faa?: { n_number?: string; mode_s_hex?: string } | null }).faa ?? null;
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic/registered"),
+    (route) => {
+      const q = (new URL(route.request().url()).searchParams.get("q") ?? "").toUpperCase();
+      const named = !!faa && (q === faa.n_number?.toUpperCase() || q === faa.mode_s_hex?.toUpperCase());
+      return route.fulfill({ json: named ? faa : null });
+    },
+  );
+  // Its photo by its N-number through the planner, none: the planner asked Planespotters.net
+  // live on CI's runner, and the card drew a real one.
+  await page.route(
+    (url) => /\/api\/planner\/airplanes\/[^/]+\/photo$/.test(url.pathname),
+    (route) => route.fulfill({ json: null }),
+  );
   // No photo of it, unless a test gives one: Planespotters' sky is not the suite's either.
   await page.route(
     (url) => url.hostname === "api.planespotters.net",

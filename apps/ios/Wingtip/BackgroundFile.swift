@@ -31,6 +31,20 @@ final class BackgroundFile {
         then { try? FileManager.default.removeItem(at: url) }
     }
 
+    /// The file's JSON read and decoded off the main actor, after every
+    /// write asked before it; nil where there is none or it does not
+    /// decode. What a model kept between launches reads after the first
+    /// frame (ScreenModels.loadKept), not in its init before it.
+    func read<T: Decodable & Sendable>(_: T.Type) async -> T? {
+        await last?.value
+        return await Self.decoded(T.self, url)
+    }
+
+    @concurrent
+    private nonisolated static func decoded<T: Decodable & Sendable>(_: T.Type, _ url: URL) async -> T? {
+        (try? Data(contentsOf: url)).flatMap { try? JSONDecoder().decode(T.self, from: $0) }
+    }
+
     /// Returns once every write and erase asked so far has run.
     func settled() async {
         await last?.value

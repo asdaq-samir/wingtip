@@ -31,7 +31,7 @@ public final class RecordsStandIn {
     private RecordsStandIn() {}
 
     public static void answer(PlannerClient planner, LocalDate soloUntil, List<ReviewCheckDto> checks) {
-        given(planner.endorsements(any(), any()))
+        given(planner.endorsements(any(), any(), any()))
                 .willAnswer(ask -> say(ask.getArgument(0), ask.getArgument(1), soloUntil, checks));
         given(planner.records(any(), any())).willAnswer(ask -> {
             List<PlannerExperienceAsk> experience = ask.getArgument(0);

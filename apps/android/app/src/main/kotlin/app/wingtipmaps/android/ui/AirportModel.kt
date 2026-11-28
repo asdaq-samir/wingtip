@@ -150,7 +150,7 @@ class AirportModel @Inject constructor() : ViewModel() {
     }
 
     /** The open field's NOTAMs asked again, the problem line's Try Again
-     *  (the errors-and-onboarding audit, 2026-11-21: a failed list had no
+     *  (a failed list had no
      *  way to ask again). */
     fun retryNotams() {
         val ident = _state.value.place?.ident ?: return

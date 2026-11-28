@@ -44,7 +44,7 @@ const figures = (c: RouteLineChoices["chips"][number]) =>
 
 /** A way's name on its chip: the planner's first kind, and how many more
  *  it is the best of ("Avoid Weather +2"), where "Avoid Weather & Fastest &
- *  Over Land" ran off the row (the UI audit's C7, 2026-11-17). Its name in
+ *  Over Land" ran off the row. Its name in
  *  full is its chip's name to a screen reader and on its line's callout. */
 function shortLabel(label: string): string {
   const kinds = label.split(" & ");
@@ -67,7 +67,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
     `${c.key === "none" ? "As typed, the route as typed" : c.label}${c.time ? `, ${c.time}` : ""}${figures(c) ? `, ${figures(c)}` : ""}${c.warning ? `, ${c.warning.toLowerCase()}` : ""}`;
   return (
     <div
-      className={cn(grouped ? "pb-1" : "mt-2 mb-1", line.stale && "opacity-50 transition-opacity motion-reduce:transition-none")}
+      className={cn(!grouped && "mt-2 mb-1", line.stale && "opacity-50 transition-opacity motion-reduce:transition-none")}
       data-testid="route-line"
       data-stale={line.stale ? "" : undefined}
       aria-busy={line.stale || undefined}
@@ -80,8 +80,24 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
         aria-label="Routes"
         disabled={line.stale}
         // Room above and under for the chips' 44-point areas, which a
-        // scrolling row would cut off.
-        className="flex w-full justify-start gap-2 overflow-x-auto overscroll-x-contain py-1.5"
+        // scrolling row would cut off. In the foot bar (`grouped`) that
+        // room is laid over the strip's: the row's 44 laid out at the thin
+        // strip's 28 (PIN_FIGURE's two lines, 1.75rem), so Routes swapping
+        // the figures for the chips moves neither the bar nor the map's
+        // room. There the row is only as wide as its chips
+        // (w-fit), so the room after the last chip passes to the sheet
+        // behind the bar, as the figures do (sheet/FootBar).
+        // The row itself takes touches, where it took none and only
+        // its chips did: iPhone's Safari would not scroll a row that takes
+        // no touch, and a sideways swipe on the chips did nothing (the
+        // owner, 2026-11-23: "Not able to slide the routes"). A sideways
+        // swipe is the row's, not the sheet's (swipe-ignore "x", as the
+        // route box's pills); an upward drag still opens the sheet.
+        data-base-ui-swipe-ignore={grouped ? "x" : undefined}
+        className={cn(
+          "flex justify-start gap-2 overflow-x-auto overscroll-x-contain py-1.5",
+          grouped ? "pointer-events-auto -my-2 w-fit max-w-full touch-pan-x" : "w-full",
+        )}
       >
         {line.chips.map((c) => (
           <ToggleGroupItem

@@ -6,6 +6,7 @@ import { CheckIcon, ChevronDownIcon, ChevronsUpDownIcon, ChevronUpIcon } from "l
 import { cn } from "cn";
 import { anchorHiddenRender } from "./anchorHidden";
 import { MENU_CHECK, MENU_CHECK_ITEM, MENU_CONTENT, MENU_LABEL, MENU_SEPARATOR } from "./menuLook";
+import { useEdgeRoom } from "../../hooks/use-viewport";
 
 /*
  * shadcn's Select on Base UI's (base-vega), as the other ui/ parts were
@@ -69,6 +70,9 @@ function SelectContent({
      *  listbox is named, and its popup is not the listbox. */
     "aria-label"?: string;
   }) {
+  // Clear of the status bar, the notch and the home indicator, 8 past
+  // them (useEdgeRoom), not Base UI's 5 from the very edge.
+  const edgeRoom = useEdgeRoom();
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
@@ -77,6 +81,7 @@ function SelectContent({
         align={align}
         alignOffset={alignOffset}
         alignItemWithTrigger={alignItemWithTrigger}
+        collisionPadding={edgeRoom}
         className="isolate z-50"
         render={anchorHiddenRender(onAnchorHidden)}
       >

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ci.yml's test-web: the files generated and committed -- the phones' API
-# models and engine calls, the design tokens, the screens' links, the
-# shared words, the app icons -- each checked against what its generator makes, but on a pull
+# models and engine calls, the design tokens, the map's overlay layers, the screens' links, the
+# shared words, each card's actions, the app icons -- each checked against what its generator makes, but on a pull
 # request only where the change touched the generator, its source or its
 # output. They took 1.5 of test-web's 3.8 minutes on every web change
 # (PR #577's runs), though a change to apps/web/src alone can change none
@@ -34,17 +34,14 @@ check "The phones' generated models and engine calls" scripts/ci/phones_generate
   'scripts/build/api-models-apps.*' 'scripts/build/engine-contract-apps.*' scripts/ci/phones_generated.sh \
   apps/ios/Wingtip/API/Generated apps/ios/WingtipAPI apps/ios/Wingtip/Engine/Generated \
   "$A/api/generated" "$A/engine/generated"
-check "The design tokens" "scripts/build/design-tokens.sh --check" -- \
-  design/tokens.json 'scripts/build/design-tokens.sh' 'scripts/build/design_tokens*' \
-  apps/web/src/styles/tokens.css apps/web/src/lib/tokens.ts apps/ios/Wingtip/Design/Generated "$A/design/generated" \
-  services/jobs/charts/map_zoom.py
-check "The screens and their links" "scripts/build/screens.sh --check" -- \
-  design/screens.json 'scripts/build/screens.*' docs/navigation.md \
-  apps/web/src/lib/navigation/generated apps/ios/Wingtip/Navigation/Generated "$A/navigation/generated"
-check "The words every app says the same" "scripts/build/wording.sh --check" -- \
-  design/wording.json 'scripts/build/wording.*' docs/design/rules.md \
-  apps/web/src/lib/wording/generated apps/ios/Wingtip/Design/Generated \
-  apps/android/app/src/main/res/values/wording_strings.xml
+# The design generators, each its own check, from scripts/areas.yml's
+# `generators` table: a new one is an entry there, not a line here.
+set -f # the globs go to git as they are
+while IFS=$'\t' read -r _ title script sources outputs; do
+  # shellcheck disable=SC2086 # each a path or a glob, one a word
+  check "$title" "$script --check" -- $sources $outputs
+done < <(python3 scripts/areas.py generators)
+set +f
 check "The app icons" "scripts/build/app-icons.sh --check" -- \
   docs/brand docs/store design/tokens.json 'scripts/build/app-icons.sh' 'scripts/build/app_icons*' \
   'scripts/build/brand-render*' apps/ios/Wingtip/Assets.xcassets apps/ios/WingtipWatch/Assets.xcassets \

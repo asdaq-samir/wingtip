@@ -11,10 +11,10 @@ the apps' own work; the gateway half of M1 is here.
 | Finding | Now |
 |---|---|
 | M2: `/internal/mcp/*` (any pilot's records by id) reachable from outside, behind a committed default token | Served only on the gateway's internal port 8081, which no compose file publishes (`InternalPortConfig`); a 404 on 8080 and 8443; Caddy refuses `/internal/*` too. `MCP_INTERNAL_TOKEN` has no default: `make dev` writes a random one into `.env`, and a gateway with the connector on and no token will not start. |
-| M3: open client registration with no limit; the authorization server on in production | The connector is off unless `MCP_ENABLED=true` (every address a 404, `ConnectorOff`); 10 registrations an hour per address, a 100-character name, 4 callbacks of 200, a 16 KB body; unused clients and ended connections let go each night (`ConnectorHousekeeping`). |
+| M3: open client registration with no limit; the authorization server on in production | The connector is off unless `MCP_ENABLED=true` (every address a 404, `ConnectorOff`); 10 registrations an hour per address (an IPv6 caller's /64), a 100-character name, 4 callbacks of 200, a 16 KB body; unused clients, ended connections and authorizations never finished (a day after they began, V54) let go each night (`ConnectorHousekeeping`). |
 | M4: the Google key unusable with a referrer restriction | Google's requests carry the site's origin (`strict-origin`), every other request none; the key's restrictions are the owner's console step below. |
 | L1 (and M1's server half): the link's dialog named no account | `POST /api/auth/magic-link/account` answers the masked address of a usable link without spending it; the web dialog shows it ([NATIVE.md](NATIVE.md) has the call for the apps). |
-| L2: a viewer's `Forwarded` header reached Spring | Caddy drops `Forwarded` and `X-Forwarded-Prefix`. |
+| L2: a viewer's `Forwarded` header reached Spring | Caddy drops `Forwarded`, `X-Forwarded-Prefix`, `-Port` and `-Ssl`, and the gateway reads none of them: Tomcat's RemoteIpValve (`forward-headers-strategy: native`) takes X-Forwarded-For, -Proto and -Host from the trusted proxies alone (`GATEWAY_TRUSTED_PROXIES`, loopback where unset), and the port from the protocol. |
 | L3: a replayed refresh token left its connection live | A spent refresh token presented again revokes the whole connection (`RotatedRefreshTokens`). |
 | L4: connector tokens outlived account deletion and disconnecting | The planner asks the gateway whether the connection stands on every call. The gateway keeps a yes (`LiveConnections`) for at most 60 s and never past the first expiry of the connection's tokens, so a token that runs out on its own is refused from its own expiry; every change the gateway makes to a pilot's connections (a token issued, rotated or revoked through `/oauth2/revoke`, a connection removed for a replayed refresh token, the account deleted) forgets the pilot's kept answers at once, and an answer read across such a change is not kept. The 60 s bounds only a change made behind the gateway's back (the tables edited by hand, or a second gateway process, which the deployment does not run). |
 | L5: Apple's native sign-in had no nonce | A session nonce, verified when sent; required once the app sends it (`APP_APPLE_REQUIRE_NONCE`, [NATIVE.md](NATIVE.md)). |
@@ -40,8 +40,10 @@ the apps' own work; the gateway half of M1 is here.
   time. When a fixed deepmerge is released, `npm update` takes it
   ([versions.md](versions.md)).
 - **CI runners.** While the repository is public, no self-hosted runner
-  (`vars.LINUX_RUNNER`): a fork's pull request would run on the Mac mini.
-  Keep "Require approval for all outside collaborators" on regardless.
+  (`vars.LINUX_RUNNER`, `vars.MAC_RUNNER`): a fork's pull request would run
+  on the Mac mini. Every `runs-on` naming one now puts a fork on GitHub's
+  runner regardless (`workflow_rules.py` holds it). Keep "Require approval
+  for all outside collaborators" on regardless.
 
 ## What only the owner can do
 
@@ -94,14 +96,14 @@ the AWS template and CI. Nothing critical. The outside test's brief is
 | H: the CI autofix bot ran a branch's own formatters in the job that pushed with `MERGE_TOKEN`, the owner's, which a branch's `format.sh` could read from `/proc` or a `pre-push` hook | Three jobs on three machines: the formatters run with no token at all, and only their diff reaches the push, which applies changes to existing files of the pull request's own, hooks off (`ci-autofix.yml`, `autofix_format.sh`). The review's address job, which pushes, no longer fetches pages (the first review's L11). |
 | M: on AWS a container reached the instance's metadata (hop limit 2) and so the server role's keys: every secret and backup | `HttpPutResponseHopLimit: 1`; both buckets refuse requests not over TLS. |
 | M: a connector token revoked while its connection's refresh token stood, or one of a second connection through the same client, kept working | The planner asks about the token itself (`X-Connector-Token`, an introspection); `LiveConnections` keeps a yes per token, never past its expiry. |
-| M: five link requests from anyone locked a pilot out of signing in for the hour | The address's five are counted per caller, 30 an hour in all (`MagicLinkController.ADDRESS_CALLERS`). |
+| M: five link requests from anyone locked a pilot out of signing in for the hour | The address's five are counted per caller, 30 an hour in all (`MagicLinkController.ADDRESS_CALLERS`, `SlidingWindowLimiter.allowLink`), and since round 4 an IPv6 caller is its /64, so a lockout takes 6 networks, not 6 addresses of one; the deletion link is counted the same way. |
 | M (availability): the AWS tile path asked the planner for `/chart-tile/...` under the origin's Host, a 404 then a 403, which CloudFront would have kept | Rewritten as the gateway does (`/api/planner/X` is `/api/X`), the planner named `planner`. |
 | M (availability): two migrations numbered V46, so the merged gateway would not start | The Apple token's client is V49 (ops-audit's indexes took V48); `MigrationVersionsTest` refuses a repeat. |
 | L: an iPhone sign-in kept the Apple refresh token of whatever code came with it, another account's too | Kept only where Apple's ID token for the code names the signing-in subject. |
 | L: the Apple nonce route made a 30-day session per call, for anyone | 30 an hour a client. |
-| L: the delete-account page's time told which addresses have an account (the mail sent on the request's thread) | Sent on a thread of its own. |
+| L: the delete-account page's time told which addresses have an account (the mail sent on the request's thread) | Sent on a thread of its own, and since round 4 the look-up and the link's row with it. |
 | L: a provider's email change left magic-link sessions under the old, now free, address | They end with the change. |
-| L: NOTAM, METAR and remark text reached the pilot's AI app with nothing saying it is data, hidden Unicode included | The server's instructions say it is data; `calls.as_data` takes out control and format characters. |
+| L: NOTAM, METAR and remark text reached the pilot's AI app with nothing saying it is data, hidden Unicode included | The server's instructions say it is data; `calls.as_data` takes out control characters (C0 and C1), format characters and the variation selectors (round 4, Low 11). |
 | L: the batch routes took any number of asks | 500 a call. |
 | L: deleting an account on the web, or a session lapsing, kept the planner's answers at the pilot's points, the tracks and the trail; Android's sign-out kept OkHttp's cache | Forgotten as Log Out forgets them (`forgetWhereTheyFlew`); Android's wipe empties the cache. |
 | L: Android closed on a link with a bad escape (`wingtipmaps://plan?x=%`) | The part is left out. |
@@ -117,11 +119,32 @@ review left (the owner: "I will take your recs"):
 | N2: no Wingtip-side way to end a connector connection | You, Connected Apps: each connection listed and disconnected one at a time, its tokens and spent refresh hashes deleted, the consent with the last (`/api/me/connections`). |
 | N3: a phone route link replaced the plan without the preview | On the iPhone and Android a route link (and Android's AI and App Functions routes) opens the shared-flight preview; the plan changes at Use This Plan. |
 | N4: the gateway and Flyway used the Postgres superuser | Flyway signs in as the owner (`wingtip`); the app as `wingtip_app`, rows only, made and re-granted by `db/callback/afterMigrate.sql`, with its own secret (`AppDbPasswordSecret`, `APP_DB_PASSWORD`). |
-| N5: a busted tile cache key reached the planner unlimited | AWS WAF `TileRateLimit` on the distribution: 3,000 tile requests per address per 5 minutes, then 429; about $6.20 a month (README-AWS). |
+| N5: a busted tile cache key reached the planner unlimited | **Open at launch** (the owner, 2026-11-27, decision 0063: `EdgeRateLimit` off, about $7.20 a month saved). With edge.yaml's `EdgeRateLimit=on` and the main stack's `WebAclArn` (decision 0064; not offered on a new AWS experience project account), AWS WAF `TileRateLimit` on the distribution: 3,000 tile requests per address per 5 minutes, then 429; since round 4 a second rule holds every other `/api/planner/` path to the same, counted apart (M4); about $7.20 a month (README-AWS). |
 | N6: an iPhone sign-in's Apple token replaces the web's, whose grant is then never revoked | Needs a device: the check and what each answer decides are in NATIVE.md, "Checking on a device". |
 | N8: addresses compared case-sensitively | V50 merges pilots one address apart but for case (or keeps one apart, under a reserved `.invalid` address, where a merge would break a unique key), notes each in `email_case_merges`, and makes `lower(email)` unique; `findByEmail` folds case. |
 
 What stands, with why, is the scope's section 7.
+
+What round 4 (claude/r4-gateway, 2026-11-23) did with the gateway's
+findings of that day's security review (the owner took every
+recommendation):
+
+| Finding | Now |
+|---|---|
+| M1: every per-caller limit was per IPv6 address, and one /64 holds 2^64 | `SlidingWindowLimiter.clientOf` counts an IPv6 caller by its /64: the sign-in and deletion links, connector registrations, Apple nonces, the account look-up, diagnostics, speed samples, instructor invites and link checks. AWS WAF's rate rules still count per address; WAF has no prefix key. |
+| M4: anonymous planner routes had no limit beyond the two tile paths | **Open at launch** with N5 (decision 0063). With the edge stack's rate limit on (decision 0064), a second rule in `TileRateLimit`: 3,000 requests to any other `/api/planner/` path per address per five minutes, then 429. |
+| The old L4's defence in depth: the internal flight writes trusted the planner's word on the scope | `POST`, `PUT` and `DELETE /internal/mcp/flights` need the pilot's own access token (`X-Connector-Token`), active and granted `wingtip:flights` (`ConnectorGrants.mayChangeFlights`); a 403 otherwise. A connection consented to before V53 refreshes to the old `wingtip:write` and is refused a save (`ConnectorGrantsTest`). The planner passes the token it was sent on those three calls and hands the pilot the 403's own words (app/mcp/records.py, the connector's half). |
+| L1: `/oauth2/revoke` refused every connector client, all public | `PublicRefresh` admits a public client there by its id, and Spring's provider revokes only a token issued to it; the metadata lists `none` for revocation. |
+| L2: an authorization left on the consent page was never deleted | `created_at` (V54); one with no token is let go a day on. |
+| L3: anyone could block a pilot's web account deletion for an hour | Counted as the sign-in link is, the caller first (`allowLink`); the look-up and the row off the request's thread. |
+| L4: instructor invites relayed any text to any address | The subject is fixed; the name in the mail is a name's letters alone (`InstructorService.mailedName`), and the name a pilot sets must be one (`FullNameRequest`); 10 invites a day per caller as well as 5 per student. |
+| L6: Apple's web sign-in did not check `iss` | `issuerUri("https://appleid.apple.com")`. |
+| L7: the review code needed only 20 characters, and verifying had no limit | 32 or more base64url characters; every verify counted per caller (`APP_MAGIC_LINK_PER_CLIENT_PER_HOUR`). |
+| L8: Google's and Apple's tokens stayed in Boot's in-memory store | Let go of at sign-in, once Apple's refresh token is kept. |
+| L9 (the gateway's half): a signed-in write with no pilot reached the planner without `X-Pilot-Id` | A 401. |
+| L9 (the planner's half): a checkpoint note written without `X-Pilot-Id` became everyone's shared note | A 401 unless the stack is the one-user one (`APP_OPEN_WRITES`, the gateway's `app.open-writes`): `app/routers/notes.py`. |
+| L13: `X-Forwarded-Port` and `-Ssl` reached Spring | See L2 above. |
+| Reuse M2: the client's address worked out by hand, and X-Forwarded-Host believed from anyone | The RemoteIpValve as in L2; a share link is built from `APP_PUBLIC_BASE_URL` wherever it is set (`FlightShareController.origin`). |
 
 ## The live view in Claude (decision 0061)
 
@@ -144,3 +167,38 @@ each way in is held:
 | A flight handed back with a map of any size | `Flight.fuel_on_board` is bounded as the stops are (`MAX_STOPS + 2` fields, each an identifier). |
 | Another pilot's saved flight replaced or deleted | The gateway's `PUT` and `DELETE /internal/mcp/flights/{id}` find the flight by id and the pilot's own id together (`FlightService.get`), a 404 otherwise, on the internal port with the planner's secret alone. |
 | What a connected app may do is hidden from the pilot | You's Connected Apps says it under each app, in the consent page's own words (`ConnectionDto.can`, `ConnectorSettings.SCOPE_WORDS`). |
+
+## CI, round 4 (2026-11-23)
+
+The round-4 review (wingtip-audits/2026-11-23/security.md) found the deep
+review's class twice more: a write or owner token on a machine that had
+run a branch's npm code. What changed:
+
+| Finding | Now |
+|---|---|
+| H1: the review's address job ran `npm ci` (install scripts on) and Claude with `npm`, `node` and `pip`, then approved the fix's held checks with `MERGE_TOKEN` in the same job, where a fake `gh` or `git` left on `$GITHUB_PATH` would get it | The approval is its own job, `approve`, on GitHub's runner, with only main's `scripts/ci` checked out (`review_fix_approve.sh`); `MERGE_TOKEN` is only there. The address job runs `npm ci --ignore-scripts` and checks out without keeping the job's token in `.git/config` (the action sets its own for Claude's push). |
+| H2: a pull request's `build (e2e)` held `packages: write` while it ran the branch's `npm ci` and `vite build`, and Promote's ECR copy fell back to GHCR's `:latest` for any image a commit did not rebuild | The page is built by `page (e2e)` with `packages: read` and handed on as an artifact; `build (e2e page)` makes and pushes its image without running anything of the branch. The images' own builds run inside BuildKit, which never sees the registry login. Promote's `push-ecr` falls back to ECR's own `latest`, which only it writes, never GHCR's. |
+| M6: a page the review fetched could steer the address job's fix, which then merged by itself | The fix's own push turns the pull request's auto-merge off and says so in a comment: the owner looks before it merges (`gh pr merge <n> --auto --merge` turns it on again). |
+| L14: `vars.LINUX_RUNNER` and `vars.MAC_RUNNER` were one-variable cliffs | Each `runs-on` naming one is `github.event.pull_request.head.repo.fork != true && vars.…`, and `workflow_rules.py` refuses one without it. |
+
+Left for the owner (GitHub settings, no code): fork approval to "all
+outside collaborators" (M7), `sha_pinning_required` on, workflow tokens
+not allowed to approve pull requests, and `PLAYWRIGHT_IMAGE` by digest
+(L15; the scripts tag the slim copy by that name, so a digest needs them
+changed too).
+
+## Round 4, the planner (claude/r4-planner, 2026-11-23)
+
+| Found | Now |
+|---|---|
+| M2: anyone could make the planner fetch and keep terrain tiles for the whole world | Past the sectionals' sheets (`chart_coverage`) a tile is the sea's surface, drawn once in memory; nothing is fetched or kept (`terrain_view._charted`). |
+| M3: any FAA PDF name of the right shape was fetched, kept and drawn under the one drawing lock; past editions were kept for good; `_ABSENT` was wiped whole at 1,000 | Only a PDF the edition's own index names is fetched (`publications.listed`, in `_pdf_of`), names matched whole (`fullmatch`); past editions' PDFs, pages, diagrams and plates go at each changeover (`publication_prune`); the misses are an LRU of 1,000. |
+| M5: any hex id fetched once was followed for 30 days, and made-up ids sorted first starved the real ones | Followed only for a signed-in pilot (`X-Pilot-Id`, the gateway's), at most 500, the card opened latest asked first; an id no source has heard a day after is dropped (`FOLLOW_UNHEARD_S`). |
+| L10: the nav log's stream sent the raw exception | Its kind and the request's id; the text stays in the log. |
+| L12: off-grid chart tiles made a folder and a `.none` each | No tile outside `[0, 2^z)`, before anything is kept. |
+
+## Round 7, the planner (claude/r7-backend, 2026-11-23)
+
+| Found | Now |
+|---|---|
+| P-M1: the follow share key was made into the live store, beside the shares it hashes, so whoever read the store could test guessed pilot ids | `FOLLOW_SHARE_KEY` from the environment: production's from the stack's `FollowShareKeySecret` (deploy.sh), and compose and the planner both refuse to start without it; the development stack makes one once into the planner's own secrets volume (`FOLLOW_SHARE_KEY_FILE`). A store that kept the key loses it, and the pilots' follows hashed with it, when first opened (P-L1). |

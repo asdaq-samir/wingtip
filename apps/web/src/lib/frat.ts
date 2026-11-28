@@ -5,7 +5,7 @@
  * (VFR not recommended, the pilot's own minimums, a TFR on the route,
  * SIGMETs and G-AIRMETs, night), from the nav log's fuel check, from the
  * pilot's own airplane's inspections (lib/airworthiness), from the
- * pilot's logbook (the flight review, the medical, recent landings) --
+ * pilot's logbook --
  * and for what only the pilot knows: IMSAFE, and the pressures on the
  * day.
  *
@@ -144,7 +144,7 @@ export function riskLine(a: { level: string; score: number }): string {
  * files it with the flight; and what the pilot ticked, which is about
  * them today, not the route: kept on this device for the day it was
  * ticked on (this device's calendar day), so a reload keeps it and
- * tomorrow starts again (the web audit's WEB-15).
+ * tomorrow starts again.
  */
 export const useRisk = create<{
   day: string;

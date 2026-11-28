@@ -1,5 +1,4 @@
-//! The fuel the plan leaves at a place along the route, in flight (the
-//! aviation audit's AV-4): planning figures, as the nav log's fuel column
+//! The fuel the plan leaves at a place along the route, in flight: planning figures, as the nav log's fuel column
 //! is, never the airplane's gauge.
 //!
 //! The tanks hold the fuel at the start less the start and taxi allowance

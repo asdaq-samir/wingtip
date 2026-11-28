@@ -104,7 +104,7 @@ struct FuelSetSheet: View {
                     if let shown, shown > usable {
                         Text("More than the \(usable) gal the tanks hold").foregroundStyle(WingtipInk.problem)
                     } else if ask.stop {
-                        Text("Lands with \(Format.tankGallons(ask.tank.gal))")
+                        Text(ask.tank.gal < 0 ? "Lands \(Format.tankGallons(ask.tank.gal))" : "Lands with \(Format.tankGallons(ask.tank.gal))")
                     } else {
                         Text("The fuel in the tanks at engine start: full, or the gallons.")
                     }

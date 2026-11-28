@@ -16,13 +16,15 @@ import { shownPx } from "./insets";
  * Base UI writes that as 0 until the popup has measured itself, so each
  * card's first frame read as the card all the way up, and the map's
  * padding went 844 then 368 as every card opened, and through 0 as the
- * phone turned (the flicker audit, 2026-11-14, FL-4 and FL-17).
+ * phone turned.
  */
 export function useSheetCover(
   sheet: HTMLElement | null,
   front: PanelState,
   onPhone: boolean,
   fromBottom: boolean,
+  /** FPL's pill on a bottom sheet, px (sheet/insets' footPillPx), 0 for the rem one. */
+  pillPx = 0,
 ): { cover: number; least: number; most: number; width: number } {
   // The sheet's height and, under a bottom sheet, the room its viewport
   // leaves at the foot: measured as they change. The cover is worked out
@@ -50,7 +52,8 @@ export function useSheetCover(
   if (!onPhone) return { cover: Math.round(box.height), least: 0, most: 0, width: Math.round(box.width) };
   // Not yet laid out (hidden as the page opens): nothing to say yet.
   if (!box.height) return { cover: 0, least: 0, most: 0, width: 0 };
-  const at = (size: PanelState) => Math.round(shownPx(size === "full" ? "half" : size, fromBottom, box.height) + box.below);
+  const at = (size: PanelState) =>
+    Math.round(shownPx(size === "full" ? "half" : size, fromBottom, box.height, undefined, pillPx) + box.below);
   // And the least and the most it covers, the pill's and half's, which the
   // map slides between as the sheet moves (GlMapShell's useSheetSlide).
   return { cover: at(front), least: at("peek"), most: at("half"), width: 0 };

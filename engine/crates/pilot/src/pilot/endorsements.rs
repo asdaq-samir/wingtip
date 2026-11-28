@@ -9,18 +9,12 @@
 //! compared as text: no time zone enters here.
 
 use super::js;
-use crate::time::{days_from_civil, days_in_month};
+use crate::time::{days_from_civil, parse_date};
 
 /// The day of a "YYYY-MM-DD" (a longer ISO text read by its first ten);
 /// None for no such day.
 fn day(iso: &str) -> Option<(i64, u32, u32)> {
-    let d = iso.get(..10)?;
-    let b = d.as_bytes();
-    if !(b[4] == b'-' && b[7] == b'-' && [0, 1, 2, 3, 5, 6, 8, 9].iter().all(|&i| b[i].is_ascii_digit())) {
-        return None;
-    }
-    let (y, m, dd) = (d[..4].parse().ok()?, d[5..7].parse().ok()?, d[8..].parse().ok()?);
-    ((1..=12).contains(&m) && dd >= 1 && dd <= days_in_month(y, m)).then_some((y, m, dd))
+    parse_date(iso.get(..10)?)
 }
 
 /// A day as the pages say one: "13 Oct 2026".

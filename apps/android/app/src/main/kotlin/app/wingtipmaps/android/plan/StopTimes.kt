@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.plan
 
+import app.wingtipmaps.android.format.Format
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -59,10 +60,21 @@ object StopTimes {
 
     /** A time as the timeline writes it: the bare clock, "14:10", where no
      *  zone is said; "13:00 MST" in the point's own zone where they are. */
-    fun words(ms: Long, zone: ZoneId?, said: Boolean, device: ZoneId = ZoneId.systemDefault()): String {
+    fun words(ms: Long, zone: ZoneId?, said: Boolean, device: ZoneId = ZoneId.systemDefault(), left: Left? = null): String {
         val pattern = if (said) "HH:mm zzz" else "HH:mm"
-        return DateTimeFormatter.ofPattern(pattern, Locale.US).format(Instant.ofEpochMilli(ms).atZone(if (said) zone ?: device else device))
+        val shownIn = if (said) zone ?: device else device
+        val clock = DateTimeFormatter.ofPattern(pattern, Locale.US).format(Instant.ofEpochMilli(ms).atZone(shownIn))
+        // Its day too where it is not the day the flight left: "Tue 15:54 CST",
+        // the day it left counted in the zone its clock is read in: the
+        // departure's once zones are said, else this phone's, as the bare
+        // clock is (iOS's TimelineClock), so the two never disagree.
+        val day = left?.let { Format.arrivalDay(ms, it.ms, shownIn, if (said) it.zone else device) }
+        return if (day == null) clock else "$day $clock"
     }
+
+    /** When the flight leaves and in which zone (the departure's field's;
+     *  null this phone's), for the day an arrival is said with. */
+    data class Left(val ms: Long, val zone: ZoneId?)
 
     /** The minutes on the ground for a stop left again at the clock's
      *  `hour`:`minute` in `zone`: the next such time at or after landing,

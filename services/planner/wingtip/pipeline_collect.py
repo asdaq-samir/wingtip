@@ -44,7 +44,7 @@ def collect(dep_ident: str = "C81", dest_ident: str = "KDLH", out_path: Path | N
     route_end = (dest["lat"], dest["lon"])
 
     bbox_pad_nm = FALLBACK_HALF_WIDTH_NM + 2
-    # The short way round 180 (geo_boxes): each reader splits it there.
+    # The short way over 180 (geo_boxes): each reader splits it there.
     bbox = geo_boxes.corridor_box(route_start, route_end, bbox_pad_nm)
 
     raw = osm.query_overpass(bbox)

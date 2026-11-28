@@ -103,8 +103,7 @@ export function lonBounds(lons: readonly number[]): [number, number] {
  * field is nearest, which point of a line a target's -- a sampling step,
  * a label's spacing or a camera's offset, never a figure a pilot reads:
  * a distance or a course shown is the engine's geodesic (Geo, below).
- * Each was once written out by hand in its own file (the audit of
- * 2026-11-16).
+ * Each was once written out by hand in its own file.
  */
 /** Squared flat degrees between two points `dLat` and `dLon` apart: an
  *  order alone, with no square root to take. */
@@ -161,17 +160,59 @@ function destination(a: LatLon, bearing: number, nm: number): LatLon {
   return callEngine("destination", { points: [{ lat: a.lat, lon: a.lon, bearing_deg: bearing, nm }] })[0]!;
 }
 
+/** From `a` to each of `to`, its distance, nm, and true bearing, in one
+ *  call to the engine (`great_circles`): a list of fields or an area's
+ *  corners measured from the airplane, where a call a field each was two
+ *  crossings into the .wasm a field at each draw. */
+function fromTo(a: LatLon, to: readonly LatLon[]): { distanceNm: number[]; bearingDeg: number[] } {
+  if (!to.length) return { distanceNm: [], bearingDeg: [] };
+  const { distance_nm, bearing_deg } = callEngine("great_circles", {
+    lat1: to.map(() => a.lat),
+    lon1: to.map(() => a.lon),
+    lat2: to.map((p) => p.lat),
+    lon2: to.map((p) => p.lon),
+  });
+  return { distanceNm: distance_nm, bearingDeg: bearing_deg };
+}
+
+/** Each leg between successive `points`, its length, nm, and its initial
+ *  true course, in one call (`great_circles`). */
+function legs(points: readonly LatLon[]): { distanceNm: number[]; bearingDeg: number[] } {
+  if (points.length < 2) return { distanceNm: [], bearingDeg: [] };
+  const from = points.slice(0, -1),
+    to = points.slice(1);
+  const { distance_nm, bearing_deg } = callEngine("great_circles", {
+    lat1: from.map((p) => p.lat),
+    lon1: from.map((p) => p.lon),
+    lat2: to.map((p) => p.lat),
+    lon2: to.map((p) => p.lon),
+  });
+  return { distanceNm: distance_nm, bearingDeg: bearing_deg };
+}
+
+/** `destination` for many at once, in one call: where each great circle
+ *  from its point on its true bearing reaches its `nm` out. */
+function destinations(points: readonly (LatLon & { bearing: number; nm: number })[]): LatLon[] {
+  if (!points.length) return [];
+  return callEngine("destination", { points: points.map((p) => ({ lat: p.lat, lon: p.lon, bearing_deg: p.bearing, nm: p.nm })) });
+}
+
 /** The geodesic rules, each the engine's. Only a loaded engine hands
- *  one out (useGeo, geoLoaded). */
+ *  one out (useGeo, geoLoaded). The many-at-once forms (fromTo, legs,
+ *  destinations) for anything asked over a list: one crossing into the
+ *  engine, not one an item. */
 export interface Geo {
   distanceNm: typeof distanceNm;
   legsNm: typeof legsNm;
   bestStopIndex: typeof bestStopIndex;
   bearingDeg: typeof bearingDeg;
   destination: typeof destination;
+  fromTo: typeof fromTo;
+  legs: typeof legs;
+  destinations: typeof destinations;
 }
 
-const geo: Geo = { distanceNm, legsNm, bestStopIndex, bearingDeg, destination };
+const geo: Geo = { distanceNm, legsNm, bestStopIndex, bearingDeg, destination, fromTo, legs, destinations };
 
 /** The geodesic rules once the engine is there, null while its .wasm is
  *  still coming: a part draws without its figure until then and again

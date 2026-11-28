@@ -17,17 +17,38 @@
  * scroller's content, so all of it went up with the scroll, FPL's head
  * 40 points off the sheet's top all the way up at the default text size
  * (the HIG review, 2026-11-21). Measured as a tall one, only its first row
- * sticks.
+ * sticks. So too the page's end room under FPL's foot bar (sheet/FootBar,
+ * SheetScroller's data-foot-room), which the scroller runs on under: a
+ * long route's field all the way up stuck with its last row, the Add
+ * Stops pill and the toggle back, under the bar, out of a finger's reach
+ * (the owner's iPhone, 2026-11-23).
  */
 export function bandFits(band: HTMLElement | null) {
   const scroller = band?.parentElement;
   if (!band || !scroller) return;
+  const watch = new ResizeObserver(() => check());
+  // The foot room found again as it comes and goes with the scroller's
+  // children (a layout that adds or drops its end room), not once.
+  let room: HTMLElement | null = null;
+  const find = () => {
+    const now = scroller.querySelector<HTMLElement>(":scope > [data-foot-room]");
+    if (now === room) return;
+    if (room) watch.unobserve(room);
+    room = now;
+    if (room) watch.observe(room);
+  };
   const check = () => {
-    const foot = parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
+    find();
+    const foot = (parseFloat(getComputedStyle(scroller).paddingBottom) || 0) + (room?.offsetHeight ?? 0);
     band.toggleAttribute("data-band-tall", band.offsetHeight > scroller.clientHeight - foot);
   };
-  const watch = new ResizeObserver(check);
+  find();
   watch.observe(band);
   watch.observe(scroller);
-  return () => watch.disconnect();
+  const children = new MutationObserver(check);
+  children.observe(scroller, { childList: true });
+  return () => {
+    watch.disconnect();
+    children.disconnect();
+  };
 }

@@ -28,21 +28,31 @@ data class LogbookForm(
     val remarks: String,
 ) {
     /** The entry as the gateway takes it (PUT /api/logbook/{id}), or what
-     *  does not read, in words, so the row says it where it is. */
-    fun request(was: LogbookEntryDto): Result<LogbookEntryRequest> = runCatching {
+     *  does not read, in words, so the row says it where it is. Its
+     *  category, class and gear kept while it is the same airplane, else
+     *  the logbook's for the one typed (`known`), else none; its full stops
+     *  kept while its landings are (61.57(a)(1), (b)). */
+    fun request(was: LogbookEntryDto, known: AirplaneKind? = null): Result<LogbookEntryRequest> = runCatching {
         val flownOn = try {
             LocalDate.parse(date.trim()).toString()
         } catch (e: DateTimeParseException) {
             throw IllegalArgumentException("The date reads as a year, month and day: 2026-11-09.", e)
         }
+        val tail = airplane.trim().uppercase().ifEmpty { null }
+        val same = tail != null && tail.equals(was.aircraft?.trim(), ignoreCase = true)
+        val kind = if (same) AirplaneKind(was.category, was.aircraftClass, was.tailwheel) else known
+        val dayCount = count(dayLandings, "day landings")
+        val nightCount = count(nightLandings, "night landings")
         LogbookEntryRequest(
-            aircraft = airplane.trim().uppercase().ifEmpty { null }, aircraftType = was.aircraftType, airHours = was.airHours,
-            approaches = was.approaches, crossCountryHours = was.crossCountryHours, dayLandings = count(dayLandings, "day landings"),
+            aircraft = tail, aircraftType = was.aircraftType, airHours = was.airHours,
+            approaches = was.approaches, crossCountryHours = was.crossCountryHours, dayLandings = dayCount,
             distanceNm = was.distanceNm, dualHours = was.dualHours, flightId = was.flightId, flownOn = flownOn, fromTrack = was.fromTrack,
             holding = was.holding, instrumentHours = was.instrumentHours, longestLegNm = was.longestLegNm, nightHours = hours(night, "night"),
-            nightLandings = count(nightLandings, "night landings"), remarks = remarks.trim().ifEmpty { null },
+            nightLandings = nightCount, remarks = remarks.trim().ifEmpty { null },
             route = route.trim().uppercase().ifEmpty { null }, soloHours = was.soloHours, totalHours = hours(total, "total"),
             touchAndGoes = was.touchAndGoes, toweredLandings = was.toweredLandings, tracking = was.tracking,
+            category = kind?.category, aircraftClass = kind?.aircraftClass, tailwheel = kind?.tailwheel,
+            fullStopLandings = was.fullStopLandings.takeIf { dayCount == was.dayLandings && nightCount == was.nightLandings },
         )
     }
 

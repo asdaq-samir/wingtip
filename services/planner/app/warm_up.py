@@ -1,7 +1,9 @@
 """The planner's warm-up and its periodic checks (started by app.main's
 lifespan): the reference data every request reads, loaded at start
 rather than under the first pilot's request, and what is checked again
-once it is warm (the FAA's editions, the registry, the chart cycle)."""
+once it is warm (the FAA's editions, the chart cycle). The FAA's
+aircraft registry is ingest's to read (ingest.history), off the
+planner's process."""
 
 import csv
 import logging
@@ -9,6 +11,7 @@ import threading
 
 from apscheduler.schedulers.base import BaseScheduler
 from wingtip import (
+    airport_comms,
     airspace,
     altitude,
     chart_prepare,
@@ -16,10 +19,12 @@ from wingtip import (
     faa_editions,
     fixes,
     geocode,
+    icing_forecast,
     nearby,
+    pattern,
     places,
+    publication_prune,
     publications,
-    registry,
     remarks,
     sua,
     water,
@@ -35,12 +40,9 @@ from .settings import get_settings
 
 log = logging.getLogger(__name__)
 
-# How often the FAA's files are checked for a new edition, whether those
-# on disk are still in their cycle, and whether the registry is a day old.
+# How often the FAA's files are checked for a new edition, and whether
+# those on disk are still in their cycle.
 EDITIONS_CHECK_EVERY_S = 6 * 3600
-#: Whether the FAA's aircraft registry is downloaded and read here
-#: (wingtip.registry): on, but on a test stack (infra/docker-compose.ci.yml).
-REGISTRY_REFRESH = get_settings().registry_refresh
 #: Whether a new edition of the FAA's NASR files (airports, frequencies,
 #: navaids, Class B/C/D) and its obstacle file is fetched here
 #: (check_faa_editions): on, but on a test stack. Its own switch, not the
@@ -135,6 +137,7 @@ def at_changeover() -> None:
     check_faa_editions()
     check_procedures()
     publications.preload()
+    publication_prune.prune()
     chart_serving.forget_serving()
 
 
@@ -164,12 +167,6 @@ def _schedule_checks(on: BaseScheduler) -> None:
     # And a minute after each 0901Z: an edition takes over then, not at the
     # six-hourly check's next turn.
     schedule.daily_at(on, 9, 2, at_changeover, name="faa-changeover")
-    # The aircraft registry, read again once it is a day old (each check a
-    # look at the file's age): now as well, so a warm-up read that failed is
-    # tried again, and after a good one refresh() sees a fresh file and does
-    # nothing.
-    if REGISTRY_REFRESH:
-        schedule.every(on, EDITIONS_CHECK_EVERY_S, registry.refresh, name="aircraft-registry")
     # The documents library (wingtip.library), now and once a day.
     if FAA_LIBRARY_REFRESH:
         schedule.every(on, LIBRARY_CHECK_EVERY_S, library.refresh, name="faa-library")
@@ -220,6 +217,13 @@ def warm_reference_data(on: BaseScheduler) -> None:
         # its parse was 11.8 s of a cold KBOS to KSAN's plan (Session1's
         # profile, 2026-10-23).
         ("patterns", lambda: faa_data.pattern_agl_ft("KJFK", altitude.DEFAULT_FAA_CACHE_DIR)),
+        # Every field's runways from NASR (wingtip.nasr_fields) and their
+        # ends' right traffic and positions (wingtip.pattern): the first
+        # briefing after a restart read them, 2.4 s where the next took
+        # 18 ms (4.8 and 0.5 s of a cold briefing's 5.4 s profiled in the
+        # planner's container, 2026-11-27).
+        ("runways", lambda: airport_comms.get_runways("KORD")),
+        ("runway ends", lambda: pattern.right_traffic_ends("KORD")),
         # And its charted, open fields, a route's checkpoint candidates.
         (
             "route airports",
@@ -254,6 +258,12 @@ def warm_reference_data(on: BaseScheduler) -> None:
         nearby.warm()
     except Exception:  # noqa: BLE001 -- a stop is chosen on time and fuel alone until it is in
         log.exception("nearby places warm-up failed")
+    # And the forecast icing and the ground under it (wingtip.icing_forecast.warm):
+    # the first IFR Go / No-Go or Brief after a deploy paid 0.6 s for them.
+    try:
+        icing_forecast.warm()
+    except Exception:  # noqa: BLE001 -- the first IFR Go / No-Go reads them itself
+        log.exception("forecast icing warm-up failed")
 
     # After warm, not before it: the first start downloads the USGS's
     # place names (wingtip.places), and nothing waits on them -- a waypoint
@@ -266,6 +276,7 @@ def warm_reference_data(on: BaseScheduler) -> None:
     # (wingtip.publications), once per edition: a card only links them.
     try:
         publications.preload()
+        publication_prune.prune()
     except Exception:  # noqa: BLE001
         log.exception("publications warm-up failed")
     # And the towns Nearest can be asked from (wingtip.geocode), a megabyte
@@ -274,17 +285,6 @@ def warm_reference_data(on: BaseScheduler) -> None:
         geocode.preload()
     except Exception:  # noqa: BLE001
         log.exception("towns warm-up failed")
-    # And the FAA's aircraft registry (wingtip.registry), for a tracked
-    # airplane's card: 73 MB from the FAA and half a minute's read, once a
-    # day; a card before it is in shows no registration. Its own switch
-    # (REGISTRY_REFRESH), not the charts': the server draws no charts
-    # (CHARTS_AUTO_REFRESH=0 there too), and gated on that, it never read
-    # the registry at all. Off on a test stack, which downloads nothing it need not.
-    if REGISTRY_REFRESH:
-        try:
-            registry.refresh()
-        except Exception:  # noqa: BLE001 -- the next day's check tries again
-            log.exception("aircraft registry not read")
 
     # The cycle pack, from the files read above, where the one on disk is
     # not of them: a new cycle's first start writes it (a minute or so),

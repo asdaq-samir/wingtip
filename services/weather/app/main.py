@@ -39,11 +39,12 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from collections.abc import Callable
+from pathlib import Path
 
 from apscheduler.schedulers.base import BaseScheduler
 from wingtip import log_lines, schedule, tracing, weather_store
 
-from . import aviationweather, fetch, flow, gfs, glmp, glmp_forecast, radar, satellite, spc, tfr
+from . import aviationweather, fetch, flow, gfs, glmp, glmp_forecast, icing, radar, replay, satellite, spc, tfr
 from .settings import get_settings
 
 log = logging.getLogger("weather")
@@ -76,6 +77,7 @@ PRODUCTS = (
     *(Product(f"winds-{hr}", _winds(hr), "winds") for hr in gfs.PERIODS),
     Product("glmp", glmp.fetch_latest, "glmp"),
     Product("glmp-forecast", glmp_forecast.fetch_latest, "glmp"),
+    Product(icing.STORE_NAME, icing.fetch_latest, "icing"),
     Product("spc-outlook", spc.fetch_outlook, "outlook"),
     Product("tfrs", tfr.fetch, "tfrs"),
     Product("radar", radar.fetch, "radar"),
@@ -87,9 +89,11 @@ PRODUCTS = (
 def products() -> tuple[Product, ...]:
     """The products this service fetches: every one, but the flow layer
     only while WEATHER_FLOW_ON says so (settings.flow_on), so a parked
-    layer costs no download and no memory."""
-    on = get_settings().flow_on
-    return tuple(p for p in PRODUCTS if on or p.name != "flow")
+    layer costs no download and no memory, and the icing grids unless
+    WEATHER_ICING_ON is off (settings.icing_on, the test stack's)."""
+    settings = get_settings()
+    off = {name for name, on in (("flow", settings.flow_on), (icing.STORE_NAME, settings.icing_on)) if not on}
+    return tuple(p for p in PRODUCTS if p.name not in off)
 
 
 #: What a fetch may fail with: its source, in its own words.
@@ -98,6 +102,7 @@ FAILURES = (
     gfs.ModelWindsUnavailable,
     flow.FlowUnavailable,
     glmp.GlmpUnavailable,
+    icing.IcingUnavailable,
     tfr.TfrUnavailable,
     radar.RadarUnavailable,
     satellite.SatelliteUnavailable,
@@ -225,8 +230,14 @@ def main() -> None:
     signal.signal(signal.SIGTERM, finish)
     signal.signal(signal.SIGINT, finish)
     log.info("weather service: storing into %s, health on :%d", weather_store.store_dir(), settings.port)
+    chosen = None
+    if settings.replay:
+        # A recorded day's products written now, and left out of the turns.
+        replayed = replay.seed(Path(settings.replay))
+        log.info("replayed %s from %s; not fetched", ", ".join(sorted(replayed)), settings.replay)
+        chosen = tuple(p for p in products() if p.name not in replayed)
     on = schedule.scheduler(workers=settings.workers)
-    Schedule().jobs(on)
+    Schedule(chosen).jobs(on)
     on.start()
     stop.wait()
     on.shutdown(wait=False)

@@ -3,6 +3,7 @@ import { plannerAirports } from "./plannerAirports";
 import { plannerMap } from "./plannerMap";
 import { plannerDev } from "./plannerDev";
 import { plannerLibrary } from "./plannerLibrary";
+import { plannerTeaching } from "./plannerTeaching";
 import { gatewayPilot } from "./gatewayPilot";
 import { gatewayRecords } from "./gatewayRecords";
 
@@ -13,6 +14,8 @@ export {
   failIfNotOk,
   isDropped,
   isUnknownPlace,
+  plannerUnreachable,
+  PLANNER_UNREACHABLE,
   unknownPlaceIn,
   unknownWhy,
   type UnknownPlace,
@@ -33,7 +36,7 @@ export { csrfHeaders, data, gateway, planner } from "./http";
  * One object for the pages, made of a module per area: the planner's
  * route and plan (./plannerRoute), airports and places (./plannerAirports),
  * the map's layers (./plannerMap), the developer's (./plannerDev) and the
- * documents library (./plannerLibrary);
+ * documents library (./plannerLibrary), teaching and debriefing (./plannerTeaching);
  * and the gateway's, by its OpenAPI tags, who the pilot is
  * (./gatewayPilot) and what they keep (./gatewayRecords). The clients and the rules every call keeps are in
  * ./http, and why a call failed in ./errors.
@@ -44,6 +47,7 @@ export const api = {
   ...plannerMap,
   ...plannerDev,
   ...plannerLibrary,
+  ...plannerTeaching,
   ...gatewayPilot,
   ...gatewayRecords,
 };

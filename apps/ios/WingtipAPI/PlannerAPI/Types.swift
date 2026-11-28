@@ -149,7 +149,9 @@ public protocol APIProtocol: Sendable {
     /// ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight
     /// uses). With no flight there is no runway in use or cruise altitude to
     /// weigh. `unchecked` names the TFRs when their list could not be had;
-    /// `time_zone` is the field's, for its NOTAMs' local times.
+    /// `time_zone` is the field's, for its NOTAMs' local times. Each NOTAM
+    /// comes read for the card: its `reading`, `card` and `subject`
+    /// (app.notam_reading).
     ///
     /// - Remark: HTTP `GET /api/airport/{ident}/notams`.
     /// - Remark: Generated from `#/paths//api/airport/{ident}/notams/get(airport_notams)`.
@@ -339,6 +341,39 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/approach-plate/{cycle}/{ident}/{procedure}.png`.
     /// - Remark: Generated from `#/paths//api/approach-plate/{cycle}/{ident}/{procedure}.png/get(approach_plate)`.
     func approachPlate(_ input: Operations.ApproachPlate.Input) async throws -> Operations.ApproachPlate.Output
+    /// Approach Debriefs
+    ///
+    /// The approaches a track flew, one for each time it came down a final:
+    /// of the field's approaches drawn, the one whose final it fitted best,
+    /// the one picked where it fits as well, each fix by fix against the
+    /// procedure (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) in the engine's
+    /// ApproachDebrief. A POST for the drawings and the track; it changes
+    /// nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/post(approach_debriefs)`.
+    func approachDebriefs(_ input: Operations.ApproachDebriefs.Input) async throws -> Operations.ApproachDebriefs.Output
+    /// Approach Transition
+    ///
+    /// Of an approach's transitions drawn, the one the track came in by:
+    /// every fix of it before the final passed, the closest to it on the way;
+    /// null where none was flown, so the approach stays from vectors.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs/transition`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/transition/post(approach_transition)`.
+    func approachTransition(_ input: Operations.ApproachTransition.Input) async throws -> Operations.ApproachTransition.Output
+    /// Approach Lesson
+    ///
+    /// An approach taught as an instructor teaches it, from the FAA's coded
+    /// procedure (FAA-H-8083-16B, chapter 4): the briefing, the steps flown
+    /// fix by fix at `gs_kt` with the way to each, the quiz, and the side
+    /// view. What the coded data does not hold, the minimums above all, is
+    /// "See the plate", never a figure made up. A POST for the drawing; it
+    /// changes nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/lesson`.
+    /// - Remark: Generated from `#/paths//api/approach/lesson/post(approach_lesson)`.
+    func approachLesson(_ input: Operations.ApproachLesson.Input) async throws -> Operations.ApproachLesson.Output
     /// Briefing
     ///
     /// Everything the nav log's own leg math doesn't cover: adverse
@@ -1344,7 +1379,8 @@ public protocol APIProtocol: Sendable {
     ///
     /// An airplane being tracked: what it is, the field it took off from
     /// and its track today (wingtip.traffic.flight); no track where its trace
-    /// cannot be had.
+    /// cannot be had. Followed from now on, its flights recorded, only where
+    /// a signed-in pilot opened it (X-Pilot-Id, set by the gateway).
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/get(traffic_flight)`.
@@ -1364,7 +1400,9 @@ public protocol APIProtocol: Sendable {
     /// Traffic Past Flight
     ///
     /// One of those flights' reports, for its track log and its replay
-    /// (wingtip.traffic.past_flight); 404 where it is not one of them.
+    /// (wingtip.traffic.past_flight), made ready to replay by the engine
+    /// (wingtip.traffic.replay_ready: gaps, a held or missing height carried at
+    /// the last good one); 404 where it is not one of them.
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}/history/{flight_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/history/{flight_id}/get(traffic_past_flight)`.
@@ -1404,6 +1442,15 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/traffic/route`.
     /// - Remark: Generated from `#/paths//api/traffic/route/get(traffic_route)`.
     func trafficRoute(_ input: Operations.TrafficRoute.Input) async throws -> Operations.TrafficRoute.Output
+    /// Usage Daily
+    ///
+    /// Every route's calls on each finished UTC day from `since` on, today
+    /// left out until it is over: totals by route template, method and status,
+    /// tied to no pilot (docs/privacy-inventory.md).
+    ///
+    /// - Remark: HTTP `GET /api/usage/daily`.
+    /// - Remark: Generated from `#/paths//api/usage/daily/get(usage_daily)`.
+    func usageDaily(_ input: Operations.UsageDaily.Input) async throws -> Operations.UsageDaily.Output
     /// Waypoints In View
     ///
     /// The VFR waypoints inside the map's view (wingtip.fixes), at most
@@ -1704,7 +1751,9 @@ extension APIProtocol {
     /// ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight
     /// uses). With no flight there is no runway in use or cruise altitude to
     /// weigh. `unchecked` names the TFRs when their list could not be had;
-    /// `time_zone` is the field's, for its NOTAMs' local times.
+    /// `time_zone` is the field's, for its NOTAMs' local times. Each NOTAM
+    /// comes read for the card: its `reading`, `card` and `subject`
+    /// (app.notam_reading).
     ///
     /// - Remark: HTTP `GET /api/airport/{ident}/notams`.
     /// - Remark: Generated from `#/paths//api/airport/{ident}/notams/get(airport_notams)`.
@@ -2022,6 +2071,63 @@ extension APIProtocol {
         try await approachPlate(Operations.ApproachPlate.Input(
             path: path,
             headers: headers
+        ))
+    }
+    /// Approach Debriefs
+    ///
+    /// The approaches a track flew, one for each time it came down a final:
+    /// of the field's approaches drawn, the one whose final it fitted best,
+    /// the one picked where it fits as well, each fix by fix against the
+    /// procedure (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) in the engine's
+    /// ApproachDebrief. A POST for the drawings and the track; it changes
+    /// nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/post(approach_debriefs)`.
+    public func approachDebriefs(
+        headers: Operations.ApproachDebriefs.Input.Headers = .init(),
+        body: Operations.ApproachDebriefs.Input.Body
+    ) async throws -> Operations.ApproachDebriefs.Output {
+        try await approachDebriefs(Operations.ApproachDebriefs.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Approach Transition
+    ///
+    /// Of an approach's transitions drawn, the one the track came in by:
+    /// every fix of it before the final passed, the closest to it on the way;
+    /// null where none was flown, so the approach stays from vectors.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs/transition`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/transition/post(approach_transition)`.
+    public func approachTransition(
+        headers: Operations.ApproachTransition.Input.Headers = .init(),
+        body: Operations.ApproachTransition.Input.Body
+    ) async throws -> Operations.ApproachTransition.Output {
+        try await approachTransition(Operations.ApproachTransition.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Approach Lesson
+    ///
+    /// An approach taught as an instructor teaches it, from the FAA's coded
+    /// procedure (FAA-H-8083-16B, chapter 4): the briefing, the steps flown
+    /// fix by fix at `gs_kt` with the way to each, the quiz, and the side
+    /// view. What the coded data does not hold, the minimums above all, is
+    /// "See the plate", never a figure made up. A POST for the drawing; it
+    /// changes nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/lesson`.
+    /// - Remark: Generated from `#/paths//api/approach/lesson/post(approach_lesson)`.
+    public func approachLesson(
+        headers: Operations.ApproachLesson.Input.Headers = .init(),
+        body: Operations.ApproachLesson.Input.Body
+    ) async throws -> Operations.ApproachLesson.Output {
+        try await approachLesson(Operations.ApproachLesson.Input(
+            headers: headers,
+            body: body
         ))
     }
     /// Briefing
@@ -3611,7 +3717,8 @@ extension APIProtocol {
     ///
     /// An airplane being tracked: what it is, the field it took off from
     /// and its track today (wingtip.traffic.flight); no track where its trace
-    /// cannot be had.
+    /// cannot be had. Followed from now on, its flights recorded, only where
+    /// a signed-in pilot opened it (X-Pilot-Id, set by the gateway).
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/get(traffic_flight)`.
@@ -3649,7 +3756,9 @@ extension APIProtocol {
     /// Traffic Past Flight
     ///
     /// One of those flights' reports, for its track log and its replay
-    /// (wingtip.traffic.past_flight); 404 where it is not one of them.
+    /// (wingtip.traffic.past_flight), made ready to replay by the engine
+    /// (wingtip.traffic.replay_ready: gaps, a held or missing height carried at
+    /// the last good one); 404 where it is not one of them.
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}/history/{flight_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/history/{flight_id}/get(traffic_past_flight)`.
@@ -3717,6 +3826,23 @@ extension APIProtocol {
         headers: Operations.TrafficRoute.Input.Headers = .init()
     ) async throws -> Operations.TrafficRoute.Output {
         try await trafficRoute(Operations.TrafficRoute.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Usage Daily
+    ///
+    /// Every route's calls on each finished UTC day from `since` on, today
+    /// left out until it is over: totals by route template, method and status,
+    /// tied to no pilot (docs/privacy-inventory.md).
+    ///
+    /// - Remark: HTTP `GET /api/usage/daily`.
+    /// - Remark: Generated from `#/paths//api/usage/daily/get(usage_daily)`.
+    public func usageDaily(
+        query: Operations.UsageDaily.Input.Query,
+        headers: Operations.UsageDaily.Input.Headers = .init()
+    ) async throws -> Operations.UsageDaily.Output {
+        try await usageDaily(Operations.UsageDaily.Input(
             query: query,
             headers: headers
         ))

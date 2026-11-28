@@ -12,6 +12,7 @@ import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanViewModel } from "./usePlanView";
 import { coursePoints } from "../../../lib/course";
 import { useRoutesShown } from "./useRoutesShown";
+import { useKept } from "./useKept";
 
 /**
  * FPL's route as a list and a line (usePlanWorkspace): its timeline, its
@@ -136,11 +137,12 @@ export function usePlanRouteList(
     setWasWhole(wholeRoute);
     setHadPoints(hasPoints);
     if (wholeRoute && !wasWhole) edit.setRouteOpen(editorFocused);
-    if (!hasPoints) edit.setRouteOpen(false);
+    // Cleared from elsewhere (FPL's ✕), the empty card; by the field's own
+    // ✕, whose press keeps the focus in it, the field stays, its Undo there.
+    if (!hasPoints && !editorFocused) edit.setRouteOpen(false);
   }
-  // The route's field open (RouteEditor): asked for -- the timeline's Type
-  // or Paste a Route before the route is whole, the keyboard button at Add a Stop's end
-  // after -- a stop being typed into it, or a point the planner does not
+  // The route's field open (RouteEditor): asked for by the box's toggle
+  // (TypeRouteButton), a stop being typed into it, or a point the planner does not
   // know, which it says with its Remove (RouteBox), its line on the
   // timeline red with why. Before the route is whole the timeline is
   // open to edit with the field folded till it is asked for (the owner,
@@ -148,13 +150,24 @@ export function usePlanRouteList(
   const boxOpen = edit.routeOpen || addingStop || !!s.unknownPlace;
   const routeFolded = wholeRoute && !boxOpen;
   const { setRouteOpen } = edit;
+  // Whether the box's toggle turned the grouped box into the route's field
+  // (TypeRouteButton, typeInPlace), rather than a field opened some other
+  // way (a stop being typed, under the card): routeEditing's routeTyped.
+  // Let go once the field is folded.
+  const [typedInPlace, setTypedInPlace] = useState(false);
+  if (typedInPlace && !edit.routeOpen) setTypedInPlace(false);
+  const typeInPlace = useCallback(() => {
+    setTypedInPlace(true);
+    setRouteOpen(true);
+  }, [setRouteOpen]);
   // Done: the field folded away, the timeline alone.
   const foldRoute = useCallback(() => {
     setRouteOpen(false);
     setAddingStop(false);
     setAddAt(null);
   }, [setRouteOpen, setAddAt]);
-  return {
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({
     ...edit,
     ...line,
     ...shown,
@@ -167,5 +180,7 @@ export function usePlanRouteList(
     routeFolded,
     foldRoute,
     setEditorFocused,
-  };
+    typedInPlace,
+    typeInPlace,
+  });
 }

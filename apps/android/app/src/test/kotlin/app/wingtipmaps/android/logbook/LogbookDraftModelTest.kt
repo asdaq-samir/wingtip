@@ -50,8 +50,8 @@ class LogbookDraftModelTest {
         override val recorded = MutableStateFlow(Recorded())
         override fun asked(to: Double) { recorded.value = recorded.value.copy(askedTo = to) }
         override fun forget() { recorded.value = Recorded() }
-        fun points(n: Int, flown: Boolean = true) {
-            recorded.value = recorded.value.copy(points = (0 until n).map { DraftTrackPoint(lat = 42.0, lon = -88.0, t = it * 5_000.0) }, flown = flown)
+        fun points(n: Int, flown: Boolean = true, atSpeed: Boolean = false) {
+            recorded.value = recorded.value.copy(points = (0 until n).map { DraftTrackPoint(lat = 42.0, lon = -88.0, t = it * 5_000.0) }, flown = flown, atSpeed = atSpeed)
         }
     }
 
@@ -88,7 +88,7 @@ class LogbookDraftModelTest {
             )
         }
         override suspend fun entries() = emptyList<LogbookEntryDto>()
-        override suspend fun currency() = CurrencyDto(
+        override suspend fun currency(toFly: AirplaneKind?) = CurrencyDto(
             approachesInWindow = 1, crossCountryHours = 1.4, flights = 1, holdingInWindow = false, landings = 1,
             nightHours = 0.0, totalHours = 1.4, trackingInWindow = true, dayPassengersUntil = "2027-02-07",
         )
@@ -248,5 +248,26 @@ class LogbookDraftModelTest {
         assertTrue(model.state.value.open)
         flight.points(151)
         assertEquals(1, reads)
+    }
+
+    @Test
+    fun atFlyingSpeedTheTrackIsReadOnceEachTenMinutesOfPoints() {
+        val flight = Flight()
+        var reads = 0
+        val counting = DraftRules { reads++; TrackReading(landings = 0, endsAirborne = true, blockTo = null) }
+        LogbookDraftModel(flight, Shelf(), counting, Servers(), Dispatchers.Unconfined) { 0.0 }
+        flight.points(120, atSpeed = true)
+        assertEquals(1, reads)
+        // Two minutes more in the air: not read again.
+        flight.points(144, atSpeed = true)
+        assertEquals(1, reads)
+        flight.points(240, atSpeed = true)
+        assertEquals(2, reads)
+        // Slowed below flying speed: read again at each minute of points.
+        flight.points(252)
+        assertEquals(3, reads)
+        // A speed hovering at flying speed reads no fewer points again.
+        flight.points(253, atSpeed = true)
+        assertEquals(3, reads)
     }
 }

@@ -23,7 +23,7 @@ main=${main%/.git}
 live=${WINGTIP_LIVE_DIR:-$HOME/Developer/wingtip-live}
 export PATH="$PATH:$HOME/.docker/bin"
 cd "$main" || exit 1
-git fetch -q origin
+git fetch -q --prune origin
 landed() { # is commit $1 on main or the integration branch?
   git merge-base --is-ancestor "$1" origin/main 2>/dev/null ||
   { git rev-parse -q --verify origin/claude/integration >/dev/null &&

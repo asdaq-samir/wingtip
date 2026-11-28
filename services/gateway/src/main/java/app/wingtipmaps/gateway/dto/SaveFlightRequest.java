@@ -52,8 +52,7 @@ public record SaveFlightRequest(
         /* The altitudes the pilot set at points of the route, as the
          *  planner's `altitudes` parameter writes them: "VPBNG:4500,KDLH:2400",
          *  ten at most; a point the route is at more than once names its
-         *  visit, "VPBNG@2:6500" (the second time there; the web audit's
-         *  WEB-2, 2026-11-14). Null or blank for none. */
+         *  visit, "VPBNG@2:6500" (the second time there). Null or blank for none. */
         @Nullable
         @Pattern(
                 regexp = "^$|" + POINT + "(?:@\\d{1,2})?:\\d{1,5}(," + POINT + "(?:@\\d{1,2})?:\\d{1,5}){0,9}",
@@ -61,7 +60,8 @@ public record SaveFlightRequest(
         String altitudes,
         /* The planner's address's other picks for the flight, as it writes
          *  them -- runways, procedures, crossings, times on the ground,
-         *  holds, the plan or altitude flown -- so it
+         *  holds, the plan or altitude flown, the fuel stops, the fuel on
+         *  board and the flight rules -- so it
          *  opens again as it was planned. Only those keys, URL-encoded.
          *  Null or blank for none. */
         @Nullable
@@ -72,10 +72,15 @@ public record SaveFlightRequest(
         String picks) {
 
     /** One pick: a key the planner's address has for a flight (web
-     *  lib/flightLink PICK_KEYS), and its value URL-encoded. */
-    static final String PICK =
-            "(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds"
-                    + "|alternate|local_min)=[A-Za-z0-9%._~+-]{0,400}";
+     *  lib/address PICK_KEYS), and its value URL-encoded. Also
+     *  `fuel`, the stops that are fuel stops, `tanks`, the fuel on board
+     *  as it leaves each field, and `rules`, VFR or IFR, which set the
+     *  flight's cruising altitudes (14 CFR 91.159, 91.179) and its fuel
+     *  (91.151, 91.167): a saved IFR flight came back VFR, with plain stops
+     *  and full tanks. */
+    static final String PICK = "(?:(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs"
+            + "|cross|ground|holds|alternate|local_min|fuel|tanks)=[A-Za-z0-9%._~+-]{0,400}"
+            + "|rules=(?:vfr|ifr|VFR|IFR))";
 
     /** A point of the route: an airport's or a waypoint's ident, or the
      *  pilot's own point off one, "VPBNG/090/30" (the planner's

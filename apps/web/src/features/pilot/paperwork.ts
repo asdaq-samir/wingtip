@@ -50,5 +50,5 @@ export function dueTitle(due: Pick<Due, "title" | "tailNumber">): string {
 }
 
 /** A figure's key as a test id's words, kebab-case as every other id is
- *  ("annualOn" is "annual-on"; the web audit's WEB-34). */
+ *  ("annualOn" is "annual-on"). */
 export const kebab = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);

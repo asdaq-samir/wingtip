@@ -13,9 +13,10 @@ from cachetools import TTLCache
 from .. import airports, registry
 from .legs import LEG_GAP_S as LEG_GAP_S, _field_at as _field_at, _left_from as _left_from, _legs
 from .common import _LOCK, _clock, _number
-from .adsb_lol import GLOBE, UNREAD, _GlobeRefused, _Unread, _globe_get, _trace
+from .globe import GLOBE, UNREAD, _GlobeRefused, _Unread, _globe_get, _trace
 from .recorded import _recorded, follow
 from .watched import _WATCHED, _watch
+from . import opensky
 
 #: At most this many points of a trail are sent: enough for a line on a phone, a fraction of a long flight's.
 TRAIL_POINTS = 600
@@ -24,6 +25,14 @@ TRAIL_POINTS = 600
 DEPARTED_WITHIN_NM = 3.0
 #: readsb's trace flag for a point that starts a new leg.
 _NEW_LEG = 2
+#: readsb's trace flag: the point's vertical rate is the GNSS one, not the
+#: barometric (readsb's globe history; tar1090's trace format).
+_GEOM_RATE = 4
+#: What a past flight's point carries for its replay (the engine's
+#: replay_track tells a held pressure altitude by the GNSS height and the
+#: rates).
+_SHOWN = ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")
+PAST_KEYS = _SHOWN + ("alt_baro_ft", "alt_geom_ft", "baro_rate_fpm", "geom_rate_fpm", "ground")
 
 
 def _altitude_ft(point: list) -> float | None:
@@ -35,7 +44,7 @@ def _altitude_ft(point: list) -> float | None:
     return _number(geometric) if geometric is not None else _number(point[3])
 
 
-def flight(hex_id: str) -> dict:
+def flight(hex_id: str, pilot: str | None = None) -> dict:
     """An airplane's flight today, from its trace: {"hex", "faa" (its FAA
     registration, wingtip.registry.lookup; None for one registered abroad or
     while the registry is not yet read), "registration", "type",
@@ -43,11 +52,15 @@ def flight(hex_id: str) -> dict:
     "name", "at"} -- the field it took off from, where its trace shows it
     on the ground at one, else None), "trail" ([{"t", "lat", "lon",
     "alt_ft"}], this flight's track from its takeoff or the start of its
-    leg, at most TRAIL_POINTS)}."""
+    leg, at most TRAIL_POINTS)}. Followed from now on where a signed-in
+    `pilot` opened its card."""
     hex_id = hex_id.lower()
-    # Its card open: followed from now on, its flights recorded from the
-    # FAA's radar card open or not (heard_elsewhere).
-    follow(hex_id)
+    # Its card open by a pilot: followed from now on, its flights recorded
+    # from the FAA's radar card open or not (heard_elsewhere). Not on any
+    # anonymous ask: one walking the addresses 000000, 000001 and on put
+    # them all in the round adsb.lol is asked.
+    if pilot:
+        follow(hex_id, pilot)
     trace = _trace(hex_id) or {}
     # A point is [seconds, lat, lon, altitude, ground speed, track, flags,
     # ...]; one too short to hold them is not used.
@@ -89,6 +102,9 @@ def flight(hex_id: str) -> dict:
     # The FAA's record of a US airplane (wingtip.registry), None for one registered abroad; its registration and year
     # where no trace today gives them (N654FL's card read "Registration –" with the registry's record, 2026-11-13).
     faa = registry.lookup(hex_id=hex_id, n_number=trace.get("r"))
+    # The trace writes its year as text and the registry as a number; FlightDetail's year is text, so the registry's
+    # is written as text too (N606FR's card read "–" on every row when its 2023 came from the registry, 2026-11-26).
+    year = trace.get("year") or (faa or {}).get("year")
     return {
         "hex": hex_id,
         "faa": faa,
@@ -96,7 +112,7 @@ def flight(hex_id: str) -> dict:
         "type": trace.get("t") or None,
         "description": trace.get("desc") or None,
         "operator": trace.get("ownOp") or None,
-        "year": trace.get("year") or (faa or {}).get("year") or None,
+        "year": str(year) if year else None,
         "departed": departed,
         "trail": trail,
     }
@@ -171,7 +187,11 @@ def _day_trace(hex_id: str, day) -> dict | None | _Unread:
 
 def _points(trace: dict | None) -> list[dict]:
     """A trace's points as {"t" (s since 1970), "lat", "lon", "alt_ft" (None
-    on the ground), "gs_kt", "track_deg", "vrate_fpm", "new_leg"}."""
+    on the ground), "gs_kt", "track_deg", "vrate_fpm", "new_leg", and
+    for the replay "alt_baro_ft" (the pressure altitude as sent),
+    "alt_geom_ft" (readsb's GNSS height), "baro_rate_fpm"
+    and "geom_rate_fpm" (the rate sent, by the flag that says which, and
+    readsb's own geom_rate) and "ground"}."""
     if not trace:
         return []
     base = _number(trace.get("timestamp")) or 0.0
@@ -179,6 +199,8 @@ def _points(trace: dict | None) -> list[dict]:
     for p in trace.get("trace") or []:
         if not isinstance(p, list) or len(p) < 7 or _number(p[1]) is None or _number(p[2]) is None:
             continue
+        rate = _number(p[7]) if len(p) > 7 else None
+        geometric_rate = isinstance(p[6], int) and bool(p[6] & _GEOM_RATE)
         out.append(
             {
                 "t": round(base + float(p[0]), 1),
@@ -187,20 +209,26 @@ def _points(trace: dict | None) -> list[dict]:
                 "alt_ft": _altitude_ft(p),
                 "gs_kt": _number(p[4]),
                 "track_deg": _number(p[5]),
-                "vrate_fpm": _number(p[7]) if len(p) > 7 else None,
+                "vrate_fpm": rate,
                 "new_leg": isinstance(p[6], int) and bool(p[6] & _NEW_LEG),
+                "alt_baro_ft": None if p[3] == "ground" else _number(p[3]),
+                "alt_geom_ft": _number(p[10]) if len(p) > 10 else None,
+                "baro_rate_fpm": None if geometric_rate else rate,
+                "geom_rate_fpm": rate if geometric_rate else (_number(p[11]) if len(p) > 11 else None),
+                "ground": p[3] == "ground",
             }
         )
     return out
 
 
-def _summaries(points: list[dict]) -> list[dict]:
-    """A merged trace's flights, oldest first, as `history` lists them."""
+def _summaries(points: list[dict], named: bool = True) -> list[dict]:
+    """A merged trace's flights, oldest first, as `history` lists them; their
+    ends not looked for where not `named` (how many there are, and when)."""
     now = time.time()
     flights = []
     for leg in _legs(points):
         air = [p for p in leg if p["alt_ft"] is not None]
-        start, end = _field_at(leg[0], landing=False), _field_at(leg[-1], landing=True)
+        start, end = (_field_at(leg[0], landing=False), _field_at(leg[-1], landing=True)) if named else (None, None)
         in_air = now - leg[-1]["t"] < 5 * 60 and leg[-1]["alt_ft"] is not None
         flights.append(
             {
@@ -231,7 +259,7 @@ def _recorded_flights(hex_id: str) -> list[dict]:
     return out
 
 
-def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float | None = None, today=None) -> dict:
+def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float | None = None, today=None, ask: bool = True) -> dict:
     """An airplane's last `limit` flights found, newest first, as FlightAware
     lists them: {"hex", "registration", "type", "flights": [{"id" (its
     takeoff's time, s), "origin", "destination" (each {"ident", "name",
@@ -246,7 +274,8 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
     days at a time side by side, until the flights are found or the
     archive's ARCHIVE_DAYS run out: today's from the recent trace, the
     days before from the archive. A day that cannot be had is left out and
-    counted, not an error."""
+    counted, not an error. OpenSky is asked only where `ask`; else what it
+    gave before is given."""
     import datetime as dt
 
     hex_id = hex_id.lower()
@@ -260,24 +289,42 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
     day = until - dt.timedelta(days=1) if until == today else until
     unread = 0
     flights: list[dict] = []
+    # The flights OpenSky has for the days adsb.lol's archive would not give.
+    elsewhere: list[dict] = []
 
-    def found() -> list[dict]:
-        listed = _summaries(_merged(traces))
+    def found(named: bool = True) -> list[dict]:
+        listed = _summaries(_merged(traces), named)
+        taken = [(f["off"], f["on"]) for f in listed]
+        listed = sorted(
+            listed + [f for f in elsewhere if not any(off <= f["on"] and f["off"] <= on for off, on in taken)], key=lambda f: f["id"]
+        )
         return [f for f in listed if f["id"] < before] if before is not None else listed
 
     with ThreadPoolExecutor(max_workers=HISTORY_BATCH) as pool:
         while True:
             # The flights of the days read so far, the oldest day's first
             # flight possibly begun the day before: one more is wanted than
-            # is shown, so the last shown is whole.
-            flights = found()
+            # is shown, so the last shown is whole. Their ends are named once,
+            # after: each pass named every flight's again, two nearest-field
+            # searches a flight.
+            flights = found(named=False)
             if len(flights) > limit or day < stop:
                 break
             batch = [day - dt.timedelta(days=n) for n in range(HISTORY_BATCH) if day - dt.timedelta(days=n) >= stop]
             past = list(pool.map(lambda d: _day_trace(hex_id, d), batch))
-            unread += sum(1 for t in past if t is UNREAD)
+            missed = [d for d, t in zip(batch, past) if t is UNREAD]
+            if missed == batch and opensky.on():
+                # The archive gave none of them (its globe turning the
+                # planner away): OpenSky asked for every day left of this
+                # ask in one round, where it was a round a batch, 16 s.
+                missed += [day - dt.timedelta(days=n) for n in range(HISTORY_BATCH, (day - stop).days + 1)]
+                batch = missed
+            more, still = opensky.flights(hex_id, missed, today, ask) if missed and opensky.on() else ([], len(missed))
+            elsewhere += more
+            unread += still
             traces += past
             day = batch[-1] - dt.timedelta(days=1)
+    flights = found()
     named = next((t for t in traces if isinstance(t, dict)), {})
     # And the flights watched here (`_watch`), where the archive has none
     # at that time: adsb.lol's history closed to the planner behind a
@@ -290,6 +337,8 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
     )
     flights.reverse()
     shown = flights[:limit]
+    if ask and opensky.on():
+        opensky.warm(hex_id, shown, time.time())
     # Where the next ask starts: the last shown's day where more were found
     # than shown (those that took off before it, by `before`), else the
     # first day not read yet, while the archive has it.
@@ -309,8 +358,7 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
 
 def past_flight(hex_id: str, flight_id: int, today=None) -> dict | None:
     """One of `history`'s flights, its points for a track log and a replay:
-    {"id", "points" ([{"t", "lat", "lon", "alt_ft", "gs_kt", "track_deg",
-    "vrate_fpm"}], at most PAST_POINTS, evenly)}; None where it is not one
+    {"id", "points" ([{PAST_KEYS}], at most PAST_POINTS, evenly)}; None where it is not one
     of the archive's days' flights."""
     import datetime as dt
 
@@ -331,17 +379,16 @@ def past_flight(hex_id: str, flight_id: int, today=None) -> dict | None:
             continue
         step = max(1, math.ceil(len(leg) / PAST_POINTS))
         kept = leg[::step] + ([leg[-1]] if (len(leg) - 1) % step else [])
-        return {
-            "id": flight_id,
-            "points": [{k: p[k] for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")} for p in kept],
-        }
+        return {"id": flight_id, "points": [{k: p.get(k) for k in PAST_KEYS} for p in kept]}
+    # One OpenSky has (`history` lists those too): its path from there.
+    path = opensky.track(hex_id, flight_id, time.time())
+    if path:
+        step = max(1, math.ceil(len(path) / PAST_POINTS))
+        return {"id": flight_id, "points": path[::step]}
     # One watched here (`history` lists those too).
     for leg in _legs(_recorded(hex_id)):
         if int(leg[0]["t"]) == flight_id:
             step = max(1, math.ceil(len(leg) / PAST_POINTS))
             kept = leg[::step] + ([leg[-1]] if (len(leg) - 1) % step else [])
-            return {
-                "id": flight_id,
-                "points": [{k: p.get(k) for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")} for p in kept],
-            }
+            return {"id": flight_id, "points": [{k: p.get(k) for k in PAST_KEYS} for p in kept]}
     return None

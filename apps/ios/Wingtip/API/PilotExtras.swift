@@ -29,7 +29,7 @@ typealias InspectionsRequest = GWInspectionsRequest
 
 extension InspectionsRequest {
     init(_ i: Inspections?) {
-        self.init(annualOn: i?.annualOn, eltBatteryDueOn: i?.eltBatteryDueOn, eltInspectedOn: i?.eltInspectedOn, forHire: i?.forHire ?? false,
+        self.init(annualOn: i?.annualOn, eltBatteryDueOn: i?.eltBatteryDueOn, eltInspectedOn: i?.eltInspectedOn, forHire: i?.forHire,
                   hoursNow: i?.hoursNow, hundredHourAtHours: i?.hundredHourAtHours, staticCheckOn: i?.staticCheckOn,
                   transponderCheckOn: i?.transponderCheckOn)
     }
@@ -121,9 +121,11 @@ typealias AircraftRequest = GWAircraftRequest
 typealias LogbookEntryRequest = GWLogbookEntryRequest
 
 extension LogbookEntryRequest {
-    /// A new flight's form: today, one landing by day, the airplane flown.
-    static func blank(aircraft: String?) -> LogbookEntryRequest {
-        LogbookEntryRequest(flownOn: Day.today(), aircraft: aircraft, dayLandings: 1)
+    /// A new flight's form: today, one landing by day, the airplane flown,
+    /// with its category, class and gear where the logbook has said them
+    /// for its N-number (AirplaneKind; 14 CFR 61.57(a)(1)(ii)).
+    static func blank(aircraft: String?, entries: [LogbookEntry]? = nil) -> LogbookEntryRequest {
+        LogbookEntryRequest(flownOn: Day.today(), aircraft: aircraft, dayLandings: 1).flying(AirplaneKind.of(entries, tail: aircraft))
     }
 
     /// The form's fields in a paper logbook's order, every figure nought
@@ -142,7 +144,8 @@ extension LogbookEntryRequest {
                   toweredLandings: toweredLandings, tracking: tracking)
     }
 
-    /// An entry as its form opens it.
+    /// An entry as its form opens it, its airplane's category, class and
+    /// gear and its full stops kept as the gateway has them.
     init(_ e: LogbookEntry) {
         self.init(flownOn: e.flownOn, aircraft: e.aircraft, aircraftType: e.aircraftType, route: e.route, remarks: e.remarks,
                   totalHours: e.totalHours, nightHours: e.nightHours, crossCountryHours: e.crossCountryHours,
@@ -151,6 +154,10 @@ extension LogbookEntryRequest {
                   distanceNm: e.distanceNm, longestLegNm: e.longestLegNm, approaches: e.approaches,
                   holding: e.holding, tracking: e.tracking, airHours: e.airHours, touchAndGoes: e.touchAndGoes,
                   fromTrack: e.fromTrack, flightId: e.flightId)
+        category = e.category
+        aircraftClass = e.aircraftClass
+        tailwheel = e.tailwheel
+        fullStopLandings = e.fullStopLandings
     }
 
     /// Blank words sent as null, not as "".
@@ -297,9 +304,14 @@ extension Gateway {
     static func setKnowledgeTest(_ codes: [String]) async throws -> Training {
         try await call { try await $0.setKnowledgeTest(body: .json(GWKnowledgeTestRequest(codes: codes))).ok.body.json }
     }
-    /// An endorsement signed on paper, recorded by its day; nil takes it off.
-    static func recordEndorsement(_ code: String, on day: String?) async throws -> Training {
-        if let day { return try await call { try await $0.endorse(path: .init(code: code), body: .json(GWEndorsementRequest(endorsedOn: day))).ok.body.json } }
+    /// An endorsement signed on paper, recorded by its day and the make and
+    /// model it names where it names one (61.87(n), 61.93(c)(2): the
+    /// engine's kinds with a {mm} field); nil takes it off.
+    static func recordEndorsement(_ code: String, on day: String?, makeModel: String? = nil) async throws -> Training {
+        if let day {
+            let request = GWEndorsementRequest(endorsedOn: day, makeModel: makeModel)
+            return try await call { try await $0.endorse(path: .init(code: code), body: .json(request)).ok.body.json }
+        }
         return try await call { try await $0.withdraw(path: .init(code: code)).ok.body.json }
     }
     static func dropInstructor(_ id: Int) async throws -> Training { try await call { try await $0.dropInstructor(path: .init(id: id)).ok.body.json } }

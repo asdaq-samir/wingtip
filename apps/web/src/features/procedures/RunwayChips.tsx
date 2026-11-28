@@ -124,10 +124,9 @@ export function Chips({
  *  under the head while the line is open: the body goes under the head's
  *  edge, and the tray reads as one. 38 high, the 32 chips three in, in
  *  rem as the chips are, so the two stay one height at a larger text size
- *  (at 19.65 px the 38-pixel head stood 4 short of its body; the HIG
- *  review, 2026-11-21); the
- *  head 44 across at the least ("Land RWY"), so the chip against it takes none of its 44 points
- *  (the iOS audit's P1). */
+ *  (at 19.65 px the 38-pixel head stood 4 short of its body); the
+ *  head 44 across at the least ("Land RWY"), so the chip against it takes none of its 44 points.
+ */
 export const TRAY_HEAD =
   "relative flex h-[2.375rem] min-w-11 shrink-0 items-center justify-center rounded-l-full bg-tint/12 pr-1.5 pl-3 text-tint";
 export const TRAY_BODY = "rounded-r-full bg-tint/12 p-0.75 pl-0";

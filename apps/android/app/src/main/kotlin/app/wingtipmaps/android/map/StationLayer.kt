@@ -1,18 +1,11 @@
 package app.wingtipmaps.android.map
 
-import android.view.View
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipMap
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -61,23 +54,7 @@ object StationLayer {
         _shown.value = Shown(marks, settings)
     }
 
-    fun follow(view: MapView) {
-        var scope: CoroutineScope? = null
-        var job: Job? = null
-        view.addOnDidFinishLoadingStyleListener { redraw(view, _shown.value) }
-        view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-                scope = s
-                job = s.launch { _shown.collect { redraw(view, it) } }
-            }
-
-            override fun onViewDetachedFromWindow(v: View) {
-                job?.cancel()
-                scope?.cancel()
-            }
-        })
-    }
+    fun follow(view: MapView) = view.followFlow(_shown, { _shown.value }) { redraw(view, it) }
 
     private fun redraw(view: MapView, shown: Shown) {
         val density = view.resources.displayMetrics.density
@@ -91,7 +68,7 @@ object StationLayer {
             StationPictures.addTo(style, density)
             style.addSource(GeoJsonSource(SOURCE, json))
             for (layer in layers()) {
-                if (style.getLayer(MapStyle.AIRPORTS) != null) style.addLayerAbove(layer, MapStyle.AIRPORTS) else style.addLayer(layer)
+                if (style.getLayer(MapStyle.AIRPORT_LAYERS.last()) != null) style.addLayerAbove(layer, MapStyle.AIRPORT_LAYERS.last()) else style.addLayer(layer)
             }
         } else {
             source.setGeoJson(json)
@@ -140,6 +117,9 @@ object StationLayer {
             PropertyFactory.textColor(Expression.switchCase(Expression.eq(Expression.get("over"), true), red, ink)),
             PropertyFactory.textHaloColor(Expression.color(WingtipColors.Chart.CASING_HEX.toColorInt())),
             PropertyFactory.textHaloWidth(2f),
+            // At the Dimmer's light at night, as all drawn on the chart (MapDim).
+            PropertyFactory.iconOpacity(MapDim.opacity()),
+            PropertyFactory.textOpacity(MapDim.opacity()),
         )
     }
 
@@ -162,6 +142,7 @@ object StationLayer {
                 PropertyFactory.textHaloWidth(2f),
                 PropertyFactory.textAllowOverlap(true),
                 PropertyFactory.textIgnorePlacement(true),
+                PropertyFactory.textOpacity(MapDim.opacity()),
             ),
             // Farther out, only where the wind earns it, giving way to one
             // another rather than piled up.
@@ -182,6 +163,7 @@ object StationLayer {
                 PropertyFactory.iconTranslateAnchor(Property.ICON_TRANSLATE_ANCHOR_VIEWPORT),
                 PropertyFactory.iconAllowOverlap(true),
                 PropertyFactory.iconIgnorePlacement(true),
+                PropertyFactory.iconOpacity(MapDim.opacity()),
             ).also { it.minZoom = farthest },
         )
     }

@@ -15,9 +15,8 @@ import { faaWords } from "../../lib/advisories";
 import { procedureQuery } from "../../lib/queryClient";
 import { Chips, NONE } from "./RunwayChips";
 import { CHIP } from "./routeListStyle";
-import { KIND_TITLE } from "./procedureWords";
+import { KIND_TITLE, PROCEDURES_FAILED } from "./procedureWords";
 import QueryState from "../../components/QueryState";
-import { PROCEDURES_FAILED } from "./ProcedureMenu";
 
 // The procedures sheet's pages (ProceduresRoute): a kind's list, and one
 // procedure's own page.
@@ -159,7 +158,7 @@ export function ProcedurePage({
           rows going under it fading into the glass rather than an opaque
           band across it. In the popover from md up, at the page's end:
           pinned there it reached into an iPhone held sideways' notch with
-          the popover (the iOS audit's P12). */}
+          the popover. */}
       <div
         className={cn(
           "sticky bottom-[calc(-1*max(1rem,env(safe-area-inset-bottom)))] -mx-4 flex gap-2 bg-linear-to-b from-transparent to-background/85 to-35% px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]",

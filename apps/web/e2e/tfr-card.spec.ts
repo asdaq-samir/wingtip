@@ -66,6 +66,10 @@ test("a TFR's card has every card's head, its rule as the regulation and its tim
   await settle(page);
   await settled(sideDrawer(page));
   await mapStill(page);
+  // The TFR drawn before the tap: its list answers after the map settles,
+  // and a tap on bare chart before it opened no card (PR #591's run, passed
+  // on its retry).
+  await expect.poll(async () => (await drawn(page, "tfr-picked")).some((t) => t.id === "6/4116"), { timeout: slow(10000) }).toBe(true);
   // Open chart above the sheet, clear of the map's buttons at its sides.
   const map = (await page.getByTestId("gl-map").first().boundingBox())!;
   await page.mouse.click(map.x + map.width * 0.4, map.y + Math.min(map.height * 0.25, 200));

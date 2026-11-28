@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AircraftDto;
+import app.wingtipmaps.gateway.dto.AirplaneKind;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
@@ -152,6 +153,7 @@ class AircraftControllerTest {
                         any(),
                         any(),
                         any(),
+                        any(),
                         any()))
                 .willReturn(sampleAircraft());
 
@@ -186,6 +188,7 @@ class AircraftControllerTest {
                         eq("SDFGRY"),
                         eq("B1"),
                         eq("White blue stripes"),
+                        any(),
                         any()))
                 .willReturn(sampleAircraft().describeForFlightPlan("SDFGRY", "B1", "White blue stripes"));
 
@@ -200,6 +203,43 @@ class AircraftControllerTest {
                 .andExpect(jsonPath("$.equipment").value("SDFGRY"))
                 .andExpect(jsonPath("$.surveillance").value("B1"))
                 .andExpect(jsonPath("$.colour").value("White blue stripes"));
+    }
+
+    /** Its category, class and gear go through to the airplane and back,
+     *  which passenger currency is judged by (14 CFR 61.57(a)(1)(ii)). */
+    @Test
+    void add_passesItsCategoryClassAndGearThrough() throws Exception {
+        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
+        given(aircraftService.add(
+                        any(),
+                        eq("N12345"),
+                        eq("C172"),
+                        eq(110.0),
+                        eq(8.5),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(new AirplaneKind("Airplane", "Single-engine land", true))))
+                .willReturn(sampleAircraft().kind("Airplane", "Single-engine land", true));
+
+        mockMvc.perform(post("/api/aircraft")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tailNumber\":\"N12345\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,"
+                                + "\"fuelBurnGph\":8.5,\"kind\":{\"category\":\"Airplane\","
+                                + "\"aircraftClass\":\"Single-engine land\",\"tailwheel\":true}}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind.category").value("Airplane"))
+                .andExpect(jsonPath("$.kind.aircraftClass").value("Single-engine land"))
+                .andExpect(jsonPath("$.kind.tailwheel").value(true));
     }
 
     @Test

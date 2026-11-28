@@ -1,5 +1,5 @@
 import type { Briefing, Course, Leg } from "../../lib/api/types";
-import { fieldPhases, navLogRows, routeAdiz, routeJurisdiction, windLine, runwayNumber, type useLoad } from "../plan";
+import { fieldPhases, windLine, runwayNumber, type useLoad } from "../plan";
 import { callEngine } from "../../lib/engine/engine";
 import { fieldCategory } from "../../lib/fieldWeather";
 import { worstOf } from "../../lib/findings";
@@ -16,9 +16,13 @@ interface GlanceInputs {
   landings: string[];
   dep: string;
   dest: string;
-  /** When the flight leaves, and how long it takes, for the arrival's time. */
+  /** When the flight leaves; the time in the air, En Route's figure. */
   leaving: Date;
   eteMin: number | null;
+  /** Minutes from leaving to landing at the destination, the stops' time
+   *  on the ground in (features/plan's arrivalMin): the Arrive row's time,
+   *  the one FPL's timeline gives the destination. */
+  arriveMin: number | null;
   checks: ReturnType<typeof runwayChecks>;
   picks: Parameters<typeof fieldPhases>[5];
   ownCallSign: Parameters<typeof fieldPhases>[4];
@@ -53,6 +57,7 @@ export function buildGlance({
   dest,
   leaving,
   eteMin,
+  arriveMin,
   checks,
   picks,
   ownCallSign,
@@ -76,17 +81,10 @@ export function buildGlance({
       wind: metar && metar.wind_speed_kt != null ? windLine(metar) : null,
       crosswindKt: check ? Math.round(check.crosswindKt) : null,
       crosswindOver: !!check?.crosswindOver,
-      radio: call ? { to: call.to, mhz: call.mhz! } : null,
-      // A field not checked (no elevation, no runway length) is not known, never fine; one past
-      // the POH's tables is a caution (the engine's runways finding says the same).
-      finding:
-        !check || check.unchecked || !distance || distance.unknown
-          ? "unknown"
-          : distance.over
-            ? "stop"
-            : check.crosswindOver || distance.beyond
-              ? "caution"
-              : "ok",
+      radio: call ? { to: call.to, mhz: call.mhz!, ctaf: !!call.ctaf } : null,
+      // The engine's finding for the field (runway::fit), FPL's chips' too; a field not
+      // checked at all is not known, never fine.
+      finding: check?.finding ?? "unknown",
     };
   };
   const byKey = (keys: VerdictItem["key"][]) => worstOf(items.filter((i) => keys.includes(i.key)).map((i) => i.finding));
@@ -105,11 +103,14 @@ export function buildGlance({
       line: items.find((i) => i.key === "weather")?.detail ?? null,
       finding: byKey(["weather", "altitude"]),
     },
-    arrive: course ? fieldAt(dest, "arrival", eteMin != null ? new Date(leaving.getTime() + eteMin * 60_000) : null) : null,
-    // The route's points and its legs between, every 2 nm (the engine's).
-    outside: course ? (routeJurisdiction(navLogRows(course, [], legs))?.brief ?? null) : null,
-    // And the ADIZs it meets on the way (14 CFR part 99).
-    adiz: course ? (routeAdiz(navLogRows(course, [], legs))?.brief ?? null) : null,
+    // Landed at the destination after the time in the air and the turnarounds
+    // at the stops, not the time in the air alone.
+    arrive: course ? fieldAt(dest, "arrival", arriveMin != null ? new Date(leaving.getTime() + arriveMin * 60_000) : null) : null,
+    // The route's points and its legs between, every 2 nm, and the ADIZs
+    // it meets (14 CFR part 99): the engine's, asked by the planner with
+    // the course (app.route_borders).
+    outside: course?.outside ?? null,
+    adiz: course?.adiz ?? null,
     adverse: adverseRows(briefing),
     unchecked: (briefing?.weather_unavailable ?? []).map((source) => WEATHER_SOURCE_LABEL[source]),
     // The reports as sent, for a finding's sources under its line.

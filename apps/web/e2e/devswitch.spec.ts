@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { closeConsole, roleMenu, showTabs } from "./helpers";
+import { watchFor } from "./pacing";
 
 /**
  * Who is offered the developer's workspace.
@@ -31,7 +32,7 @@ async function noDevSwitch(page: Page) {
   await showTabs(page);
   await expect(page.getByTestId("account-button")).toBeVisible();
   await roleMenu(page);
-  await page.waitForTimeout(500);
+  await watchFor(page, 500);
   await expect(devSwitch(page)).toHaveCount(0);
 }
 

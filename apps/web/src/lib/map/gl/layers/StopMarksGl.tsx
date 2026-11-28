@@ -7,18 +7,49 @@ import { STOP_KINDS, type StopKind } from "../../../stopKinds";
 import { colourOf } from "../../marks/flightCategory";
 import { fieldMarkPicture } from "../../marks/markPictures";
 import { BREAK_PIN, FUEL_PIN, PIN_PLACE, stackedPin, type StopPin } from "../../marks/stopPins";
-import { labelledLayer, pictureLayer } from "../markLayers";
+import { ROUTE_MARKS_LOWEST } from "../../marks/routeMarks";
+import { labelledLayer, pictureLayer, type Layout } from "../markLayers";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 
 const PIN = ["==", ["get", "kind"], "pin"] as ExpressionSpecification;
 const FIELD = ["==", ["get", "kind"], "field"] as ExpressionSpecification;
 
+/** A stop's field: its mark and its ident together or not at all, never
+ *  a bare mark (the owner's "no bare map marks"). The mark may lie under
+ *  its own pin (which takes the room first, so the marks placed after it
+ *  -- a Class B's field, the chart's fields and their idents -- give way
+ *  to the pin), and it takes its room too, so no chart ident is drawn half
+ *  under it. Its ident under the mark, clear of its pin, which stands up
+ *  and to the right of the field (PIN_PLACE): beside the mark the ident
+ *  met its own pin and would have hidden every field under one. */
+const FIELD_UNDER_PIN: Layout = {
+  "icon-allow-overlap": true,
+  "icon-ignore-placement": false,
+  "text-allow-overlap": false,
+  "text-optional": false,
+  "icon-optional": false,
+  "text-anchor": "top",
+  // Just clear of the field's 26-point mark, under it.
+  "text-offset": [0, 1.3],
+};
+
+/** Pins placed in the route's order (`order`, the first stop's 0), so
+ *  where two would overlap the one flown to first keeps its place. */
+const PIN_ORDER = ["coalesce", ["get", "order"], 0] as ExpressionSpecification;
+
 /** A stop's field's mark and ident under its pins, its pins' tip on the
- *  field's middle (Tesla's trip map, the owner's screenshot, 2026-10-21). */
+ *  field's middle (Tesla's trip map, the owner's screenshot, 2026-10-21).
+ *  The mark and its ident give way together where the route's own names
+ *  or another mark's are (the owner's iPhone screenshot, 2026-11-23:
+ *  KPGA's over KLAS's at the country's zoom). A pin gives way too, to a
+ *  pin already placed: six suggested fuel stops along a 1,300 nm leg
+ *  stood piled on each other at the country's zoom (the owner's iPhone,
+ *  2026-11-23), so the later ones wait for the map to be zoomed in, their
+ *  fields drawn whole, mark and ident, where there is room. */
 function stopLayers(id: string): SymbolLayerSpecification[] {
   return [
-    { ...labelledLayer(`${id}-fields`, id), filter: FIELD },
-    { ...pictureLayer(`${id}-pins`, id, {}, PIN_PLACE), filter: PIN },
+    { ...labelledLayer(`${id}-fields`, id, { collide: true, sort: 0 }, FIELD_UNDER_PIN), filter: FIELD },
+    { ...pictureLayer(`${id}-pins`, id, { collide: true, sort: PIN_ORDER }, PIN_PLACE), filter: PIN },
   ];
 }
 const FUEL_STOPS = "fuel-stops";
@@ -52,7 +83,7 @@ export function FuelStopsGl({ stops, onSelect }: { stops: StopPin[]; onSelect: (
             lat: s.lat,
             lon: s.lon,
             picture: s.reason === "break" ? BREAK_PIN : FUEL_PIN,
-            props: { kind: "pin", title: `Suggested ${s.reason === "break" ? "stop" : "fuel stop"} ${s.ident}` },
+            props: { kind: "pin", order: i, title: `Suggested ${s.reason === "break" ? "stop" : "fuel stop"} ${s.ident}` },
             onTap: () => onSelect(s.ident),
           },
         ];
@@ -60,7 +91,9 @@ export function FuelStopsGl({ stops, onSelect }: { stops: StopPin[]; onSelect: (
       }),
     [stops, places, onSelect],
   );
-  useGlSymbols(FUEL_STOPS, FUEL_STOP_LAYERS, marks);
+  // Under the route's own marks, which are placed first: the route's ends
+  // keep their names and the pin is drawn under them, not over.
+  useGlSymbols(FUEL_STOPS, FUEL_STOP_LAYERS, marks, { under: ROUTE_MARKS_LOWEST });
   return null;
 }
 
@@ -75,7 +108,7 @@ export function StopFieldsGl({
 }) {
   const marks = useMemo<GlSymbol[]>(
     () =>
-      fields.flatMap((f): GlSymbol[] => [
+      fields.flatMap((f, i): GlSymbol[] => [
         {
           key: `${f.ident}-field`,
           lat: f.lat,
@@ -90,7 +123,7 @@ export function StopFieldsGl({
           lat: f.lat,
           lon: f.lon,
           picture: stackedPin(f.kinds),
-          props: { kind: "pin", title: `${f.ident}: ${f.kinds.map((k) => STOP_KINDS[k].name).join(", ")}` },
+          props: { kind: "pin", order: i, title: `${f.ident}: ${f.kinds.map((k) => STOP_KINDS[k].name).join(", ")}` },
           onTap: () => onSelect(f.ident),
         },
       ]),

@@ -1,8 +1,7 @@
 import { blend, clampRgb, parse, type Color } from "culori";
 
 /**
- * The theme's colours read for WCAG 2's contrast ratio, as the iOS
- * audit's P15 measures it on the page: a test reads index.css's tokens
+ * The theme's colours read for WCAG 2's contrast ratio, as the page's measure takes it: a test reads index.css's tokens
  * through this and holds every pair of words and surface to 4.5:1 (WCAG
  * 1.4.3) with culori's `wcagContrast`, so a retuned token that drops
  * below it fails a test, not a pilot at night. The colour itself is
@@ -24,11 +23,14 @@ export function over(fg: Color, alpha: number, bg: Color): Color {
 }
 
 /** One of the pilot's looks as <html> carries it: the look (data-brand),
- *  night (.dark) and sunlight (data-chart-light="bright"). */
+ *  night (.dark) and sunlight (data-chart-light="bright"), and whether the
+ *  device asks for more contrast (Increase Contrast, `prefers-contrast:
+ *  more`). */
 export interface Look {
   brand: "wingtip" | "cockpit" | "ink" | "native";
   dark: boolean;
   bright: boolean;
+  more?: boolean;
 }
 
 /** Whether one simple selector of tokens.css (`:root`, `.dark`,
@@ -40,6 +42,7 @@ function holds(part: string, look: Look): boolean {
   if (not) return !holds(not[1]!, look);
   const attr = /^\[data-([\w-]+)="([^"]+)"\]$/.exec(part);
   if (attr?.[1] === "brand") return look.brand === attr[2];
+  if (part === "[data-brand]") return true;
   if (attr?.[1] === "chart-light") return look.bright === (attr[2] === "bright");
   throw new Error(`tokens.css selector part not understood: ${part}`);
 }
@@ -52,7 +55,11 @@ function holds(part: string, look: Look): boolean {
  * look's colours as the page draws them, not one block's alone.
  */
 export function lookTokens(css: string, look: Look): Record<string, string> {
-  const clean = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  // Increase Contrast's blocks hold only where the device asks for it; in
+  // their place in the file, so they win as the browser's order has them.
+  const clean = css
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/@media\s*\(prefers-contrast:\s*more\)\s*\{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/g, (_, inner: string) => (look.more ? inner : ""));
   const winners: Record<string, { value: string; weight: number; order: number }> = {};
   let order = 0;
   for (const block of clean.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {

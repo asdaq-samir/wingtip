@@ -1,17 +1,25 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, firstRow, grabberTo, settle, sideDrawer, slow, frontSheet } from "./helpers";
+import { closeCard, firstRow, grabberTo, settle, sideDrawer, slow, frontSheet, withFoot } from "./helpers";
 import { card, cardWeather, tafFromNow } from "./placeCard";
 import { pickAirplane } from "./startState";
+import { steady } from "./pacing";
 
 /** Airports as places, as Maps has them: a tap on one on the chart opens its card in the panel -- its name, what kind of field it is, the
  *  weather there as pilots read it -- with Fly Here, Weather and Frequencies; the card is the address's (?place=) and puts itself away. */
+
+// cardWeather's handler asks the planner for the card's real answer before it changes the weather; a card still asking as the test
+// ends found the page closed and failed the job with no red test (route.fetch: Test ended, KDLH, PR #591's shard 9): the handlers
+// taken off, their errors let go, as each test ends, as ifr.spec does.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
 
 test("the departure's own card says no distance from itself while the pilot's position is not known", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=C81");
   await settle(page);
   // No distance in the facts: no "here of C81", as the phones said no "From KMSN 0 nm" (PlaceCard's distanceOf).
   await expect(card(page).getByTestId("place-fact-elevation")).toBeVisible({ timeout: slow(15000) });
-  await expect(card(page).getByTestId("place-fact-distance")).toHaveText("Distance—");
+  await expect(card(page).getByTestId("place-fact-distance")).toHaveText("Dist.—");
 });
 
 test("an airport's card has the field's pictures across its top, its ident over them, how far it is, its actions, its tabs right under them and the weather there", async ({
@@ -41,17 +49,17 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
   await expect(card(page).getByTestId("place-actions").locator(":scope > *")).toHaveText([/Fly Here|≈ \d/, /Call/, /Favorite/, /Address/]);
   await expect(card(page).getByTestId("place-add-stop")).toHaveCount(0);
-  const tabs = card(page).getByRole("tab");
+  const tabs = withFoot(card(page)).getByRole("tab");
   expect((await tabs.evaluateAll((t) => t.map((x) => x.ariaLabel))).join("|")).toMatch(/^Info\|Weather(, \w+)?\|Runways\|Charts(, \d+)?$/);
-  await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
+  await expect(withFoot(card(page)).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   const [actions, bar] = await Promise.all(
-    [card(page).getByTestId("place-actions"), card(page).getByRole("tablist")].map(async (l) => (await l.boundingBox())!),
+    [card(page).getByTestId("place-actions"), withFoot(card(page)).getByRole("tablist")].map(async (l) => (await l.boundingBox())!),
   );
   expect(bar.y).toBeGreaterThanOrEqual(actions.y + actions.height);
 
   // Weather: the panel all the way up, the weather's card at the tab's top, its category in the FAA's colour:
   // with no TAF, a sentence from the report and no hours; its first row ends in the card's Refresh (the owner, 2026-11-11).
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   // A tab only switches what is shown (the owner, 2026-11-11): pulled all
   // the way up to read it, as a pilot would.
   await grabberTo(page, "full");
@@ -63,7 +71,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
 
   // Info: the field's elevation and airspace in its facts (the Details only its address, 2026-11-14), and
   // the distance from the route's departure while the pilot's own position is not known.
-  await card(page).getByTestId("place-tab-radio").click();
+  await withFoot(card(page)).getByTestId("place-tab-radio").click();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await expect(card(page).getByTestId("place-fact-elevation")).toContainText(/[\d,]+ ft$/);
   await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^AirspaceClass D/);
@@ -116,17 +124,18 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
-  // The pictures open on the runways, and the aerial that comes after them
-  // goes after them, never in front of the one in view (FL-23).
+  // The aerial's tile is held first while the photos are asked, the
+  // runways after it, and the aerial fills its own tile when it comes: the
+  // runways never move from the place they were drawn in.
   const pages = card(page).getByTestId("place-pictures").locator('[data-slot="carousel-item"]');
-  await expect(pages.nth(0).getByTestId("place-runway-sketch")).toBeVisible({ timeout: slow(15000) });
+  await expect(pages.nth(1).getByTestId("place-runway-sketch")).toBeVisible({ timeout: slow(15000) });
   aerial();
   await expect(pages).toHaveCount(2, { timeout: slow(15000) });
-  await expect(pages.nth(0).getByTestId("place-runway-sketch")).toBeVisible();
-  await expect(pages.nth(1).getByTestId("place-aerial")).toHaveCount(1);
+  await expect(pages.nth(1).getByTestId("place-runway-sketch")).toBeVisible();
+  await expect(pages.nth(0).getByTestId("place-aerial")).toHaveCount(1);
 
   // The weather's card at the top of the Weather tab.
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   // A tab only switches what is shown (the owner, 2026-11-11): pulled all
   // the way up to read it, as a pilot would.
   await grabberTo(page, "full");
@@ -172,7 +181,7 @@ test('a field with no report wears the nearest station\'s category as "≈" with
   await page.goto("/app/plan?place=C81");
   await settle(page);
   // On the Weather tab, the panel all the way up.
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   // A tab only switches what is shown (the owner, 2026-11-11): pulled all
   // the way up to read it, as a pilot would.
   await grabberTo(page, "full");
@@ -198,7 +207,7 @@ test('a field with no report wears the nearest station\'s category as "≈" with
   await settle(page);
   await expect(card(page).getByTestId("place-name")).toBeVisible({ timeout: slow(15000) });
   await expect(card(page).getByTestId("place-runway-sketch")).toBeVisible();
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   await expect(card(page).getByTestId("place-weather-summary")).toContainText("Nearest report KUGN, 12.0 nm E");
   await expect(card(page).getByTestId("place-category")).toHaveCount(0);
 });
@@ -216,7 +225,7 @@ test("a field with no report wears the category modelled there, before a near st
   await cardWeather(page, "C81", { metar: null, nearby_metar: nearby, modelled_weather: modelled });
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   const chip = card(page).getByTestId("place-category");
   await expect(chip).toContainText("≈ IFR", { timeout: slow(15000) });
   await expect(chip.locator(".sr-only")).toHaveText("About IFR, modelled for this field by the National Weather Service, not a report");
@@ -281,20 +290,7 @@ test("an airport's card keeps one layout whatever the field: a long name in two 
       );
       return { tiles: Math.round(tiles.y - head.y), whereFoot: Math.round(where.y + where.height - head.y), head: Math.round(head.height) };
     };
-    let last = await measure();
-    await expect
-      .poll(
-        async () => {
-          await page.waitForTimeout(300);
-          const now = await measure();
-          const still = JSON.stringify(now) === JSON.stringify(last);
-          last = now;
-          return still;
-        },
-        { timeout: slow(10000) },
-      )
-      .toBe(true);
-    return last;
+    return steady(measure);
   };
   const short = await layout("C81");
   // A name long enough to need two lines.

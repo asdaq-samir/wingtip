@@ -240,11 +240,11 @@ function YouHead({ pilot, opens }: { pilot: Pilot | null; opens: boolean }) {
   const who = pilot && (
     <>
       {name ? (
-        <span className={cn("max-w-full truncate font-bold tracking-tight text-foreground", TEXT.hero)} data-testid="you-name">
+        <span className={cn("max-w-full truncate font-bold text-foreground", TEXT.hero)} data-testid="you-name">
           {name}
         </span>
       ) : (
-        <span className={cn("max-w-full truncate font-bold tracking-tight text-tint", TEXT.hero)} data-testid="you-name">
+        <span className={cn("max-w-full truncate font-bold text-tint", TEXT.hero)} data-testid="you-name">
           Add Your Name
         </span>
       )}

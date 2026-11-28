@@ -1,5 +1,4 @@
-"""Search boxes in degrees that hold across the antimeridian (the
-edge-places audit's S10, 2026-11-21).
+"""Search boxes in degrees that hold across the antimeridian.
 
 A box of (south, west, north, east) is how the planner cuts the FAA's
 obstacles, airspace, TFRs, fixes and the weather's stations down to a
@@ -12,7 +11,7 @@ is worked out with every longitude within 180 degrees of the first
 (wingtip_core::geo::lon_near's rule, the short way round as the geodesic
 goes), so it may pass -180 or 180, and whatever reads data with it reads
 it as the one or two boxes it is between -180 and 180 (`split_box`,
-route_options' own since the routes audit's P12): `in_box` and `meets`.
+route_options' own): `in_box` and `meets`.
 A box that does not reach 180, every route in the 48 states, is the one
 box wingtip.geo gives, to the bit, and is read as it always was.
 

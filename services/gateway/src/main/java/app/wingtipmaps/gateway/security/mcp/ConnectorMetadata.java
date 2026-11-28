@@ -33,6 +33,12 @@ final class ConnectorMetadata {
                     scopes.clear();
                     scopes.addAll(ConnectorSettings.SCOPES);
                 })
+                // A public client revokes its own tokens by its id alone
+                // (PublicRefresh), which Spring's default list left out.
+                .tokenRevocationEndpointAuthenticationMethods(methods -> {
+                    methods.clear();
+                    methods.add(ClientAuthenticationMethod.NONE.getValue());
+                })
                 .claims(claims -> {
                     // Nothing here introspects; the planner checks tokens by signature.
                     claims.remove("introspection_endpoint");

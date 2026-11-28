@@ -17,4 +17,12 @@ describe("the route to ForeFlight", () => {
     expect(foreflightRoute(named, 4500, true)).toBe("foreflightmobile://maps/search?q=C81+CONTPACK@BANGS_LAKE+VPBNG+KDLH+4500ft");
     expect(foreflightRoute(named, 4500)).toContain("+42.3700/-88.0800+");
   });
+
+  it("the airplane's position, no identifier ForeFlight finds, at its place", () => {
+    const fromHere: PlanPoint[] = [
+      { ident: "@42.2341,-87.9877,700", name: "POS0", kind: "fix", lat: 42.2341, lon: -87.9877 },
+      ...points.slice(2),
+    ];
+    expect(foreflightRoute(fromHere, null)).toBe("foreflightmobile://maps/search?q=42.2341/-87.9877+VPBNG+KDLH");
+  });
 });

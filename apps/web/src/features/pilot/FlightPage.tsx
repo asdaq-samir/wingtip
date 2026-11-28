@@ -2,14 +2,14 @@
 import { Suspense, lazy, useMemo, useState, type ReactNode } from "react";
 import { FileTrigger } from "react-aria-components";
 import { Pressable } from "react-aria/Pressable";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import ConsoleClose from "../../components/ConsoleClose";
 import { api } from "../../lib/api/client";
 import type { Flight, FlightSummary } from "../../lib/api/types";
-import { debrief } from "./debrief";
+import { debriefQuery } from "./debrief";
 import { Findings } from "./FlightFindings";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../lib/frat";
 import { TEXT } from "../../lib/text";
@@ -20,7 +20,6 @@ import { dayMonthTime, dayMonthYear, feet, gal, grouped, hm, localDay, nm } from
 import { reviewState, said } from "../../lib/endorsements";
 import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
 import { FINDING_TONE } from "../../lib/findings";
-import { airportQuery } from "../../lib/queryClient";
 import { trainingQuery } from "../../lib/queryClientRecords";
 import { proceduresOf, sameField } from "../../lib/procedures";
 import { FieldError } from "../../components/ui/field";
@@ -47,22 +46,9 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
     () => local ?? (saved.data ? { source: saved.data.source, points: saved.data.points } : null),
     [local, saved.data],
   );
-  const fields = [
-    ...new Set(flight.checkpoints.filter((c) => ["departure", "stop", "destination"].includes(c.category)).map((c) => c.name)),
-  ];
-  const places = useQueries({ queries: fields.map(airportQuery) });
-  const patterns = Object.fromEntries(
-    fields.flatMap((ident, i) => {
-      const ft = places[i]?.data?.pattern?.altitude_ft;
-      return ft == null ? [] : [[ident, ft]];
-    }),
-  );
-  const patternKey = JSON.stringify(patterns);
-  const result = useMemo(
-    () => (track ? debrief(flight, track.points, patterns) : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `patterns` by its contents
-    [flight, track, patternKey],
-  );
+  // The planner's debrief, with the fields' pattern altitudes their cards give.
+  const debriefed = useQuery({ ...debriefQuery(flight, track?.points ?? []), enabled: !!track });
+  const result = debriefed.data ?? null;
 
   const save = useMutation({
     mutationFn: (t: Track) => api.flights.saveTrack(flight.id, t),
@@ -166,7 +152,12 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
           {problem ?? (save.error ?? unsave.error)?.message}
         </FieldError>
       )}
-      {track && !result && (
+      {debriefed.error && (
+        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+          The debrief could not be worked out: {debriefed.error.message}
+        </FieldError>
+      )}
+      {track && debriefed.isSuccess && !result && (
         <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>No flight in this track: it never went faster than taxiing.</p>
       )}
       {result && <Findings d={result} />}

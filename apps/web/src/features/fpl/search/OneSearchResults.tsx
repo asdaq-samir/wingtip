@@ -57,7 +57,7 @@ function lined<T>(items: T[], key: (item: T) => string, row: (item: T) => ReactN
  * rule: where it happens).
  */
 export default function OneSearchResults({ model }: { model: OneSearchModel }) {
-  const { airports, waypoints, airplanes, does, answered, direct, typed, problem, actionable } = model;
+  const { airports, waypoints, airplanes, does, answered, airportsAnswered, direct, typed, problem, actionable } = model;
   // A mouse resting on an airport's row: its preview beside the panel
   // (the owner, 2026-11-09: hover previews on pointer devices only).
   const hover = usePointerHover();
@@ -83,6 +83,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
         key={r.ident}
         value={r.ident}
         icon={<AirportIcon ident={r.ident} name={r.name} kept={top} />}
+        iconWidth="mark"
         title={
           <>
             <span className="font-mono">
@@ -181,7 +182,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   );
 
   // The groups in Apple's order, a hairline between each two as between rows.
-  const groups: { heading: string; rows: ReactNode }[] = [];
+  const groups: { heading: string; rows: ReactNode; waiting?: boolean }[] = [];
   if (topAirport) groups.push({ heading: direct ? WORDING.directTo : "Top Hit", rows: airportRow(topAirport, true) });
   else if (topAirplane) groups.push({ heading: "Top Hit", rows: airplaneRow(topAirplane, true) });
   if (asks.length > 0) groups.push({ heading: "Suggestions", rows: lined(asks, (d) => d.key, doRow) });
@@ -197,6 +198,9 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   if (waypoints.length > 0)
     groups.push({
       heading: "Waypoints and Navaids",
+      // Still asked of the planner while the airports are in: this group
+      // dims alone, not the whole list at each letter.
+      waiting: airportsAnswered && !answered,
       rows: lined(
         waypoints,
         (r) => r.ident,
@@ -238,27 +242,33 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
 
   return (
     // Its sides the page's own sixteen (TabPage), where its own sixteen
-    // more put the list 32 in (the sheet audit's F-P1).
+    // more put the list 32 in.
     <div className="flex flex-col gap-2 pt-2 pb-4" data-testid="one-search-results">
       {problem && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{problem}</FieldError>}
       {unheard && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{unheard}</FieldError>}
-      <CommandList
-        className={cn("max-h-none overflow-hidden rounded-2xl bg-card p-0", none && "bg-transparent", !answered && "opacity-60")}
-        aria-busy={!answered}
-        aria-label="Search results"
-      >
-        {groups.map((g, i) => (
-          <Fragment key={`${i}-${g.heading}`}>
-            {i > 0 && <RowLine />}
-            <ResultGroup heading={g.heading}>{g.rows}</ResultGroup>
-          </Fragment>
-        ))}
+      {/* The list holds its groups alone, as a listbox may (axe's
+          aria-required-children): the hairline between two groups is the
+          group's own (ResultGroup's lined), and the status follows the
+          list, in one block with it so the page's gap is not added under
+          the list. */}
+      <div>
+        <CommandList
+          className={cn("max-h-none overflow-hidden rounded-2xl bg-card p-0", none && "bg-transparent", !airportsAnswered && "opacity-60")}
+          aria-busy={!answered}
+          aria-label="Search results"
+        >
+          {groups.map((g, i) => (
+            <ResultGroup key={`${i}-${g.heading}`} heading={g.heading} lined={i > 0} className={cn(g.waiting && "opacity-60")}>
+              {g.rows}
+            </ResultGroup>
+          ))}
+        </CommandList>
         {/* Base UI's status, kept mounted so VoiceOver hears "Nothing
             found" as it comes; empty while there are rows. */}
         <CommandEmpty className={cn("px-1 text-muted-foreground", TEXT.prose)}>
           {none && (direct && !typed ? "Type an airport's ident or name." : answered ? "Nothing found." : "Searching…")}
         </CommandEmpty>
-      </CommandList>
+      </div>
     </div>
   );
 }

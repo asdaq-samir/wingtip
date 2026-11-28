@@ -65,9 +65,14 @@ class InFlight {
     var terrainFt: Double? = null
 
     /** The airplane's own glide ratio (AirplaneNow: the pilot's over its book's), the ring's;
-     *  none, no ring. */
-    @Volatile
-    var glideRatio: Double? = null
+     *  none, no ring. Kept as a flow too, so the Nearest rows' glide
+     *  (FlightModel.reaches) is worked again when it changes, not only
+     *  at the next fix. */
+    private val _glideRatio = MutableStateFlow<Double?>(null)
+    val glideRatios: StateFlow<Double?> = _glideRatio.asStateFlow()
+    var glideRatio: Double?
+        get() = _glideRatio.value
+        set(value) { _glideRatio.value = value }
 
     /** Whether the map shows the glide ring (GlideRing.shown): the engine
      *  is asked for it only then, not at every fix for nothing. */
@@ -107,8 +112,9 @@ class InFlight {
     private val altitudes = ArrayDeque<Pair<Double, Double>>()
 
     /** The fix taken: the instruments worked out again from it and the
-     *  plan. A null fix (own ship off) clears them. */
-    fun took(fix: OwnShip.Fix?, plan: Plan.State, nowMs: Long = AppClock.nowMs()) {
+     *  plan. A null fix (own ship off) clears them. `known` is the engine's
+     *  `underway` already asked for this fix (OwnShip.underwayOf). */
+    fun took(fix: OwnShip.Fix?, plan: Plan.State, nowMs: Long = AppClock.nowMs(), known: Result<Boolean>? = null) {
         if (fix == null) {
             altitudes.clear()
             _state.value = State()
@@ -123,7 +129,7 @@ class InFlight {
         }
         val vs = Engine.verticalSpeed(altitudes.map { EngineContract.VerticalSpeedInputSamplesItem(it.first, it.second) })
         val glide = if (ringShown) Engine.glideRing(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt, glideRatio) else Result.success(null)
-        val underway = OwnShip.underway(fix.groundspeedKt)
+        val underway = known ?: OwnShip.underway(fix.groundspeedKt)
         // Where the airplane is on the route only once it moves: parked,
         // the engine's answer is never on the route (ON_ROUTE_NM needs
         // motion), the strip shows the planned totals, and the whole line
@@ -198,7 +204,7 @@ class InFlight {
         /** The route's half of the engine's `in_flight`: the fields in
          *  order (the departure, the stops, the destination) are its
          *  waypoints. The fuel is the engine's from the last fuel stop
-         *  passed (the aviation audit's AV-4): the tanks filled to the
+         *  passed: the tanks filled to the
          *  plan's usable fuel at each stop a hop of the planner's totals
          *  begins at (`refuel_at`), less the airplane's start and taxi
          *  allowance (the totals' taxi_gal; none where its profile gives

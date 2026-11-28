@@ -3,6 +3,8 @@ import { create } from "zustand";
 import type { ProcedureDrawing } from "../../lib/api/types";
 import { persist } from "zustand/middleware";
 import { usePreferences } from "../../lib/preferences";
+import { useDarkTheme } from "../../lib/map/gl/useDarkTheme";
+import { CHART_LOOK } from "../../lib/tokens";
 
 /** A d-TPP approach page's shape as the planner draws it: its room in
  *  the card beside the map before the page comes, so nothing moves. */
@@ -10,17 +12,18 @@ export const PLATE_SHAPE = "387 / 594";
 
 /** How solid a plate's page is at first: enough to read the plate, the
  *  chart still faintly under it, as ForeFlight opens one on the map
- *  (the iPhone's and Android's PlateLook, the same figure). */
-export const PLATE_OPACITY = 0.85;
+ *  (design/tokens.json's chart-look, the phones' PlateLook's figure too). */
+export const PLATE_OPACITY = CHART_LOOK.plateOpacity;
 /** Never wholly clear: a page at nought would still take the map's taps
  *  with nothing on the screen to show for it. */
-export const LEAST_PLATE_OPACITY = 0.1;
+export const LEAST_PLATE_OPACITY = CHART_LOOK.plateLeastOpacity;
 
 interface PlateLook {
   /** The page's opacity, clear (LEAST_PLATE_OPACITY) to solid (1). */
   opacity: number;
-  /** White on black, for the night. */
-  inverted: boolean;
+  /** White on black: the pilot's own choice, or null to follow the
+   *  app's appearance (dark at night). */
+  inverted: boolean | null;
   /** The tags on the approach's fixes and its final segment marked. */
   annotations: boolean;
   setOpacity: (opacity: number) => void;
@@ -38,7 +41,7 @@ export const usePlateLook = create<PlateLook>()(
   persist(
     (set) => ({
       opacity: PLATE_OPACITY,
-      inverted: false,
+      inverted: null,
       annotations: true,
       setOpacity: (opacity) => set({ opacity: Math.min(1, Math.max(LEAST_PLATE_OPACITY, opacity)) }),
       setInverted: (inverted) => set({ inverted }),
@@ -46,11 +49,36 @@ export const usePlateLook = create<PlateLook>()(
     }),
     {
       name: "wingtip.plateLook",
-      version: 1,
+      // Version 2: a plate follows the appearance until the pilot picks.
+      // Version 1 kept "false" for every pilot who never touched the switch,
+      // which drew a white plate on the night's dark map; that kept false is
+      // read as no choice.
+      version: 2,
+      migrate: migratePlateLook,
       partialize: (s) => ({ opacity: s.opacity, inverted: s.inverted, annotations: s.annotations }),
     },
   ),
 );
+
+type KeptPlateLook = Pick<PlateLook, "opacity" | "inverted" | "annotations">;
+
+/** A kept plate look read after an update (persist's migrate): before
+ *  version 2 a kept "false" is read as no choice, so the plate follows
+ *  the appearance (usePlateInverted). */
+export function migratePlateLook(kept: unknown, version: number): KeptPlateLook {
+  const was = { opacity: PLATE_OPACITY, inverted: null, annotations: true, ...(kept as Partial<KeptPlateLook> | null) };
+  return version < 2 && was.inverted === false ? { ...was, inverted: null } : was;
+}
+
+/** Whether a plate is drawn white on black: the pilot's own choice, else
+ *  the app's dark appearance, as the reader's pages are (useReader), so a
+ *  plate at night is never a white page on the dark map, which would undo
+ *  the pilot's dark adaptation (AIM 8-1-6, Vision in Flight). */
+export function usePlateInverted(): boolean {
+  const chosen = usePlateLook((s) => s.inverted);
+  const dark = useDarkTheme();
+  return chosen ?? dark;
+}
 
 /** A plate's key, its field and its procedure: "KOSH:I36". */
 export const plateKey = (airport: string, id: string) => `${airport}:${id}`;

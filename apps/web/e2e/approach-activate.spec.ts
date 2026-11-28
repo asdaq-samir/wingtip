@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { openRoute, openTab, settle, settled, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
-import { DRAWN, LIST } from "./procedureStubs";
+import { DRAWN, LIST, pickTransition, unfoldProcedure } from "./procedureStubs";
 
 // The owner's load-then-activate (2026-11-22), as a GPS navigator has it:
 // an approach picked loads as a box off the route's line, Activate joins it
@@ -50,31 +50,48 @@ test("an approach picked loads off the line, is activated onto it and back off, 
   let kdlh = await destination(page);
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   const menu = page.getByTestId("procedure-menu");
-  await menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" }).click();
-  await page.getByTestId("procedure-menu-transition").filter({ hasText: "From DLH" }).click();
+  // Where the runway the wind picked has no approach the menu opens on
+  // every runway's (2026-11-26): Runway 9's page first.
+  const ils = menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" });
+  const runway9 = menu.getByTestId("procedure-menu-runway").filter({ hasText: "Runway 9" });
+  await expect(ils.or(runway9)).toBeVisible({ timeout: slow(10000) });
+  if (await runway9.isVisible()) await runway9.click();
+  await ils.click();
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09/);
+  await pickTransition(kdlh, "approach", "From DLH");
   // Loaded: in the address with its "L", a box of its fixes, none on the line.
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
   kdlh = await destination(page);
+  // Its box behind its pill on the ground, unfolded by a tap (2026-11-23).
+  await unfoldProcedure(kdlh, "approach");
   const loaded = kdlh.getByTestId("approach-loaded");
-  await expect(loaded).toContainText("ILS · RWY 09", { timeout: slow(20000) });
+  // Its name in its own words, apart from the transition beside it (the
+  // pill's face, TimelineProcedureRows), whose text runs on with no space.
+  await expect(loaded.getByTestId("procedure-name").locator(":scope > span").first()).toHaveText(/\bILS\b/, { timeout: slow(20000) });
   await expect(loaded).toContainText("FAKER");
   await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toHaveCount(0);
   // Activated: on the magenta line, its fixes points of the route.
   await loaded.getByTestId("approach-activate").click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
+  await unfoldProcedure(kdlh, "approach");
   const onLine = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
   await expect(onLine.getByTestId("fix-branch-row").filter({ hasText: "FAKER" })).toBeVisible();
   await expect(kdlh.getByTestId("approach-loaded")).toHaveCount(0);
-  // Deactivated: back in its box, off the line.
-  await onLine.getByTestId("approach-deactivate").click();
+  // Deactivated from its menu, the "•••" at its head (2026-11-24): back off the line, dashed.
+  await onLine.getByTestId("procedure-kind").first().click();
+  await page.getByTestId("procedure-menu-deactivate").click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
+  await unfoldProcedure(kdlh, "approach");
   await expect(kdlh.getByTestId("approach-loaded")).toBeVisible();
   // Removed, and put back by the Undo toast: from a page opened on it, as
   // edits a moment apart are one step of the plan's history (SETTLE_MS).
   await page.goto(page.url());
   await settle(page);
   kdlh = await destination(page);
-  await kdlh.getByTestId("approach-remove").click();
+  await unfoldProcedure(kdlh, "approach");
+  // Taken out by its menu's No Approach, its pill on Landing's runway row (2026-11-25).
+  await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
+  await page.getByTestId("procedure-menu-none").click();
   await expect(page).not.toHaveURL(/[?&]procs=/);
   const bar = page.locator("[data-slot=toast]").filter({ hasText: "Procedure Removed" });
   await bar.getByRole("button", { name: "Undo" }).click();
@@ -88,6 +105,8 @@ test("an activated approach is suspended at its MAP until its missed approach is
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   const kdlh = await destination(page);
+  // On the ground its missed approach is behind the approach's pill (2026-11-23).
+  await unfoldProcedure(kdlh, "approach");
   const missed = kdlh.getByTestId("missed-approach");
   // Suspended: SUSP at the MAP, its legs dimmed in a box off the line.
   await expect(missed).toHaveAttribute("data-flown", "false", { timeout: slow(20000) });
@@ -98,9 +117,10 @@ test("an activated approach is suspended at its MAP until its missed approach is
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}M(&|$)/);
   await expect(missed).toHaveAttribute("data-flown", "true");
   await expect(missed.getByTestId("missed-fix-row").filter({ hasText: "MISSA" })).toBeVisible();
-  // Suspended again: off the line, the route ending at the runway.
+  // Suspended again: its fixes on a dashed line, not flown (the owner,
+  // 2026-11-24: "maybe a dashed line when not activated").
   await missed.getByTestId("missed-suspend").click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
   await expect(missed).toHaveAttribute("data-flown", "false");
-  await expect(missed.getByTestId("missed-fix-row")).toHaveCount(0);
+  await expect(missed.getByTestId("missed-fix-row").first().locator("[data-thread]")).toHaveAttribute("data-thread", "dashed");
 });

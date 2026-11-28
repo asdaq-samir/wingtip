@@ -6,18 +6,29 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
+import anyio
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
+from wingtip import airports
 
-from ..generated.planner_calls import airport_place, airport_procedures as procedures_at, airport_search, nearest_airports as nearest
-from .calls import METAR_SOURCE, editions, ident as ident_of, paged, pilot
+from ..schemas.devml import AirportSuggestion
+from ..generated.planner_calls import airport_place, airport_procedures as procedures_at, nearest_airports as nearest
+from .calls import METAR_SOURCE, as_data, editions, ident as ident_of, paged, pilot
 from .tool_meta import READS, read_only
 
 Ident = Annotated[str, Field(min_length=2, max_length=7, description="An airport's identifier: KDLH, DLH, C81.")]
+#: The fuels a field sells, as the nearest list names them (NASR APT_BASE's FUEL_TYPES).
+Fuel = Literal["100LL", "Jet A", "UL94"]
+#: The most fields the planner's nearest list answers (routers/airports).
+NEAREST_MOST = 25
 
 #: The card's weather, which airport_weather answers instead.
 WEATHER = ("metar", "nearby_metar", "modelled_weather", "taf", "weather_unavailable")
+
+
+#: The furthest search_airports pages, its offset's most.
+SEARCH_REACH = 500
 
 
 def register(server: MCPServer) -> None:
@@ -33,11 +44,38 @@ def register(server: MCPServer) -> None:
     async def search_airports(
         query: Annotated[str, Field(min_length=2, max_length=60, description="An identifier, an airport's name or its town.")],
         limit: Annotated[int, Field(ge=1, le=25, description="How many to answer, 1 to 25.")] = 10,
-        offset: Annotated[int, Field(ge=0, description="How many to skip, for the next page: the last answer's next_offset.")] = 0,
+        offset: Annotated[
+            int, Field(ge=0, le=SEARCH_REACH, description="How many to skip, for the next page: the last answer's next_offset.")
+        ] = 0,
     ) -> dict[str, Any]:
         pilot()
-        found = (await airport_search(q=query))["airports"]
-        return {"airports": found[offset : offset + limit], **paged(found, offset, limit), "sources": editions("nasr")}
+        # The search the app's own box runs (/api/airports/search's), asked
+        # for one more than this page: that endpoint answers its first 8,
+        # which made `total` and `has_more` say 8 was all. The total is said only once the last page is
+        # in sight; before it, there are more.
+        rows = await anyio.to_thread.run_sync(lambda: airports.search_airports(query, limit=offset + limit + 1))
+        # Each in the endpoint's own shape (its response model), closed
+        # fields labelled (decision 0043).
+        found = as_data([AirportSuggestion.model_validate(r).model_dump(exclude_none=True) for r in rows])
+        page = paged(found, offset, limit)
+        if page["has_more"]:
+            page["total"] = None
+        # The search pages no further than SEARCH_REACH: past it the last
+        # page says so, never a next_offset the tool would refuse (MCP's pagination, a null next page at the end).
+        # Its total is then the number that matched, counted once on this
+        # rare page, never null beside a has_more of false
+        # nor only the matches paged, which read as the full
+        # count.
+        if page["next_offset"] is not None and page["next_offset"] > SEARCH_REACH:
+            reach = page["next_offset"]
+            total = await anyio.to_thread.run_sync(lambda: airports.count_airports(query))
+            page |= {
+                "has_more": False,
+                "next_offset": None,
+                "total": total,
+                "note": f"Only the first {reach} matches are paged: give more of the name.",
+            }
+        return {"airports": found[offset : offset + limit], **page, "sources": editions("nasr")}
 
     @server.tool(
         name="airport_info",
@@ -86,7 +124,9 @@ def register(server: MCPServer) -> None:
         name="nearest_airports",
         description="The landing fields nearest a position or an airport, nearest first: distance (nm) and true "
         "bearing, longest open runway, a frequency to call inbound, flight category where it reports, and the class "
-        "of airspace at the surface. Filter by runway length, towered fields, or public-use fields.",
+        "of airspace at the surface, the fuels sold and whether it has an instrument approach. Filter by runway "
+        "length, fuel, an instrument approach, towered fields, or public-use fields. Only the nearest 25 are "
+        "searched: `searched_nm` says how far that reached.",
         title="Nearest airports",
         annotations=read_only("Nearest airports"),
         meta=READS,
@@ -99,6 +139,8 @@ def register(server: MCPServer) -> None:
         min_runway_ft: Annotated[int | None, Field(ge=0, le=20000, description="Longest open runway at least this, feet.")] = None,
         towered_only: Annotated[bool, Field(description="Only fields with a control tower.")] = False,
         public_only: Annotated[bool, Field(description="Leave out private and military fields.")] = False,
+        fuel: Annotated[Fuel | None, Field(description="Only fields that sell this fuel: 100LL, Jet A, UL94.")] = None,
+        instrument_approach_only: Annotated[bool, Field(description="Only fields with an instrument approach (CIFP).")] = False,
     ) -> dict[str, Any]:
         pilot()
         own = None
@@ -108,20 +150,31 @@ def register(server: MCPServer) -> None:
         if lat is None or lon is None:
             raise ToolError("Say where: give `near` (an airport identifier) or both `lat` and `lon`.")
         # The planner's most, filtered here: its list is nearest first.
-        found = (await nearest(lat=lat, lon=lon, limit=25))["airports"]
+        found = (await nearest(lat=lat, lon=lon, limit=NEAREST_MOST))["airports"]
         kept = [
             a
             for a in found
             if (min_runway_ft is None or (a.get("longest_runway_ft") or 0) >= min_runway_ft)
-            # The nearest list's tower is its inbound radio's (its `towered`
-            # is the map pin's, which this list leaves unset).
+            # Towered by the nearest list's `towered` (the field in the FAA's
+            # list of towers, routers/airports.py) or its inbound radio's kind.
             and (not towered_only or a.get("towered") or (a.get("radio") or {}).get("kind") == "TWR")
             and (not public_only or (not a.get("private") and a.get("military") != "military"))
+            and (fuel is None or fuel in (a.get("fuel") or []))
+            and (not instrument_approach_only or a.get("instrument_approach") is True)
             # The field searched around is not its own alternative.
             and a.get("ident") != own
         ]
+        reach = max((a.get("distance_nm") or 0 for a in found), default=0)
+        few = len(kept) < limit and len(found) >= NEAREST_MOST
         return {
             "airports": [{k: v for k, v in a.items() if v is not None} for a in kept[:limit]],
             "searched": len(found),
+            "searched_nm": round(reach, 1),
+            # A filter that leaves few of the nearest 25 says so, so the
+            # model does not take them for every field round there.
+            "note": f"Only the {len(found)} nearest fields, out to {reach:.0f} nm, were searched: a farther one may match; "
+            "search near another airport to widen it."
+            if few
+            else None,
             "sources": [*editions("nasr"), METAR_SOURCE],
         }

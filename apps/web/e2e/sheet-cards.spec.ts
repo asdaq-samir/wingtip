@@ -48,7 +48,7 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   // mobile, run 45127491141; the nav log held 3.5 s here gives the same
   // 0.017 from the same three boxes).
   // (Its first leg's course, Crs, where the estimate's Trk had none.)
-  await expect(page.locator("[data-pin-foot]").first().locator("dt").last()).toContainText("Crs", { timeout: slow(30_000) });
+  await expect(page.locator("[data-foot-strip]").first().locator("dt").last()).toContainText("Crs", { timeout: slow(30_000) });
 
   // From the pill: the card half way up over it, the panel left at the pill.
   await expectDrawnOnce(page, () => openMapSettings(page), { card: "map-settings", maxMoves: 0 });
@@ -152,7 +152,7 @@ test("the Map card's gear opens Settings over it at Map, and Settings' close goe
   await expect(card.getByTestId("map-settings-more")).toHaveCount(0);
 });
 
-test("the approaches' pull-down is a card in the sheet, and the list it opens takes its place there", async ({ page }) => {
+test("the approaches' menu opens the field's whole list as a card in the sheet", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 660, "a phone's card; wider it is a popover");
   await page.route(
     (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
@@ -166,11 +166,9 @@ test("the approaches' pull-down is a card in the sheet, and the list it opens ta
   await openRoute(page);
   const arrive = panel.getByRole("region", { name: "KDLH · Arrive" });
   await arrive.locator("[data-testid=procedure-kind][data-kind=approach]").click({ timeout: slow(30000) });
-  const menu = panel.getByTestId("procedure-menu");
+  // The stock dropdown (2026-11-25), as the runway's pill opens.
+  const menu = page.getByTestId("procedure-menu");
   await expect(menu).toBeVisible();
-  await expect(menu).toHaveAttribute("data-sheet-card", "");
-  // The route's list under it, kept out of sight.
-  await expect(arrive).toBeHidden();
   // Its foot opens the field's whole list, a card of its own in its place.
   await page.getByTestId("procedure-menu-all").click();
   await expect(menu).toHaveCount(0);

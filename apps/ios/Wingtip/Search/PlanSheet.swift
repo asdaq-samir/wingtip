@@ -35,8 +35,7 @@ struct PlanSheet: View {
                     // FPL, hidden and at no opacity, the List's rows (UIKit's
                     // collection view) were still read by VoiceOver and the
                     // audit over FPL, "Recents" at its top, whatever
-                    // accessibilityHidden said (the accessibility audit,
-                    // 2026-11-21).
+                    // accessibilityHidden said.
                     if nav.sheetPage == .search {
                         BrowseSections(nearest: search.nearest, pick: browse)
                     }
@@ -69,7 +68,7 @@ struct PlanSheet: View {
         .onChange(of: search.presented) { _, up in if up { nav.sheetPage = .search } }
         // Search left (the toggle, a route shown): the search put
         // away and the keyboard with it, what was typed kept for the way
-        // back (the web's sheet audit, 2026-11-12).
+        // back.
         .onChange(of: nav.sheetPage) { _, page in if page != .search, search.presented { search.presented = false } }
         // A route made (Fly Here, a link, a saved flight, typed): the FPL
         // page; a route cleared leaves the page where it is.

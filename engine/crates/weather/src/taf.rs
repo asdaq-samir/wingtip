@@ -9,7 +9,6 @@
 
 use crate::metar::{self, Layer, Wind};
 use crate::time;
-use wingtip_core::units::M_PER_SM;
 
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct Period {
@@ -96,7 +95,8 @@ fn weather_of(p: &mut Period, words: &[&str]) {
             p.visibility_sm = metar::statute_miles(w, None).map(|(v, _)| v);
         } else if p.visibility_sm.is_none() && digits(w, 4) {
             let metres: f64 = w.parse().unwrap();
-            p.visibility_sm = Some(if metres >= 9999.0 { 6.0 } else { metres / M_PER_SM });
+            // One conversion for METAR and TAF alike (metar::metric_sm): 1,600 m is 1 sm in both.
+            p.visibility_sm = Some(if metres >= 9999.0 { 6.0 } else { metar::metric_sm(metres) });
         } else if w == "NSW" {
             p.weather.push(w.to_string());
         } else if let Some(cover) = sky(w) {
@@ -255,5 +255,14 @@ mod tests {
         assert_eq!((t.periods[0].ceiling_ft(), t.periods[0].ceiling_unknown()), (None, true));
         // Above a scattered layer of known height it is still the ceiling, and not known.
         assert_eq!((t.periods[1].ceiling_ft(), t.periods[1].ceiling_unknown()), (None, true));
+    }
+
+    #[test]
+    fn metric_visibility_reads_as_a_metars_does() {
+        // 1,600 m is 1 sm in a TAF as in a METAR (metar::metric_sm), not 0.994.
+        let near = time::days_from_civil(2026, 11, 2) * time::DAY_S + 12 * 3600;
+        let t = parse("TAF EGLL 021120Z 0212/0312 27012KT 1600 BR BKN004", near).unwrap();
+        assert_eq!(t.periods[0].visibility_sm, Some(1.0));
+        assert_eq!(t.periods[0].visibility_sm, Some(metar::metric_sm(1600.0)));
     }
 }

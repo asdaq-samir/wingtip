@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from tests_wingtip.test_registry import MASTER_HEADER, _master
-from wingtip import aircraft_details, registry, registry_history, traffic
+from wingtip import aircraft_details, registry, registry_history, stores, traffic
 from wingtip.history import ntsb
 
 DEREG_HEADER = (
@@ -134,6 +134,15 @@ def test_past_registrations_of_the_airframe_and_of_the_n_number(directory):
     assert past[2]["status"] == "Registration expired"
 
 
+def test_an_n_number_with_no_registration_in_effect_is_its_last_canceled_one(directory):
+    # The owner's N6460R read "Not registered" and nothing more (2026-11-27).
+    found = registry.lookup(n_number="N4512R", directory=directory)
+    assert (found["manufacturer"], found["model"], found["year"]) == ("Piper", "PA-28-140", 1971)
+    assert (found["status"], found["standing"], found["last_action"], found["expires"]) == ("Deregistered", "lapsed", "1999-03-01", None)
+    assert found["seats"] == 4  # the reference model's, its engine none in this fixture's DEREG row
+    assert registry.lookup(n_number="N999ZZ", directory=directory) is None
+
+
 def test_documents_and_a_reservation(directory):
     (doc,) = registry_history.documents(directory / registry.DB_NAME, "N654FL")
     assert (doc["kind"], doc["received"]) == ("Evidence of ownership", "2026-11-05")
@@ -143,8 +152,8 @@ def test_documents_and_a_reservation(directory):
 
 
 def test_an_older_registry_file_is_read_again(directory, tmp_path):
-    assert registry.schema(directory / registry.DB_NAME) == registry.SCHEMA
-    assert registry.schema(tmp_path / "none.sqlite") == 0
+    assert stores.version(directory / registry.DB_NAME) == registry.SCHEMA
+    assert stores.version(tmp_path / "none.sqlite") == 0
 
 
 def test_the_card_gathers_every_part(directory, monkeypatch):
@@ -161,7 +170,7 @@ def test_the_card_gathers_every_part(directory, monkeypatch):
 
 
 @pytest.mark.skipif(
-    not (RAW / registry.DB_NAME).exists() or registry.schema(RAW / registry.DB_NAME) != registry.SCHEMA,
+    not (RAW / registry.DB_NAME).exists() or stores.version(RAW / registry.DB_NAME) != registry.SCHEMA,
     reason="the FAA's registry is not read on this machine in this shape",
 )
 def test_the_real_registry_has_every_part():

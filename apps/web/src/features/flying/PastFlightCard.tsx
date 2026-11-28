@@ -1,18 +1,18 @@
 import { Suspense, lazy, memo, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
-import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { Gauge, MoveVertical, PlaneLanding, PlaneTakeoff, Route, Timer } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { CardHead } from "../../components/CardHead";
 import { SheetCard } from "../../components/SheetCard";
 import { RowBadge } from "../../components/RowBadge";
-import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../lib/api/types";
+import type { PastFlights, PastFlightSummary } from "../../lib/api/types";
 import { clockTime, feet, knots, wholeNm } from "../../lib/format";
 import { compassPoint } from "../../lib/compass";
 import { useGeo } from "../../lib/geo";
 import { callEngine } from "../../lib/engine/engine";
-import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../plan";
+import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight, type ReplayPoint } from "../plan";
 import { useThreeD } from "../../lib/extras";
 import { CameraMenu, ReplayTimeline } from "../replay";
 import { setReplayCamera } from "../../lib/replay/camera/cameraStore";
@@ -20,7 +20,7 @@ import { BADGE } from "../../lib/rowBadges";
 import { TEXT } from "../../lib/text";
 import { altFt, bearing, grouped } from "../../lib/format";
 import { dayOf, lasted, legOf, statusOf, when } from "../../components/airplane/pastFlightFormat";
-import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
+import { pastFlightQuery, pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
 import { loadPastFlightChart } from "../navlog";
 
 /** The track log's rows shown before "All reports" is asked for. */
@@ -48,6 +48,10 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
     .flatMap((page) => page.flights ?? []);
   const flight = [...(data?.pages.flatMap((page) => page.flights ?? []) ?? []), ...held].find((f) => f.id === id) ?? null;
   const points = usePastFlight((s) => s.points);
+  // Its path from the planner (the map's PastFlightPath asks the same):
+  // none to be had, an older OpenSky flight's, said so in the player's
+  // place (N654FL's of 4 Nov, an empty player, 2026-11-27).
+  const { isError: noPath } = useQuery(pastFlightQuery(hex, id));
   const off = when(flight?.off ?? id);
   return (
     // At half as it opens, as every card does (the owner, 2026-11-11).
@@ -56,8 +60,7 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
         name={flight ? legOf(flight) : "Flight"}
         nameTestId="past-flight-name"
         // Its day, times and how it ended the line under its name, in sight
-        // at the pill too (the card rule's 10; the selection audit,
-        // 2026-11-18: it scrolled away with the body).
+        // at the pill too (the card rule's 10; it scrolled away with the body).
         sub={flight ? `${dayOf(off)} · ${clockTime(off)}–${clockTime(when(flight.on))} · ${statusOf(flight)}` : dayOf(off)}
         onClose={onClose}
         closeTestId="past-flight-close"
@@ -66,7 +69,13 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
           plays at the half sheet, at the pilot's ask; the figures and each
           report under. */}
       <div className="space-y-5 pt-3">
-        <Replay />
+        {noPath ? (
+          <ListGroup>
+            <ListRow muted title="Its path can't be had now, so there is nothing to replay." data-testid="past-flight-no-path" />
+          </ListGroup>
+        ) : (
+          <Replay />
+        )}
         {flight && <Figures flight={flight} points={points} />}
         {flight?.destination && points.length > 1 && <ApproachRow ident={flight.destination.ident} points={points} />}
         {points.length > 1 && <TrackLog points={points} />}
@@ -76,7 +85,7 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
 }
 
 /** Off and on, how long, how high, how far over the ground and how fast. */
-function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFlightPoint[] }) {
+function Figures({ flight, points }: { flight: PastFlightSummary; points: ReplayPoint[] }) {
   // The miles flown are the engine's (lib/geo): their rows wait for it.
   const geo = useGeo();
   const flown = useMemo(() => geo?.legsNm(points).reduce((sum, nm) => sum + nm, 0) ?? null, [geo, points]);
@@ -118,15 +127,18 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
         title="Time"
         value={value(lasted(flight.on - flight.off))}
       />
-      <ListRow
-        media={
-          <RowBadge colour={BADGE.weather}>
-            <MoveVertical />
-          </RowBadge>
-        }
-        title="Highest"
-        value={value(feet(flight.max_alt_ft))}
-      />
+      {/* None where its source gives no altitudes (the OpenSky Network's flights). */}
+      {flight.max_alt_ft != null && (
+        <ListRow
+          media={
+            <RowBadge colour={BADGE.weather}>
+              <MoveVertical />
+            </RowBadge>
+          }
+          title="Highest"
+          value={value(feet(flight.max_alt_ft))}
+        />
+      )}
       {points.length > 1 && flown !== null && (
         <>
           <ListRow
@@ -150,6 +162,8 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
           />
         </>
       )}
+      {/* Its source credited where it is not adsb.lol or this app's own recording. */}
+      {flight.source && <ListRow muted title={`Flight from the ${flight.source}`} data-testid="past-flight-source" />}
     </ListGroup>
   );
 }
@@ -180,7 +194,7 @@ function Replay() {
 /** Its height and ground speed over the flight, the replay's moment
  *  marked on it and said over it -- with the controls, so the graph is in
  *  sight as it plays at the half sheet, at the pilot's ask. */
-function ReplayChart({ points }: { points: PastFlightPoint[] }) {
+function ReplayChart({ points }: { points: ReplayPoint[] }) {
   const second = usePastFlight((s) => (s.at === null ? null : Math.floor(s.at)));
   const here = second === null ? null : positionAt(points, second);
   const box = useRef<HTMLDivElement>(null);
@@ -223,7 +237,7 @@ const ApproachDebriefs = lazy(() => import("../../components/ApproachDebrief"));
  * student's airplane can go over it after: at a tap, as it asks for the
  * field's procedures, each drawn.
  */
-function ApproachRow({ ident, points }: { ident: string; points: PastFlightPoint[] }) {
+function ApproachRow({ ident, points }: { ident: string; points: ReplayPoint[] }) {
   const [asked, setAsked] = useState(false);
   // Its reports as a track: seconds to ms, the height on the ground none.
   const track = useMemo(() => points.map((p) => ({ t: p.t * 1000, lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null })), [points]);
@@ -293,7 +307,7 @@ function useHalfFit(box: RefObject<HTMLDivElement | null>): number | null {
 
 /** Each report of the flight, as FlightAware's Track Log, in the figures a
  *  pilot uses (feet, knots, degrees, feet a minute). */
-function TrackLog({ points }: { points: PastFlightPoint[] }) {
+function TrackLog({ points }: { points: ReplayPoint[] }) {
   return (
     <ListGroup title="Track Log">
       <LogTable points={points} />
@@ -303,7 +317,7 @@ function TrackLog({ points }: { points: PastFlightPoint[] }) {
 
 /** Each report, a row: drawn again only when the reports change (memo),
  *  not with the replay's every second -- the chart above carries that. */
-const LogTable = memo(function LogTable({ points }: { points: PastFlightPoint[] }) {
+const LogTable = memo(function LogTable({ points }: { points: ReplayPoint[] }) {
   const [all, setAll] = useState(false);
   const rows = all ? points : points.slice(0, LOG_ROWS);
   return (

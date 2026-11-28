@@ -1,6 +1,6 @@
 package app.wingtipmaps.android.tiles
 
-import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.api.PlannerPaths
 
 /**
  * Where a chart kind's tiles come from, as the web app has it
@@ -42,6 +42,6 @@ data class TileTemplate(
         val density = if (scale == 1) "" else "@${scale}x"
         val base = tilesBase
         if (!base.isNullOrEmpty()) return "$base/$cycle/$kind/$z/$x/$y$density.png?r=$revision"
-        return "${Config.gateway}/api/planner/chart-tile/$kind/$z/$x/$y$density.png?c=$cycle&r=$revision"
+        return PlannerPaths.address(PlannerPaths.chartTile(kind, z, x, y, density)) + "?c=$cycle&r=$revision"
     }
 }

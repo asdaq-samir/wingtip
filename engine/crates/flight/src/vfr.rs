@@ -3,7 +3,7 @@
 //! the altitude plan's distance under a cloud base
 //! (wingtip_altitude::clouds), route options' fields under minimums and
 //! the briefing's "VFR flight not recommended" line. They were written
-//! out in each of those before (the aviation audit, 2026-11-08).
+//! out in each of those before.
 
 /// 91.155(c): no VFR beneath a ceiling lower than 1,000 ft within the
 /// lateral boundaries of the surface areas of controlled airspace

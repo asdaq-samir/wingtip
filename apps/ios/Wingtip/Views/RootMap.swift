@@ -5,9 +5,10 @@ import SwiftUI
 /// sheet or beside the iPad's sidebar (RootView). A view of its own, so
 /// what it reads as the flight goes -- the dry run, the traffic -- runs
 /// this body alone and leaves the root's, with its sheet, as it was. Own
-/// ship's fix itself is not read here (its height is `markedFt`), so a
-/// fix on the ground or in cruise runs neither this body nor the map's
-/// update, with its route and checkpoint comparisons.
+/// ship's fix itself is not read here (its height is `markedFt`, the
+/// hazard's `hazardFix`), so a fix on the ground or in cruise runs neither
+/// this body nor the map's update, with its route and checkpoint
+/// comparisons.
 struct RootMap: View {
     let layout: RootLayout
     /// The height of the map the sheet covers.
@@ -23,6 +24,8 @@ struct RootMap: View {
     /// The flight (FlightSession), its parts read where they are drawn.
     @Environment(FlightSession.self) private var flight
     @Environment(\.undoManager) private var undoManager
+    /// Which window this map is in, and whether it is the key one.
+    @State private var window = KeyWindow()
     /// This window runs the flight's loops (WindowLead): a second window
     /// on the iPad draws the same flight without running them again.
     @Environment(\.leadsLoops) private var leadsLoops
@@ -33,11 +36,13 @@ struct RootMap: View {
     @State private var fitRequest = 0
     // Setup's map switches (MapExtrasInput.Keys).
     @AppStorage(MapExtrasInput.Keys.waypoints) private var waypointsOn = false
-    @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
     @AppStorage(MapExtrasInput.Keys.plates) private var platesOn = true
     // The plate card's look (PlateLook.Keys), kept on the device.
     @AppStorage(PlateLook.Keys.opacity) private var plateOpacity = PlateLook.defaultOpacity
-    @AppStorage(PlateLook.Keys.inverted) private var plateInverted = false
+    @AppStorage(PlateLook.Keys.inverted) private var plateInverted: Bool?
+    // The plate's shade by the Dimmer is put on by ChartMap, which reads
+    // the Dimmer: read here, each step of its slider drew this body again.
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage(PlateLook.Keys.annotations) private var plateAnnotations = true
     // The Map card's Terrain Hazards (HazardRows); no clearance kept is the engine's default.
     @AppStorage(TerrainHazard.Keys.setting) private var hazardSetting = TerrainHazard.Setting.off
@@ -86,9 +91,12 @@ struct RootMap: View {
             extras: MapExtrasInput(
                 held: nav.heldRoute.flatMap { AirportRoute($0).heldPoint },
                 selectedField: nav.heldRoute.flatMap { AirportRoute($0).field },
-                waypoints: waypointsOn, classB: classBOn, plates: platesOn, approaches: plan.procedures,
+                waypoints: waypointsOn,
+                route: Set(plan.course.map { [$0.departure, $0.destination] + ($0.stops ?? []) }?.map(\.ident) ?? []),
+                plates: platesOn, approaches: plan.procedures,
                 hiddenPlates: HiddenPlates.shared.keys,
-                plateLook: PlateLook(opacity: plateOpacity, inverted: plateInverted, annotations: plateAnnotations),
+                plateLook: PlateLook(opacity: plateOpacity, annotations: plateAnnotations,
+                                     page: PageLook(inverted: PageLook.inverted(kept: plateInverted, dark: colorScheme == .dark))),
                 // A plate's page tapped: its card, half way up, as a field's.
                 onPlate: { key in nav.open(.plate(key)) },
                 // A finger held on the chart: the airspace there, half way
@@ -104,14 +112,15 @@ struct RootMap: View {
                 emergency: emergency.open != nil,
                 // Own ship's GPS in flight, the plan's cruise on the ground:
                 // the engine picks (TerrainHazard).
-                hazard: HazardInput(setting: hazardSetting, clearanceFt: hazardClearanceFt, speedKt: ownShip.fix?.groundspeedKt,
-                                    gpsFt: ownShip.fix?.altitudeFt, plannedFt: plan.altitudeFt)),
+                hazard: HazardInput(setting: hazardSetting, clearanceFt: hazardClearanceFt, speedKt: ownShip.hazardFix?.speedKt,
+                                    gpsFt: ownShip.hazardFix?.gpsFt, plannedFt: plan.altitudeFt)),
             // A tap on the course opens its nearest leg's card, that leg
             // cased in green while it is in sight (RouteLegView).
             routeLegs: RouteLegInput(
                 legs: plan.course != nil ? RouteLegModel.mapLegs(plan) : [],
                 selected: { if case .leg(let index) = nav.top { return index }; return nil }(),
-                onSelect: { index in nav.open(.leg(index)) }),
+                onSelect: { index in nav.open(.leg(index)) },
+                points: RouteLegModel.legPoints(plan)),
             // The route's fields worse by the flight's time there, and the
             // airplane's demonstrated crosswind for the wind barbs' red.
             fieldWeather: FieldWeatherInput(
@@ -192,10 +201,13 @@ struct RootMap: View {
             // The flight's own work while the map is up (FlightLoops), in
             // the lead window alone (MainWindow), behind the map.
             .background { if leadsLoops { Color.clear.modifier(FlightLoops()) } }
-            // The window's UndoManager for the route's history: shake to undo
-            // and the Edit menu (PlanHistory).
-            .onAppear { plan.undoManager = undoManager }
-            .onChange(of: undoManager) { _, manager in plan.undoManager = manager }
+            // The key window's UndoManager, where the route's steps are
+            // forwarded from, so shake to undo and the Edit menu reach the
+            // plan's one history (PlanHistory): the window the pilot is in
+            // hands over its own as it becomes the key one.
+            .keyWindow(window) { plan.windowUndo = undoManager }
+            .onAppear { if plan.windowUndo == nil || window.isKey { plan.windowUndo = undoManager } }
+            .onChange(of: undoManager) { _, manager in if window.isKey { plan.windowUndo = manager } }
             // The GPS at its best while the map follows the airplane (OwnShip.precise).
             .onChange(of: following, initial: true) { _, now in ownShip.mapFollows = now }
             // Siri listens for the fields the shortcuts' airport entity

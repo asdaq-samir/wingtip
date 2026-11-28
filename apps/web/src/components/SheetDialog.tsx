@@ -6,8 +6,7 @@ import { afterRouteDrawn } from "../lib/routeDrawn";
  *  AlertDialog, about 36 KB that the first load does not draw. Drawn
  *  straight from its module once it is in (fromChunk), where `lazy`
  *  suspended the first box opened once more, its chunk long fetched: FPL's
- *  fuel gauge's first sheet took 529 ms where the next took about 200 (the
- *  speed audit of 2026-11-21). */
+ *  fuel gauge's first sheet took 529 ms where the next took about 200. */
 const { Part: Body, prefetch: loadBody } = fromChunk(
   () => import("./SheetDialogBody"),
   (m) => m.default,

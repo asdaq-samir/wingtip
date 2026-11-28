@@ -1,9 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, drawn, grabberTo, settle, slow } from "./helpers";
+import { closeCard, drawn, grabberTo, settle, slow, withFoot } from "./helpers";
 import { sky } from "./trackingSky";
-import { extrasOn } from "./extras";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
-test.beforeEach(({ page }) => extrasOn(page, "otherAirplanes"));
 
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
@@ -54,10 +52,11 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
-  const card = page.getByTestId("flight-card");
+  const card = page.getByTestId("airplane-profile");
+  // Its flights are the Flights tab's, Info open first (the owner, 2026-11-27).
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await grabberTo(page, "full"); // from the pill's size, as every card opens
-  await card.getByTestId("flight-tab-flights").click(); // its flights, on their tab (C1)
-  await expect(card.getByTestId("flight-facts")).toBeHidden(); // the facts and pictures Info's alone (2026-11-14)
+  await expect(card.getByTestId("airplane-facts")).toBeVisible(); // over the pictures (2026-11-26)
   const rows = card.getByTestId("past-flight");
   await expect(rows).toHaveCount(2, { timeout: slow(15_000) });
   // FlightAware's row: how it ended and how long, then each end's field, its town and when.
@@ -103,7 +102,7 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   // Closed: back to the airplane's card, the path put away.
   await closeCard(page, "past-flight-close");
   await expect(page).not.toHaveURL(/[?&]past=/);
-  await expect(card.getByTestId("flight-earlier")).toBeVisible();
+  await expect(card.getByTestId("past-flights-section")).toBeVisible();
   await expect.poll(async () => (await drawn(page, "past-flight")).length).toBe(0);
 });
 
@@ -144,9 +143,10 @@ test("an airplane's last flights found are listed, the ones before them on askin
   );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
-  const card = page.getByTestId("flight-card");
+  const card = page.getByTestId("airplane-profile");
+  // Its flights are the Flights tab's, Info open first (the owner, 2026-11-27).
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await grabberTo(page, "full"); // from the pill's size, as every card opens
-  await card.getByTestId("flight-tab-flights").click(); // its flights, on their tab (C1)
   const rows = card.getByTestId("past-flight");
   await expect(rows).toHaveCount(2, { timeout: slow(15_000) });
   // The ones before, from where the list ends: before its last takeoff.
@@ -199,9 +199,10 @@ test("an airplane quiet for a fortnight is looked for further back by itself, an
   );
   await page.goto("/app/plan?flight=a0b7d8");
   await settle(page);
-  const card = page.getByTestId("flight-card");
+  const card = page.getByTestId("airplane-profile");
+  // Its flights are the Flights tab's, Info open first (the owner, 2026-11-27).
+  await withFoot(card).getByTestId("airplane-tab-flights").click();
   await grabberTo(page, "full"); // from the pill's size, as every card opens
-  await card.getByTestId("flight-tab-flights").click(); // its flights, on their tab (C1)
   await expect(card.getByTestId("past-flights-none")).toHaveText("No flights heard in the last six weeks", { timeout: slow(15_000) });
   expect(asked.map((q) => q.get("until"))).toEqual([null, "2026-09-28", "2026-09-14"]);
   await expect(card.getByTestId("past-flights-more")).toHaveCount(0);

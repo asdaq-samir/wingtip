@@ -18,7 +18,7 @@ nonisolated enum WingtipColor {
         static let routeGreen = rgb(0x52C41A)
         /// The route's green a shade deeper over the dimmed chart, so it does not glare.
         static let routeGreenNight = rgb(0x3F9A1C)
-        /// The thin edge round the course's magenta by day (white at 35% over the dimmed chart).
+        /// The thin edge round the course's magenta, by day and at night: at night it keeps the course 4.7:1 against the dimmed paper (a white edge gave 1.0:1).
         static let routeEdge = rgb(0x0B0F0A)
         /// A VFR waypoint's magenta, the sectional's: the one it draws a field with no tower in.
         static let waypoint = rgb(0xC0309F)
@@ -129,7 +129,8 @@ nonisolated enum WingtipColor {
         static let lifr = rgb(0xA371F7)
         /// LIFR as a chip's fill under white words: #a371f7 is 3.35:1 under white, this 6.4:1 (WCAG 1.4.3; the UI audit, 2026-11-09).
         static let lifrChip = rgb(0x7E3FB8)
-        static let unknown = rgb(0x8FA3B0)
+        /// A dot or mark with no report, 3:1 and more on every surface by day and at night (WCAG 1.4.11): 4.2:1 on white, 3.7:1 on the sheet, 3.0:1 on the night's muted, where #8fa3b0 was 2.6:1 on white and 2.3:1 on the sheet (the themes audit, 2026-11-27). Its words are the scheme's category-unknown-ink.
+        static let unknown = rgb(0x6B7F8C)
     }
     nonisolated enum Brand {
         /// Airspace Magenta, the ring round the mark.
@@ -372,6 +373,11 @@ nonisolated struct WingtipPalette: Sendable {
     let accentForeground: UIColor
     let destructive: UIColor
     let destructiveInk: UIColor
+    let categoryVfrInk: UIColor
+    let categoryMvfrInk: UIColor
+    let categoryIfrInk: UIColor
+    let categoryLifrInk: UIColor
+    let categoryUnknownInk: UIColor
     let border: UIColor
     let input: UIColor
     let ring: UIColor
@@ -428,8 +434,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0x171717),
         destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: rgb(0xE5E5E5),
-        input: rgb(0x8F8F8F),
+        input: rgb(0x808080),
         ring: rgb(0x0066CC),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -484,8 +495,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0xEEF3F9),
         destructive: rgb(0xFF7979),
         destructiveInk: rgb(0xFF7979),
+        categoryVfrInk: rgb(0x4AC26B),
+        categoryMvfrInk: rgb(0x6CB0FF),
+        categoryIfrInk: rgb(0xFF8A80),
+        categoryLifrInk: rgb(0xC297FF),
+        categoryUnknownInk: rgb(0xA9B8C4),
         border: rgb(0xFFFFFF, 0.1),
-        input: rgb(0xFFFFFF, 0.15),
+        input: rgb(0x808080),
         ring: rgb(0x57A8FF),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -540,6 +556,11 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0x000000),
         destructive: rgb(0xB3261E),
         destructiveInk: rgb(0x9C1C15),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: rgb(0x000000),
         input: rgb(0x333333),
         ring: rgb(0x0047A0),
@@ -558,6 +579,67 @@ nonisolated struct WingtipPalette: Sendable {
         outlineVariant: rgb(0xC3C9D1),
         materialPrimary: rgb(0x000000, 0),
         materialOnPrimary: rgb(0x000000, 0),
+        inkMagenta: rgb(0x000000, 0),
+        inkBrown: rgb(0x000000, 0),
+        inkField: rgb(0x000000, 0),
+        primaryContainer: rgb(0x000000, 0),
+        onPrimaryContainer: rgb(0x000000, 0)
+    )
+    static let sunlightNight = WingtipPalette(
+        airspaceBlueText: rgb(0x6FA0E8),
+        airspaceMagentaText: rgb(0xE884D1),
+        course: rgb(0xE600E6),
+        background: rgb(0x0B1422),
+        foreground: rgb(0xEEF3F9),
+        card: rgb(0x17283A),
+        cardForeground: rgb(0xEEF3F9),
+        popover: rgb(0x1B2E44),
+        popoverForeground: rgb(0xEEF3F9),
+        primary: rgb(0x006DDE),
+        primaryForeground: rgb(0xFAFAFA),
+        tint: rgb(0x57A8FF),
+        tintShade: rgb(0x57A8FF),
+        sheet: rgb(0x0B1422),
+        airspaceBlueInk: rgb(0x8CB8F2),
+        airspaceMagentaInk: rgb(0xF0A0CF),
+        procedure: rgb(0x9D9DF0),
+        caution: rgb(0xF5B85E),
+        cautionInk: rgb(0xF9CD8C),
+        cautionWash: rgb(0xFE9A00, 0.12),
+        go: rgb(0x75D7A3),
+        goInk: rgb(0x9BE3BD),
+        secondary: rgb(0x20354C),
+        secondaryForeground: rgb(0xEEF3F9),
+        muted: rgb(0x20354C),
+        mutedForegroundShade: rgb(0xCFD9E5),
+        mutedForeground: rgb(0xCFD9E5),
+        accent: rgb(0x20354C),
+        accentForeground: rgb(0xEEF3F9),
+        destructive: rgb(0xFF7979),
+        destructiveInk: rgb(0xFF7979),
+        categoryVfrInk: rgb(0x4AC26B),
+        categoryMvfrInk: rgb(0x6CB0FF),
+        categoryIfrInk: rgb(0xFF8A80),
+        categoryLifrInk: rgb(0xC297FF),
+        categoryUnknownInk: rgb(0xA9B8C4),
+        border: rgb(0xFFFFFF, 0.4),
+        input: rgb(0x9E9E9E),
+        ring: rgb(0x57A8FF),
+        chart1: rgb(0xD4D4D4),
+        chart2: rgb(0x737373),
+        chart3: rgb(0x525252),
+        chart4: rgb(0x404040),
+        chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0x0B1422),
+        surfaceContainerLow: rgb(0x17283A),
+        surfaceContainer: rgb(0x1B2E44),
+        surfaceContainerHigh: rgb(0x263D57),
+        surfaceContainerHighest: rgb(0x2E4866),
+        surfaceVariant: rgb(0x2E4866),
+        outline: rgb(0x7F93AB),
+        outlineVariant: rgb(0x3A5068),
+        materialPrimary: rgb(0x57A8FF),
+        materialOnPrimary: rgb(0x0B1422),
         inkMagenta: rgb(0x000000, 0),
         inkBrown: rgb(0x000000, 0),
         inkField: rgb(0x000000, 0),
@@ -596,8 +678,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0x171717),
         destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: rgb(0xE5E5E5),
-        input: rgb(0x8F8F8F),
+        input: rgb(0x808080),
         ring: rgb(0x00707E),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -652,8 +739,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0xEEF3F9),
         destructive: rgb(0xFF7979),
         destructiveInk: rgb(0xFF7979),
+        categoryVfrInk: rgb(0x4AC26B),
+        categoryMvfrInk: rgb(0x6CB0FF),
+        categoryIfrInk: rgb(0xFF8A80),
+        categoryLifrInk: rgb(0xC297FF),
+        categoryUnknownInk: rgb(0xA9B8C4),
         border: rgb(0xFFFFFF, 0.1),
-        input: rgb(0xFFFFFF, 0.15),
+        input: rgb(0x808080),
         ring: rgb(0x46D3E6),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -708,8 +800,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0x1F1A14),
         destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: rgb(0xE2D8C4),
-        input: rgb(0x8F8F8F),
+        input: rgb(0x808080),
         ring: rgb(0x0066CC),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -764,8 +861,13 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: rgb(0xEEF1F5),
         destructive: rgb(0xFF7979),
         destructiveInk: rgb(0xFF7979),
+        categoryVfrInk: rgb(0x4AC26B),
+        categoryMvfrInk: rgb(0x6CB0FF),
+        categoryIfrInk: rgb(0xFF8A80),
+        categoryLifrInk: rgb(0xC297FF),
+        categoryUnknownInk: rgb(0xA9B8C4),
         border: rgb(0xFFFFFF, 0.1),
-        input: rgb(0xFFFFFF, 0.15),
+        input: rgb(0x808080),
         ring: rgb(0x5AC8FA),
         chart1: rgb(0xD4D4D4),
         chart2: rgb(0x737373),
@@ -820,6 +922,11 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: UIColor.label,
         destructive: rgb(0xD20000),
         destructiveInk: rgb(0xC10007),
+        categoryVfrInk: rgb(0x15702F),
+        categoryMvfrInk: rgb(0x1A62D6),
+        categoryIfrInk: rgb(0xB3261E),
+        categoryLifrInk: rgb(0x7E3FB8),
+        categoryUnknownInk: rgb(0x51636F),
         border: UIColor.separator,
         input: UIColor.systemGray,
         ring: UIColor.systemBlue,
@@ -876,6 +983,11 @@ nonisolated struct WingtipPalette: Sendable {
         accentForeground: UIColor.label,
         destructive: rgb(0xFF7979),
         destructiveInk: rgb(0xFF7979),
+        categoryVfrInk: rgb(0x4AC26B),
+        categoryMvfrInk: rgb(0x6CB0FF),
+        categoryIfrInk: rgb(0xFF8A80),
+        categoryLifrInk: rgb(0xC297FF),
+        categoryUnknownInk: rgb(0xA9B8C4),
         border: UIColor.separator,
         input: UIColor.systemGray,
         ring: UIColor.systemBlue,
@@ -915,6 +1027,8 @@ nonisolated enum WingtipType {
     static let title: Font = Font.system(.headline, weight: .semibold)
     /// A row's name and its value, the body (iOS Body); 16 with a mouse, a desktop's body size (it was 14, and the desktop panel read small: the UI audit, 2026-11-09).
     static let row: Font = Font.system(.body, weight: .regular)
+    /// A slim pill's words (the route's runway, ARR, APCH and DEP pills, FPL's N-number and FL pills): 16 on 22 with a finger and a mouse alike, a size under a row's 17 so a 24-point pill holds them and a field's line keeps its pills; where they were a row's with a raw 16 for touch beside it in three places (the iPad audit's H-L6, 2026-11-26).
+    static let pill: Font = Font.system(.callout, weight: .regular)
     /// What is read rather than scanned: a summary, a paragraph (iOS Subheadline); 16 with a mouse.
     static let prose: Font = Font.system(.subheadline, weight: .regular)
     /// The line under a row's name (iOS Subheadline); 14 with a mouse.
@@ -945,6 +1059,7 @@ nonisolated enum WingtipSpace {
     static let sm: CGFloat = 8
     static let md: CGFloat = 12
     static let lg: CGFloat = 16
+    static let group: CGFloat = 16
     static let xl: CGFloat = 24
     static let xxl: CGFloat = 32
 }
@@ -1002,6 +1117,7 @@ nonisolated enum WingtipMap {
     static let airspaceFaded: Double = 0.35
     static let airspaceHeld: Double = 1.8
     static let airspaceLabelFaded: Double = 0.6
+    static let routeTagOffEndsNm: Double = 2
 }
 
 /// From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1.
@@ -1040,6 +1156,12 @@ nonisolated enum WingtipMapZoom {
     static let vor: Double = 8
     /// The VFR waypoints and the low enroute chart's fixes. The app's alone: the charts job's tiles hold every fix from its own zooms (overlay_layers).
     static let fix: Double = 10
+    /// The Class B fields' weather marks at their full size and named from this zoom; farther out, over the whole country, each a small mark with no ident that gives way to the route's own, so only the route's ends and stops are named there (the owner's iPhone screenshot, 2026-11-23).
+    static let classBNamed: Double = 5
+    /// The route's tags beyond its fields and stops, its tops of climb and descent, from this zoom, where a leg is long enough on a phone to read them; farther out the route is its line, its ends and its stops.
+    static let routeTags: Double = 6
+    /// A procedure's fixes' tags and an approach plate's fix tags from this zoom; farther out an approach is a short line by its field, and its words would cover it and the fields round it.
+    static let procedureWords: Double = 9
 }
 
 /// The map's words (design/tokens.json's map.label): the size scale (px), the halo, and each kind's size, weight and halo.
@@ -1058,7 +1180,7 @@ nonisolated enum WingtipMapLabel {
     static let sizeRunway: Double = 16
     static let sizePicked: Double = 17
     static let halo: Double = 2
-    static let haloNight: Double = 0.85
+    static let haloNight: Double = 1
     static let scaleMax: Double = 1.2
     /// Each light-haloed word's ink after dark, by its day ink (map.label.night-ink).
     static let nightInk: [String: String] = ["#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#62d48e", "#1c1a17": "#eef1f5", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8fb4ff", "#b45309": "#fbbf24", "#7c3aed": "#bba1ff", "#78716c": "#cdc8c3", "#be185d": "#f58cc4", "#0f766e": "#4fd1c5", "#57534e": "#cfcac5", "#9333ea": "#c99cff"]
@@ -1102,6 +1224,47 @@ nonisolated enum WingtipMapLabel {
     static let clusterCount = Kind(size: [(0, 14)], bold: true, halo: .none)
     /// Model Weather's pinned value on its white pill.
     static let flowPin = Kind(size: [(0, 13)], bold: true, halo: .none)
+}
+
+/// The chart's Dimmer and Contrast and the plates' see-through on the map (design/tokens.json's chart-look group).
+nonisolated enum WingtipChartLook {
+    static let nightDim: Double = 0.5
+    static let dimMax: Double = 0.7
+    static let contrastMin: Double = -0.3
+    static let contrastMax: Double = 0.4
+    static let step: Double = 0.05
+    static let plateOpacity: Double = 0.85
+    static let plateLeastOpacity: Double = 0.1
+    static let routeEdgeNight: Double = 0.9
+    static let routeEdgeDay: Double = 0.55
+    static let routeEdgeSunlight: Double = 0.9
+}
+
+/// The chart's raster paint by look, its contrast and saturation (design/tokens.json's chart-paint group).
+nonisolated enum WingtipChartPaint {
+    static let dayContrast: Double = 0.1
+    static let daySaturation: Double = 0.1
+    static let nightContrast: Double = 0.13
+    static let nightSaturation: Double = 0
+    static let sunlightContrast: Double = 0.2
+    static let sunlightSaturation: Double = 0.2
+}
+
+/// The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group).
+nonisolated enum WingtipDimmer {
+    static let state: String = "mapDim"
+    static let wordState: String = "labelNight"
+    static let warningState: String = "warningDim"
+    static let metadata: String = "wingtip:dim"
+    static let opacity: [String: [String]] = ["line": ["line-opacity"], "circle": ["circle-opacity", "circle-stroke-opacity"], "symbol": ["icon-opacity", "text-opacity"]]
+    static let colour: [String: [String]] = ["line": ["line-color"], "circle": ["circle-color", "circle-stroke-color"], "symbol": ["text-color", "icon-color"]]
+    static let warningUnderPaper: Double = 0.85
+    static let wordGamma: Double = 2.2
+    static let wordLeast: Double = 0.01
+    static let wordFloor: Double = 0.75
+    static let wordLight: Double = 0.4460834275041789
+    static let wordFloorContrast: Double = 0.13
+    static let nightWord: [String: String] = ["#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#5cc685", "#1c1a17": "#afb1b4", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8db2fc", "#b45309": "#dfaa20", "#7c3aed": "#bba1ff", "#78716c": "#b6b1ad", "#be185d": "#f58cc4", "#0f766e": "#4ac4b9", "#57534e": "#b6b1ad", "#9333ea": "#c99cff"]
 }
 
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.

@@ -19,7 +19,8 @@ import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 import { useGlView } from "../useGlView";
 import { TAP, selectionRing } from "./common";
 import { useMapRing } from "../../mapPick";
-import { CHART } from "../../../tokens";
+import { CHART, MAP, MAP_ZOOM } from "../../../tokens";
+import { glZoom } from "../glStyle";
 
 /** The level the map is at, the app's, as the camera comes to rest: what
  *  the words on the procedures and the patterns come in at. */
@@ -53,6 +54,11 @@ const PROCEDURE_LAYERS: SymbolLayerSpecification[] = [
   pictureLayer("procedure-fix-diamonds", "procedure-fixes"),
 ];
 
+/** From a route-readable zoom (map.zoom.route-tags): over the whole
+ *  country a TOD's pill sat on the fields it was between (the owner's
+ *  iPhone screenshot, 2026-11-23). */
+const LEG_POINTS_FROM = glZoom(MAP_ZOOM.routeTags);
+
 /** The layer of a top of climb's or descent's name, whose side turns with
  *  the map (useTurnedNames). */
 const LEG_POINT_NAMES = "leg-point-names";
@@ -66,13 +72,11 @@ const LEG_POINT_NAMES = "leg-point-names";
 const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [
   pictureLayer("leg-points", "leg-points", { collide: true, sort: 0 }),
   chipLayer(LEG_POINT_NAMES, "leg-points", { collide: true, sort: 0 }, { "icon-image": ROUTE_POINT_PILL.id, ...turnSide(0) }),
-];
+].map((layer) => ({ ...layer, minzoom: LEG_POINTS_FROM }));
 
 /** How near either end of its leg a top of climb or descent is not drawn,
- *  in nautical miles: there it sits on the field, or on the airplane where
- *  the leg starts at My Location, and the field's own mark says as much. A
- *  mark's room on the map, not a figure of flight. */
-const OFF_THE_ENDS_NM = 2;
+ *  in nautical miles: one token for all three apps (map.route-tag-off-ends-nm). */
+const OFF_THE_ENDS_NM = MAP.routeTagOffEndsNm;
 
 const pair = (p: LatLon): [number, number] => [p.lat, p.lon];
 const along = (a: LatLon, b: LatLon, f: number): LatLon => ({ lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f });
@@ -341,7 +345,7 @@ export function PickedGl({
     [focus, carded, held],
   );
   // Each ring drawn, for the browser tests: a ring left on the map once its
-  // card has gone is the bug they hold (the selection audit, 2026-11-18).
+  // card has gone is the bug they hold.
   useGlProbe("picked-ring", ["picked-ring"], () => ({ ring: true }));
   useGlData(RING_SOURCE, data);
   const hold = useEffectEvent(onHold);

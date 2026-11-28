@@ -116,8 +116,9 @@ class OfflineTest {
     fun theArchivesGoStraightOverTheChartWithItsPaint() {
         val style = """{"version":8,"sources":{"chart":{"type":"raster"}},"layers":[
             {"id":"chart","type":"raster","source":"chart","paint":{"raster-contrast":0.1}},{"id":"airports","type":"symbol"}]}"""
-        assertEquals(style, OfflineLayers.withDownloads(style, emptyList()))
-        val out = Json.parseToJsonElement(OfflineLayers.withDownloads(style, listOf(File("/data/a/sec@2x.pmtiles")))).jsonObject
+        val root = Json.parseToJsonElement(style).jsonObject
+        assertEquals(root, OfflineLayers.withDownloads(root, emptyList()))
+        val out = OfflineLayers.withDownloads(root, listOf(File("/data/a/sec@2x.pmtiles")))
         val ids = out["layers"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.content }
         assertEquals(listOf("chart", "offline-0", "airports"), ids)
         val source = out["sources"]!!.jsonObject["offline-0"]!!.jsonObject

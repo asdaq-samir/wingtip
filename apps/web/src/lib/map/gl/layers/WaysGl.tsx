@@ -51,7 +51,7 @@ export const WAY_CHIPS_LOWEST = "route-way-chips-others";
  *  pile up (MapLibre's collision). The shown one's layer is last, on top,
  *  and placed first: over the route's own marks too, whose names give way
  *  to it, where they were drawn over it and cut its words ("Avc FAINS
- *  ther", the UI audit's B6, 2026-11-17). */
+ *  ther", 2026-11-17). */
 const WAY_LAYERS: SymbolLayerSpecification[] = [
   wayChipLayer(WAY_CHIPS_LOWEST, { collide: true, sort: 0 }, false, {}),
   wayChipLayer(WAY_SHOWN_LAYER, {}, true, { "icon-ignore-placement": false, "text-ignore-placement": false }),

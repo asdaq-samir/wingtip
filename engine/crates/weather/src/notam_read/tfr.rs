@@ -104,6 +104,20 @@ pub fn band(floor: Option<(f64, &str)>, ceiling: Option<(f64, &str)>) -> Option<
     })
 }
 
+/// The band, with what it can't say alone: where the areas' floors (or
+/// ceilings) are given some AGL and some MSL, which is lowest (highest)
+/// depends on the ground under each (crate::tfr's mixed_heights), so the
+/// one figure is not the whole TFR's and the pilot is told to read each
+/// area's (14 CFR 91.103: all available information).
+fn varies(band: String, floor: bool, ceiling: bool) -> String {
+    match (floor, ceiling) {
+        (true, true) => band + " (floors and ceilings differ by area, some AGL, some MSL: see each area)",
+        (true, false) => band + " (floors differ by area, some AGL, some MSL: see each area)",
+        (false, true) => band + " (ceilings differ by area, some AGL, some MSL: see each area)",
+        (false, false) => band,
+    }
+}
+
 /// The 16 points JO 7930.2 3-3-9 gives a direction from a place in, as
 /// an obstacle's NOTAM says it ("(9.4NM S SJT)").
 const POINTS: [&str; 16] = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
@@ -166,7 +180,8 @@ fn level_of(v: &Value, ft: &str, reference: &str) -> Option<(f64, String)> {
 }
 
 /// `tfr_read`: `{"kind", "rule", "title", "floor_ft", "floor_ref",
-/// "ceiling_ft", "ceiling_ref", "over_field", "field", "edge"}` (each may
+/// "floor_varies", "ceiling_ft", "ceiling_ref", "ceiling_varies",
+/// "over_field", "field", "edge"}` (each may
 /// be missing) to `{"heading", "what", "where", "place"}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     if name != "tfr_read" {
@@ -181,6 +196,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let floor = level_of(v, "floor_ft", "floor_ref");
     let ceiling = level_of(v, "ceiling_ft", "ceiling_ref");
     let high = band(floor.as_ref().map(|(f, r)| (*f, r.as_str())), ceiling.as_ref().map(|(f, r)| (*f, r.as_str())));
+    let flag = |k: &str| matches!(v.get(k), Some(Value::Bool(true)));
+    let high = high.map(|h| varies(h, flag("floor_varies"), flag("ceiling_varies")));
     let over = match v.get("over_field") {
         Some(Value::Bool(b)) => Some(*b),
         _ => None,
@@ -218,6 +235,21 @@ mod tests {
             got,
             r#"{"heading":"Security TFR","what":"Security TFR, 14 CFR 99.7","rule":"Special security instructions, 14 CFR 99.7","where":"3,500 to 18,000 ft MSL, over the field","place":"San Angelo, TX"}"#
         );
+    }
+
+    #[test]
+    fn floors_given_agl_beside_msl_are_said_to_differ_by_area() {
+        // 1,000 ft AGL beside 3,000 ft MSL: the lower is the AGL one only
+        // where the ground is under 2,000 ft (crate::tfr's mixed_heights).
+        let v = json::parse(r#"{"floor_ft":1000,"floor_ref":"AGL","floor_varies":true,"ceiling_ft":18000,"ceiling_ref":"MSL"}"#).unwrap();
+        let got = json::parse(&call("tfr_read", &v).unwrap()).unwrap();
+        assert_eq!(
+            got.get("where").and_then(Value::as_str),
+            Some("1,000 ft AGL to 18,000 ft MSL (floors differ by area, some AGL, some MSL: see each area)")
+        );
+        let v = json::parse(r#"{"floor_ft":1000,"floor_ref":"AGL","floor_varies":false,"ceiling_ft":18000,"ceiling_ref":"MSL"}"#).unwrap();
+        let got = json::parse(&call("tfr_read", &v).unwrap()).unwrap();
+        assert_eq!(got.get("where").and_then(Value::as_str), Some("1,000 ft AGL to 18,000 ft MSL"));
     }
 
     #[test]

@@ -9,31 +9,43 @@ export const circuitsOf = (page: Page) => async () => [...new Set((await drawn(p
  * The route's Procedures (ProceduresRoute), FPL's list, at the pilot's ask: a field's
  * traffic pattern picked by its runway, kept in the address, and drawn on the map round the runway with its 45° entry (PatternLayer).
  */
-/** A field's runway line opened where it is folded to the runway picked
- *  (PatternChips), at the owner's ask ("can the runway line collapse to
- *  the selected runway?"). */
+/** A field's runway menu opened from its pill on FPL's list (RunwayPill;
+ *  the owner, 2026-11-25: "we don't need the folding runways"): its
+ *  runways each a radio item, the one picked checked. */
 export async function openRunways(field: Locator) {
-  // The field's runways in first: the list is drawn again as a sheet over
-  // it closes, the field gone from it for a moment.
-  await expect(field.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
-  // The runway into the wind may be picked for the pilot after the line
-  // shows, folding it as it comes (ProceduresRoute's intoWind): opened again
-  // until it stays open.
-  const folded = field.locator("[data-folded]");
-  // That pick waited for first, where the field has a wind to pick into:
-  // a line opened before it is folded by it, as the owner asked
-  // (e6d13391), and on a slow runner it came after the loop below had
-  // seen the line open and gone on, the runway then clicked gone under the
-  // finger (the mobile project, CI 2026-10-28, and here on the merged
-  // bundle). Calm, nothing is picked, and the line is open already.
-  await folded
-    .first()
-    .waitFor({ timeout: slow(10000) })
-    .catch(() => {});
-  await expect(async () => {
-    if (await folded.count()) await folded.click();
-    await expect(folded).toHaveCount(0, { timeout: 1500 });
-  }).toPass({ timeout: slow(20000) });
+  const pill = field.getByTestId("runway-pill").first();
+  await expect(pill).toBeVisible({ timeout: slow(20000) });
+  await pill.click();
+  await expect(runwayOptions(field.page()).first()).toBeVisible();
+}
+
+/** The runway menu's runways, open (openRunways). */
+export const runwayOptions = (page: Page) => page.getByTestId("runway-option");
+
+/** A runway in the open menu the pilot may pick and has not. */
+export const otherRunway = (page: Page) =>
+  runwayOptions(page).and(page.locator(':not([data-disabled]):not([aria-checked="true"])')).first();
+
+/** A runway option's number, from its name ("Runway 9, into the wind"). */
+export const runwayOf = async (option: Locator) => /^Runway (\w+)/.exec((await option.getAttribute("aria-label")) ?? "")![1]!;
+
+/** The planner's forecast wind at every field stubbed: an easterly at 14 kt,
+ *  whatever the field's TAF says today (forecast-wind.spec). KDLH, which
+ *  the route reaches hours on, then lands on 09, where the stubbed ILS is:
+ *  on the stack's own forecast (CI's run of PR #591, 320 at 11 gusting 18)
+ *  it landed on 27, and the approach menu opened on its runways' page,
+ *  "No approaches to Runway 27", where the whole list is not. */
+export async function easterly(page: Page, asked: string[] = []) {
+  await page.route(
+    (url) => /\/airport\/[^/]+\/forecast-wind$/.test(url.pathname),
+    (route) => {
+      const ident = new URL(route.request().url()).pathname.split("/").at(-2)!;
+      asked.push(ident);
+      return route.fulfill({
+        json: { ident, distance_nm: 0, dir_true_deg: 90, speed_kt: 14, gust_kt: null, valid_from: 0, valid_to: 4_000_000_000 },
+      });
+    },
+  );
 }
 
 // KDLH's ILS as the planner would send it (wingtip.procedures), stubbed: the
@@ -123,3 +135,42 @@ export const ARRIVAL_DRAWN = {
   holds: [],
   fixes: [{ ident: "OFOFO", lat: 46.84, lon: -92.4, roles: [], min_ft: null, max_ft: null, speed_kt: null, missed: false }],
 };
+
+/** A picked procedure's transition, from its menu's Transition › (the
+ *  dropdown picks a procedure at one tap, from vectors or its common
+ *  route; 2026-11-25). */
+export async function pickTransition(field: Locator, kind: "approach" | "arrival" | "departure", words: string) {
+  await field.locator(`[data-testid=procedure-kind][data-kind=${kind}]`).click();
+  const page = field.page();
+  await page.getByTestId("procedure-menu-transitions").click();
+  await page.getByTestId("procedure-menu-transition").filter({ hasText: words }).click();
+}
+
+/** A picked procedure's fixes shown or hidden: a tap on its pill, its
+ *  chip at the end being its menu (2026-11-25). */
+export async function toggleFixes(section: Locator) {
+  await section.getByTestId("section-fold").first().click();
+}
+
+/** A procedure picked at a field, out on the field's line once the line
+ *  is opened, as its runways are (the owner, 2026-11-23: "Keep the pill
+ *  hidden like runway"): `field` the field's region ("KDLH · Arrive"),
+ *  its rows then on the line, or an approach's boxes after it (loaded,
+ *  its missed approach). A no-op where the line is already open. */
+export async function unfoldProcedure(field: Locator, kind: "approach" | "arrival" | "departure") {
+  const toggle = field.getByTestId("timeline-toggle");
+  await expect(toggle).toBeVisible({ timeout: slow(20000) });
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  // The field and its procedures one group, the box round them both.
+  await expect(field).toHaveAttribute("data-testid", "field-group");
+  // Its sections folded at first (2026-11-24): the kind's fixes shown by a
+  // tap on its pill (2026-11-25).
+  const section = field.locator(`[data-kind=${kind}]`).first();
+  await expect(section).toBeVisible();
+  if ((await section.getAttribute("data-section-folded")) !== null) await toggleFixes(section);
+  await expect(section).not.toHaveAttribute("data-section-folded", "");
+  // Its rows out, where it has rows on the line (an approach only loaded
+  // has its box instead).
+  if (kind !== "approach") await expect(field.locator(`[data-testid=procedure-rows][data-kind=${kind}]`)).toBeVisible();
+}

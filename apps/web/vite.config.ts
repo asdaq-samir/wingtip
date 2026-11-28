@@ -6,15 +6,24 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { compression, defineAlgorithm } from "vite-plugin-compression2";
-import { constants as zlib } from "node:zlib";
-import { CHART_TILES, IN_FLIGHT_READS, LIBRARY_BOOKS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
+import {
+  APP_CHUNKS,
+  CHART_TILES,
+  IN_FLIGHT_READS,
+  LIBRARY_BOOKS,
+  OVERLAY_ARCHIVE,
+  RADAR_FRAMES,
+  markFromCache,
+} from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
 import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
 import { STAGING, publish, publishDir } from "./vite-plugins/publishBuild.ts";
 import { licences } from "./vite-plugins/licences.ts";
+import { compressed } from "./vite-plugins/compression.ts";
 import { claudeView } from "./vite-plugins/claudeView.ts";
+import { firstFrame } from "./vite-plugins/firstFrame.ts";
+import { TEST_SETUP } from "./vite-plugins/testSetup.ts";
 
 // The page reader's files (features/airplane/lib/readPage), from node_modules into the
 // build's tesseract/ under their own names, where tesseract.js asks for
@@ -51,38 +60,24 @@ export default defineConfig({
     tesseractFiles,
     // The connector's live view, one self-contained page (claude-view.html).
     claudeView,
+    // The first frame's theme, look and sunlight before the body paints (first-frame.js).
+    firstFrame(),
     preloadEngine,
     themeColor,
     react(),
     // The React Compiler, memoising each component and hook as it builds
-    // them, at the owner's pick of the audit's recommendation: only its
+    // them, at the owner's pick: only its
     // lint rule had been installed, and every nav-log stream message
     // drew the whole panel again (MapPanel, TabBar, the route box).
     // Not the stock shadcn wrappers (components/ui), which hand their
     // props to Radix and gain nothing from a memo: 25.6 KB of the first
-    // load, measured per file with and without it (the 20 Oct audit).
+    // load, measured per file with and without it.
     // node_modules named again: an exclude replaces the plugin's default,
     // and without it the compiler ran over react-dom and MapLibre too.
     babel({ exclude: [/[/\\]node_modules[/\\]/, /\/components\/ui\//], presets: [reactCompilerPreset()] }),
     tailwindcss(),
-    // Each file a .br (Brotli at 11) and a .gz (gzip at 9) beside it, made
-    // once here, which the gateway sends to a browser that asks for them
-    // (WebMvcConfig's EncodedResourceResolver): Brotli at 11 is too slow to
-    // make per request, and made here it is 19% under gzip for the engine's
-    // WebAssembly (397,838 bytes to 492,654, 2026-11-14), which iPhone Safari
-    // takes (Accept-Encoding: gzip, deflate, br). The service worker's
-    // globPatterns name no .br or .gz, so it keeps only the files themselves.
-    // CI's build check serves nothing, so asks for none (WINGTIP_PRECOMPRESS=0:
-    // they took the build from about 30 s to 89, run 43735121847).
-    process.env.WINGTIP_PRECOMPRESS !== "0" &&
-      compression({
-        include: /\.(js|mjs|css|html|svg|json|webmanifest|wasm)$/,
-        threshold: 1024,
-        algorithms: [
-          defineAlgorithm("brotliCompress", { params: { [zlib.BROTLI_PARAM_QUALITY]: 11 } }),
-          defineAlgorithm("gzip", { level: 9 }),
-        ],
-      }),
+    // A .br and a .gz beside each file, for the gateway (vite-plugins/compression.ts).
+    compressed(),
     // The app in the air: a service worker (Workbox, generated at
     // build) that keeps the app shell, every chart tile the map has
     // drawn or `KeepRoute` fetched ahead, and the planner's own
@@ -118,10 +113,15 @@ export default defineConfig({
         // deploy: Inter's non-Latin subsets (170 KB), fetched by the browser
         // only for a glyph they hold, the developer's pages (77 KB), and the
         // page reader's 15 MB (tesseract/), kept by tesseract.js itself.
+        // Nor what a pilot turns on: the 3D layers (deckLayers, 657 KB),
+        // the wind flow (FlowGl, 301 KB) and the ACS table (acs, 143 KB),
+        // kept by APP_CHUNKS the first time they open. The precache went
+        // from 11.5 MB in 340 files to 10.4 MB (2026-11-27). pdf.js stays:
+        // a document kept for the air opens in it with no connection.
         // Asked for when needed.
         globIgnores: [
           "**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2",
-          "**/{DevPanel,TrainWorkspace}-*.js",
+          "**/{DevPanel,TrainWorkspace,deckLayers,FlowGl,acs}-*.js",
           "tesseract/**",
           // The connector's live view, which Claude shows, not this app.
           "claude-view.html",
@@ -298,6 +298,8 @@ export default defineConfig({
           // The library's books never through the caches; in flight, a shorter wait (vite-plugins/workboxRules).
           LIBRARY_BOOKS,
           IN_FLIGHT_READS,
+          // The app's chunks the precache leaves out, kept once opened (vite-plugins/workboxRules).
+          APP_CHUNKS,
           {
             // The planner's answers: the network when there is one
             // (the winds change), the last answer when there is not --
@@ -389,7 +391,7 @@ export default defineConfig({
   test: {
     environment: "node",
     exclude: ["**/node_modules/**", "e2e/**"],
-    setupFiles: ["src/test/storage.ts", "src/test/animations.ts", "src/lib/engine/vitestSetup.ts", "src/test/guards.ts"],
+    setupFiles: TEST_SETUP,
     sequence: { shuffle: true },
     dangerouslyIgnoreUnhandledErrors: false,
   },

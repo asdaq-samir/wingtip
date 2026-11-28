@@ -3,8 +3,8 @@ import { create } from "zustand";
 import type { LatLon } from "../geo";
 
 /**
- * One thing picked on the map at a time (the map selection audit, the
- * owner, 2026-11-18: "a new pick replaces the old card"). Each kind of
+ * One thing picked on the map at a time (the owner, 2026-11-18: "a new pick replaces the old card").
+ * Each kind of
  * thing whose card or ring can be up -- an airport (the address's
  * `place`), a point held (`at`), a VOR (`navaid`), a TFR (`tfr`), an
  * airplane (`flight`), the map's own card (GlMapShell's: a fix, a

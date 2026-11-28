@@ -104,7 +104,7 @@ export async function* ndjson<T>(stream: ReadableStream | undefined): AsyncGener
  *  planner's nav log sends a line every 8 s while it works (its
  *  HEARTBEAT_S), and the narratives' first words come within a minute. A
  *  stalled one kept "Asking the planner…" up for the gateway's ten
- *  minutes (the audit's finding). */
+ *  minutes. */
 export const STREAM_QUIET_MS = 90_000;
 
 /** The reader's next piece, or a TimeoutError -- "No answer in time"

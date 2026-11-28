@@ -9,8 +9,7 @@ interface Playing {
  * A timeline's play paused while the app is in the background, so nothing
  * plays unseen, and on again on return if it was playing: the radar loop
  * (features/weather-loop) and the flow layer's hours (features/weather-flow)
- * alike, where the one went on and the other stayed paused (the hand-built
- * audit, 2026-11-12). `on` for the one component that runs the clock.
+ * alike, where the one went on and the other stayed paused. `on` for the one component that runs the clock.
  */
 export function usePauseWhileHidden(on: boolean, player: Playing) {
   useEffect(() => {

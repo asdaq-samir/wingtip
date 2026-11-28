@@ -32,6 +32,23 @@ class LookTest {
     }
 
     @Test
+    fun theMapsPipsAndTheDotsReadOneTableOfCategoryColours() {
+        for (category in listOf("VFR", "MVFR", "IFR", "LIFR")) {
+            val hex = FlightCategory.HEX.getValue(category)
+            assertEquals(category, FlightCategory.mark(category), Color(("FF" + hex.drop(1)).toLong(16)))
+        }
+        assertEquals(listOf("VFR", "MVFR", "IFR", "LIFR"), FlightCategory.HEX.keys.toList())
+        assertEquals(WingtipColors.Category.Unknown, FlightCategory.mark(null))
+    }
+
+    @Test
+    fun aCategoryDotsCasingClearsTheNightGround() {
+        // The night's card (the dark palette's sheet) against the white casing.
+        val ground = WingtipPalettes.Dark.sheet
+        assertTrue(contrast(FlightCategory.RING, ground) >= 3.0)
+    }
+
+    @Test
     fun wingtipIsTheDefaultLookAndItsTintIsTheBrandBlue() {
         assertEquals(Look.WINGTIP, Look.of(null))
         assertEquals(Look.INK, Look.of("ink"))

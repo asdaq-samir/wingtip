@@ -4,9 +4,13 @@ import android.content.Context
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.Plan
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.time.Instant
 
 /**
@@ -27,18 +31,29 @@ object PlanAlternate {
     private val _filed = MutableStateFlow<Filed?>(null)
     val filed: StateFlow<Filed?> = _filed.asStateFlow()
 
-    /** The one filed last, read once at launch (WingtipApplication). */
+    /** The one filed last, read once at launch (WingtipApplication) on
+     *  the IO dispatcher, so the start does not wait on the file; one
+     *  filed meanwhile is not overwritten by it. */
     fun attach(context: Context) {
         val kept = Kept.of(context, "alternate").also { prefs = it }
-        val dest = kept[DEST]
-        val ident = kept[IDENT]
-        _filed.value = if (dest != null && ident != null) Filed(dest, ident) else null
+        reading.launch {
+            val dest = kept[DEST]
+            val ident = kept[IDENT]
+            if (dest != null && ident != null && !changed) _filed.compareAndSet(null, Filed(dest, ident))
+        }
     }
+
+    private val reading = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Filed or taken off since launch: what was read is older. */
+    @Volatile
+    private var changed = false
 
     /** `ident` filed as `dest`'s alternate, or null to take it off; the
      *  caller plans again, so the totals carry it. */
     fun file(dest: String, ident: String?) {
         val filed = ident?.trim()?.uppercase()?.ifEmpty { null }?.let { Filed(dest.uppercase(), it) }
+        changed = true
         prefs?.edit {
             it.clear()
             if (filed != null) {

@@ -7,7 +7,7 @@ import { askSearch, useSearchPick, type SearchPick } from "../../../lib/oneSearc
 import { useVoice } from "../../voice";
 import SearchBox from "./SearchBox";
 import { AccountButton } from "../../pilot";
-import type { OneSearchModel } from "./useOneSearch";
+import { useOneSearchModel } from "./oneSearchModel";
 import { WORDING } from "../../../lib/wording/generated/wording";
 
 /**
@@ -25,17 +25,18 @@ import { WORDING } from "../../../lib/wording/generated/wording";
  * the field is not in use, as Apple Maps' avatar is (the owner,
  * 2026-11-20: "move the fpl button on the left side of search and avatar
  * to the right side"; PageToggle, AccountButton): the field the same size as FPL's strip in its place
- * (SHEET_BAR), so a turn changes only what is in the bar. The title row
- * that was over the field went for the map's room (the owner,
- * 2026-11-10); the app's name stays the page's heading, for a screen
- * reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
+ * (SHEET_BAR), so a turn changes only what is in the bar. No title row
+ * over the field, for the map's room (the owner, 2026-11-10); the app's
+ * name is the page's heading, for a screen reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
 /** What a picker's ask is called over its field: its own title (Change
  *  Stop), else Add Stop for a stop, else what it asks for (Departure). */
 const askTitle = (pick: SearchPick) => pick.title ?? (pick.stop ? WORDING.addStop : pick.label);
 
-export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
+export default function OneSearchField({ inputRef }: { inputRef: React.RefObject<HTMLInputElement | null> }) {
+  // Its view model (OneSearchRoot round the panel).
+  const model = useOneSearchModel();
   // What is said typed in the field once a pause ends it, the field
   // focused to go on from there.
   const voice = useVoice("search", (said) => {

@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { Toggle } from "./ui/toggle";
+import { Button } from "./ui/button";
 import { PANEL_FIELD_FILL } from "./panelField";
 import { TEXT } from "../lib/text";
 import { useConsoleOpen } from "../lib/mapChrome";
@@ -39,33 +39,35 @@ export default function PageToggle() {
   }, []);
   if (!pages || pages.at !== 0) return null;
   return (
-    <Toggle
+    // A button, as it goes to the other page: a Toggle held unpressed was
+    // said "toggle button, not pressed", and its hover swapped the white disc for grey.
+    <Button
       ref={drawn}
-      pressed={false}
+      variant="ghost"
       // A card over the sheet covers this row; were one opening as it is
       // tapped, it closes them -- You too -- and turns to FPL.
-      onPressedChange={() => {
+      onClick={() => {
         noteFocus(self.current);
         closeEveryCard();
         useConsoleOpen.getState().setOpen(false);
         pages.go(1);
         // The first flight's tip points at FPL's word (FplTip): once it has
         // been tapped to FPL, the tip has done its work and is not shown
-        // again (the UI audit's B5).
+        // again.
         useTips.getState().see(FPL_TIP);
       }}
       aria-label="FPL, show flight plan"
       data-testid="sheet-page-toggle"
       // 44 px whatever the text size, as the map's buttons beside it
       // (MAP_BUTTON); its word a note's 13 semibold, as 3D's word is near
-      // its size in the same disc: at 12 it read small (the scale audit's
-      // Q3b, the owner, 2026-11-21). "FPL" is 3 letters, about 30 px wide
+      // its size in the same disc: at 12 it read small (the owner, 2026-11-21).
+      // "FPL" is 3 letters, about 30 px wide
       // at 19.65 px text, so it fits the 44.
-      className={`relative size-(--size-map-button) shrink-0 rounded-full p-0 text-foreground print:hidden ${PANEL_FIELD_FILL}`}
+      className={`relative size-(--size-map-button) shrink-0 rounded-full p-0 text-foreground hover:bg-card hover:text-foreground dark:hover:bg-card print:hidden ${PANEL_FIELD_FILL}`}
     >
       <span aria-hidden="true" className={`font-semibold ${TEXT.note}`}>
         FPL
       </span>
-    </Toggle>
+    </Button>
   );
 }

@@ -44,7 +44,17 @@ MAX_AGE_S = 37 * 24 * 3600
 _IDENT = re.compile(r"[A-Z0-9]{2,8}")
 
 _LOCK = threading.Lock()
-_held: dict[str, object] = {"key": None, "idents": frozenset()}
+#: The newest list as read: its identifications, and the Mode S addresses
+#: the registry gives its N-numbers, worked out once a list and registry
+#: file (`key`). Each radar track asked the registry for its own address,
+#: a read of the file each, 79 ms a poll for 88 tracks (2026-11-27).
+_held: dict[str, object] = {"key": None, "idents": frozenset(), "addresses": frozenset()}
+#: The list's folder and the registry file are looked at again after this
+#: long, s, so a poll's tracks share one look: the folder's listing and
+#: the files' stat for each track were most of a poll's 6 ms once the
+#: registry was no longer read for each (88 tracks, 2026-11-27).
+LOOK_S = 5.0
+_looked: dict[Path, tuple[float, tuple | None]] = {}
 
 
 def _newest(directory: Path) -> Path | None:
@@ -63,30 +73,52 @@ def read(path: Path) -> frozenset[str]:
     return frozenset(idents)
 
 
+def _list_file(directory: Path) -> tuple | None:
+    """The newest list (its path and mtime) and the registry file's
+    version, looked at once in LOOK_S; None where no list is kept."""
+    clock = time.monotonic()
+    with _LOCK:
+        seen = _looked.get(directory)
+    if seen is not None and clock - seen[0] < LOOK_S:
+        return seen[1]
+    path = _newest(directory)
+    found = (path, path.stat().st_mtime, registry.version()) if path is not None else None
+    with _LOCK:
+        _looked[directory] = (clock, found)
+    return found
+
+
+def _current(directory: Path, now: float | None) -> dict | None:
+    """The newest list as `_held` keeps it, None where none is kept or the
+    newest is older than MAX_AGE_S."""
+    key = _list_file(directory)
+    if key is None or (time.time() if now is None else now) - key[1] > MAX_AGE_S:
+        return None
+    path = key[0]
+    with _LOCK:
+        if _held["key"] == key:
+            return dict(_held)
+    idents = read(path)
+    held = {"key": key, "idents": idents, "addresses": registry.addresses(idents)}
+    with _LOCK:
+        _held.update(held)
+    return held
+
+
 def current(directory: Path = LADD_DIR, now: float | None = None) -> frozenset[str] | None:
     """The newest list's identifications, None where none is kept or the
     newest is older than MAX_AGE_S."""
-    path = _newest(directory)
-    if path is None:
-        return None
-    mtime = path.stat().st_mtime
-    if (time.time() if now is None else now) - mtime > MAX_AGE_S:
-        return None
-    with _LOCK:
-        if _held["key"] != (path, mtime):
-            _held["idents"] = read(path)
-            _held["key"] = (path, mtime)
-        return _held["idents"]  # type: ignore[return-value]
+    held = _current(directory, now)
+    return None if held is None else held["idents"]
 
 
 def hidden(plane: dict, directory: Path = LADD_DIR, now: float | None = None) -> bool:
     """Whether a radar track from SWIM must not be shown: its aircraft is on
-    the current list, or no current list is kept and LADD_REQUIRED holds."""
-    idents = current(directory, now)
-    if idents is None:
+    the current list -- by its call sign, its registration, or its Mode S
+    address, one the registry gives a listed N-number -- or no current
+    list is kept and LADD_REQUIRED holds."""
+    held = _current(directory, now)
+    if held is None:
         return get_settings().ladd_required
     names = {str(plane.get(key) or "").upper().replace("-", "") for key in ("callsign", "registration")}
-    if names & idents:
-        return True
-    found = registry.lookup(hex_id=plane.get("hex")) if plane.get("hex") else None
-    return bool(found and str(found.get("n_number") or "").upper() in idents)
+    return bool(names & held["idents"]) or str(plane.get("hex") or "").lower() in held["addresses"]

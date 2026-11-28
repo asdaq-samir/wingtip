@@ -183,3 +183,8 @@ def test_the_places_stand_when_the_outline_read_beside_them_fails(monkeypatch):
     monkeypatch.setattr(nearby, "_outline", unreadable)
     (cafe,) = nearby._read(42.1142, -87.9015, "r")["food"]
     assert cafe["name"] == "Kitty Hawk Cafe" and cafe["on_field"] is False
+
+
+def test_a_category_is_written_in_the_engines_sentence_case():
+    assert nearby._words("american_restaurant") == "American restaurant"
+    assert nearby._words("car_rental_service") == "Car rental" and nearby._words(None) == ""

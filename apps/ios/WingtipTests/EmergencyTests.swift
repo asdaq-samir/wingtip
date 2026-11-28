@@ -46,11 +46,13 @@ struct EmergencyTests {
         let duluth = data.fields[0]
         var strip = duluth
         strip.ident = "IL11"; strip.name = "Private strip"; strip.distanceNm = 3; strip.isPrivate = true; strip.towered = false; strip.metar = nil
-        strip.lat = 46.83; strip.lon = -92.21
+        // About 3 nm from the fix, by the engine's own distance from it.
+        strip.lat = 46.85; strip.lon = -92.21
         var closed = strip
         closed.ident = "00MO"; closed.isPrivate = false; closed.status = "CI"; closed.distanceNm = 2.5
         var under = strip
-        under.ident = "KUND"; under.isPrivate = false; under.distanceNm = 1
+        under.ident = "KUND"; under.isPrivate = false; under.distanceNm = 0.5
+        under.lat = 46.805; under.lon = -92.22
         data.fields += [strip, closed, under]
         let ranked = try DiversionDrillModel.ranked(data, fix: fix)
         // Of fields otherwise alike a public one comes first (best_fields'

@@ -135,9 +135,19 @@ function Head({ off = false, children }: { off?: boolean; children: ReactNode })
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = box.current;
-    const root = document.documentElement.style;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const watch = new ResizeObserver(() => root.setProperty("--flying-head-h", `${el.offsetHeight}px`));
+    // On the map's own element (MapPage's #content, insetVars' too), not
+    // the page's root, so a change restyles the map's part alone.
+    const root = (el.closest<HTMLElement>("#content") ?? document.documentElement).style;
+    // Over the map, as its reader, the map's banners (MapBanners), is drawn in
+    // the map's shell, apart from this head, and written only as
+    // the height changes:
+    // a variable changed on the root restyles every element on the page,
+    // and the observer is told of every resize, the same height too.
+    const watch = new ResizeObserver(() => {
+      const height = `${el.offsetHeight}px`;
+      if (root.getPropertyValue("--flying-head-h") !== height) root.setProperty("--flying-head-h", height);
+    });
     watch.observe(el);
     return () => {
       watch.disconnect();
@@ -157,8 +167,9 @@ function Head({ off = false, children }: { off?: boolean; children: ReactNode })
         // 2026-11-06); on a phone's bottom sheet both are 0.
         "pointer-events-none absolute right-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] z-[1000] flex items-center gap-3.5 rounded-(--radius-card) px-4 py-3",
         off ? "w-fit" : "left-[calc(0.75rem+var(--map-inset-left,0px))]",
-        // In as the flight starts; not where the pilot asks for less motion.
-        "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-4 motion-safe:duration-300",
+        // In from the top as the flight starts, on the app's own arrival
+        // (feel.css's appear-slide); not where the pilot asks for less motion.
+        "appear-slide [--appear-from:0_-1rem]",
       )}
     >
       {children}

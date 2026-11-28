@@ -42,9 +42,9 @@ def test_ads_b_exchange_is_asked_no_more_than_its_gap_and_its_month_allow(adsbx,
 
 
 def test_a_search_adsb_lol_cannot_take_now_is_asked_of_ads_b_exchange_at_once(adsbx, clock):
-    adsb_lol._STATE["blocked_until"] = clock.now + 60
+    adsb_lol._LOL.hold(60, clock.now)
     # A region asked of it a moment ago: a search is not held to that gap.
-    adsbx_part._ADSBX["last"] = clock.now
+    adsbx_part._ADSBX.asked(clock.now)
     get, asked = _routed({"adsbexchange-com1.p.rapidapi.com/v2/callsign/UAL2088": _answer([{**CESSNA, "flight": "UAL2088 "}])})
     with patch("requests.get", side_effect=get):
         (ual,) = traffic.find("UAL2088")

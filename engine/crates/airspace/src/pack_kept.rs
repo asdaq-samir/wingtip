@@ -13,38 +13,70 @@
 //! every pack written so far is read as it was.
 //!
 //! At most KEEP readings are kept (a few region packs, a handful of
-//! tables each), the oldest let go first.
+//! tables each), the one used longest ago let go first: a reading found is
+//! moved to the back, so the readings a phone asks in turn stay kept.
 
 use crate::pack::Pack;
 use std::any::Any;
 use std::sync::{Arc, Mutex};
 
-/// The readings kept at most: four or five region packs round the
-/// airplane, five readings each, with room for the next cycle's.
-pub const KEEP: usize = 32;
+/// The readings kept at most: the eight kinds (airports, primaries,
+/// landing fields, navaids, fixes, places, airspace attributes and SUA
+/// heights) of five region packs round the airplane are 40, with room for
+/// the next cycle's. At 32 a phone asking
+/// the five packs' eight readings in turn let each go before it came round
+/// again, and read the airports table anew every few seconds in flight.
+pub const KEEP: usize = 64;
 
-type Entry = ((u32, u64, usize), &'static str, Arc<dyn Any + Send + Sync>);
+type Key = (u32, u64, usize);
+type Reading = Arc<dyn Any + Send + Sync>;
 
-static KEPT: Mutex<Vec<Entry>> = Mutex::new(Vec::new());
+/// The readings, the one used longest ago first.
+struct Kept {
+    entries: Vec<(Key, &'static str, Reading)>,
+    limit: usize,
+}
+
+impl Kept {
+    const fn new(limit: usize) -> Self {
+        Self { entries: Vec::new(), limit }
+    }
+
+    /// The reading kept, moved to the back as the one used last.
+    fn find(&mut self, key: Key, what: &'static str) -> Option<Reading> {
+        let at = self.entries.iter().position(|e| e.0 == key && e.1 == what)?;
+        let entry = self.entries.remove(at);
+        let reading = entry.2.clone();
+        self.entries.push(entry);
+        Some(reading)
+    }
+
+    /// Keeps a reading, letting go of the one used longest ago when full.
+    fn keep(&mut self, key: Key, what: &'static str, reading: Reading) {
+        self.entries.retain(|e| !(e.0 == key && e.1 == what));
+        if self.entries.len() >= self.limit {
+            self.entries.remove(0);
+        }
+        self.entries.push((key, what, reading));
+    }
+}
+
+static KEPT: Mutex<Kept> = Mutex::new(Kept::new(KEEP));
 
 /// `make(pack)`, the reading `what` of this pack, made once and kept. A
 /// lock another call's panic left poisoned only costs the reading again.
 pub(crate) fn kept<T: Any + Send + Sync>(pack: &Pack, what: &'static str, make: impl FnOnce(&Pack) -> T) -> Arc<T> {
     let key = pack.identity();
-    if let Ok(all) = KEPT.lock()
-        && let Some(found) = all.iter().find(|e| e.0 == key && e.1 == what)
-        && let Ok(t) = found.2.clone().downcast::<T>()
+    if let Ok(mut all) = KEPT.lock()
+        && let Some(found) = all.find(key, what)
+        && let Ok(t) = found.downcast::<T>()
     {
         return t;
     }
     // Made outside the lock: a big table's reading holds up no other call.
     let made = Arc::new(make(pack));
     if let Ok(mut all) = KEPT.lock() {
-        all.retain(|e| !(e.0 == key && e.1 == what));
-        if all.len() >= KEEP {
-            all.remove(0);
-        }
-        all.push((key, what, made.clone()));
+        all.keep(key, what, made.clone());
     }
     made
 }
@@ -72,5 +104,39 @@ mod tests {
         // The same header, other bytes: its CRC-32 tells it apart.
         assert_eq!(*read(&two), b"2");
         assert_eq!(made.load(Ordering::SeqCst), 2);
+    }
+
+    /// Eight readings of five packs asked in turn, as a phone in flight
+    /// asks them: after the first round every one is found.
+    #[test]
+    fn a_round_of_forty_readings_is_found_after_the_first() {
+        const WHAT: [&str; 8] = ["a", "b", "c", "d", "e", "f", "g", "h"];
+        let mut kept = Kept::new(KEEP);
+        let mut missed = 0;
+        for round in 0..3 {
+            for pack in 0..5u32 {
+                for what in WHAT {
+                    let key = (pack, 0, 0);
+                    if kept.find(key, what).is_none() {
+                        assert_eq!(round, 0, "{pack} {what} let go in round {round}");
+                        missed += 1;
+                        kept.keep(key, what, Arc::new(()));
+                    }
+                }
+            }
+        }
+        assert_eq!(missed, 40);
+    }
+
+    /// Full, the one used longest ago goes, not the one first kept.
+    #[test]
+    fn the_reading_used_longest_ago_goes_first() {
+        let mut kept = Kept::new(2);
+        kept.keep((1, 0, 0), "a", Arc::new(()));
+        kept.keep((2, 0, 0), "a", Arc::new(()));
+        assert!(kept.find((1, 0, 0), "a").is_some());
+        kept.keep((3, 0, 0), "a", Arc::new(()));
+        assert!(kept.find((1, 0, 0), "a").is_some());
+        assert!(kept.find((2, 0, 0), "a").is_none());
     }
 }

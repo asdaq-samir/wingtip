@@ -43,7 +43,7 @@ export function placeWeather(place: AirportPlace | undefined, known: { category:
   const weatherLine = metar
     ? [
         placeWind(metar),
-        metar.visibility_sm != null ? miles(metar.visibility_sm, metar.visibility_plus) : null,
+        metar.visibility_sm != null ? miles(metar.visibility_sm, metar.visibility_plus, metar.visibility_minus) : null,
         metar.ceiling_ft == null ? WORDING.noCeiling : `Ceiling ${feet(metar.ceiling_ft)}`,
       ]
         .filter(Boolean)

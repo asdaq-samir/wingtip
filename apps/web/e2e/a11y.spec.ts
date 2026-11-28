@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openConsole, openTab, settle, showTabs, slow, consolePage, mapStill } from "./helpers";
+import { openConsole, openTab, settle, settled, showTabs, slow, consolePage, mapStill } from "./helpers";
 import { atRest, violations } from "./a11yAxe";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -38,15 +38,10 @@ test("the console's Guide", async ({ page }) => {
   await openConsole(page);
   await consolePage(page.getByTestId("console-sheet"), "Guide");
   // Come to rest: sliding in, its glass is over the moving map, and its
-  // words were read against that.
-  await page.getByTestId("console-sheet").evaluate((el) =>
-    Promise.all(
-      el
-        .getAnimations({ subtree: true })
-        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
-        .map((a) => a.finished),
-    ),
-  );
+  // words were read against that. An animation cancelled on the way is as
+  // done as one run out (settled), where its rejected finished failed the
+  // test with an AbortError.
+  await settled(page.getByTestId("console-sheet"));
   await mapStill(page);
   expect(await violations(page, '[data-testid="console-sheet"]')).toEqual([]);
 });

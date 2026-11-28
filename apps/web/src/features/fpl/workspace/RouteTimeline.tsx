@@ -1,28 +1,20 @@
 import { useQueries } from "@tanstack/react-query";
 import { useIsMobile } from "../../../hooks/use-mobile";
-import { unknownWhy } from "../../../lib/api/client";
+import { plannerUnreachable, unknownWhy } from "../../../lib/api/client";
 import { leaveWhen } from "../../../lib/format/leaveWhen";
-import { clockElsewhere, clockIn } from "../../../lib/format";
+import { arrivalDay, clockElsewhere, clockIn } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 import { identOf, isPosition } from "../../../lib/identSchema";
 import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
-import {
-  FuelStopsChip,
-  NoFuelStopNote,
-  TimelineRoute,
-  TypeRouteButton,
-  visitAt,
-  visitRow,
-  type TimelinePoint,
-} from "../../procedures/lazy";
-import { keepTimelineHeight } from "./routeEditing";
-import { etaAt, rowCautions } from "../../plan";
+import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
+import { etaAt, fixMinutes } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
-import { MissingEnd, TypeRow } from "./RouteStart";
+import { BoxToggle, MissingEnd } from "./RouteStart";
+import { FuelPill } from "./FuelPill";
 
 /**
  * FPL's route on the ground, the one layout (decision 0047) and where it
@@ -59,8 +51,6 @@ export default function RouteTimeline({
   const { routeRows } = vm.leg;
   const { metarCategory } = vm.brief;
   const { waypointStops } = vm.routeList;
-  const { setStops } = vm.route;
-  const { fuelToAdd, noFuelStop } = vm.stops;
   const { panel, setPanel } = vm.view;
   const read = !!vm.flight.flying || !!vm.flight.dryRunning;
   // From md up the side panel is the window's height at half as at full
@@ -84,7 +74,10 @@ export default function RouteTimeline({
         checking: true,
         failed: noConnection(card)
           ? `${NO_CONNECTION}. Whether ${ident} is open is not known.`
-          : `Whether ${ident} is open could not be checked.`,
+          : plannerUnreachable(card.error)
+            ? // Asked again by itself (lib/queryRetry's refetchWhileUnreachable).
+              `The planner could not be reached. Whether ${ident} is open will be checked again.`
+            : `Whether ${ident} is open could not be checked.`,
       };
     return { closed: null, checking: true, failed: null };
   };
@@ -119,35 +112,34 @@ export default function RouteTimeline({
       const arrival = arrivalAt(ident, role, visitAt(routePoints, index).seen);
       return !!arrival && !!clockElsewhere(arrival.at, cardOf(ident)?.data?.time_zone, departZone);
     });
-  const zoneOf = (at: Date, ident: string) => clockIn(at, fields.includes(ident) ? cardOf(ident)?.data?.time_zone : departZone);
+  // Its day too where it is not the day the flight left (arrivalDay):
+  // "Tue 15:54 CST" a day on, as etaAt writes the times with no zone.
+  const zoneOf = (at: Date, ident: string) => {
+    const zone = fields.includes(ident) ? cardOf(ident)?.data?.time_zone : departZone;
+    const there = clockIn(at, zone);
+    const day = arrivalDay(at, new Date(from), zone, departZone);
+    return there && day ? { ...there, time: `${day} ${there.time}` } : there;
+  };
   const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
     if (role === "Departure") {
-      const leave = read ? (
-        depart ? (
-          leaveWhen(new Date(depart))
-        ) : (
-          "Now"
-        )
-      ) : (
-        <DepartPicker value={depart} onChange={changeDepart} look="time" />
-      );
       // Read, the departure's own clock and zone, as the stops'. Picked,
       // the picker keeps this device's clock, so it says this device's
       // zone: it said the departure's beside the device's time, two hours
-      // out for a phone in New York leaving Denver.
+      // out for a phone in New York leaving Denver. The zone always right
+      // after the time, so "Now" over "14:05 CST", where it sat after the
+      // two lines, "Now CST" over "14:05" (the owner's iPhone, 2026-11-23).
       if (zoned && read && depart) {
         const there = zoneOf(new Date(depart), ident);
         if (there) return <ZonedTime {...there} />;
       }
       const here = zoned ? clockIn(new Date(from), null) : null;
-      return here ? (
-        <span className="inline-flex items-baseline">
-          {leave}
-          <span className={`ml-1 font-normal ${TEXT.caption}`}>{here.zone}</span>
-        </span>
-      ) : (
-        leave
-      );
+      // "Now" alone, its field's elevation under it as every line's
+      // altitude is (the owner, 2026-11-24: "Under now just put altitude
+      // instead of time to match others"), its zone after it.
+      if (!read) return <DepartPicker value={depart} onChange={changeDepart} look="time" zone={here?.zone} clock={false} />;
+      if (!depart) return here ? <ZonedTime time="Now" zone={here.zone} /> : "Now";
+      const leave = leaveWhen(new Date(depart));
+      return here ? <ZonedTime time={leave} zone={here.zone} /> : leave;
     }
     const arrival = arrivalAt(ident, role, seen);
     if (!arrival) return "—";
@@ -156,10 +148,23 @@ export default function RouteTimeline({
     const there = zoned ? zoneOf(arrival.at, ident) : null;
     return there ? <ZonedTime {...there} /> : etaAt(from, arrival.minutes);
   };
-  // Each point's warning where it, or a leg since the point before, lies
-  // outside the United States (the engine's route_jurisdiction, decision
-  // 0053): the nav log's rows from the point before's to its own.
-  const cautions = rowCautions(routeRows);
+  // A procedure fix's time as a stop's is written, from the planner's
+  // minutes to it (fixMinutes), in its field's zone where the stops say
+  // theirs (the owner, 2026-11-24: "Each fix should show altitude and eta
+  // on the right side to look similar to other stops").
+  // On the field's own leg: a departure's fixes on the leg out of it, an
+  // arrival's and an approach's on the leg into it.
+  const fixAt = fixMinutes(routeRows);
+  const fixTimeAt = (field: string) => (fix: string, leaving: boolean) => {
+    const leg = fixAt.find((l) => sameField(leaving ? l.from : l.to, field));
+    const minutes = aircraft.none ? undefined : leg?.minutes.get(fix);
+    if (minutes === undefined) return null;
+    // Its time without the zone: a procedure's fixes are timed in their
+    // field's zone, said once on the field's own line (the owner,
+    // 2026-11-25: "PST" on every fix).
+    const there = zoned ? zoneOf(new Date(new Date(from).getTime() + minutes * 60_000), field) : null;
+    return there ? <span className="whitespace-nowrap">{there.time}</span> : etaAt(from, minutes);
+  };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =
       index === 0 && ident === planned.dep
@@ -178,56 +183,28 @@ export default function RouteTimeline({
       seen,
       visit,
       time: timeOf(ident, role, seen),
+      fixTime: fixTimeAt(ident),
       category: unknown || !field ? null : metarCategory(ident),
       problem: unknown ?? (status.closed ? `${status.closed}. Pick another field.` : status.failed),
-      caution: null,
       checking: status.checking,
       fuelStop: role === "Stop" && fuel.some((f) => sameField(f, ident)),
       field,
     };
   });
-  // In route order, each point said from the row after the point before's.
-  let fromRow = -1;
-  for (const point of points) {
-    const row = visitRow(routeRows, point.role, point.ident, point.seen);
-    const at = row ? routeRows.indexOf(row) : -1;
-    if (at < 0) continue;
-    point.caution = cautions.slice(fromRow + 1, at + 1).find(Boolean) ?? null;
-    fromRow = at;
-  }
   // Half a route, open to edit: the end it lacks in its place, and the
-  // route typed or pasted where Add a Stop is on a whole one (RouteStart).
+  // box's toggle in its last row where Add a Stop is on a whole one.
   const half = !read && !wholeRoute;
-  // The fuel stops' pill at Add a Stop's end: the planner's suggested ones
-  // put in, every flight's, or, once the route has fuel stops and needs no
-  // more, taken out again (the owner, 2026-11-20); none where there are
-  // neither. Add while any flight still has stops suggested, though some are
-  // in: the owner's trip read 21 gal short after the tap, its last flight's
-  // stops never offered.
-  const fuelIn = planned.stops.some((stop) => fuel.some((f) => sameField(f, stop)));
-  const fuelPill = fuelToAdd ? (
-    <FuelStopsChip added={false} onClick={fuelToAdd.add} />
-  ) : fuelIn ? (
-    <FuelStopsChip added onClick={() => setStops(planned.stops.filter((stop) => !fuel.some((f) => sameField(f, stop))))} />
-  ) : noFuelStop[0] ? (
-    <NoFuelStopNote flight={noFuelStop[0]} />
-  ) : null;
-  // Type the Route, where More's item was (the owner, 2026-11-21: More keeps
-  // three items): a keyboard glyph at Add a Stop's end on a whole route
-  // whose field is folded, opening the route's field to type or paste it in
-  // whole (RouteEditor), as Type or Paste a Route does before it is whole.
+  // The fuel stops' pill at Add a Stop's end, as on the field's face (FuelPill).
+  const fuelPill = <FuelPill vm={vm} />;
+  // The box's toggle at Add a Stop's end on a whole route whose field is
+  // folded, where More's item was (the owner, 2026-11-21: More keeps three
+  // items), after the fuel stops' pill: the box's bottom right, as it is
+  // on every face (BoxToggle).
   const typeFuel =
     wholeRoute && vm.routeList.routeFolded ? (
       <>
         {fuelPill}
-        <TypeRouteButton
-          pressed={false}
-          onToggle={() => {
-            // The grouped box's height, kept for the field it turns into.
-            keepTimelineHeight(document.querySelector('[data-testid="route-summary"]')?.getBoundingClientRect().height ?? 0);
-            vm.routeList.setRouteOpen(true);
-          }}
-        />
+        <BoxToggle vm={vm} focus={false} />
       </>
     ) : (
       fuelPill
@@ -238,9 +215,13 @@ export default function RouteTimeline({
       points={points}
       head={half && !planned.dep ? <MissingEnd vm={vm} end="Departure" /> : undefined}
       tail={half && !planned.dest ? <MissingEnd vm={vm} end="Destination" /> : undefined}
-      foot={half ? <TypeRow vm={vm} /> : undefined}
+      // Half a route: no Add a Stop, the box's toggle in its last row --
+      // the destination's to pick (MissingEnd), or the last point's.
+      building={half}
+      lastTrailing={half && planned.dest && !vm.routeList.boxOpen ? <BoxToggle vm={vm} /> : undefined}
       addTrailing={read ? undefined : typeFuel}
       allStops={read || tall || panel === "full"}
+      half={!read && !tall && panel !== "full"}
       onAllStops={() => setPanel("full")}
     />
   );

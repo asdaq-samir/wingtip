@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { settle, sideDrawer, slow } from "./helpers";
 import { courseBox } from "./mapProbes";
 import { origin } from "./routeFitProbes";
+import { watchFor } from "./pacing";
 
 /**
  * A route opened by a link on a desktop, from a present position to a
@@ -53,7 +54,7 @@ for (const late of [false, true]) {
     await settle(page);
     await expect(() => fittedBesidePanel(page)).toPass({ timeout: slow(20_000) });
     // And kept there past the first fix.
-    await page.waitForTimeout(5_000);
+    await watchFor(page, 5_000);
     if (late) await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
     await fittedBesidePanel(page);
   });

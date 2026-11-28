@@ -83,6 +83,8 @@ class AlternateCheck(BaseModel):
     visibility_sm: float | None = None
     taf: str | None = None
     good: bool | None = None
+    #: NASR lists it closed (CI or CP): never an alternate (decision 0043).
+    closed: bool = False
     #: Its forecast meets the standard minimums; where `good` is None for
     #: minimums of its own, the pilot checks those.
     meets_standard: bool = False
@@ -108,27 +110,28 @@ class IcingLayer(BaseModel):
 
 class IcingForecastLeg(BaseModel):
     """One leg's forecast icing (wingtip.icing_forecast): the worst
-    severity at the altitude flown, null where the AWC had no forecast for
+    severity at the altitude flown, null where the grids had no forecast for
     it; the share of the leg in icing there; the layer icing is in over
     the leg at any level; and the time it was read for, the leg's middle."""
 
     index: int
     altitude_ft: float
-    severity: Literal["none", "trace", "light", "moderate", "heavy"] | None
+    severity: Literal["none", "trace", "light", "moderate", "severe"] | None
     share: float | None
     layer: IcingLayer | None
     valid_s: float | None
 
 
 class IcingForecastWorst(BaseModel):
-    severity: Literal["trace", "light", "moderate", "heavy"]
+    severity: Literal["trace", "light", "moderate", "severe"]
     altitudes_ft: list[float]
     legs: list[int]
 
 
 class IcingForecast(BaseModel):
-    """GET /api/icing/route: the AWC's forecast icing (its GFA's, from CIP
-    and FIP; AIM 7-1-4) on each leg at the altitude flown, the worst of it
+    """GET /api/icing/route: the NWS's current and forecast icing (the CIP
+    analysis and the IFI forecast grids the weather service keeps; AIM
+    7-1-4) on each leg at the altitude flown, the worst of it
     and the Go / No-Go's line (the engine's icing_forecast_route); the
     legs it had no forecast for; the hour the forecast was issued."""
 

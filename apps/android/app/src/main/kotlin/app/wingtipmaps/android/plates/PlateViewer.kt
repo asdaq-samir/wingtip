@@ -42,8 +42,6 @@ fun PlateViewer(title: String, url: String, georeference: PlateGeoreference?, on
     val context = LocalContext.current
     val cache = context.cacheDir
     val page by produceState<Result<Bitmap?>?>(null, url) { value = runCatching { PlatePage.read(url, cache) } }
-    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
-    val at = PlatePosition.of(fix, georeference).getOrNull()
     val ink = rememberChartInk(url)
     val wide = isWide()
     FullScreenPage(
@@ -63,9 +61,21 @@ fun PlateViewer(title: String, url: String, georeference: PlateGeoreference?, on
         val read = page
         val shown = read?.getOrNull()
         when {
-            shown != null -> ZoomablePage(shown, null, at?.let { PageMark(it.x, it.y, it.rotationDeg) }, ink.pageInk())
+            shown != null -> PlateWithOwnShip(shown, georeference, flight, ink)
             read != null -> ProblemLine(stringResource(R.string.plate_no_page))
             else -> Loading()
         }
     }
+}
+
+/** The page with own ship on it, its own composable so that only it reads
+ *  each fix: the bar, the ink's controls and the dialog are not drawn
+ *  again each second. */
+@Composable
+private fun PlateWithOwnShip(page: Bitmap, georeference: PlateGeoreference?, flight: FlightModel, ink: ChartInk) {
+    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
+    val at = PlatePosition.of(fix, georeference).getOrNull()
+    // White on black at night unless picked, no brighter than the chart (rememberPlateLook).
+    val look = rememberPlateLook()
+    ZoomablePage(page, null, at?.let { PageMark(it.x, it.y, it.rotationDeg) }, ink.pageInk(), inverted = look.inverted, brightness = look.brightness)
 }

@@ -126,18 +126,10 @@ step "gateway OpenAPI (WRITE_OPENAPI=1 mvn test)" 1 services/gateway/src/main se
 step "phones' API models (api-models-apps.sh)" 1 "services/planner/openapi.json services/gateway/openapi.json scripts/build/api-models-apps.* .tool-versions" \
   "apps/ios/Wingtip/API/Generated apps/ios/WingtipAPI $A/api/generated" \
   "turn 'regen-all api-models-apps' scripts/build/api-models-apps.sh" "turn 'regen-all api-models-apps' scripts/build/api-models-apps.sh --check"
-step "design tokens (design-tokens.sh)" 0 "design/tokens.json scripts/build/design-tokens.sh scripts/build/design_tokens*" \
-  "apps/web/src/styles/tokens.css apps/web/src/lib/tokens.ts apps/ios/Wingtip/Design/Generated $A/design/generated" \
-  scripts/build/design-tokens.sh "scripts/build/design-tokens.sh --check"
-step "screens (screens.sh)" 0 "design/screens.json scripts/build/screens.*" \
-  "docs/navigation.md apps/web/src/lib/navigation/generated apps/ios/Wingtip/Navigation/Generated $A/navigation/generated" \
-  scripts/build/screens.sh "scripts/build/screens.sh --check"
-# The shared words, where this tree has them (design/wording.json, claude/words-audit).
-if [ -x scripts/build/wording.sh ]; then
-  step "shared words (wording.sh)" 0 "design/wording.json scripts/build/wording.*" \
-    "apps/web/src/lib/wording/generated apps/ios/Wingtip/Design/Generated/Wording.swift apps/android/app/src/main/res/values/wording_strings.xml docs/design/rules.md" \
-    scripts/build/wording.sh "scripts/build/wording.sh --check"
-fi
+# The design generators, from scripts/areas.yml's `generators` table.
+while IFS=$'\t' read -r _ title script sources outputs; do
+  step "$title ($(basename "$script"))" 0 "$sources" "$outputs" "$script" "$script --check"
+done < <(python3 scripts/areas.py generators)
 step "web's engine rules (web_rules.py)" 0 "apps/web/src scripts/build/web_rules.py" "engine/facade/web-rules.txt apps/web/src/lib/engine/webRules.ts" \
   "python3 scripts/build/web_rules.py" "python3 scripts/build/web_rules.py --check"
 step "WebAssembly (build-engine-wasm.sh)" 1 "engine/facade engine/crates engine/bindings/wasm engine/Cargo.lock scripts/build/build-engine-wasm.sh" \

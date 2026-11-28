@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.format
 
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.visibilityReportable
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -69,6 +71,23 @@ object Format {
     fun clock(epochMs: Long, zone: ZoneId = ZoneId.systemDefault()): String =
         DateTimeFormatter.ofPattern("HH:mm", Locale.US).format(Instant.ofEpochMilli(epochMs).atZone(zone))
 
+    /**
+     * The day an arrival is written with where it is not the day the flight
+     * left, as the web's arrivalDay: "Tue" within the week, "11/30" a week or
+     * more on, each day counted in its own zone (the arrival's field's, the
+     * departure's; this phone's where one has none); null on the same day. A
+     * flight left at 14:27 and said "15:54", the next day's, read as 87
+     * minutes on for 2,700 nm (the owner's iPhone, 2026-11-23).
+     */
+    fun arrivalDay(atMs: Long, leftMs: Long, zone: ZoneId? = null, leftZone: ZoneId? = null): String? {
+        val there = Instant.ofEpochMilli(atMs).atZone(zone ?: ZoneId.systemDefault()).toLocalDate()
+        val home = Instant.ofEpochMilli(leftMs).atZone(leftZone ?: ZoneId.systemDefault()).toLocalDate()
+        val days = java.time.temporal.ChronoUnit.DAYS.between(home, there)
+        if (days == 0L) return null
+        return if (days in 1..6) there.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.US)
+        else "${there.monthValue}/${there.dayOfMonth}"
+    }
+
     /** A course, heading, track, radial or wind direction: three figures,
      *  whole degrees, north as 360 (FAA Order JO 7110.65, 2-4-17), "045°". */
     fun heading(deg: Double): String = headingFigures(deg) + "°"
@@ -85,6 +104,10 @@ object Format {
      *  ft": as ATC gives traffic's altitude in hundreds of feet (FAA Order
      *  JO 7110.65, 2-1-21), one form wherever a target is shown (the web's
      *  reportedAltitude). */
+    /** Words begun with a capital, the rest as given ("arrival" as
+     *  "Arrival"): a line's or a name's first word. The app's one copy. */
+    fun capital(words: String): String = words.replaceFirstChar { it.uppercaseChar() }
+
     fun reportedAltitude(ft: Double): String = String.format(Locale.US, "%,d ft", (ft / 100).roundToLong() * 100)
 
     /** A distance in whole nautical miles, "38 nm": a field's distance on
@@ -135,11 +158,21 @@ object Format {
     /** A visibility in statute miles as said, quarters as fractions (the
      *  web's lib/atis visibilityWords): "10 sm", "2½ sm", "¾ sm"; a
      *  report's "more than" (P6SM, FAA JO 7900.5; the planner's
-     *  visibility_plus) "6+ sm", as the web's miles(sm, plus). */
-    fun visibility(sm: Double, plus: Boolean): String = visibility(sm).let { if (plus) it.removeSuffix(" sm") + "+ sm" else it }
+     *  visibility_plus) "6+ sm", as the web's miles(sm, plus); a report's
+     *  "less than" (M1/4SM, FMH-1 chapter 6; the planner's
+     *  visibility_minus) "less than ¼ sm", never the figure alone, which
+     *  says more than was seen. None where the engine does not answer, as
+     *  reportedVisibility says. */
+    fun visibility(sm: Double, plus: Boolean, minus: Boolean = false): String? = visibility(sm)?.let {
+        when {
+            minus -> "less than $it"
+            plus -> it.removeSuffix(" sm") + "+ sm"
+            else -> it
+        }
+    }
 
-    fun visibility(sm: Double): String {
-        val (whole, fraction) = reportedVisibility(sm)
+    fun visibility(sm: Double): String? {
+        val (whole, fraction) = reportedVisibility(sm) ?: return null
         val part = when (fraction) {
             null -> ""
             "1/4" -> "¼"
@@ -151,13 +184,17 @@ object Format {
     }
 
     /** A visibility as a whole and a fraction of a statute mile, as a METAR
-     *  writes it: 1.625 is (1, "5/8"), 10 is (10, null). To the sixteenth
-     *  below 3 sm (the finest a US report gives, "1/16SM") and the whole
-     *  mile from 3, always down, as the web's reportedVisibility: 5/8 was
-     *  written ".63", rounded up. */
-    fun reportedVisibility(sm: Double): Pair<Int, String?> {
-        val whole = kotlin.math.floor(sm + 1e-9).toInt()
-        val sixteenths = if (sm >= 3) 0 else kotlin.math.floor((sm + 1e-9 - whole) * 16).toInt()
+     *  writes it: 1.625 is (1, "5/8"), 10 is (10, null). The value is the
+     *  engine's visibility_reportable, the reportable one at or below it
+     *  (FMH-1 Table 6-1), as the web's reportedVisibility asks it: 5/8 was
+     *  written ".63", rounded up, and no report writes 11/16. The engine is
+     *  built in: a refusal is logged (Engine.rule) and gives none, never a
+     *  figure of our own, as iOS's reportedVisibility throws. */
+    fun reportedVisibility(sm: Double): Pair<Int, String?>? {
+        val reported = Engine.visibilityReportable(sm).getOrNull() ?: return null
+        val whole = kotlin.math.floor(reported + 1e-9).toInt()
+        // Every reportable value under 3 is a whole number of sixteenths.
+        val sixteenths = ((reported - whole) * 16).roundToInt()
         if (sixteenths == 0) return whole to null
         var n = sixteenths
         var d = 16

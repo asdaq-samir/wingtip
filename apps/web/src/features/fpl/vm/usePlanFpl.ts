@@ -8,6 +8,7 @@ import type { PlanCards } from "./usePlanCards";
 import type { PlanPicks } from "./usePlanPicks";
 import type { PlanMapModel } from "./usePlanMap";
 import type { PlanViewModel } from "./usePlanView";
+import { useKept } from "./useKept";
 
 /**
  * The cards over FPL, the Stops and the lists in full (useFplCards), and
@@ -50,8 +51,7 @@ export function usePlanFpl(
   }, [setViewPick, openProfileCard]);
   const profileReady = routed && !!course && !s.local;
   // The Profile's side view's chunk once there is a route to draw it for,
-  // at idle: its card opened on a fetch and a suspended first draw (the
-  // speed audit of 2026-11-21).
+  // at idle: its card opened on a fetch and a suspended first draw.
   useEffect(() => {
     if (!profileReady) return;
     const idle = window.requestIdleCallback ?? ((go: () => void) => window.setTimeout(go, 1000));
@@ -59,7 +59,8 @@ export function usePlanFpl(
     const handle = idle(prefetchMiniProfile);
     return () => cancel(handle);
   }, [profileReady]);
-  return { ...cards, openProfile, profileReady };
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({ ...cards, openProfile, profileReady });
 }
 
 /** The cards over FPL, as the workspace's hooks read them. */

@@ -6,9 +6,12 @@ from __future__ import annotations
 import threading
 import time
 
+from ..engine import ask as engine
+from ..figure import number as _number
 from ..units import NM_PER_DEG_LAT
+from ..config import user_agent
 
-HEADERS = {"User-Agent": "wingtip-maps/0.1 (VFR flight planner; traffic for pilots' situational awareness)"}
+HEADERS = {"User-Agent": user_agent("VFR flight planner; traffic for pilots' situational awareness")}
 #: How long a refusal for the day's quota keeps adsb.lol unasked where it
 #: names no Retry-After, s: an hour.
 QUOTA_WAIT_S = 3600.0
@@ -35,7 +38,9 @@ def refused_for_s(resp) -> float:
 
 
 #: A position older than this is left out: the airplane is somewhere else.
-STALE_S = 30.0
+#: The engine's (traffic_figures), which the web's map and the phones hold
+#: to as well.
+STALE_S = engine("traffic_figures")["stale_s"]
 #: How long one request may take.
 TIMEOUT_S = 5.0
 
@@ -52,13 +57,6 @@ _LOCK = threading.Lock()
 
 class TrafficUnavailable(RuntimeError):
     """adsb.lol has not answered for a while."""
-
-
-def _number(value) -> float | None:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
 
 
 def _aircraft(entry: dict) -> dict | None:

@@ -1,7 +1,7 @@
-//! time_ago and route_procedures held to the shared fixtures the web and
-//! both phones read too (apps/web/src/lib/fixtures/timeAgo.json and
-//! routeProcedures.json): the one "... ago", and the SIDs and STARs typed
-//! among a route's words. A route file's reading is route_file.rs's.
+//! time_ago, route_procedures and route_typed held to the shared fixtures
+//! the web and both phones read too (apps/web/src/lib/fixtures/timeAgo.json,
+//! routeProcedures.json and routeTyped.json): the one "... ago", the SIDs
+//! and STARs typed among a route's words, and a typed route read whole. A route file's reading is route_file.rs's.
 
 use serde_json::Value;
 use std::path::PathBuf;
@@ -29,4 +29,9 @@ fn time_ago_reads_as_the_fixture_says() {
 #[test]
 fn route_procedures_reads_as_the_fixture_says() {
     each_case("route_procedures", "routeProcedures.json");
+}
+
+#[test]
+fn route_typed_reads_as_the_fixture_says() {
+    each_case("route_typed", "routeTyped.json");
 }

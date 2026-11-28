@@ -6,6 +6,7 @@ import anyio
 import httpx2
 import pytest
 
+from mcp.server.auth.provider import AccessToken
 from mcp.server.mcpserver.exceptions import ToolError
 
 from app.mcp import records
@@ -91,3 +92,50 @@ def test_a_flight_the_gateway_keeps_as_reviewed_is_said_in_its_words(monkeypatch
     monkeypatch.setattr(records.httpx2, "AsyncClient", lambda **kw: real(transport=answer, **kw))
     with pytest.raises(ToolError, match="kept the flight as it was: its route stays as reviewed"):
         anyio.run(records.replan_flight, "42", 12, {"departureIdent": "C81"})
+
+
+def test_a_saved_flight_gone_since_it_was_listed_is_not_said_as_the_account(monkeypatch):
+    """The mcp audit of 2026-11-23, L6: a 404 on one flight is that flight
+    gone, which reconnecting would not bring back; a 400 is the gateway's
+    own words with what to do."""
+    monkeypatch.setenv("MCP_INTERNAL_TOKEN", "planner-secret-0123456789abcdef0123")
+    real = httpx2.AsyncClient
+
+    def answering(status, body):
+        transport = httpx2.MockTransport(lambda request: httpx2.Response(status, json=body))
+        monkeypatch.setattr(records.httpx2, "AsyncClient", lambda **kw: real(transport=transport, **kw))
+
+    answering(404, {"detail": "not found"})
+    with pytest.raises(ToolError, match="no longer in the pilot's Wingtip: my_flights lists theirs"):
+        anyio.run(records.delete_flight, "42", 12)
+    with pytest.raises(ToolError, match="disconnect Wingtip and connect it again"):
+        anyio.run(records.airplanes, "42")
+    answering(400, {"detail": "stops must be identifiers"})
+    with pytest.raises(ToolError, match="refused the flight: stops must be identifiers. Change what it names"):
+        anyio.run(records.save_flight, "42", {})
+
+
+def test_a_flight_write_shows_the_gateway_the_pilots_own_token(gateway, monkeypatch):
+    """The gateway checks a flight write's scope for itself (round 4): the
+    three writes carry the token the call came with, a read does not."""
+    monkeypatch.setattr(records, "get_access_token", lambda: AccessToken(token="the-token", client_id="claude", scopes=[]))
+    anyio.run(records.save_flight, "42", {"departureIdent": "C81"})
+    anyio.run(records.replan_flight, "42", 12, {"departureIdent": "C81"})
+    anyio.run(records.delete_flight, "42", 12)
+    anyio.run(records.flights, "42")
+    *writes, read = gateway
+    assert [w.headers["X-Connector-Token"] for w in writes] == ["the-token"] * 3
+    assert "X-Connector-Token" not in read.headers
+
+
+def test_a_write_the_connection_was_not_granted_says_what_to_tick(monkeypatch):
+    """A 403 is the gateway's own words, which name the consent page's box,
+    not "try again in a minute"."""
+    monkeypatch.setenv("MCP_INTERNAL_TOKEN", "planner-secret-0123456789abcdef0123")
+    words = 'This connection was not allowed wingtip:flights: approve "Save, change and delete your saved flights".'
+    said = {"status": 403, "detail": words}
+    real = httpx2.AsyncClient
+    answer = httpx2.MockTransport(lambda request: httpx2.Response(403, json=said))
+    monkeypatch.setattr(records.httpx2, "AsyncClient", lambda **kw: real(transport=answer, **kw))
+    with pytest.raises(ToolError, match='^This connection was not allowed wingtip:flights: approve "Save, change'):
+        anyio.run(records.save_flight, "42", {})

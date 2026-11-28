@@ -5,6 +5,7 @@ import { zuluTime } from "../../lib/format";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { airportQuery } from "../../lib/queryClient";
 import { sameField } from "../../lib/procedures";
+import type { FitWind } from "./runwayFit";
 import { windPick, type WindPick, reportedWind, type ReportedWind, type NavLogRow, type ProcedureAirport } from "../plan";
 
 /** How far off a field's time must be for its runway to be picked into
@@ -14,7 +15,7 @@ const TEN_MIN_MS = 10 * 60_000;
 
 /**
  * Each of the route's fields' wind for FPL's route list (useProceduresRoute,
- * split from it for the audit's WEB-19): its card's report, else the
+ * split from it): its card's report, else the
  * nearest one's, or, where the airplane is there more than an hour from
  * now, the TAF's forecast for then; the runway into it (windPick) and the
  * wind as the field's line says it (reportedOf).
@@ -120,7 +121,7 @@ export function useFieldWinds({ airports, rows, depart }: { airports: ProcedureA
   // The wind a field reports, else the nearest report's, as the METAR
   // gives it: from true north (FAA Order JO 7900.5), marked "T" beside the
   // runways' magnetic numbers, where a tower's and an ATIS's winds are
-  // magnetic (AIM 4-1-13) -- the audit's finding.
+  // magnetic (AIM 4-1-13).
   const reportedOf = (ident: string): ReportedWind | null => {
     const i = airports.findIndex((a) => sameField(a.ident, ident));
     // The forecast's, where the runway is picked into it (windOf).
@@ -133,5 +134,22 @@ export function useFieldWinds({ airports, rows, depart }: { airports: ProcedureA
     const m = card?.metar ?? card?.nearby_metar?.metar;
     return m ? reportedWind(m.wind_dir_true_deg, m.wind_speed_kt, m.wind_gust_kt) : null;
   };
-  return { cards, forecastFor, forecasts, startMs, landedAt, windOf, reportedOf };
+  // The same wind as each end's fit's (runwayFit: its crosswind, its
+  // tailwind, its distances' headwind): the forecast's for the landing
+  // where the runway is picked into it, else the report's. The fit read
+  // the METAR alone, so with a forecast it judged another wind than the
+  // pick's: KLAS's 26R "into the wind" of the forecast's 250 at 5 and
+  // "Tailwind 2 kt" of the METAR's 050 at 3, at once (2026-11-25).
+  const fitWindOf = (ident: string): FitWind | null => {
+    const i = airports.findIndex((a) => sameField(a.ident, ident));
+    const forecast = forecastFor[i] != null ? forecasts[i]?.data : null;
+    if (forecast) return { dirTrueDeg: forecast.dir_true_deg, speedKt: forecast.speed_kt, gustKt: forecast.gust_kt };
+    const card = cards[i]?.data;
+    const m = card?.metar ?? card?.nearby_metar?.metar;
+    // The report's variable arc, which the forecast has none of.
+    return m
+      ? { dirTrueDeg: m.wind_dir_true_deg, speedKt: m.wind_speed_kt, gustKt: m.wind_gust_kt, variableDeg: m.wind_variable_deg ?? null }
+      : null;
+  };
+  return { cards, forecastFor, forecasts, startMs, landedAt, windOf, reportedOf, fitWindOf };
 }

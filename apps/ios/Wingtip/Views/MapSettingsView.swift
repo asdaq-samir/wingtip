@@ -81,6 +81,8 @@ struct MapSettingsView: View {
             Section("Look") {
                 ThemeRow()
                 AppearanceRow()
+                // The chart's Dimmer and Contrast, as the web's (ChartLook).
+                ChartLookRows()
                 // The map's words follow the text size, up to 1.2 times
                 // (owner rec 26; MapLabelLook), as the web's switch.
                 Toggle("Larger Map Labels", isOn: $largerLabels)
@@ -101,17 +103,16 @@ struct MapSettingsView: View {
     }
 }
 
-/// The route's checkpoints and the Class B fields' weather chips, the
-/// route's ••• menu's On the Map (the owner, 2026-11-14: "Let's not enable
-/// waypoints for a pilot"), each off by default.
+/// The route's checkpoints, the route's ••• menu's On the Map (the owner,
+/// 2026-11-14: "Let's not enable waypoints for a pilot"), off by default.
+/// The Class B fields' weather is always drawn, as the web's (the owner,
+/// 2026-11-17), so it has no switch.
 struct RouteOnMapToggles: View {
     @AppStorage(MapExtrasInput.Keys.waypoints) private var waypointsOn = false
-    @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
 
     var body: some View {
         Section("On the Map") {
             Toggle("Route Checkpoints", isOn: $waypointsOn)
-            Toggle("Class B Weather", isOn: $classBOn)
         }
     }
 }

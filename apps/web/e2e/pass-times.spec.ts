@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, sideDrawer, slow, openTab, openSection } from "./helpers";
+import { settle, sheetFoot, sideDrawer, slow, openTab, openSection } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -79,7 +79,7 @@ test("a TFR in force when the flight gets there is flagged, one that starts late
   await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   // Counted on FPL's Brief button (FplTabBar), the Preflight marked for
   // it, and the flag on its section inside.
-  await expect(sideDrawer(page).getByTestId("route-brief-count")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("route-brief-count")).toBeVisible();
   await openTab(page, "Preflight");
   await expect(page.getByTestId("panel-tab-mark-preflight")).toBeVisible();
   await openSection(page, "TFRs & Special Use");

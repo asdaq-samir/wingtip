@@ -107,8 +107,7 @@ export function SearchField({
             ref={input}
             enterKeyHint="search"
             // A place to search for, not a form's AutoFill: off, as the one
-            // search's field says (SearchBox), and as the iOS audit's P19
-            // asks every typed field to say.
+            // search's field says (SearchBox), and as every typed field is asked to say.
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}

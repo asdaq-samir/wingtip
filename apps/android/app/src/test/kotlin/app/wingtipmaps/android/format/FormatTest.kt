@@ -10,6 +10,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -102,15 +103,10 @@ class FormatTest {
     fun anAltimeterAVisibilityAndATemperature() {
         assertEquals("29.92 inHg", Format.altimeter(29.92))
         assertEquals("30.10 inHg", Format.altimeter(30.1))
-        assertEquals("10 sm", Format.visibility(10.0))
-        assertEquals("2½ sm", Format.visibility(2.5))
-        assertEquals("¾ sm", Format.visibility(0.75))
-        assertEquals("0 sm", Format.visibility(0.0))
-        // Eighths as a METAR writes them, never rounded up: 5/8 was ".63 sm".
-        assertEquals("5/8 sm", Format.visibility(0.625))
-        assertEquals("1 3/8 sm", Format.visibility(1.375))
-        assertEquals(0 to "11/16", Format.reportedVisibility(0.7456))
-        assertEquals(4 to null, Format.reportedVisibility(4.97))
+        // A visibility is the engine's (visibility_reportable), held on
+        // the device (MagneticAndVisibilityEngineTest); on the JVM, where
+        // the engine cannot load, none is written rather than a guess.
+        assertNull(Format.visibility(10.0))
         assertEquals("15 °C", Format.temperature(15.0))
         assertEquals("−3 °C", Format.temperature(-3.0))
     }
@@ -118,8 +114,8 @@ class FormatTest {
     /** A forecast's ceiling and visibility, as the web's ceilingAndVisibility. */
     @Test
     fun ceilingAndVisibility() {
-        assertEquals("1,200 ft · 3 sm", Format.ceilingAndVisibility(1200.0, 3.0))
-        assertEquals("no ceiling · 6 sm", Format.ceilingAndVisibility(null, 6.0))
+        // With a visibility, the engine's miles: held on the device
+        // (MagneticAndVisibilityEngineTest).
         assertEquals("800 ft · —", Format.ceilingAndVisibility(800.0, null))
     }
 }

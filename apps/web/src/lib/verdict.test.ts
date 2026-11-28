@@ -3,11 +3,19 @@ import type { Alternates } from "./api/types";
 import { briefVerdict, type VerdictInput, type VerdictItem } from "./verdict";
 
 const quiet: VerdictInput = {
-  weather: { pending: false, failed: null, vfrNotRecommended: [], underMinimums: [], hazards: [], unchecked: [], worst: "3,500 ft · 6 sm" },
-  airspace: { pending: false, unchecked: false, inForce: [], near: 0, specialUse: [] },
+  weather: {
+    pending: false,
+    failed: null,
+    vfr_not_recommended: [],
+    under_minimums: [],
+    hazards: [],
+    unchecked: [],
+    worst: "3,500 ft · 6 sm",
+  },
+  airspace: { pending: false, unchecked: false, in_force: [], near: 0, special_use: [] },
   altitude: { pending: false, problem: null, cautions: [], flown: "FL055 · Lowest" },
-  fuel: { pending: false, marginGal: 12.4, requiredGal: 27.6, reserveMin: 30 },
-  runways: { pending: false, worked: true, short: [], crosswind: [], beyond: [], unchecked: [] },
+  fuel: { pending: false, margin_gal: 12.4, required_gal: 27.6, reserve_min: 30 },
+  runways: { pending: false, worked: true, short: [], crosswind: [], beyond: [], tailwind: [], close: [], unchecked: [] },
   balance: { pending: false, worked: true, problems: [], takeoff: "2,407 lb at 41.2 in" },
   risk: { level: "low", line: "Low · 2 points" },
 };
@@ -31,9 +39,9 @@ describe("the Go / No-Go", () => {
   it("is no-go as planned on VFR not recommended, a TFR in force, too little fuel or no altitude, naming each", () => {
     const { items, line } = verdict({
       ...quiet,
-      weather: { ...quiet.weather, vfrNotRecommended: ["KDLH currently reporting IFR"] },
-      airspace: { ...quiet.airspace, inForce: ["6/1111"] },
-      fuel: { ...quiet.fuel, marginGal: -2.25 },
+      weather: { ...quiet.weather, vfr_not_recommended: ["KDLH currently reporting IFR"] },
+      airspace: { ...quiet.airspace, in_force: ["6/1111"] },
+      fuel: { ...quiet.fuel, margin_gal: -2.25 },
       altitude: { ...quiet.altitude, problem: "Ceiling 11,700 ft: terrain 40 nm past KDLH needs 12,500" },
     });
     expect(items.find((i) => i.key === "weather")!.detail).toBe("VFR not recommended: KDLH currently reporting IFR");
@@ -42,7 +50,7 @@ describe("the Go / No-Go", () => {
   });
 
   it("under IFR cites the IFR reserve's rule", () => {
-    const { items } = verdict({ ...quiet, fuel: { ...quiet.fuel, marginGal: -2.25, reserveMin: 45, ifr: true } });
+    const { items } = verdict({ ...quiet, fuel: { ...quiet.fuel, margin_gal: -2.25, reserve_min: 45, ifr: true } });
     expect(items.find((i) => i.key === "fuel")!.detail).toBe("2.3 gal short of the fuel and its 45 min reserve (14 CFR 91.167)");
   });
 
@@ -51,14 +59,14 @@ describe("the Go / No-Go", () => {
     const item = finding({ ...quiet, weather: { ...quiet.weather, icing, hazards: ["Icing G-AIRMET"] } }, "weather");
     expect(item).toMatchObject({ finding: "caution", detail: icing, section: "Adverse Conditions" });
     // Your own minimums come first.
-    expect(finding({ ...quiet, weather: { ...quiet.weather, icing, underMinimums: ["KDLH 800 ft"] } }, "weather").finding).toBe("stop");
+    expect(finding({ ...quiet, weather: { ...quiet.weather, icing, under_minimums: ["KDLH 800 ft"] } }, "weather").finding).toBe("stop");
   });
 
   it("asks for another look at hazards, an area in use, a pilot's own altitude and a crosswind", () => {
     const input: VerdictInput = {
       ...quiet,
       weather: { ...quiet.weather, hazards: ["IFR G-AIRMET"] },
-      airspace: { ...quiet.airspace, specialUse: [{ name: "VOLK EAST MOA", when: "active" }] },
+      airspace: { ...quiet.airspace, special_use: [{ name: "VOLK EAST MOA", when: "active" }] },
       altitude: { ...quiet.altitude, cautions: ["Westbound above 3,000 ft flies even thousands plus 500 (14 CFR 91.159)"] },
       runways: { ...quiet.runways, crosswind: ["C81"] },
     };
@@ -94,13 +102,18 @@ describe("the Go / No-Go", () => {
     expect(line.finding).toBe("caution");
   });
 
+  it("asks for the pilot's load where the airplane has a loading but none is set, never balancing the POH's sample", () => {
+    const item = finding({ ...quiet, balance: { pending: false, worked: false, no_load: true, problems: [], takeoff: null } }, "balance");
+    expect(item).toMatchObject({ finding: "unknown", detail: "Not worked out: give your load" });
+  });
+
   it("leaves out the fuel, the runways and the weight and balance with no airplane picked", () => {
     expect(briefVerdict({ input: quiet, airplane: false }).items.map((i) => i.key)).toEqual(["weather", "airspace", "altitude", "risk"]);
   });
 });
 
 describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
-  const check = (good: boolean) => ({
+  const check = (good: boolean | null) => ({
     ident: "KMSN",
     approach: true,
     precision: true,
@@ -110,6 +123,7 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
     visibility_sm: 4,
     taf: null,
     good,
+    closed: false,
     meets_standard: true,
     reasons: [],
     distance_nm: 220,
@@ -123,24 +137,32 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
     ...quiet,
     weather: { ...quiet.weather, ifr: true, ...weather },
   });
-  const weather = (input: VerdictInput, alternate?: Alternates): VerdictItem => verdict(input, { alternate }).items[0]!;
+  const weather = (input: VerdictInput, alternate?: Alternates | { failed?: boolean; pending?: boolean }): VerdictItem =>
+    verdict(input, { alternate }).items[0]!;
 
-  it("says nothing while the answer is awaited or the one filed will do", () => {
-    expect(weather(ifr()).finding).toBe("ok");
+  it("is pending while the answer is awaited, and says nothing where the one filed will do", () => {
+    expect(weather(ifr(), { pending: true }).finding).toBe("pending");
     expect(weather(ifr(), answer(true, check(true))).finding).toBe("ok");
+  });
+
+  it("is not checked, never ok, where no check was made or it failed (14 CFR 91.169(b))", () => {
+    expect(weather(ifr()).finding).toBe("unknown");
+    expect(weather(ifr(), { failed: true }).detail).toBe(
+      "Alternate not checked: 14 CFR 91.169(b) excuses one only where the destination's forecast shows it",
+    );
   });
 
   it("asks for one where one is needed, and stops on one under its minimums, opening its section", () => {
     expect(weather(ifr(), answer(true, null))).toMatchObject({
-      finding: "caution",
-      detail: "An alternate is required (14 CFR 91.169): file one in Weather",
+      finding: "stop",
+      detail: "An alternate is required (14 CFR 91.169(a)(2)) and none is filed: file one in Weather",
       tab: "arrive",
       section: "Alternate",
     });
     expect(weather(ifr(), answer(true, check(false))).finding).toBe("stop");
   });
 
-  it("leaves the weather's own caution where its caution is no worse", () => {
-    expect(weather(ifr({ hazards: ["IFR G-AIRMET"] }), answer(true, null)).detail).toBe("IFR G-AIRMET along the route");
+  it("leaves the weather's own caution where its caution is no worse (none filed is a stop, 91.169(a)(2))", () => {
+    expect(weather(ifr({ hazards: ["IFR G-AIRMET"] }), answer(true, check(null))).detail).toBe("IFR G-AIRMET along the route");
   });
 });

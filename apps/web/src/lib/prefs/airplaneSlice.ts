@@ -13,7 +13,7 @@ export const STOCK_C172: AircraftChoice = { profile: "c172", label: "C172 · Ces
  *  weather, airspace and ground, none of which an airplane changes -- and
  *  every figure that needs one (times, fuel, speeds, glide, tops of climb
  *  and descent, weight and balance) is left out, not guessed (the owner,
- *  2026-11-08; the FPL audit's A14). */
+ *  2026-11-08). */
 export const NO_AIRPLANE: AircraftChoice = { profile: "", label: "", none: true };
 
 /** Whether an airplane has been picked: its figures can be shown. */

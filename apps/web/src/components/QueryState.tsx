@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import { Skeleton } from "./ui/skeleton";
@@ -6,6 +7,8 @@ import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
 import { NO_CONNECTION, noConnection } from "../lib/problems";
 import { FieldError } from "./ui/field";
+import { skeletonRows } from "./skeletonRows";
+import { CardFacts } from "./CardFacts";
 
 /** What a query says of itself (TanStack Query's own flags). */
 interface Asked {
@@ -27,8 +30,7 @@ interface Asked {
  * Try again, in place, as CLAUDE.md asks errors to be shown: one line for
  * every list, where the checklist, the squawks, the checkride's record and
  * Nearest stayed on "Fetching…" for good after a failure, the logbook said
- * it had no flights, and the saved flights showed nothing at all (the
- * commonality audit's N-12). A row of a list (`row`), else a line of its
+ * it had no flights, and the saved flights showed nothing at all. A row of a list (`row`), else a line of its
  * own; nothing once the answer is in.
  */
 export default function QueryState({
@@ -47,7 +49,7 @@ export default function QueryState({
   row?: boolean;
   /** As many rows as are coming, where the count is known (a list of the
    *  planner's twelve fields): each a row's height from the first frame,
-   *  so nothing under them moves as they come (the flicker audit's FL-9). */
+   *  so nothing under them moves as they come. */
   rows?: number;
   /** The lines under each row's name, as the rows that come have them. */
   lines?: number;
@@ -77,20 +79,25 @@ export default function QueryState({
     );
   }
   // While it comes: the shape of what is coming, its words for a screen
-  // reader, where a grey line of "Fetching…" read as unfinished (the style
-  // audit, 2026-10-26).
+  // reader, where a grey line of "Fetching…" read as unfinished.
   if (query.isLoading || query.isError) {
     if (row && rows) return <SkeletonRows rows={rows} lines={lines} fetching={fetching} />;
-    const bars = (
-      <span role="status" className="flex w-full flex-col gap-2 py-1">
-        <span className="sr-only">{fetching}</span>
-        <Skeleton aria-hidden="true" className="h-4 w-3/5" />
-        <Skeleton aria-hidden="true" className="h-3 w-2/5" />
-      </span>
-    );
+    const bars = <SkeletonBars fetching={fetching} />;
     return row ? <ListRow title={bars} /> : <div className="px-1">{bars}</div>;
   }
   return null;
+}
+
+/** Two lines still coming, a line and a shorter one under it, their
+ *  words for a screen reader. */
+export function SkeletonBars({ fetching }: { fetching: ReactNode }) {
+  return (
+    <span role="status" className="flex w-full flex-col gap-2 py-1">
+      <span className="sr-only">{fetching}</span>
+      <Skeleton aria-hidden="true" className="h-4 w-3/5" />
+      <Skeleton aria-hidden="true" className="h-3 w-2/5" />
+    </span>
+  );
 }
 
 /** A line of words to come at the line's own height: the stock Skeleton
@@ -100,34 +107,69 @@ export function SkeletonLine({ className }: { className?: string }) {
   return <Skeleton aria-hidden="true" className={cn("inline-block h-[0.8em] align-middle", className)} />;
 }
 
-/** `rows` list rows still coming, each its name and `lines` lines under it
- *  in the row's own type, so each is the height of the row that replaces
- *  it; their words for a screen reader once. */
-export function SkeletonRows({ rows, lines = 1, fetching }: { rows: number; lines?: number; fetching: string }) {
+/** skeletonRows (./skeletonRows) as an element. */
+export function SkeletonRows(props: { rows: number; lines?: number; fetching: string }) {
+  return <>{skeletonRows(props)}</>;
+}
+
+/** Each placeholder fact's name and value, ch wide, as the airport card's
+ *  five run (Weather VFR, Airspace D, Elev. 808 ft, Pattern 1,800 ft,
+ *  Dist. 12 nm): uneven, as words are. */
+const FACT_WIDTHS: readonly (readonly [string, string])[] = [
+  ["w-[6ch]", "w-[4ch]"],
+  ["w-[7ch]", "w-[2ch]"],
+  ["w-[4ch]", "w-[6ch]"],
+  ["w-[6ch]", "w-[8ch]"],
+  ["w-[4ch]", "w-[5ch]"],
+];
+
+/** A card's Info still coming: its facts strip in the real CardFacts
+ *  (`fit`, wrapping as the facts do at a larger text), `facts` of them,
+ *  each a name at the note's size over a value at the row's, sized in ch
+ *  so they grow with the pilot's text, and its pictures' first tile
+ *  (CardPictures' 4:3 at 70 % of the card, 60 % from sm), so the card
+ *  opens in its own shape and fills in place, where it stood empty under
+ *  a grey "Fetching…" and then jumped. */
+export function SkeletonCardInfo({
+  facts,
+  fetching,
+  note,
+}: {
+  facts: number;
+  fetching: string;
+  /** The fact with a note under it, a caption line kept for it: the
+   *  airport card's Airspace ("Part-time"), whose note pushed the pictures
+   *  down some 16 px when the facts came in at a part-time towered field. */
+  note?: number;
+}) {
   return (
-    <>
-      {Array.from({ length: rows }, (_, i) => (
-        <ListRow
-          key={i}
-          title={
-            <span role={i === 0 ? "status" : undefined}>
-              {i === 0 && <span className="sr-only">{fetching}</span>}
-              <SkeletonLine className="w-40" />
-            </span>
-          }
-          description={
-            lines > 0 && (
-              <>
-                {Array.from({ length: lines }, (_, l) => (
-                  <span key={l} className="block">
-                    <SkeletonLine className={l === lines - 1 ? "w-28" : "w-52"} />
-                  </span>
-                ))}
-              </>
-            )
-          }
-        />
-      ))}
-    </>
+    <div role="status" data-testid="card-info-coming">
+      <span className="sr-only">{fetching}</span>
+      <div aria-hidden="true">
+        <CardFacts testId="card-facts-coming" fit>
+          {Array.from({ length: facts }, (_, i) => {
+            const [name, value] = FACT_WIDTHS[i % FACT_WIDTHS.length]!;
+            return (
+              <div key={i} className="flex shrink-0 flex-col gap-0.5">
+                <dt className={TEXT.note}>
+                  <SkeletonLine className={name} />
+                </dt>
+                <dd className={TEXT.row}>
+                  <SkeletonLine className={value} />
+                </dd>
+                {i === note && (
+                  <dd className={TEXT.caption}>
+                    <SkeletonLine className="w-[7ch]" />
+                  </dd>
+                )}
+              </div>
+            );
+          })}
+        </CardFacts>
+      </div>
+      <div className="@container pt-4" aria-hidden="true">
+        <Skeleton className="aspect-4/3 w-[70%] rounded-(--radius-card) sm:w-[60%]" />
+      </div>
+    </div>
   );
 }

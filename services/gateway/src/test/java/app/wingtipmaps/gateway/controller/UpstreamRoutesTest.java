@@ -101,7 +101,13 @@ class UpstreamRoutesTest {
             Map.entry("GET /api/plates/states/{cycle}/{state}", "public csrf"),
             // One of the FAA's charts in force as its own PDF, public as the
             // FAA's own is.
-            Map.entry("GET /api/faa-chart/pdf/{source}/{edition}/{pdf}", "public csrf"));
+            Map.entry("GET /api/faa-chart/pdf/{source}/{edition}/{pdf}", "public csrf"),
+            // The approach's lesson, its debriefs and the move between
+            // them: public and a POST with no CSRF cookie, as the flight's
+            // debrief (/api/debrief) is.
+            Map.entry("POST /api/approach/lesson", "public no-csrf"),
+            Map.entry("POST /api/approach/debriefs", "public no-csrf"),
+            Map.entry("POST /api/approach/debriefs/transition", "public no-csrf"));
 
     /** Routes whose passed headers changed on purpose since the hand list
      *  was recorded: what each passes now. */
@@ -110,6 +116,14 @@ class UpstreamRoutesTest {
             // its ETag for a 304 rather than the whole list again (the
             // planner's /api/tfrs, 2026-11-12).
             "GET /api/tfrs", Set.of("Cache-Control", "ETag"));
+
+    /** Routes that are told who the pilot is (X-Pilot-Id) since the hand
+     *  list was recorded, on purpose. */
+    static final Set<String> PILOT_SINCE = Set.of(
+            // An airplane's card follows it from then on only for a
+            // signed-in pilot, so walking addresses starves no pilot's
+            // airplane (security round 4, M5, 86bdb82d2).
+            "GET /api/traffic/flight/{hex_id}");
 
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {
@@ -167,7 +181,7 @@ class UpstreamRoutesTest {
                     "csrf",
                     old.csrf(),
                     "GET".equals(route.method()) ? "-" : route.csrf() ? "checked" : "exempt");
-            compare(differences, name, "pilot", old.pilot(), route.pilot());
+            compare(differences, name, "pilot", old.pilot() || PILOT_SINCE.contains(name), route.pilot());
             compare(differences, name, "range", old.range(), route.range());
             compare(
                     differences,

@@ -144,6 +144,149 @@
       }
     },
     {
+      "name": "An airplane with a POH loading and no load given: the weight and balance not worked, never the POH's sample (14 CFR 91.9(a), 91.103)",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": false
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 30,
+            "ifr": false
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": false,
+            "no_load": true,
+            "problems": [],
+            "takeoff": null
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": null,
+        "fields": [
+          {
+            "ident": "C81",
+            "role": "departure",
+            "private": false,
+            "military": null,
+            "phone": null,
+            "status": "O"
+          },
+          {
+            "ident": "KDLH",
+            "role": "destination",
+            "private": false,
+            "military": null,
+            "phone": null,
+            "status": "O"
+          }
+        ],
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "enroute",
+            "section": "Adverse Conditions",
+            "finding": "ok",
+            "detail": "No hazards; at worst 3,500 ft · 6 sm"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & Special Use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & Balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "unknown",
+            "detail": "Not worked out: give your load"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          }
+        ],
+        "line": {
+          "finding": "unknown",
+          "words": "No problems found; not checked: weight & balance"
+        }
+      }
+    },
+    {
       "name": "No airplane picked: the fuel, runways and weight and balance are left out",
       "input": {
         "verdict": {
@@ -381,7 +524,7 @@
       }
     },
     {
-      "name": "IFR, an alternate required and none filed: a caution where the weather says nothing worse",
+      "name": "IFR, an alternate required and none filed: a stop, 14 CFR 91.169(a)(2) being a prohibition (advice still: the pilot may fly, 91.3)",
       "input": {
         "verdict": {
           "weather": {
@@ -452,8 +595,8 @@
             "label": "Weather",
             "tab": "arrive",
             "section": "Alternate",
-            "finding": "caution",
-            "detail": "An alternate is required (14 CFR 91.169): file one in Weather"
+            "finding": "stop",
+            "detail": "An alternate is required (14 CFR 91.169(a)(2)) and none is filed: file one in Weather"
           },
           {
             "key": "airspace",
@@ -505,8 +648,260 @@
           }
         ],
         "line": {
-          "finding": "caution",
-          "words": "Look again at weather"
+          "finding": "stop",
+          "words": "No-go as planned: weather"
+        }
+      }
+    },
+    {
+      "name": "IFR, no alternate check sent: not checked, never ok (91.169(b))",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": true
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 45,
+            "ifr": true
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": null,
+        "fields": null,
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "arrive",
+            "section": "Alternate",
+            "finding": "unknown",
+            "detail": "Alternate not checked: 14 CFR 91.169(b) excuses one only where the destination's forecast shows it"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & Special Use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal beyond reserve"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & Balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          }
+        ],
+        "line": {
+          "finding": "unknown",
+          "words": "No problems found; not checked: weather"
+        }
+      }
+    },
+    {
+      "name": "IFR, the alternate's check failed: not checked, never ok (91.169(b) excuses one only where the forecast shows it)",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": true
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 45,
+            "ifr": true
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": {
+          "failed": true
+        },
+        "fields": null,
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "arrive",
+            "section": "Alternate",
+            "finding": "unknown",
+            "detail": "Alternate not checked: 14 CFR 91.169(b) excuses one only where the destination's forecast shows it"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & Special Use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal beyond reserve"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & Balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          }
+        ],
+        "line": {
+          "finding": "unknown",
+          "words": "No problems found; not checked: weather"
         }
       }
     },

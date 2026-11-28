@@ -9,6 +9,7 @@ import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
 import { CardDialogs } from "./sheet/CardDialogs";
 import { CARD_FOOT_ROOM } from "./sheet/insets";
+import { useCardFootHeight } from "./sheet/cardFeet";
 import { holdOpenCard, type OpenCard } from "../lib/openCards";
 import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
 
@@ -46,7 +47,6 @@ export function SheetCard({
   closeButton,
   onClose,
   fullScreen = false,
-  swipeCloses = false,
   cardId,
   testId,
   returnFocus,
@@ -85,10 +85,6 @@ export function SheetCard({
   /** Emergency, the one card all the way up as it opens (the card rule's 4);
    *  every other card opens at half. */
   fullScreen?: boolean;
-  /** A settings card (the Map card): a swipe down from half closes it, as
-   *  its ✕ does, and from all the way up brings it to half, where a content
-   *  card parks at the pill (CardStack). */
-  swipeCloses?: boolean;
   /** Its id among the open cards where its owner sizes it (useCardSize). */
   cardId?: string;
   testId?: string;
@@ -186,22 +182,17 @@ export function SheetCard({
   };
   const target = useCardFrame(
     head
-      ? {
-          fullScreen,
-          title,
-          testId,
-          labelledBy: headingId,
-          dismiss,
-          onSwipeClose: swipeCloses ? () => onClose?.() : undefined,
-          initialFocus: opening,
-          finalFocus: finalFocus ?? toOpener,
-        }
+      ? { fullScreen, title, testId, labelledBy: headingId, dismiss, initialFocus: opening, finalFocus: finalFocus ?? toOpener }
       : // Its content's head names it; the focus left where it is unless
         // it came from the chart (fromMarker), the drawer's own Escape.
         { fullScreen, title, dismiss: ownDismiss, initialFocus, finalFocus },
     id,
   );
   const fromMarker = useFromMarker();
+  // Its end room: under a tab bar in its foot slot (sheet/CardFoot) the
+  // bar's height, so its last row scrolls clear above it; else 16 points or
+  // the home indicator's inset, clear of the screen's foot.
+  const footPx = useCardFootHeight(id);
 
   // The name in its own head row, where the content draws it (a map
   // card's, MapCard).
@@ -237,7 +228,7 @@ export function SheetCard({
       <div
         ref={head ? undefined : fromMarker}
         className="relative shrink-0 px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
-        style={{ paddingBottom: CARD_FOOT_ROOM }}
+        style={{ paddingBottom: footPx ? `${footPx}px` : CARD_FOOT_ROOM }}
         data-testid={head ? undefined : testId}
       >
         {!head ? (

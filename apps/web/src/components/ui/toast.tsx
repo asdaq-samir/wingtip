@@ -76,7 +76,9 @@ function Toasts({ position }: { position: "top" | "bottom" }) {
       key={toast.id}
       toast={toast}
       // Base UI's own swipe to put it away, followed by the finger
-      // (its --toast-swipe-movement variables).
+      // (its --toast-swipe-movement variables): up at the top, as an iOS
+      // banner goes, where the stock down sent it over the map; down at the foot; and to the right in either.
+      swipeDirection={position === "top" ? ["up", "right"] : ["down", "right"]}
       data-slot="toast"
       // One with an Undo takes a tap (index.css); the rest let it through
       // to the map under them.
@@ -86,10 +88,20 @@ function Toasts({ position }: { position: "top" | "bottom" }) {
       className={cn(
         // Its corner radius.banner in px, not rem: iOS's corners do not
         // grow with Dynamic Type, and rounded-3xl came to 24.6 at 17.88 px
-        // (the HIG review, the owner, 2026-11-21).
-        "absolute inset-x-0 flex min-h-12 items-center gap-2 rounded-(--radius-banner) px-4 py-2.5 transition-[opacity,transform] duration-200 ease-out [--gap:0.5rem]",
-        "data-limited:hidden data-ending-style:opacity-0 data-starting-style:opacity-0",
-        "motion-safe:data-starting-style:translate-y-2 motion-reduce:transition-none",
+        // (the owner, 2026-11-21).
+        // `translate` in the list beside the stack's `transform`: Tailwind's
+        // translate-y-* writes the `translate` property, which the list
+        // left out, so the toast's rise snapped and only its fade ran.
+        "absolute inset-x-0 flex min-h-12 items-center gap-2 rounded-(--radius-banner) px-4 py-2.5 transition-[opacity,transform,translate] duration-(--motion-fade) ease-(--motion-sheet-ease) [--gap:0.5rem]",
+        "data-limited:hidden data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none",
+        // Under the finger as it is swiped, not eased behind it.
+        "data-swiping:transition-none",
+        // It comes from its own edge and goes back to it, as an iOS banner
+        // drops from the top: down from above at the top, up from below
+        // at the foot.
+        position === "top"
+          ? "motion-safe:data-starting-style:-translate-y-2 motion-safe:data-ending-style:-translate-y-2"
+          : "motion-safe:data-starting-style:translate-y-2 motion-safe:data-ending-style:translate-y-2",
         position === "top"
           ? "top-0 [transform:translate(var(--toast-swipe-movement-x),calc(var(--toast-offset-y)_+_var(--toast-index)_*_var(--gap)_+_var(--toast-swipe-movement-y)))]"
           : "bottom-0 [transform:translate(var(--toast-swipe-movement-x),calc(var(--toast-swipe-movement-y)_-_var(--toast-offset-y)_-_var(--toast-index)_*_var(--gap)))]",
@@ -97,7 +109,7 @@ function Toasts({ position }: { position: "top" | "bottom" }) {
     >
       {/* Its ✓ and spinner a row's leading glyph, 20 beside the 17-point
           title, as iOS sets a symbol beside Body; at 16 the glyph read
-          smaller than its words (size.glyph-row; the scale audit's Q4). */}
+          smaller than its words (size.glyph-row). */}
       {toast.type === "success" && <Check className="size-(--size-glyph-row) shrink-0 text-tint" strokeWidth={2.5} aria-hidden />}
       {toast.type === "loading" && (
         <Spinner className="size-(--size-glyph-row) shrink-0" role="presentation" aria-label={undefined} aria-hidden />
@@ -127,7 +139,9 @@ function Anchored({ className }: { className?: string }) {
               data-testid="done-note"
               className={cn(
                 "flex max-w-[min(20rem,calc(100vw-2rem))] items-center gap-2 rounded-full px-3 py-2 shadow-md",
-                "transition-[opacity,scale] duration-150 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none",
+                // Grown a little out of the control that caused it, as Apple's
+                // "Copied" is, rather than only fading in place.
+                "origin-(--transform-origin) transition-[opacity,scale] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 motion-reduce:transition-none",
               )}
             >
               <Check className="size-(--size-glyph-row) shrink-0 text-tint" strokeWidth={2.5} aria-hidden />

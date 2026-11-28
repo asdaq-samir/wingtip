@@ -14,6 +14,8 @@
 //!   distances and how an end suits the airplane (web lib/takeoffLanding,
 //!   lib/runwayFit), which the Brief's runway check goes by too
 //!   (crate::gonogo::runways);
+//! - `fit`: how well an end fits today, one finding and its reason for
+//!   FPL's runway chips and the Brief's runway check alike;
 //! - `circuit`: the pattern's legs and its 45° entry, and the way out of
 //!   a field (web lib/trafficPattern, wingtip.pattern's circuits);
 //! - `landing`: the runway landed on with an instrument approach, its own
@@ -36,9 +38,11 @@ pub mod calls;
 pub mod circuit;
 #[cfg(test)]
 mod crosswind_tests;
+pub mod fit;
 pub mod landing;
 pub mod marks;
 pub mod performance;
 pub mod pick;
 pub mod proximity;
 pub mod wind;
+pub mod wind_variable;

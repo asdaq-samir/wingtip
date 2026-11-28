@@ -14,16 +14,8 @@ the phones (the generated `call`) ask; these keep their names and dicts and only
 them across.
 """
 
-import json
-
-import wingtip_native
-
 from .magnetic import magnetic_variation_deg
-
-
-def _ask(name: str, **given):
-    """The engine's rule `name` on the input given, its answer parsed."""
-    return json.loads(wingtip_native.call(name, json.dumps(given)))
+from .engine import ask as _ask
 
 
 def end_heading_true_deg(ident: str | None, heading_true_deg: float | None, variation_deg: float) -> float | None:
@@ -54,7 +46,10 @@ def _slim(runways: list) -> list:
 
 
 def _report(metar: dict | None) -> dict | None:
-    return {k: metar.get(k) for k in ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt")} if metar else None
+    # The variable direction's bounds too ("230V310", awc_metars_read): the
+    # engine judges the crosswind at the arc's worst (FMH-1 ch. 12; AIM 7-1-28).
+    keys = ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt", "wind_variable_deg")
+    return {k: metar.get(k) for k in keys} if metar else None
 
 
 def with_winds(runways: list, metar: dict | None, lat: float, lon: float, recent: dict | None = None) -> list:

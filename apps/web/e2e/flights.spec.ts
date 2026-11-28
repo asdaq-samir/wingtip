@@ -17,6 +17,7 @@ import { openSettingsPage } from "./mapCard";
 import { closeBrief } from "./routeHelpers";
 import { pickAirplane } from "./startState";
 import { showPage } from "./sheetPages";
+import { steady } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -48,16 +49,7 @@ async function signedIn(page: Page, filed: Record<string, unknown>[], list: obje
  *  one after (CI and locally, the first test of a fresh worker). The
  *  address the same for two seconds is the plan the page keeps. */
 async function planSettled(page: Page) {
-  await expect
-    .poll(
-      async () => {
-        const was = page.url();
-        await page.waitForTimeout(2000);
-        return was === page.url();
-      },
-      { timeout: 30_000 },
-    )
-    .toBe(true);
+  await steady(async () => page.url(), { gap: 2000, timeout: 30_000 });
 }
 
 test("a flight is filed once, whole, and a new plan is offered for saving again", { tag: "@smoke" }, async ({ page }) => {
@@ -92,6 +84,8 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   expect(flight.totalEteMin).not.toBeNull();
   expect(flight.checkpoints[0]).toMatchObject({ category: "departure", sequenceNo: 0 });
   expect(flight.checkpoints.at(-1)).toMatchObject({ category: "destination" });
+  // Filed with its rules, the app's setting, so it reopens VFR.
+  expect(new URLSearchParams((flight as { picks?: string }).picks ?? "").get("rules")).toBe("vfr");
 
   // A new departure time: a fresh nav log is a new plan. "Saved" used to
   // stay for the session, and a click filed a duplicate of whatever was
@@ -160,7 +154,6 @@ test("opening a saved flight puts its route in the header, and Load plans that r
         id: 9,
         departureIdent: "KMSP",
         destinationIdent: "KDLH",
-        stops: [],
         cruiseAltitudeFt: 5500,
         aircraftTailNumber: null,
         createdAt: "2026-09-20T12:00:00Z",
@@ -169,6 +162,10 @@ test("opening a saved flight puts its route in the header, and Load plans that r
         totalEteMin: 55,
         totalFuelGal: 8,
         altitudes: "KDLH:2400",
+        // Its picks, as the connector saves them too: its altitude, its
+        // fuel stop, the fuel on board leaving the departure, and IFR.
+        stops: ["KMSN"],
+        picks: "altitude_ft=5500&fuel=KMSN&tanks=KMSP%3A30&rules=ifr",
       },
     ],
   );
@@ -183,7 +180,8 @@ test("opening a saved flight puts its route in the header, and Load plans that r
   await library(page, "Flights");
   // The row opens the flight's page; Open on the map is the way in, and
   // it puts the console away.
-  await page.getByRole("button", { name: /^KMSP → KDLH/ }).click();
+  // Named by its route, its fuel stop among its points.
+  await page.getByRole("button", { name: /^KMSP → KMSN → KDLH/ }).click();
   await page.getByTestId("flight-open").click();
   await expect(page).toHaveURL(/dep=KMSP/);
   await expect(consoleSheet(page)).toHaveCount(0);
@@ -195,6 +193,13 @@ test("opening a saved flight puts its route in the header, and Load plans that r
   await expect(page).toHaveURL(/altitude_ft=5500/);
   // And at the altitudes the pilot set at its points: Duluth's pattern.
   await expect(page).toHaveURL(/altitudes=KDLH(%3A|:)2400/);
+  // With its fuel stop and the fuel on board it was saved with; its rules
+  // are the app's own setting, IFR now, and leave the address.
+  await expect(page).toHaveURL(/fuel=KMSN/);
+  await expect(page).toHaveURL(/tanks=KMSP(%3A|:)30/);
+  await expect(page).not.toHaveURL(/[?&]rules=/);
+  const rules = () => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.preferences") ?? "{}").state?.flightRules);
+  await expect.poll(rules).toBe("ifr");
 });
 
 test("a saved flight opened from FPL's Saved opens its page, and Open on the map plans it", async ({ page }) => {

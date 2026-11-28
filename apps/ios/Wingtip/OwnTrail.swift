@@ -25,19 +25,35 @@ final class OwnTrail {
     private var underway = false
     /// Written off the main actor (BackgroundFile).
     private let disk = BackgroundFile(OwnTrail.file)
+    /// The path kept from before read (load), or erased or cleared: until
+    /// then nothing is written over it.
+    private var loaded = false
+    private var loading: Task<Void, Never>?
 
     static var file: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("own-trail.json")
     }
 
-    init() {
-        // The path kept from before, unless the last point is over ten
-        // minutes old: that was another flight's, and a new one starts.
-        if let data = try? Data(contentsOf: Self.file), let kept = try? JSONDecoder().decode([PathPoint].self, from: data),
-           let last = kept.last, Date().timeIntervalSince1970 - last.t < Self.newFlightS {
-            points = kept
+    init() {}
+
+    /// The path kept from before, read off the main actor once, after the
+    /// app's first frame (ScreenModels.loadKept), where the launch read up
+    /// to 5,000 points on the main thread before it drew anything; unless
+    /// its last point is over ten minutes old: that was another flight's,
+    /// and a new one starts. Points taken meanwhile go on after it.
+    func load() async {
+        if loading == nil {
+            loading = Task {
+                let kept = await disk.read([PathPoint].self)
+                guard !loaded else { return }
+                loaded = true
+                guard let kept, let last = kept.last, Date().timeIntervalSince1970 - last.t < Self.newFlightS else { return }
+                let after = points.filter { $0.t > last.t }
+                points = Array((kept + after).suffix(Self.most))
+            }
         }
+        await loading?.value
     }
 
     /// Whether the airplane is at flying speed, by the engine's rule
@@ -46,8 +62,9 @@ final class OwnTrail {
     /// engine cannot say, nothing is kept and the position is not held
     /// with the screen locked; the instruments bar says why (InFlight,
     /// from the same fix).
-    func took(_ fix: OwnShip.Fix) -> Bool {
-        let flying = (try? Flight.underway(fix.groundspeedKt)) ?? false
+    /// `underway` is OwnShip's answer for this fix, where it has asked.
+    func took(_ fix: OwnShip.Fix, underway known: Bool? = nil) -> Bool {
+        let flying = known ?? (try? Flight.underway(fix.groundspeedKt)) ?? false
         underway = flying
         guard flying else { return false }
         let point = PathPoint(t: fix.at.timeIntervalSince1970, lat: fix.coordinate.latitude, lon: fix.coordinate.longitude, altFt: fix.altitudeFt)
@@ -70,6 +87,7 @@ final class OwnTrail {
     /// out or deleted the account (Session.forgetDevice). Where they flew
     /// is theirs, not the next person's on this iPhone.
     func erase() {
+        loaded = true
         points = []
         lastWritten = .distantPast
         disk.remove()
@@ -77,6 +95,7 @@ final class OwnTrail {
 
     /// The path let go: a new flight's starts empty.
     func clear() {
+        loaded = true
         points = []
         write()
     }
@@ -88,6 +107,7 @@ final class OwnTrail {
     }
 
     private func write() {
+        guard loaded else { return }
         lastWritten = Date()
         disk.write(points)
     }

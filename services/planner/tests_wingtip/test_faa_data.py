@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 
 from wingtip import faa_data
+from wingtip.engine import ask as engine
 
 
 # --- each NASR file on its own ---
@@ -83,7 +84,7 @@ def test_an_archive_gives_up_only_the_files_the_planner_reads(tmp_path, monkeypa
         def raise_for_status(self):
             pass
 
-    monkeypatch.setattr(faa_data.requests, "get", lambda *a, **k: Answer())
+    monkeypatch.setattr(faa_data.outside, "get", lambda *a, **k: Answer())
     faa_data.download_and_extract("https://example/DOF.zip", tmp_path, only=["DOF.DAT", "APT_BASE.csv"])
     assert sorted(p.name for p in tmp_path.iterdir()) == ["DOF.DAT"]
 
@@ -293,7 +294,8 @@ def _route_airports_as_before(apt_csv_path, bbox, exclude_idents=()) -> pd.DataF
             "osm_id": df["ARPT_ID"],
             "osm_type": "faa_airport",
             "category": "airport",
-            "name": df["ARPT_NAME"].str.title() + " (" + df["ARPT_ID"] + ")",
+            # The engine's casing ("7th Heaven"), as the kept one names them.
+            "name": pd.Series(engine("title_case", texts=df["ARPT_NAME"].tolist()), index=df.index) + " (" + df["ARPT_ID"] + ")",
             "lat": df["lat"],
             "lon": df["lon"],
             "bbox_area_m2": 0.0,

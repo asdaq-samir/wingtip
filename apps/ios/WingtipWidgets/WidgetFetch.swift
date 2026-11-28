@@ -14,8 +14,7 @@ import PlannerAPI
 /// App Group and shown, with its time, while a new one cannot be had.
 /// Asked through the servers' generated clients (WingtipAPI's PlannerAPI
 /// and GatewayAPI, swift-openapi-generator), as the app asks them, where
-/// it decoded hand-written copies of their JSON (the stock audit,
-/// 2026-11-21); what is kept is the little each widget shows, read from
+/// it decoded hand-written copies of their JSON; what is kept is the little each widget shows, read from
 /// the generated answer.
 enum WidgetFetch {
     private static let session: URLSession = {

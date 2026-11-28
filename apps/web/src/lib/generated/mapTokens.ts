@@ -36,6 +36,12 @@ export const MAP_ZOOM = {
   vor: 8,
   /** The VFR waypoints and the low enroute chart's fixes. The app's alone: the charts job's tiles hold every fix from its own zooms (overlay_layers). */
   fix: 10,
+  /** The Class B fields' weather marks at their full size and named from this zoom; farther out, over the whole country, each a small mark with no ident that gives way to the route's own, so only the route's ends and stops are named there (the owner's iPhone screenshot, 2026-11-23). */
+  classBNamed: 5,
+  /** The route's tags beyond its fields and stops, its tops of climb and descent, from this zoom, where a leg is long enough on a phone to read them; farther out the route is its line, its ends and its stops. */
+  routeTags: 6,
+  /** A procedure's fixes' tags and an approach plate's fix tags from this zoom; farther out an approach is a short line by its field, and its words would cover it and the fields round it. */
+  procedureWords: 9,
 } as const;
 
 /** A kind of map label's look: its size, fixed or by zoom (the app's levels, interpolated), its weight and its halo. */
@@ -48,7 +54,7 @@ export interface MapLabelKind {
 export const MAP_LABEL = {
   size: { small: 11, normal: 12, large: 13, count: 14, runway: 16, picked: 17 },
   halo: 2,
-  haloNight: 0.85,
+  haloNight: 1,
   scaleMax: 1.2,
   /** Each light-haloed word's ink after dark, by its day ink (map.label.night-ink). */
   nightInk: { "#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#62d48e", "#1c1a17": "#eef1f5", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8fb4ff", "#b45309": "#fbbf24", "#7c3aed": "#bba1ff", "#78716c": "#cdc8c3", "#be185d": "#f58cc4", "#0f766e": "#4fd1c5", "#57534e": "#cfcac5", "#9333ea": "#c99cff" } as Record<string, string>,
@@ -95,3 +101,44 @@ export const MAP_LABEL = {
     flowPin: { size: 13, bold: true, halo: "none" },
   },
 } as const satisfies { kind: Record<string, MapLabelKind>; [rest: string]: unknown };
+
+/** The chart's Dimmer and Contrast and the plates' see-through on the map (design/tokens.json's chart-look group). */
+export const CHART_LOOK = {
+  nightDim: 0.5,
+  dimMax: 0.7,
+  contrastMin: -0.3,
+  contrastMax: 0.4,
+  step: 0.05,
+  plateOpacity: 0.85,
+  plateLeastOpacity: 0.1,
+  routeEdgeNight: 0.9,
+  routeEdgeDay: 0.55,
+  routeEdgeSunlight: 0.9,
+} as const;
+
+/** The chart's raster paint by look, its contrast and saturation (design/tokens.json's chart-paint group). */
+export const CHART_PAINT = {
+  dayContrast: 0.1,
+  daySaturation: 0.1,
+  nightContrast: 0.13,
+  nightSaturation: 0,
+  sunlightContrast: 0.2,
+  sunlightSaturation: 0.2,
+} as const;
+
+/** The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group). */
+export const DIMMER = {
+  state: "mapDim",
+  wordState: "labelNight",
+  warningState: "warningDim",
+  metadata: "wingtip:dim",
+  opacity: {"line": ["line-opacity"], "circle": ["circle-opacity", "circle-stroke-opacity"], "symbol": ["icon-opacity", "text-opacity"]},
+  colour: {"line": ["line-color"], "circle": ["circle-color", "circle-stroke-color"], "symbol": ["text-color", "icon-color"]},
+  warningUnderPaper: 0.85,
+  wordGamma: 2.2,
+  wordLeast: 0.01,
+  wordFloor: 0.75,
+  wordLight: 0.4460834275041789,
+  wordFloorContrast: 0.13,
+  nightWord: {"#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#5cc685", "#1c1a17": "#afb1b4", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8db2fc", "#b45309": "#dfaa20", "#7c3aed": "#bba1ff", "#78716c": "#b6b1ad", "#be185d": "#f58cc4", "#0f766e": "#4ac4b9", "#57534e": "#b6b1ad", "#9333ea": "#c99cff"},
+} as const;

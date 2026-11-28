@@ -13,13 +13,16 @@
  * altimeter's and a ground track is not a heading, so each figure is
  * close to what the examiner sees, not it -- the page says so.
  *
- * Worked out by the shared engine (engine/crates/procedures/src/figures/debrief.rs,
- * through lib/engine), the very code behind the planner's /api/debrief and
- * the phones' `call`("debrief"): the tolerances and each row's mark too, so the
- * page's headings and ticks are the engine's figures, not copies.
+ * Worked out by the shared engine (engine/crates/procedures/src/figures/debrief.rs),
+ * asked of the planner (POST /api/debrief, with the fields' pattern
+ * altitudes the card gives) so the WebAssembly every phone downloads
+ * leaves it out; the phones ask `call`("debrief") on the device. The
+ * tolerances and each row's mark too, so the page's headings and ticks
+ * are the engine's figures, not copies.
  */
-import type { Flight } from "../../lib/api/types";
-import { callEngine } from "../../lib/engine/engine";
+import { queryOptions } from "@tanstack/react-query";
+import { api } from "../../lib/api/client";
+import type { DebriefAnswer, DebriefAsk, Flight } from "../../lib/api/types";
 import { enginePoints, type TrackPoint } from "../../lib/track";
 
 /** PA.VI.A's tolerances, as the engine grades by them: S7's altitude,
@@ -33,13 +36,6 @@ interface Tolerances {
   offRouteNm: number;
   etaMin: number;
   patternFt: number;
-}
-
-/** The track's flights: each run of points over 40 kt over the ground (a
- *  minute's dip under it, a slow flight or a go-around, kept in; a run of
- *  under a minute, a fast taxi, dropped), as [first, last] indices. */
-export function airborne(points: TrackPoint[]): [number, number][] {
-  return callEngine("debrief_airborne", { points: enginePoints(points) });
 }
 
 interface LegGrade {
@@ -111,29 +107,36 @@ export interface Debrief {
   notes: string[];
 }
 
-/** The engine's debrief of a flight against its track (a coach's reading
- *  of it and the flight's own page both ask it this way). */
-export const debriefOf = (flight: Flight, points: TrackPoint[], patterns: Record<string, number>) =>
-  callEngine("debrief", {
-    checkpoints: flight.checkpoints.map((c) => ({
-      sequence_no: c.sequenceNo,
-      name: c.name,
-      category: c.category,
-      lat: c.lat,
-      lon: c.lon,
-      along_track_nm: c.alongTrackNm,
-      true_course_deg: c.trueCourseDeg,
-      ete_min: c.eteMin,
-      altitude_ft: c.altitudeFt,
-    })),
-    points: enginePoints(points),
-    patterns,
+/** What the planner is asked to debrief a flight against its track. */
+export const debriefAsk = (flight: Flight, points: TrackPoint[]): DebriefAsk => ({
+  checkpoints: flight.checkpoints.map((c) => ({
+    sequence_no: c.sequenceNo,
+    name: c.name,
+    category: c.category,
+    lat: c.lat,
+    lon: c.lon,
+    along_track_nm: c.alongTrackNm,
+    true_course_deg: c.trueCourseDeg,
+    ete_min: c.eteMin,
+    altitude_ft: c.altitudeFt,
+  })),
+  points: enginePoints(points),
+});
+
+/** The debrief of a flight against a track, kept for the page's life: a
+ *  track, once read, does not change, so it is keyed by its ends and
+ *  length rather than by every point. Null where the track is too short
+ *  to have flown at all. */
+export const debriefQuery = (flight: Flight, points: TrackPoint[]) =>
+  queryOptions({
+    queryKey: ["debrief", flight.id, flight.checkpoints.length, points.length, points[0]?.t ?? null, points.at(-1)?.t ?? null],
+    queryFn: ({ signal }) => (points.length < 2 ? null : api.debrief(debriefAsk(flight, points), signal).then(debrief)),
+    staleTime: Infinity,
   });
 
-/** A flight debriefed against its track; null where the track never
- *  flew. `patterns` are the fields' pattern altitudes, ft MSL, by ident. */
-export function debrief(flight: Flight, points: TrackPoint[], patterns: Record<string, number> = {}): Debrief | null {
-  const { debrief: d, tolerances: t } = debriefOf(flight, points, patterns);
+/** The planner's debrief in the page's camelCase; null where the track
+ *  never flew. */
+function debrief({ debrief: d, tolerances: t }: DebriefAnswer): Debrief | null {
   if (!d) return null;
   return {
     tolerances: {

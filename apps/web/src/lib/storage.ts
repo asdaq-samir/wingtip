@@ -6,8 +6,7 @@ import { persist, type PersistStorage, type StateStorage } from "zustand/middlew
  * persist, as its preferences are (lib/preferences). Storage can be refused
  * outright (a private window, site data blocked) or full, and what is
  * there can be from an older build: the reads and writes here never throw,
- * where each of the keepers wrapped its own in a try (the commonality
- * audit's D-22), and own ship's wrote each GPS fix's same few fields.
+ * where each of the keepers wrapped its own in a try, and own ship's wrote each GPS fix's same few fields.
  */
 
 /** What each key was last written with, so the same is not written again:

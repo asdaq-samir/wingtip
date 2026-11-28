@@ -24,9 +24,9 @@ from urllib.parse import unquote
 
 import requests
 
-from . import geo, outside
+from . import geo, outside, ratelimit, single_flight
 from .atomic import atomic_path
-from .config import DATA_DIR
+from .config import DATA_DIR, user_agent
 from .units import M_PER_NM
 
 log = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ USGS_EXPORT = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryO
 WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
 #: Wikimedia asks every client to name itself.
-HEADERS = {"User-Agent": "WingtipMaps/1.0 (VFR flight planner; airport photos)"}
+HEADERS = {"User-Agent": user_agent("VFR flight planner; airport photos")}
 
 AERIAL_DIR = DATA_DIR / "raw" / "airport_aerials"
 PHOTO_DIR = DATA_DIR / "raw" / "airport_photos"
@@ -48,6 +48,27 @@ AERIAL_MIN_M = 1600.0
 #: How long a field's Wikipedia answer is kept, and asked again after: a
 #: new photo or article is rare.
 PHOTO_KEEP_S = 30 * 24 * 3600
+#: How long the aerial or a ground photo may take, s: about the card's own wait (each was 20).
+CARD_TIMEOUT_S = 8
+#: Each of the two JSON asks for a ground photo (Wikipedia's article image, then Commons' file, which needs its
+#: name: they cannot go together), s: both within CARD_TIMEOUT_S, where each was 10 inside one single flight.
+NAME_TIMEOUT_S = CARD_TIMEOUT_S / 2
+#: After a source fails, it is not asked for this long, s, and cards show
+#: what they have without it: while the USGS or Wikipedia was down every
+#: open waited up to 20 s or 2 x 10 s, and the shared session's retries on
+#: top. Asked one at a time per field, too: opens of
+#: one field at once each fetched the same file.
+HOLD_S = 300.0
+_USGS = ratelimit.Gate()
+_WIKIMEDIA = ratelimit.Gate()
+
+
+def _held(gate: ratelimit.Gate) -> bool:
+    return gate.held(time.monotonic())
+
+
+def _failed(gate: ratelimit.Gate) -> None:
+    gate.hold(HOLD_S, time.monotonic())
 
 
 class PhotoUnavailable(RuntimeError):
@@ -84,9 +105,18 @@ def aerial(ident: str, lat: float, lon: float, ends: list[tuple[float, float]], 
     path = Path(cache_dir) / f"{ident.strip().upper()}.jpg"
     if path.exists() and path.stat().st_size > 0:
         return path
-    west, south, east, north = aerial_box(lat, lon, ends)
+    with single_flight.one_at_a_time(("aerial", path)):
+        if path.exists() and path.stat().st_size > 0:
+            return path
+        if _held(_USGS):
+            raise PhotoUnavailable(f"The USGS imagery is not asked for {ident} for now: it failed lately")
+        return _fetch_aerial(ident, path, aerial_box(lat, lon, ends))
+
+
+def _fetch_aerial(ident: str, path: Path, box: tuple[float, float, float, float]) -> Path:
+    west, south, east, north = box
     try:
-        response = outside.get(
+        response = outside.once_get(
             USGS_EXPORT,
             params={
                 "bbox": f"{west},{south},{east},{north}",
@@ -97,12 +127,14 @@ def aerial(ident: str, lat: float, lon: float, ends: list[tuple[float, float]], 
                 "f": "image",
             },
             headers=HEADERS,
-            timeout=20,
+            timeout=CARD_TIMEOUT_S,
         )
         response.raise_for_status()
     except requests.RequestException as err:
+        _failed(_USGS)
         raise PhotoUnavailable(f"The USGS imagery could not be had for {ident}: {err}") from err
     if not response.headers.get("content-type", "").startswith("image/"):
+        _failed(_USGS)
         raise PhotoUnavailable(f"The USGS answered {ident} with {response.headers.get('content-type')!r}, not a picture")
     with atomic_path(path) as partial:
         partial.write_bytes(response.content)
@@ -117,11 +149,11 @@ def _plain(value: str | None) -> str:
 def _ask_ground_photo(wikipedia_link: str) -> dict | None:
     title = unquote(wikipedia_link.rstrip("/").rsplit("/", 1)[-1]).replace("_", " ")
     pages = (
-        outside.get(
+        outside.once_get(
             WIKIPEDIA_API,
             params={"action": "query", "format": "json", "prop": "pageimages", "piprop": "name", "titles": title, "redirects": 1},
             headers=HEADERS,
-            timeout=10,
+            timeout=NAME_TIMEOUT_S,
         )
         .json()
         .get("query", {})
@@ -131,7 +163,7 @@ def _ask_ground_photo(wikipedia_link: str) -> dict | None:
     if not name:
         return None
     files = (
-        outside.get(
+        outside.once_get(
             COMMONS_API,
             params={
                 "action": "query",
@@ -142,7 +174,7 @@ def _ask_ground_photo(wikipedia_link: str) -> dict | None:
                 "iiurlwidth": AERIAL_PX[0],
             },
             headers=HEADERS,
-            timeout=10,
+            timeout=NAME_TIMEOUT_S,
         )
         .json()
         .get("query", {})
@@ -173,12 +205,23 @@ def ground_photo_file(ident: str, url: str, cache_dir: Path = PHOTO_DIR) -> Path
     path = Path(cache_dir) / f"{ident.strip().upper()}.jpg"
     if path.exists() and path.stat().st_size > 0:
         return path
+    with single_flight.one_at_a_time(("ground photo", path)):
+        if path.exists() and path.stat().st_size > 0:
+            return path
+        if _held(_WIKIMEDIA):
+            raise PhotoUnavailable(f"Commons is not asked for {ident}'s photo for now: it failed lately")
+        return _fetch_ground_photo(ident, url, path)
+
+
+def _fetch_ground_photo(ident: str, url: str, path: Path) -> Path:
     try:
-        response = outside.get(url, headers=HEADERS, timeout=20)
+        response = outside.once_get(url, headers=HEADERS, timeout=CARD_TIMEOUT_S)
         response.raise_for_status()
     except requests.RequestException as err:
+        _failed(_WIKIMEDIA)
         raise PhotoUnavailable(f"Commons' photo could not be had for {ident}: {err}") from err
     if not response.headers.get("content-type", "").startswith("image/"):
+        _failed(_WIKIMEDIA)
         raise PhotoUnavailable(f"Commons answered {ident}'s photo with {response.headers.get('content-type')!r}")
     with atomic_path(path) as partial:
         partial.write_bytes(response.content)
@@ -193,19 +236,36 @@ def ground_photo(ident: str, wikipedia_link: str | None, cache_dir: Path = PHOTO
     if not wikipedia_link:
         return None
     path = Path(cache_dir) / f"{ident.strip().upper()}.json"
+    with single_flight.one_at_a_time(("ground photo answer", path)):
+        kept = _kept_answer(path)
+        if kept is not None:
+            return kept[0]
+        if _held(_WIKIMEDIA):
+            return None
+        try:
+            photo = _ask_ground_photo(wikipedia_link)
+        except (requests.RequestException, ValueError) as err:
+            if isinstance(err, requests.RequestException):
+                _failed(_WIKIMEDIA)
+            log.warning("Wikipedia could not be asked for %s's photo", ident, exc_info=True)
+            return None
+        _keep_answer(ident, path, photo)
+        return photo
+
+
+def _kept_answer(path: Path) -> tuple[dict | None] | None:
+    """(the field's photo or None) where its answer is kept and fresh, else None."""
     try:
         if time.time() - path.stat().st_mtime < PHOTO_KEEP_S:
-            return json.loads(path.read_text()).get("photo")
+            return (json.loads(path.read_text()).get("photo"),)
     except (OSError, ValueError):
         pass
-    try:
-        photo = _ask_ground_photo(wikipedia_link)
-    except (requests.RequestException, ValueError):
-        log.warning("Wikipedia could not be asked for %s's photo", ident, exc_info=True)
-        return None
+    return None
+
+
+def _keep_answer(ident: str, path: Path, photo: dict | None) -> None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"photo": photo}))
     except OSError:
         log.warning("Could not keep %s's photo", ident, exc_info=True)
-    return photo

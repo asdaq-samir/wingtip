@@ -147,6 +147,10 @@ services:
       # out (app.warm_up check_faa_editions): their own switch, on.
       FAA_DATA_AUTO_REFRESH: "1"
       CHART_TILES_URL: https://${PUBLIC_HOST}/tiles
+      # The key the followed airplanes' shares are hashed with, from the
+      # stack's FollowShareKeySecret (deploy.sh), never kept in the live
+      # store beside the shares (the round 7 audit, P-M1): no key, no start.
+      FOLLOW_SHARE_KEY: ${FOLLOW_SHARE_KEY:?set FOLLOW_SHARE_KEY in .env (deploy.sh writes it from the stack's FollowShareKeySecret; openssl rand -hex 32)}
       TZ: America/Chicago
       # One JSON object a log line, with the page's request id
       # (wingtip.log_lines), for CloudWatch Logs Insights.
@@ -278,8 +282,9 @@ services:
       APP_HSTS: "true"
       # Caddy, on the server's own Docker network, is the only way in and
       # rewrites X-Forwarded-For to the viewer's address (infra/server/
-      # Caddyfile): believed from these private blocks only
-      # (SlidingWindowLimiter.clientOf).
+      # Caddyfile): believed from these private blocks only (Tomcat's
+      # RemoteIpValve, server.tomcat.remoteip.internal-proxies; read by
+      # SlidingWindowLimiter.clientOf).
       GATEWAY_TRUSTED_PROXIES: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
       APP_DEVELOPER_EMAILS: ${APP_DEVELOPER_EMAILS:-}
       # The AI connector (docs/design/mcp-connector.md): off, every one of

@@ -86,9 +86,16 @@ nonisolated enum AirportWords {
 
     /// A reported visibility: "3 sm", "1.5 sm", and "10+ sm" or "6+ sm"
     /// for a more-than report (P6SM, the AWC's "10+"; FAA JO 7900.5), as
-    /// the web's miles writes it; nil with none, never a guessed figure.
-    static func miles(_ sm: Double?, plus: Bool?) -> String? {
-        sm.map { "\(plain($0))\(plus == true ? "+" : "") sm" }
+    /// the web's miles writes it; nil with none, never a guessed figure. A
+    /// report's "less than" ("M1/4SM", FMH-1 chapter 6; the engine's
+    /// visibility_minus) is said as such, "less than 1/4 sm", in the
+    /// report's own fraction (Format.reportedVisibility), never "0.25 sm",
+    /// more than was seen.
+    static func miles(_ sm: Double?, plus: Bool?, minus: Bool? = nil) -> String? {
+        guard let sm else { return nil }
+        guard minus == true else { return "\(plain(sm))\(plus == true ? "+" : "") sm" }
+        guard let (whole, fraction) = try? Format.reportedVisibility(sm) else { return "less than \(plain(sm)) sm" }
+        return "less than \(fraction.map { whole > 0 ? "\(whole) \($0)" : $0 } ?? String(whole)) sm"
     }
 
     /// The field's own report in a line under the airport card's tabs

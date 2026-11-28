@@ -108,7 +108,7 @@ private fun BandRow(band: AirspaceBand) {
 /** "3 sm, 500 ft below, 1,000 ft above, 2,000 ft horizontal", or "1 sm,
  *  clear of clouds": the planner's 91.155 figures as they read. */
 private fun minimums(m: VfrMinimums): String {
-    val vis = Format.visibility(m.visibilitySm)
+    val vis = Format.visibility(m.visibilitySm) ?: Format.NONE
     if (m.clearOfClouds) return "$vis, clear of clouds"
     return listOfNotNull(
         vis,

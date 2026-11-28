@@ -42,7 +42,7 @@ The long-running ones restart with Docker (`restart: unless-stopped`).
 |---|---|---|
 | `gateway` | Spring Boot: accounts, sign-in, records, the public API, mail; serves the web app and proxies `/api/planner/*` to the planner | 8080, 8443 (HTTPS) |
 | `planner` | FastAPI: the course, checkpoints, nav log, briefing, chart and overlay tiles, traffic, the live SWIM answers and feed health; the engine inside it | 8084 |
-| `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.lol rounds, written into the live store | none |
+| `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.lol rounds, written into the live store; the history stores (NTSB, airmen) and the FAA's aircraft registry | none |
 | `weather` | Fetches the weather on a schedule (METAR, TAF, PIREP, SIGMET, G-AIRMET, GFS winds aloft, GLMP, TFRs, the radar's time) into the weather store | none |
 | `db` | PostgreSQL 18 (`postgres:18-trixie`): the gateway's records | not published |
 | `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) | 8025 |
@@ -107,6 +107,39 @@ a restart of the planner drops no feed (issue #535):
   phone), its tiles lossless WebP, written by the charts job and served
   by the planner.
 
+### One planner process
+
+The planner runs as one uvicorn process (no `--workers`), its requests on
+threads. A second process is not safe yet: what keeps the planner within
+its outside sources' limits, and some of its own housekeeping, lives in
+each process's memory, so two processes would each think they were alone
+(round 4's audit, 2026-11-27). What would have to move into the live
+store first, each a module-level object today:
+
+- **adsb.lol's turns** (`traffic/adsb_lol.py`): the gap between requests
+  and the search's and the regions' places in it (`_LOL`, `_STATE`), the
+  regions' last answers (`_REGIONS`) and who is asking for one now
+  (`_FLIGHTS`), the globe's refusal hold (`traffic/globe.py`'s `_GLOBE`); two processes would
+  ask twice as often and be turned away for the day.
+- **ADS-B Exchange** (`traffic/adsbx.py`): its gap (`_ADSBX`); its month's
+  count is a file, read and written again without a lock between processes.
+- **The OpenSky Network** (`traffic/opensky_api.py`): its token (`_TOKEN`)
+  and the day's credits it says are left (`_BUDGET`); the paths asked
+  ahead (`traffic/opensky.py`'s `_ASKING` and its pool).
+- **Short-lived answers**: a search's (`traffic/lookup.py`'s `_FOUND`),
+  the traces (`traffic/globe.py`'s `_TRACES`, `_RECENT`), the one-asker-at-a-time gates
+  (`wingtip.single_flight`), the weather store's `asked` mark.
+- **The MCP connector's rate limit** (`app/mcp/calls.py`, a moving window
+  in memory): two processes would each allow the whole limit.
+- **The scheduled jobs** (`app.main`): the feed watch would alert twice and
+  each process would prune the live store; `app.usage_days` adds each
+  process's counts, which holds, and `/metrics` would show one process's.
+
+The live store already holds what both the planner and ingest write (the
+followed airplanes, tracks, OpenSky's days and paths, the sources'
+`answers`), so these are moved there, a table each, when a second
+process is wanted, not before.
+
 ### Feed health
 
 A stopped feed must not read as a quiet sky. The planner holds each feed
@@ -131,11 +164,14 @@ Each service fetches its own; the engine never fetches.
 | FAA aeronav | Chart sheets (sectional, TAC, IFR low and high), each 56-day cycle | the charts job |
 | FAA NASR, CIFP, DOF, d-TPP | Airports, runways, navaids, fixes, airspace (NASR: the National Airspace System Resources data); published procedures (CIFP: the Coded Instrument Flight Procedures); obstacles; plates | planner |
 | FAA SWIM | Live feeds over the FAA's System Wide Information Management service: STDDS (terminal radar, RVR, D-ATIS, departures), FNS (NOTAMs), TFMS (flight plans, ground stops and delay programs), ITWS (wind shear and microburst alerts), SFDPS (special activity airspace status) | ingest |
+| FAA aircraft registry | The Releasable Aircraft Database, each night's: an airplane's registration for its card and the radar's LADD check, read into a SQLite file on the data folder once it is a day old | ingest |
 | FAA NMS-API | The NOTAM Management Service API: every NOTAM in force (its initial load), then its changes, where the FAA's credentials are set (decision 0059) | ingest |
 | aviationweather.gov | METAR, TAF, PIREP, SIGMET, G-AIRMET | weather |
 | NOAA NOMADS | GFS winds and temperatures aloft, GLMP | weather |
+| NOAA NOMADS, CIP and DAFS | The icing severity, the Current Icing Product's analysis each hour (CIP2) and the In-Flight Icing forecast (IFI, the operational FIP) to 15 hours ahead, which the planner reads along an IFR route's legs | weather |
 | tfr.faa.gov | TFRs | weather |
 | adsb.lol, ADS-B Exchange | The map's traffic, by region; the followed airplanes (adsb.lol) | planner; ingest |
+| OpenSky Network | An airplane's past flights and their paths where adsb.lol's archive is closed to the planner; the followed airplanes' yesterday prefetched each night into the live store, which the planner reads before asking | planner; ingest |
 
 ## Tech stack
 

@@ -596,6 +596,58 @@
       ],
       "additionalProperties": false
     },
+    "airplane_short_type": {
+      "description": "What an airplane is in a few words, from the aircraft registry's maker and model (ACFTREF): its maker without the words that say what kind of company it is (\"AIRBUS S A S\" Airbus, \"PIPER AIRCRAFT INC\" Piper) and its model without the variant (\"A321-271NX\" A321; one starting with letters alone keeps its number, \"PA-28-140\" PA-28). The owner's \"Maybe just Airbus A321\" (2026-11-27). A name's shortening, no aviation rule.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AirplaneShortTypeInput",
+          "type": "object",
+          "properties": {
+            "manufacturer": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "model": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "answer": {
+          "title": "AirplaneShortTypeAnswer",
+          "type": "object",
+          "properties": {
+            "make_short": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "model_short": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "make_short",
+            "model_short"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "airport_data_words": {
       "description": "How far a field's figures are to be trusted, in the card's words: \"Owner-reported, last updated Aug 2023\" where NASR's INSPECT_METHOD_CODE is 1 or 2 (the 5010-1 and 5010-2 mailouts: the owner's own figures, never inspected), null where they were inspected (F, S, C) or the source is not known.",
       "type": "object",
@@ -4020,6 +4072,10 @@
                 "type": "boolean",
                 "description": "The visibility is at least visibility_sm: the feed's \"10+\", the report's P6SM or 10SM and more."
               },
+              "visibility_minus": {
+                "type": "boolean",
+                "description": "Less than the figure, \"M1/4SM\" (FMH-1 chapter 12): said \"less than 1/4 sm\", never 1/4."
+              },
               "wind_dir_true_deg": {
                 "type": [
                   "number",
@@ -4037,6 +4093,18 @@
                   "number",
                   "null"
                 ]
+              },
+              "wind_variable_deg": {
+                "description": "A variable wind direction, \"250V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first, read from the text; null where the report sends none.",
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
               },
               "altimeter_in_hg": {
                 "type": [
@@ -4079,9 +4147,11 @@
               "ceiling_cover",
               "visibility_sm",
               "visibility_plus",
+              "visibility_minus",
               "wind_dir_true_deg",
               "wind_speed_kt",
               "wind_gust_kt",
+              "wind_variable_deg",
               "altimeter_in_hg",
               "temp_c",
               "dewpoint_c",
@@ -4446,6 +4516,18 @@
                           "null"
                         ]
                       },
+                      "variable_deg": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
+                      },
                       "altimeter_in_hg": {
                         "type": [
                           "number",
@@ -4513,6 +4595,13 @@
                 "null"
               ],
               "description": "At most this many; 10 where not given."
+            },
+            "drill": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The diversion drill's (ACS PA.VI.C), with mode \"diversion\": a field within 2 nm of `at` is where the airplane is, not a diversion, and left out; 6 offered where `limit` is not given. Never for an emergency."
             }
           },
           "required": [
@@ -6653,7 +6742,7 @@
       "additionalProperties": false
     },
     "datis_ends": {
-      "description": "When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.",
+      "description": "When a digital ATIS broadcast heard at a time stops being the airport's: 75 minutes after it was heard: the hourly update AIM 4-1-13 asks, and a quarter hour for it to come ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.",
       "type": "object",
       "properties": {
         "input": {
@@ -9124,6 +9213,13 @@
                 "null"
               ],
               "description": "YYYY-MM-DD"
+            },
+            "make_model": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The solo cross-country's make and model, \"C172\": 61.93(d)(4), (5) and 61.87(n) hold the endorsements to it, compared without case, spaces or hyphens; null or missing and the checks can't tell, never met."
             }
           }
         },
@@ -9229,6 +9325,50 @@
         "answer": {
           "title": "EndorsementRenderAnswer",
           "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "endorsement_warnings": {
+      "description": "What an instructor is warned of before signing an endorsement with these fields, never a refusal: for AC 61-65K A.13 (solo at an airport in Class B airspace, 14 CFR 61.95(b)), an airport of 14 CFR part 91 appendix D, section 4, named by its FAA or ICAO ident, where 14 CFR 91.131(b)(2) has no student, sport or recreational pilot take off or land solo. Empty where there is nothing to warn of.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "EndorsementWarningsInput",
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "fields": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Words by field name."
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "code"
+          ]
+        },
+        "answer": {
+          "title": "EndorsementWarningsAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -10011,6 +10151,105 @@
       ],
       "additionalProperties": false
     },
+    "fields_near": {
+      "description": "Which box of the phone's cycle packs to read for the fields round the airplane with no planner (Nearest, the emergency assistant, the on-device Ask), for best_fields to rank: asked first with no box, the first box, half a degree of latitude each way (about 30 nm, past a light single's still-air glide from 10,000 ft above the ground); asked again with the fields found in it, a box twice as tall where they are fewer than `want`, to two degrees at most (about 120 nm); null where they are enough or the box read was the widest, when the fields read go to best_fields. Longitude is widened by the latitude's cosine (held to 0.2 at most near the pole). A box to read, not an aviation figure: which fields are landing sites, and their order, are best_fields'.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FieldsNearInput",
+          "type": "object",
+          "properties": {
+            "at": {
+              "type": "object",
+              "description": "The airplane, degrees.",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            "want": {
+              "type": "number",
+              "description": "How many fields are wanted: the box widens until it holds as many."
+            },
+            "half_deg": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The box last read, its `half_deg` as this rule gave it; null on the first ask."
+            },
+            "found": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "How many fields the packs held in that box; null on the first ask."
+            }
+          },
+          "required": [
+            "at",
+            "want"
+          ],
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "FieldsNearAnswer",
+          "type": "object",
+          "properties": {
+            "box": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "The box to read next, degrees; null: rank the fields read with best_fields.",
+              "properties": {
+                "south": {
+                  "type": "number"
+                },
+                "west": {
+                  "type": "number"
+                },
+                "north": {
+                  "type": "number"
+                },
+                "east": {
+                  "type": "number"
+                },
+                "half_deg": {
+                  "type": "number",
+                  "description": "Its half height, degrees of latitude: sent back as `half_deg`."
+                }
+              },
+              "required": [
+                "south",
+                "west",
+                "north",
+                "east",
+                "half_deg"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "box"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "filed_dof": {
       "description": "Item 18's date of flight, DOF/YYMMDD, where the flight is not on the UTC day it is filed (AIM Appendix 4, TBL 4-1); null on the same day.",
       "type": "object",
@@ -10676,6 +10915,50 @@
             {
               "type": "null"
             }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "flow_ends": {
+      "description": "When a traffic management program or restriction (TFMS flow information: a ground stop, ground delay program, airspace flow program or a facility's restriction) stops being kept: its own end where the Command Center gives one, else six hours after it was heard, a design bound (the ATCSCC advises each program's effective period and its revisions, FAA JO 7210.3 chapter 17).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FlowEndsInput",
+          "type": "object",
+          "properties": {
+            "heard": {
+              "type": "number",
+              "description": "When it was heard, Unix seconds."
+            },
+            "ends": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Its own end, Unix seconds, where the advisory or restriction gives one."
+            }
+          },
+          "required": [
+            "heard"
+          ]
+        },
+        "answer": {
+          "title": "FlowEndsAnswer",
+          "type": "object",
+          "properties": {
+            "ends": {
+              "type": "number",
+              "description": "When it is no longer kept, Unix seconds."
+            }
+          },
+          "required": [
+            "ends"
           ]
         }
       },
@@ -12031,7 +12314,7 @@
       "additionalProperties": false
     },
     "fuel_in_tanks": {
-      "description": "The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.",
+      "description": "The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill, and at every point where no flight's reserve is given.",
       "type": "object",
       "properties": {
         "input": {
@@ -12087,7 +12370,7 @@
                   "null"
                 ]
               },
-              "description": "Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given."
+              "description": "Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given; with none given at all, every point is null, not known."
             },
             "alternate_gal": {
               "type": [
@@ -12988,7 +13271,7 @@
       "additionalProperties": false
     },
     "gonogo_brief": {
-      "description": "The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the nav log flies over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a); a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).",
+      "description": "The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the flight is planned over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a)), or a pressurised one over FL250 (its 10-minute supply, 91.211(b)(1)(i)) and FL350 (a pilot's mask, (b)(1)(ii)) (a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).",
       "type": "object",
       "properties": {
         "input": {
@@ -12997,6 +13280,33 @@
           "properties": {
             "verdict": {
               "$ref": "#/definitions/VerdictInput"
+            },
+            "facts": {
+              "$ref": "#/definitions/GonogoFacts"
+            },
+            "risk": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "level": {
+                      "type": "string",
+                      "description": "\"low\", \"caution\" or \"high\"."
+                    },
+                    "line": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "line"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With `facts`: the risk assessment's level and line (gonogo_risk, gonogo_risk_line); null before the briefing."
             },
             "alternate": {
               "anyOf": [
@@ -13007,7 +13317,7 @@
                   "type": "null"
                 }
               ],
-              "description": "/api/alternate's answer; null while it is awaited or where none was asked."
+              "description": "/api/alternate's answer, or {\"failed\": true} where it failed, {\"pending\": true} while it is awaited; null where none was asked, which under IFR is an alternate not checked (unknown, 14 CFR 91.169(b))."
             },
             "fields": {
               "type": [
@@ -13025,9 +13335,9 @@
             }
           },
           "required": [
-            "verdict",
             "airplane"
-          ]
+          ],
+          "description": "`verdict`, the sections built (gonogo_input's answer and the risk), or `facts`, gonogo_input's input, which is then built here with `risk` beside it."
         },
         "answer": {
           "title": "GonogoBriefAnswer",
@@ -13707,6 +14017,24 @@
       ],
       "additionalProperties": false
     },
+    "gonogo_input": {
+      "description": "The Go / No-Go's input (gonogo_brief's `verdict`, all but the risk) put together from the briefing, the nav log and the loading, one copy for the web and the planner: the weather (VFR flight not recommended dropped under IFR, as its check is 14 CFR 91.169's; the sources not answered by name, under IFR the forecast icing not had and a ceiling with no height at a field landed at or a TAF station said unchecked, built here from the METARs and the forecast, 14 CFR 91.103; the worst forecast in words, the visibility to the hundredth down), the airspace (gonogo_route_figures' TFRs, unchecked where the briefing failed or tfr.faa.gov did not answer), the altitude (the nav log's cautions, the altitude flown as the FL chip says it, the highest leg -- with no legs, the plan picked's highest step -- and the airplane's oxygen and cabin for 14 CFR 91.211(a) and (b)), the fuel (gonogo_route_figures'), the runways (gonogo_runway_findings) and the balance (worked only with the pilot's own load, 14 CFR 91.9(a); \"2,407 lb at 41.2 in\"). Each section pending while what it waits on is awaited.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GonogoInputInput",
+          "$ref": "#/definitions/GonogoFacts"
+        },
+        "answer": {
+          "$ref": "#/definitions/VerdictInput"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "gonogo_pass_minutes": {
       "description": "Minutes after departure the flight passes a point along the route, or null.",
       "type": "object",
@@ -13891,7 +14219,7 @@
       "additionalProperties": false
     },
     "gonogo_route_figures": {
-      "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).",
+      "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145), from the briefing's `tfrs`, by NOTAM id, with how many more it lists near it; none where no `tfrs` are sent; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.",
       "type": "object",
       "properties": {
         "input": {
@@ -13959,24 +14287,134 @@
                 }
               }
             },
-            "tfr_count": {
-              "description": "How many TFRs the briefing lists along the route.",
+            "tfrs": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` (\"during\") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "notam_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "crosses": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "along_track_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "on_route": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "when": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  },
+                  "effective": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "ISO 8601 UTC; none, open that way."
+                  },
+                  "expires": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "legs": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "The nav log's legs, for when the flight passes each TFR.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "distance_nm": {
+                    "type": "number"
+                  },
+                  "ete_min": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "distance_nm"
+                ]
+              }
+            },
+            "depart_us": {
               "type": [
                 "number",
                 "null"
-              ]
+              ],
+              "description": "The departure, microseconds since 1970."
             },
-            "crossed": {
-              "description": "The NOTAM ids of the TFRs the route crosses while they are in force.",
-              "type": "array",
+            "ifr": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Planned IFR: VFR not recommended's reasons are dropped (14 CFR 91.169)."
+            },
+            "vfr_not_recommended": {
+              "type": [
+                "array",
+                "null"
+              ],
               "items": {
                 "type": "string"
-              }
+              },
+              "description": "The briefing's reasons for AIM 7-1-5's \"VFR flight not recommended\"."
+            },
+            "hazards": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The SIGMETs and G-AIRMETs along the route, by name."
+            },
+            "weather_unavailable": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The briefing's sources that did not answer."
             }
           },
           "required": [
-            "totals",
-            "crossed"
+            "totals"
           ]
         },
         "answer": {
@@ -14009,6 +14447,17 @@
             },
             "tfrs_near": {
               "type": "number"
+            },
+            "vfr_not_recommended": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The reasons that count: none under IFR."
+            },
+            "hazard_count": {
+              "type": "number",
+              "description": "The hazards the risk assessment counts: none where both SIGMETs and G-AIRMETs failed."
             }
           },
           "required": [
@@ -14016,7 +14465,9 @@
             "required_gal",
             "reserve_min",
             "tfrs_in_force",
-            "tfrs_near"
+            "tfrs_near",
+            "vfr_not_recommended",
+            "hazard_count"
           ],
           "additionalProperties": false
         }
@@ -14219,8 +14670,13 @@
                 "type": "boolean",
                 "description": "A METAR gave the temperature and altimeter."
               },
+              "temp_assumed": {
+                "type": "boolean",
+                "description": "The distances were worked out on a standard day's temperature, none being reported: a hot day's are longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
+              },
               "headwind_kt": {
-                "type": "number"
+                "type": "number",
+                "description": "The wind along the end, negative for a tailwind: the steady headwind, but behind the end the steady or the gusts' tailwind, whichever is more (as the crosswind's; runway_end_fit's tailwind_kt). The distances keep the steady headwind."
               },
               "crosswind_kt": {
                 "type": "number"
@@ -14287,6 +14743,10 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "close": {
+                      "type": "boolean",
+                      "description": "Within the runway, but with less than SAFO 19001's 15 per cent to spare."
                     }
                   },
                   "required": [
@@ -14298,9 +14758,36 @@
                     "unknown",
                     "beyond",
                     "runway",
-                    "end"
+                    "end",
+                    "close"
                   ]
                 }
+              },
+              "finding": {
+                "type": "string",
+                "enum": [
+                  "stop",
+                  "caution",
+                  "unknown",
+                  "ok"
+                ],
+                "description": "The field's runway finding, as runway_end_fit's for an end (runway::fit): stop where a distance is over the runway (14 CFR 91.103(b)); a caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), less than SAFO 19001's 15 per cent to spare or a reading past the POH's table; unknown where the elevation or a runway's length is not known; else ok."
+              },
+              "fit": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "short",
+                  "crosswind",
+                  "tailwind",
+                  "close",
+                  "beyond",
+                  "standard_day",
+                  null
+                ],
+                "description": "The finding's reason, the worst first; null for unknown and ok."
               }
             },
             "required": [
@@ -14313,14 +14800,181 @@
               "density_alt_ft",
               "temp_c",
               "reported",
+              "temp_assumed",
               "headwind_kt",
               "crosswind_kt",
               "crosswind_over",
               "grass",
               "unchecked",
-              "distances"
+              "distances",
+              "finding",
+              "fit"
             ]
           }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "gonogo_runway_findings": {
+      "description": "The Go / No-Go's runway finding put together from the runway checks (gonogo_brief's `runways`), one copy for the web and the planner: the fields, each once in the route's order, with a distance over the runway (short; 14 CFR 91.103(b)), past the POH's demonstrated crosswind, read past the POH's table (beyond), a tailwind (the wind along the end below zero; AIM 4-3-6), less than SAFO 19001's 15 per cent to spare (close), or not checked (the elevation or a runway's length not known); pending while the nav log or the briefing is awaited, and worked where the airplane has both short-field tables (each a non-empty object or list) or the nav log is awaited.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GonogoRunwayFindingsInput",
+          "type": "object",
+          "properties": {
+            "planned": {
+              "type": "boolean",
+              "description": "The nav log is in."
+            },
+            "briefed": {
+              "type": "boolean",
+              "description": "The briefing is in."
+            },
+            "aircraft": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "The nav log's airplane: its `takeoff` and `landing` tables, read as JavaScript reads them (present or not)."
+            },
+            "checks": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "The runway checks (gonogo_runway_checks), each with its field's ident.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "headwind_kt": {
+                    "type": "number"
+                  },
+                  "crosswind_over": {
+                    "type": "boolean"
+                  },
+                  "unchecked": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "distances": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "over": {
+                          "type": "boolean"
+                        },
+                        "beyond": {
+                          "type": "boolean"
+                        },
+                        "close": {
+                          "type": "boolean"
+                        },
+                        "unknown": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "over",
+                        "beyond",
+                        "close",
+                        "unknown"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "ident",
+                  "headwind_kt",
+                  "crosswind_over",
+                  "unchecked",
+                  "distances"
+                ]
+              }
+            }
+          },
+          "required": [
+            "planned",
+            "briefed",
+            "checks"
+          ]
+        },
+        "answer": {
+          "title": "GonogoRunwayFindingsAnswer",
+          "type": "object",
+          "properties": {
+            "pending": {
+              "type": "boolean"
+            },
+            "worked": {
+              "type": "boolean"
+            },
+            "short": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "crosswind": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "beyond": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "tailwind": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "close": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "unchecked": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "standard_day": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
+            }
+          },
+          "required": [
+            "pending",
+            "worked",
+            "short",
+            "crosswind",
+            "beyond",
+            "tailwind",
+            "close",
+            "unchecked",
+            "standard_day"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -15573,7 +16227,7 @@
       "additionalProperties": false
     },
     "hazard_view": {
-      "description": "Hazard colouring (ForeFlight's Hazard Advisor): the ground and obstacles on the map against the altitude flown, the GPS's in flight (`underway`, flying speed), the plan's cruise on the ground. Red over `warning_from_ft`, the altitude less the pilot's clearance -- 500 ft (14 CFR 91.119(c)), 1,000 ft by default (91.119(b), 91.177(a)(2)(ii)) or 2,000 ft (91.177(a)(2)(i), a Part 95 mountainous area); exactly the clearance meets the rule and is yellow -- yellow from `caution_from_ft`, 1,000 ft under that, nothing below. `shown` where the setting (off, on, or by itself in flight) and an altitude allow; each of `tops_ft` (obstacle tops, ft MSL) as `levels` against the bands (\"warning\", \"caution\", \"clear\"; null with no altitude). A picture against one altitude, not terrain clearance: no TAWS (TSO-C151). A phone's GPS height is over the WGS84 ellipsoid, some 100 ft under sea level over the US (GEOID18), so it errs red.",
+      "description": "Hazard colouring (ForeFlight's Hazard Advisor): the ground and obstacles on the map against the altitude flown, the GPS's in flight (`underway`, flying speed), the plan's cruise on the ground. Red over `warning_from_ft`, the altitude less the pilot's clearance -- 500 ft (14 CFR 91.119(c)), 1,000 ft by default (91.119(b), 91.177(a)(2)(ii)) or 2,000 ft (91.177(a)(2)(i), a Part 95 mountainous area); exactly the clearance meets the rule and is yellow -- yellow from `caution_from_ft`, 1,000 ft under that, nothing below. `shown` where the setting (off, on, or by itself in flight) and an altitude allow; each of `tops_ft` (obstacle tops, ft MSL) as `levels` against the bands (\"warning\", \"caution\", \"clear\"; null with no altitude). A picture against one altitude, not terrain clearance: no TAWS (TSO-C151). A phone's GPS height is over the WGS84 ellipsoid, some 100 ft under sea level over the US (GEOID18), so it errs red. The GPS height is stepped down to the 50 ft below, so a few feet's wander does not repaint the map and the step errs red too.",
       "type": "object",
       "properties": {
         "input": {
@@ -15600,7 +16254,7 @@
                 "number",
                 "null"
               ],
-              "description": "The GPS's height, ft, where it gives one."
+              "description": "The GPS's height, ft, where it gives one, as read: the engine takes it in 50 ft steps, rounded down (the warning's side)."
             },
             "planned_altitude_ft": {
               "type": [
@@ -16274,8 +16928,80 @@
       ],
       "additionalProperties": false
     },
+    "icing_forecast_hours": {
+      "description": "Which stored icing hours each leg of an IFR route is read off (#216; the owner, 2026-11-27, \"Grids, worst of nearby hours\"), by index into `hours`: the hour nearest the leg's middle first -- the CIP's analysis where it and an IFI hour are as near, the earliest for a time up to half an hour before them all -- then every other within an hour of the middle, in the order given; none for a middle more than half an hour past the last hour or before the first, the stored hours being an hour apart and each standing for the half hour either side of it. The planner samples those hours along the leg and sends them to icing_forecast_route as the leg's `hours`.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IcingForecastHoursInput",
+          "type": "object",
+          "properties": {
+            "hours": {
+              "type": "array",
+              "description": "The stored hours.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "valid_s": {
+                    "type": "number",
+                    "description": "Valid time, UNIX seconds."
+                  },
+                  "source": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "\"cip\" for the analysis, \"ifi\" for a forecast hour."
+                  }
+                },
+                "required": [
+                  "valid_s"
+                ]
+              }
+            },
+            "middles_s": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "description": "Each leg's middle, UNIX seconds."
+            }
+          },
+          "required": [
+            "hours",
+            "middles_s"
+          ],
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "IcingForecastHoursAnswer",
+          "type": "object",
+          "properties": {
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "description": "For each leg, the hours it is read off by index, the nearest first; empty for none."
+            }
+          },
+          "required": [
+            "legs"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "icing_forecast_route": {
-      "description": "Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the AWC's icing cross-section along each leg (its GFA's, from CIP and FIP), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked.",
+      "description": "Forecast icing on an IFR route (#216; AIM 7-1-4, 7-1-19): from the NWS's icing grids sampled along each leg (the CIP analysis and the IFI forecast, NWS SCN 26-87), the worst severity at the altitude flown (the levels either side of it), the share of the leg in icing there, the layer icing is forecast in, the worst on the route and the Go / No-Go's line; a leg with no section is unchecked. A leg may send the stored hours near it (`hours`, as icing_forecast_hours picks them, the nearest first) in place of one section: they merge as the owner chose (2026-11-27, \"Grids, worst of nearby hours\"), each point and level the worst of them, the share the nearest hour's own unless it has no icing at the altitude where the merged has.",
       "type": "object",
       "properties": {
         "input": {
@@ -16314,7 +17040,7 @@
                         "items": {
                           "type": "number"
                         },
-                        "description": "The AWC's severity, 0 none to 4 heavy, negative none forecast, level-fastest."
+                        "description": "The severity category (GRIB2 code table 4.228), 0 none to 4 severe, negative none forecast, level-fastest."
                       },
                       "sfc_hgt": {
                         "type": "array",
@@ -16329,13 +17055,57 @@
                       "data_levels",
                       "values"
                     ],
-                    "description": "The AWC's cross-section along the leg, null where it could not be had."
+                    "description": "One section along the leg, null where it could not be had."
                   },
                   "valid_s": {
                     "type": [
                       "number",
                       "null"
                     ]
+                  },
+                  "hours": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "description": "The sections of the stored hours near the leg, the nearest first (icing_forecast_hours' order), null for an hour whose grid could not be read; the ground (sfc_hgt) is the nearest's. Empty, or the nearest null: the leg unchecked. Sent in place of `section`.",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "width": {
+                              "type": "number"
+                            },
+                            "data_levels": {
+                              "type": "number"
+                            },
+                            "values": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "description": "The severity category (GRIB2 code table 4.228), 0 none to 4 severe, negative none forecast, level-fastest."
+                            },
+                            "sfc_hgt": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "description": "The ground under each column, m."
+                            }
+                          },
+                          "required": [
+                            "width",
+                            "data_levels",
+                            "values"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
                   }
                 },
                 "required": [
@@ -16375,7 +17145,7 @@
                       "trace",
                       "light",
                       "moderate",
-                      "heavy",
+                      "severe",
                       null
                     ]
                   },
@@ -16434,7 +17204,7 @@
                     "trace",
                     "light",
                     "moderate",
-                    "heavy"
+                    "severe"
                   ]
                 },
                 "altitudes_ft": {
@@ -17293,7 +18063,7 @@
                 "boolean",
                 "null"
               ],
-              "description": "Flown for hire, so the 100-hour inspection applies (91.409(b))."
+              "description": "Flown for hire, so the 100-hour inspection applies (91.409(b)); null, not said, is weighed as for hire and its reminder says \"if flown for hire\"."
             },
             "elt_battery_due_on": {
               "type": [
@@ -17673,17 +18443,25 @@
               "type": "string",
               "description": "The country's name as the warning starts, \"Canada\"; \"Outside the US\" for other."
             },
+            "province": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "In Canada, its province or territory, \"Ontario\" (Natural Earth's admin-1 at 1:50m); null elsewhere."
+            },
             "caution": {
               "type": [
                 "string",
                 "null"
               ],
-              "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
+              "description": "The warning at the point, \"This point is in Canada (Ontario): Canadian rules not checked \u2014 figures use US rules\"; null in the United States."
             }
           },
           "required": [
             "code",
             "name",
+            "province",
             "caution"
           ]
         }
@@ -19479,6 +20257,39 @@
       ],
       "additionalProperties": false
     },
+    "magnetic_of": {
+      "description": "A true direction as a magnetic one, degrees from 0 up to 360: \"east is least, west is best\", an east variation taken off and a west one added (FAA-H-8083-25C, chapter 16). The variation is magnetic_variation's, degrees east, west negative.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "MagneticOfInput",
+          "type": "object",
+          "properties": {
+            "true_deg": {
+              "type": "number",
+              "description": "The direction, degrees true."
+            },
+            "variation_deg": {
+              "type": "number",
+              "description": "The magnetic variation there, degrees east (west negative), as magnetic_variation answers it."
+            }
+          },
+          "required": [
+            "true_deg",
+            "variation_deg"
+          ]
+        },
+        "answer": {
+          "title": "MagneticOfAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "magnetic_variation": {
       "description": "Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.",
       "type": "object",
@@ -19510,6 +20321,63 @@
         "answer": {
           "title": "MagneticVariationAnswer",
           "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "map_dim_words": {
+      "description": "The Dimmer's words and paper at night, one copy for every app: the chart's white as MapLibre's raster shader draws it (raster-contrast about the middle, 1/(1-k) over 0 and 1+k under, then raster-brightness-max), the share of their night inks the map's light-haloed words take so that none is brighter than the paper under it (AIM 8-1-6, Vision in Flight: the pilot's dark adaptation), floored under the night's own contrast, and a night warning's light against the paper's. A display's look, not an aviation figure; its figures are design/tokens.json's map-dim group, its cases apps/web/src/lib/fixtures/mapDim.json.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "MapDimWordsInput",
+          "type": "object",
+          "properties": {
+            "night": {
+              "type": "boolean",
+              "description": "After dark: by day the words take no share (0) and the warnings their whole light (1)."
+            },
+            "brightness": {
+              "type": "number",
+              "description": "The chart's raster-brightness-max, 0 to 1 (held to it)."
+            },
+            "contrast": {
+              "type": "number",
+              "description": "The chart's raster-contrast, -1 to 1."
+            }
+          },
+          "required": [
+            "night",
+            "brightness",
+            "contrast"
+          ]
+        },
+        "answer": {
+          "title": "MapDimWords",
+          "type": "object",
+          "properties": {
+            "paper": {
+              "type": "number",
+              "description": "The chart's white as drawn, encoded sRGB 0 to 1."
+            },
+            "words": {
+              "type": "number",
+              "description": "The share of their night inks the light-haloed words take, in hundredths: 0 by day, at least 0.01 at night."
+            },
+            "warning": {
+              "type": "number",
+              "description": "A night warning's colour's share of light, the paper's times map-dim.warning-under-paper, in hundredths; 1 by day."
+            }
+          },
+          "required": [
+            "paper",
+            "words",
+            "warning"
+          ]
         }
       },
       "required": [
@@ -20021,6 +20889,66 @@
       ],
       "additionalProperties": false
     },
+    "name_case": {
+      "description": "A name the FAA writes in capitals, written as a name is, where faa_words' sentence case and place_name do not fit: a registrant's (kind person, the default: each word capitalised, a company's form such as LLC, Inc's INC as Inc, and a word with figures kept; the aircraft registry's MASTER and DEREG), a maker's (maker: its initials kept too, IAE, CFM; ACFTREF), a facility's (facility: its RCO or TWR kept; NASR's frequencies) or a street address (street: its compass points NE and ordinals 1st as written; NASR's contacts, the Census geocoder). From text, or each of texts as a list (a null row answers \"\"). A name's spelling, no aviation rule.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NameCaseInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "texts": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": "A long list's rows in one call; where given, text is not read."
+            },
+            "kind": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "person",
+                "maker",
+                "facility",
+                "street",
+                null
+              ]
+            }
+          }
+        },
+        "answer": {
+          "title": "NameCaseAnswer",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "navaid_hours": {
       "description": "A navaid's hours as filed (\"24\" is \"Continuous\"), or null where none are filed.",
       "type": "object",
@@ -20042,6 +20970,46 @@
           "type": [
             "string",
             "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navaid_kinds": {
+      "description": "The navaid kinds by NASR's NAV_BASE NAV_TYPE, one copy for every reader: `vor`, the navaids the sectional draws as a VOR (the VOR's hexagon, the VOR/DME's in its box and the VORTAC's; FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Radio Aids to Navigation), and `navaid`, every kind a route may fly over, in the order one is kept over another of the same ident (not the VOR test facilities, VOT, the fan markers or a marine beacon, which no route flies to).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavaidKindsInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "NavaidKinds",
+          "type": "object",
+          "properties": {
+            "vor": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The VORs, VORTAC first."
+            },
+            "navaid": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Every kind a route flies over, the likelier to fly to first."
+            }
+          },
+          "required": [
+            "vor",
+            "navaid"
           ]
         }
       },
@@ -20519,7 +21487,7 @@
       "additionalProperties": false
     },
     "navlog_fuel_stop_need": {
-      "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.",
+      "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given; 45 minutes at the trip's own burn where the totals give no reserve, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.",
       "type": "object",
       "properties": {
         "input": {
@@ -21563,6 +22531,203 @@
       ],
       "additionalProperties": false
     },
+    "notam_affects": {
+      "description": "Which part of the planned flight a NOTAM affects, the chip on its card: of the roles its field plays in the plan (the departure, a stop, the destination, the alternate filed), each it reaches, and whether it takes away a procedure that role flies (taken, the red chip) or is only the field's (the neutral one). Read from its card's own parts (notam_card), never its words: a departure procedure taken away (SID, ODP, DVA; AIM 5-2-9) reaches the departure and each stop, an arrival (STAR, AIM 5-4-1) or an approach (AIM 5-4-5) the destination, each stop and the alternate (14 CFR 91.169); what happened to the field itself (a runway closed, a light out, or a procedure NOTAM's own sentence closing a surface, FDC 6/3373's \"RWY 18/36 PERMANENTLY CLSD\") reaches every role there. A procedure NOTAM whose procedures it cannot name reaches the roles that fly its kind (JO 7930.2 1-2-1), neutral.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NotamAffectsInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The NOTAM as sent, domestic or ICAO form."
+            },
+            "idents": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The field's idents (OSH, KOSH), as notam_card takes them."
+            },
+            "roles": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "departure",
+                  "stop",
+                  "arrival",
+                  "alternate"
+                ]
+              },
+              "description": "The roles the NOTAM's field plays in the planned flight, any order; empty where it plays none."
+            }
+          },
+          "required": [
+            "text",
+            "roles"
+          ]
+        },
+        "answer": {
+          "title": "NotamAffectsAnswer",
+          "type": "object",
+          "properties": {
+            "affects": {
+              "type": "array",
+              "description": "Each role it reaches, those it takes a procedure from first, then departure, stop, arrival, alternate; the chip is the first. Empty where it reaches none.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "departure",
+                      "stop",
+                      "arrival",
+                      "alternate"
+                    ]
+                  },
+                  "taken": {
+                    "type": "boolean",
+                    "description": "It takes away a procedure this role flies: the red chip; false, the field's own, the neutral one."
+                  }
+                },
+                "required": [
+                  "role",
+                  "taken"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "affects"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "notam_card": {
+      "description": "A NOTAM's own card, read from its parts (FAA Order JO 7930.2): its accountability (4-2-1, \"FDC\"); its category, a procedure NOTAM's by what the procedures are for (SID, ODP and DVA departures, STAR arrivals, IAP approaches; 1-2-1), the rest its heading; its title, what happened (\"Runway 18/36 closed\"): notam_read's what, else a surface its words close (RWY, TWY; 3-3-5, 3-3-6; CLSD, JO 7340.2), else the procedures not authorized (NA); one plain sentence of its effect (\"Runway 18/36 is permanently closed, so its RNAV departures are not authorized.\"); whether the condition is permanent (PERM, 4-2-1, or its words' PERMANENTLY), and whether it then runs until the charts are updated (an EST end, or none); and the procedures it takes away, each by its charted name and number (7-1-3: \"ADELL EIGHT DEPARTURE (RNAV)\" is \"ADELL 8\", RNAV). Each null or empty where the NOTAM's parts do not say all of it: the card then says its words written out (notam_read), never a guess.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NotamCardInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The NOTAM as sent, domestic or ICAO form."
+            },
+            "idents": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The field's idents (OSH, KOSH), kept as written."
+            },
+            "ends": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The end the caller holds besides the text's own (the feed's), ISO 8601 UTC; a firm one keeps a permanent NOTAM whose text gives no end from being said to run until the charts are updated."
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "NotamCardAnswer",
+          "type": "object",
+          "properties": {
+            "account": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The domestic form's accountability (\"FDC\", \"OSH\"); null in the ICAO form."
+            },
+            "category": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "What kind of thing it is about, a small label: \"Departure procedures\", \"Arrival procedures\", \"Instrument approaches\", else notam_read's heading (Runway, Taxiway, Navaid, Airspace ...)."
+            },
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "What happened, the card's title: \"Runway 18/36 closed\"; null where its parts do not say it."
+            },
+            "effect": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "One plain sentence of what it means: \"Runway 18/36 is permanently closed, so its RNAV departures are not authorized.\"; null where its parts do not say it."
+            },
+            "permanent": {
+              "type": "boolean",
+              "description": "The condition is permanent: PERM as its end, or PERMANENTLY in its words (it stays until the charts show it)."
+            },
+            "until_charts": {
+              "type": "boolean",
+              "description": "Its end is \"until the charts are updated\": a permanent condition (PERM, JO 7930.2 4-2-1) with an end marked EST, or with none, stays until the charts show it, the EST time only the estimate of when. False where its end, firm, is its end."
+            },
+            "procedures": {
+              "type": "array",
+              "description": "The procedures it takes away (NA), in its order; empty where it takes none.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Its charted name and number: \"ADELL 8\"."
+                  },
+                  "rnav": {
+                    "type": "boolean",
+                    "description": "An RNAV procedure, \"(RNAV)\" on its title."
+                  },
+                  "departure": {
+                    "type": "boolean",
+                    "description": "A departure procedure (SID, ODP; DEPARTURE in its title, 7-1-3), which a field's departures use; false for an arrival (STAR), which its arrivals use."
+                  }
+                },
+                "required": [
+                  "name",
+                  "rnav",
+                  "departure"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "account",
+            "category",
+            "title",
+            "effect",
+            "permanent",
+            "until_charts",
+            "procedures"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "notam_read": {
       "description": "A NOTAM read for a pilot, beside its text as sent: its keyword (FAA Order JO 7930.2 1-2-1) as a plain heading, or the ICAO Q) code's subject (Appendix B); its words with the FAA's contractions written out (JO 7340.2; JO 7930.2 3-3-1 and TBL 3-3-1) in sentence case, its codes (ILS, PAPI, VOR, RNAV, LPV) and idents kept, runways and taxiways as designated (3-3-5, 3-3-6), heights MSL unless AGL is stated (4-2-1), distances and compass points from a place, coordinates and fix-radial-distances written out; and its start of activity and end of validity in UTC (YYMMDDHHMM, 3-3-2), with EST (an estimate) and PERM (permanent) (4-2-1). Its what and where in our words where its subject's words say them (the airport card's lines). The keyword AD, JO 7930.2's aerodrome, is headed \"Airport\", the FAA's word for pilots (the AIM). A word it does not know is kept as written, never guessed.",
       "type": "object",
@@ -22529,7 +23694,7 @@
       "additionalProperties": false
     },
     "own_altitude_caution": {
-      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
+      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights, or a pressurised airplane past (b)'s FL250 and FL350; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
       "type": "object",
       "properties": {
         "input": {
@@ -22568,7 +23733,7 @@
                 "object",
                 "null"
               ],
-              "description": "The airplane: `supplemental_oxygen` or `pressurized` true takes 91.211's cautions away."
+              "description": "The airplane: `supplemental_oxygen` true takes 91.211(a)'s cautions away, and its (b)(1)(i) supply; `pressurized` true puts (b)'s FL250 and FL350 in (a)'s place."
             }
           },
           "required": [
@@ -22645,6 +23810,51 @@
         },
         "answer": {
           "title": "OwnShipHexAnswer",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "oxygen_words": {
+      "description": "What 14 CFR 91.211 asks of a flight up to `highest_ft` MSL, in a pilot's words: in an airplane with no pressurised cabin, its cabin at the altitude flown, (a)(1) over 12,500 ft the crew's oxygen for any of it past 30 minutes, (a)(2) over 14,000 ft the crew's for all of it, (a)(3) over 15,000 ft every occupant provided with it, none where it carries supplemental oxygen; with a pressurised cabin, (b)(1)(i) above FL250 a 10-minute supply for every occupant (none where it carries oxygen) and (b)(1)(ii) above FL350 one pilot at the controls wearing a mask. Each height is the rule's \"above\". Null where none is asked.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "OxygenWordsInput",
+          "type": "object",
+          "properties": {
+            "highest_ft": {
+              "type": "number",
+              "description": "The highest altitude flown, feet MSL."
+            },
+            "supplemental_oxygen": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The airplane carries supplemental oxygen; false, the safer side, where not known."
+            },
+            "pressurized": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Its cabin is pressurised."
+            }
+          },
+          "required": [
+            "highest_ft"
+          ]
+        },
+        "answer": {
+          "title": "OxygenWordsAnswer",
           "type": [
             "string",
             "null"
@@ -22990,6 +24200,36 @@
             "today": {
               "type": "string",
               "description": "YYYY-MM-DD."
+            },
+            "flying": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): \"if the aircraft to be flown is an airplane with a tailwheel\"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.",
+              "properties": {
+                "category": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "14 CFR 61.5 category, \"Airplane\"."
+                },
+                "class": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "14 CFR 61.5 class, \"Single-engine land\"."
+                },
+                "tailwheel": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": false
             }
           },
           "required": [
@@ -23006,14 +24246,53 @@
                 "string",
                 "null"
               ],
-              "description": "90 days after the third most recent landing (61.57(a)); null with fewer than three."
+              "description": "90 days after the third most recent landing the logbook proves counts for the airplane judged (61.57(a)(1)): in its category and class, and in a tailwheel to a full stop; null with fewer than three. Never a guess: see dayPassengersUnknown."
             },
             "nightPassengersUntil": {
               "type": [
                 "string",
                 "null"
               ],
-              "description": "90 days after the third most recent night full-stop landing (61.57(b))."
+              "description": "90 days after the third most recent night full-stop landing the logbook proves counts for the airplane judged (61.57(b)(1))."
+            },
+            "passengerClass": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The category and class passenger currency was judged in, \"airplane/single-engine land\": the airplane to be flown's (flying), else the newest flight's (61.57(a)(1)); null where neither says."
+            },
+            "passengerClassUnknown": {
+              "type": "boolean",
+              "description": "No category and class to judge in: neither the airplane to be flown nor the newest flight says it, so no landing is counted (61.57(a)(1))."
+            },
+            "passengerTailwheel": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether the airplane judged has a tailwheel; null where the airplane to be flown doesn't say, judged as one, the stricter (61.57(a)(1)(ii))."
+            },
+            "tailwheelPassengersUntil": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "For a pilot judged in a tricycle whose logbook shows a tailwheel in the same class: the tailwheel's own, 90 days after the third most recent full-stop landing in one (61.57(a)(1)(ii)); else null."
+            },
+            "dayPassengersUnknown": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "What the logbook doesn't say, where the pilot would be current by day (61.57(a)(1)) if it were so, in a sentence beginning \"Can't tell\"; null where nothing unsaid matters."
+            },
+            "nightPassengersUnknown": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The same at night (61.57(b)(1))."
             },
             "flightReviewOn": {
               "type": [
@@ -23105,6 +24384,12 @@
           "required": [
             "dayPassengersUntil",
             "nightPassengersUntil",
+            "passengerClass",
+            "passengerClassUnknown",
+            "passengerTailwheel",
+            "tailwheelPassengersUntil",
+            "dayPassengersUnknown",
+            "nightPassengersUnknown",
             "flightReviewOn",
             "flightReviewUntil",
             "medicalExpiresOn",
@@ -24605,6 +25890,36 @@
                 "null"
               ],
               "description": "How many days before a currency lapses its reminder shows; 30 where null."
+            },
+            "flying": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): \"if the aircraft to be flown is an airplane with a tailwheel\"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.",
+              "properties": {
+                "category": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "14 CFR 61.5 category, \"Airplane\"."
+                },
+                "class": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "14 CFR 61.5 class, \"Single-engine land\"."
+                },
+                "tailwheel": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": false
             }
           },
           "required": [
@@ -25506,6 +26821,10 @@
                     },
                     "listen": {
                       "type": "boolean"
+                    },
+                    "ctaf": {
+                      "type": "boolean",
+                      "description": "Called on the field's CTAF (AIM 4-1-9): the page's label for it."
                     }
                   },
                   "required": [
@@ -25609,6 +26928,10 @@
                 "null"
               ]
             },
+            "visibility_minus": {
+              "type": "boolean",
+              "description": "Less than visibility_sm: \"less than one quarter\", a METAR's M1/4SM (FMH-1 chapter 6), said \"less than 1/4 sm\", never 1/4."
+            },
             "sky": {
               "type": "array",
               "items": {
@@ -25697,6 +27020,7 @@
             "time_z",
             "wind",
             "visibility_sm",
+            "visibility_minus",
             "sky",
             "temp_c",
             "dewpoint_c",
@@ -25818,6 +27142,10 @@
                 "null"
               ]
             },
+            "visibility_minus": {
+              "type": "boolean",
+              "description": "Less than visibility_sm: \"less than one quarter\", a METAR's M1/4SM (FMH-1 chapter 6), said \"less than 1/4 sm\", never 1/4."
+            },
             "sky": {
               "type": "array",
               "items": {
@@ -25906,6 +27234,7 @@
             "time_z",
             "wind",
             "visibility_sm",
+            "visibility_minus",
             "sky",
             "temp_c",
             "dewpoint_c",
@@ -27102,7 +28431,7 @@
       "additionalProperties": false
     },
     "replay_track": {
-      "description": "A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.",
+      "description": "A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those in the 10 s before, at the report's own time (a transponder's 25 ft steps, DO-260B), and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the rate the report sent (baro_rate_fpm, else geom_rate_fpm), else the slope of the heights reported in the 15 s before, as a VSI lags (FAA-H-8083-15B, Ch. 5): never from a report still to come; a held pressure altitude (`alt_held`, or unchanged for up to 60 s while the GNSS height or the rate sent moved more than 300 ft) left out of every fit and rate, its height the last good one carried forward, never null; ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.",
       "type": "object",
       "properties": {
         "input": {
@@ -27149,6 +28478,34 @@
                       "boolean",
                       "null"
                     ]
+                  },
+                  "baro_rate_fpm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The barometric rate sent, ft/min (readsb's baro_rate)."
+                  },
+                  "geom_rate_fpm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The GNSS rate sent, ft/min (readsb's geom_rate)."
+                  },
+                  "alt_geom_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The GNSS (geometric) height, ft, where sent: the engine tells a held pressure altitude by it."
+                  },
+                  "alt_held": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ],
+                    "description": "The caller's word that the pressure altitude is held (stale); null to let the engine tell."
                   }
                 },
                 "required": [
@@ -27195,6 +28552,10 @@
                       "null"
                     ]
                   },
+                  "alt_held": {
+                    "type": "boolean",
+                    "description": "The report's pressure altitude was held: `alt_ft` is the last good height carried forward, never null."
+                  },
                   "gs_kt": {
                     "type": [
                       "number",
@@ -27228,6 +28589,7 @@
                   "lat",
                   "lon",
                   "alt_ft",
+                  "alt_held",
                   "gs_kt",
                   "track_deg",
                   "vs_fpm",
@@ -27679,6 +29041,13 @@
                   },
                   "lon": {
                     "type": "number"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Its name as the pilot reads it, \"KBUF\": the warnings name the point and the leg to it by it; \"This point\" and \"The leg\" without one."
                   }
                 },
                 "required": [
@@ -27686,7 +29055,7 @@
                   "lon"
                 ]
               },
-              "description": "The route's points in order, as the nav log's rows: a leg from each to the next."
+              "description": "The route's points in order, the nav log's departure, stops and destination: a leg from each to the next."
             }
           },
           "required": [
@@ -27718,7 +29087,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
+                    "description": "The warning at a point outside the United States, \"CYQT is in Canada (Ontario): Canadian rules not checked \u2014 figures use US rules\"; null in the United States."
                   }
                 },
                 "required": [
@@ -27753,7 +29122,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
+                    "description": "The leg's own warning where it meets a country, or a province of Canada, neither of its ends is in, named by where it goes and where it crosses, \"The leg to KBUF crosses Canada (Ontario): Canadian rules not checked \u2014 figures use US rules\"; null otherwise (a leg into a field in Canada is said at the field)."
                   }
                 },
                 "required": [
@@ -27785,7 +29154,7 @@
                   "properties": {
                     "lead": {
                       "type": "string",
-                      "description": "The finding alone."
+                      "description": "The finding alone, \"Part of the route is in Canada (Ontario): Canadian rules not checked \u2014 figures use US rules\"."
                     },
                     "line": {
                       "type": "string",
@@ -28337,6 +29706,318 @@
       ],
       "additionalProperties": false
     },
+    "route_typed": {
+      "description": "A route typed or pasted, read as the route box and Type Route take it: each word as item 15 of a flight plan has it (AIM Appendix 4, route_read: DCT out, a speed and level group the cruise asked for), a position's \"@42.1,-88.2\" kept whole, the SIDs and STARs among the words (route_procedures; AIM 5-2-9, 5-4-1) the route's procedures, not points, and the rest the points whose form is a stop's (point_kind). goes_on where the words end in a procedure, its field still to be typed. Which field publishes a procedure, and as which kind, is the caller's, from the field's procedures.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteTypedInput",
+          "type": "object",
+          "properties": {
+            "words": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The words typed, each trimmed and uppercased here; blanks left out."
+            },
+            "procedures": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "false where the caller has nowhere to send procedures: every word is then read as a point."
+            }
+          },
+          "required": [
+            "words"
+          ]
+        },
+        "answer": {
+          "title": "RouteTypedAnswer",
+          "type": "object",
+          "properties": {
+            "words": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The words read, DCT and the level group taken out."
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The points among them in order, each a stop's form, the procedures left out."
+            },
+            "procedures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "before": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "after": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "before",
+                  "after"
+                ]
+              },
+              "description": "The SIDs and STARs among the words, each with the nearest point before and after it (route_procedures)."
+            },
+            "cruise_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The cruise the first level group asked for, feet."
+            },
+            "goes_on": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "words",
+            "points",
+            "procedures",
+            "cruise_ft",
+            "goes_on"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "route_typed_picks": {
+      "description": "The SIDs and STARs typed among a route's points (route_typed's `procedures`, each with the point typed before and after it) found among its fields' published procedures, as a filed route or a clearance writes them (AIM 5-2-9, a SID out of the departure; AIM 5-4-1, a STAR into the destination): first a departure from the route's departure, its transition the point typed after it where the procedure publishes it; else an arrival into the destination by the point typed before it; else `missed`, or `unchecked` where a field's list could not be had. A transition not published is none (the common route). A later name of the same field and kind replaces the earlier. One copy for the web's route box and the phones' Type Route.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteTypedPicksInput",
+          "type": "object",
+          "properties": {
+            "procedures": {
+              "type": "array",
+              "description": "route_typed's procedures, in the order typed.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "before": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "after": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "before",
+                  "after"
+                ]
+              }
+            },
+            "departure": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "ident": {
+                  "type": "string"
+                },
+                "procedures": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "description": "\"departure\", \"arrival\" or \"approach\"."
+                      },
+                      "id": {
+                        "type": "string",
+                        "description": "The procedure's coded identifier, \"BAEE1\"."
+                      },
+                      "name": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "transitions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "transitions"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "ident",
+                "procedures"
+              ],
+              "description": "The route's departure and its procedures as the planner lists them; null where it has none or they could not be had. Null where its list could not be had."
+            },
+            "arrival": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "ident": {
+                  "type": "string"
+                },
+                "procedures": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "description": "\"departure\", \"arrival\" or \"approach\"."
+                      },
+                      "id": {
+                        "type": "string",
+                        "description": "The procedure's coded identifier, \"BAEE1\"."
+                      },
+                      "name": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "transitions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "transitions"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "ident",
+                "procedures"
+              ],
+              "description": "The route's destination and its procedures, the same; null likewise. Null where its list could not be had."
+            }
+          },
+          "required": [
+            "procedures",
+            "departure",
+            "arrival"
+          ],
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "RouteTypedPicksAnswer",
+          "type": "object",
+          "properties": {
+            "picks": {
+              "type": "array",
+              "description": "Each field's departure or arrival picked, in the order typed.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "departure",
+                      "arrival"
+                    ]
+                  },
+                  "transition": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "ident",
+                  "id",
+                  "kind",
+                  "transition"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "missed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The names neither field publishes as that kind, in the order typed: both fields' lists were had."
+            },
+            "unchecked": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The names not found where a field's list could not be had (null): not looked at there, so not said unpublished (14 CFR 91.103)."
+            }
+          },
+          "required": [
+            "picks",
+            "missed",
+            "unchecked"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "route_way_warning": {
       "description": "A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- \"Crosses a restricted area\", \"Crosses a MOA\" ...; null where nothing is crossed.",
       "type": "object",
@@ -28713,6 +30394,18 @@
                     "number",
                     "null"
                   ]
+                },
+                "variable_deg": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
                 }
               }
             },
@@ -28789,6 +30482,40 @@
             "beyond": {
               "type": "boolean",
               "description": "The distance was read past the POH's table (higher, hotter, heavier or more tailwind than it goes): its edge's figures."
+            },
+            "temp_assumed": {
+              "type": "boolean",
+              "description": "The distance was worked out on a standard day's temperature at the field, none being reported: a hot day's is longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)(1)), so the fit is a caution, never \"within\" alone. False where no distance was worked out."
+            },
+            "tailwind_kt": {
+              "type": "number",
+              "description": "The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it)."
+            },
+            "finding": {
+              "type": "string",
+              "enum": [
+                "stop",
+                "caution",
+                "unknown",
+                "ok"
+              ],
+              "description": "How the end fits, worst first (runway::fit), the same finding the Brief's runway check gives a field: stop if short; caution for a crosswind past the demonstrated, a tailwind (AIM 4-3-6c), close or beyond; unknown; else ok."
+            },
+            "fit": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "short",
+                "crosswind",
+                "tailwind",
+                "close",
+                "beyond",
+                "standard_day",
+                null
+              ],
+              "description": "The finding's reason, the worst first; null for unknown and ok; standard_day where the distance assumed a standard day's temperature."
             }
           },
           "required": [
@@ -28799,7 +30526,11 @@
             "short",
             "close",
             "unknown",
-            "beyond"
+            "beyond",
+            "temp_assumed",
+            "tailwind_kt",
+            "finding",
+            "fit"
           ]
         }
       },
@@ -29246,6 +30977,158 @@
       ],
       "additionalProperties": false
     },
+    "runway_sketch": {
+      "description": "Where the airport card's runway sketch lays each runway, the picture runway_closure_marks places its crosses on: one layout for every app. A runway with both ends surveyed is drawn between them (NASR APT_RWY_END LAT_DECIMAL and LONG_DECIMAL, OurAirports' for a field NASR does not list), in nautical miles east and north of the field's point on the engine's flat frame (a minute of latitude a mile, a minute of longitude cos(latitude) of one). Where no runway of the field has both ends surveyed, each is guessed through the field's point along its first end's true heading (APT_RWY_END TRUE_ALIGNMENT) for its length (APT_RWY RWY_LEN), the first end where a landing on it starts; the guess is the drawing's alone (`guessed`), none is guessed beside a surveyed runway, and none within a degree of a heading already guessed (a field's parallels). Its drawn width is APT_RWY RWY_WIDTH, else 75 ft, an assumption for the drawing only and no FAA figure. A runway with fewer than two ends (a helipad) is not drawn; one with two ends and nothing to place it by is counted in `left_out`.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RunwaySketchInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number",
+              "description": "The field's point, degrees north (NASR APT_BASE's ARP)."
+            },
+            "lon": {
+              "type": "number",
+              "description": "And east."
+            },
+            "runways": {
+              "type": "array",
+              "description": "The field's runways as the planner sends them, in the card's order.",
+              "items": {
+                "title": "RunwaySketchRunway",
+                "type": "object",
+                "properties": {
+                  "runway_ends": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "description": "Its ends, the first end first; the first two are drawn.",
+                    "items": {
+                      "title": "RunwaySketchEnd",
+                      "type": "object",
+                      "properties": {
+                        "ident": {
+                          "type": "string"
+                        },
+                        "lat": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "description": "The end's surveyed position, degrees north (APT_RWY_END LAT_DECIMAL)."
+                        },
+                        "lon": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "description": "And east (LONG_DECIMAL)."
+                        },
+                        "heading_true_deg": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "description": "Its true heading (APT_RWY_END TRUE_ALIGNMENT)."
+                        }
+                      }
+                    }
+                  },
+                  "length_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "APT_RWY RWY_LEN, feet."
+                  },
+                  "width_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "APT_RWY RWY_WIDTH, feet."
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "runways"
+          ]
+        },
+        "answer": {
+          "title": "RunwaySketchAnswer",
+          "type": "object",
+          "properties": {
+            "strips": {
+              "type": "array",
+              "description": "Each runway drawn, in the order asked.",
+              "items": {
+                "title": "RunwaySketchStrip",
+                "type": "object",
+                "properties": {
+                  "runway": {
+                    "type": "integer",
+                    "description": "Which runway asked it is, from 0."
+                  },
+                  "a": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Its first end, nautical miles east and north of the field's point."
+                  },
+                  "b": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Its second end, the same."
+                  },
+                  "width_ft": {
+                    "type": "number",
+                    "description": "Its width as drawn, feet."
+                  },
+                  "guessed": {
+                    "type": "boolean",
+                    "description": "Laid along its heading through the field's point, its true place not known."
+                  }
+                },
+                "required": [
+                  "runway",
+                  "a",
+                  "b",
+                  "width_ft",
+                  "guessed"
+                ]
+              }
+            },
+            "left_out": {
+              "type": "integer",
+              "description": "How many runways with two ends are not drawn, so the card can say its picture is partial."
+            }
+          },
+          "required": [
+            "strips",
+            "left_out"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "runway_with_winds": {
       "description": "Each runway's favoured end, the planner's RunwayWind or null.",
       "type": "object",
@@ -29478,6 +31361,43 @@
             "minimum_ft",
             "judged",
             "runways"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "rvr_ends": {
+      "description": "When a runway's RVR reading heard at a time stops being the runway's: ten minutes after it was heard. AIM 7-1-13 has RVR 'updated approximately once every minute', so a reading not followed in ten is one the system or the feed stopped sending; a design bound that errs toward no RVR, the pilot then taking the visibility (14 CFR 91.175(h)(1)).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RvrEndsInput",
+          "type": "object",
+          "properties": {
+            "heard": {
+              "type": "number",
+              "description": "When it was heard, Unix seconds."
+            }
+          },
+          "required": [
+            "heard"
+          ]
+        },
+        "answer": {
+          "title": "RvrEndsAnswer",
+          "type": "object",
+          "properties": {
+            "ends": {
+              "type": "number",
+              "description": "When it is no longer the runway's RVR, Unix seconds."
+            }
+          },
+          "required": [
+            "ends"
           ]
         }
       },
@@ -31002,7 +32922,7 @@
       "additionalProperties": false
     },
     "sun_times": {
-      "description": "A day's sun at a point, as times: its solar noon, sunrise and sunset (the sun's upper limb on the horizon, its centre 0.833 degrees down; NOAA's solar calculation, the Naval Observatory's definition), and the beginning of morning and the end of evening civil twilight (its centre six degrees down, as the Air Almanac publishes it); and the periods the rules read from them that begin that evening and end the next morning: 14 CFR 1.1's night (end of evening civil twilight to beginning of morning civil twilight: 91.151(a)(2)'s reserve, 91.205(c)'s equipment), 61.57(b)'s period (1 hour after sunset to 1 hour before sunrise: the three takeoffs and landings to a full stop it asks for within 90 days are made in it, and passengers are carried in it only then) and 91.209(a)'s position lights (sunset to sunrise). The date is the pilot's local one, read at the longitude's mean noon. Where the sun does not cross a line that day (Alaska's summer, the Arctic's winter) its instants are null and `sun` or `civil_twilight` says which way.",
+      "description": "A day's sun at a point, as times: its solar noon, sunrise and sunset (the sun's upper limb on the horizon, its centre 0.833 degrees down; NOAA's solar calculation, the Naval Observatory's definition), and the beginning of morning and the end of evening civil twilight (its centre six degrees down, as the Air Almanac publishes it); and the periods the rules read from them that begin that evening and end the next morning: 14 CFR 1.1's night (end of evening civil twilight to beginning of morning civil twilight: 91.151(a)(2)'s reserve, 91.205(c)'s equipment), 61.57(b)(1)'s period (1 hour after sunset to 1 hour before sunrise: no person may act as pilot in command of an aircraft carrying persons in it without three takeoffs and three landings to a full stop made in it within the preceding 90 days, as sole manipulator of the flight controls, in an aircraft of the same category, class and type (if a class or type rating is required)) and 91.209(a)'s position lights (sunset to sunrise; in Alaska also whenever a prominent unlighted object cannot be seen from 3 statute miles or the sun is more than 6 degrees below the horizon). The date is the pilot's local one, read at the longitude's mean noon. Where the sun does not cross a line that day (Alaska's summer, the Arctic's winter) its instants are null and `sun` or `civil_twilight` says which way.",
       "type": "object",
       "properties": {
         "input": {
@@ -31106,12 +33026,17 @@
                 "all_day": {
                   "type": "boolean",
                   "description": "The sun never comes above that line this day: the whole day is in the period."
+                },
+                "rule": {
+                  "type": "string",
+                  "description": "What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times."
                 }
               },
               "required": [
                 "from_s",
                 "until_s",
-                "all_day"
+                "all_day",
+                "rule"
               ]
             },
             "passenger_night": {
@@ -31135,12 +33060,17 @@
                 "all_day": {
                   "type": "boolean",
                   "description": "The sun never comes above that line this day: the whole day is in the period."
+                },
+                "rule": {
+                  "type": "string",
+                  "description": "What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times."
                 }
               },
               "required": [
                 "from_s",
                 "until_s",
-                "all_day"
+                "all_day",
+                "rule"
               ]
             },
             "lights": {
@@ -31164,12 +33094,17 @@
                 "all_day": {
                   "type": "boolean",
                   "description": "The sun never comes above that line this day: the whole day is in the period."
+                },
+                "rule": {
+                  "type": "string",
+                  "description": "What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times."
                 }
               },
               "required": [
                 "from_s",
                 "until_s",
-                "all_day"
+                "all_day",
+                "rule"
               ]
             }
           },
@@ -32082,6 +34017,14 @@
                 "null"
               ]
             },
+            "floor_varies": {
+              "type": "boolean",
+              "description": "Its areas' floors are given some AGL and some MSL, and which is lowest depends on the ground under them (a 1,000 ft AGL floor beside a 3,000 ft MSL one): `floor_ft` is then only the lowest figure, and each area's band is the pilot's to read."
+            },
+            "ceiling_varies": {
+              "type": "boolean",
+              "description": "Likewise for the highest ceiling."
+            },
             "instructions": {
               "type": "array",
               "items": {
@@ -32167,7 +34110,9 @@
             "instructions",
             "text",
             "facility",
-            "contact"
+            "contact",
+            "floor_varies",
+            "ceiling_varies"
           ]
         }
       },
@@ -32231,6 +34176,20 @@
                 "null"
               ],
               "description": "MSL or AGL."
+            },
+            "floor_varies": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Its areas' floors are given some AGL and some MSL (tfr_detail_read): the band then says the floors differ by area."
+            },
+            "ceiling_varies": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Likewise for its ceilings."
             },
             "over_field": {
               "type": [
@@ -32471,6 +34430,36 @@
           "required": [
             "left"
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "traffic_figures": {
+      "description": "The figures the hosts' own traffic code holds to, one copy for them: stale_s, 30 s, past which a position heard (the planner's feed) or the map's last answer (the web, which then says traffic is not available) is too old to draw: the airplane is somewhere else by now. A design choice, no rule: seconds-old internet data is for knowing what is about, never for avoiding it.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TrafficFiguresInput",
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "answer": {
+          "title": "TrafficFiguresAnswer",
+          "type": "object",
+          "properties": {
+            "stale_s": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "stale_s"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -33406,6 +35395,34 @@
       ],
       "additionalProperties": false
     },
+    "visibility_reportable": {
+      "description": "A visibility in statute miles as a report writes it: the reportable value at or below it, never above, from the Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\" (0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, then eighths to 2, quarters to 3, whole miles to 15, every 5 past that), as FAA JO 7900.5E carries it.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "VisibilityReportableInput",
+          "type": "object",
+          "properties": {
+            "sm": {
+              "type": "number",
+              "description": "The visibility, statute miles."
+            }
+          },
+          "required": [
+            "sm"
+          ]
+        },
+        "answer": {
+          "title": "VisibilityReportableAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "vor_check_limit_deg": {
       "description": "The largest bearing error 14 CFR 91.171 allows for a kind of VOR check: 4 degrees for a test signal (VOT or a repair station's, (b)(1)), a surface checkpoint ((b)(2)) and one receiver against the other ((c)); 6 for an airborne checkpoint ((b)(3)) and a radial along an airway ((b)(4)).",
       "type": "object",
@@ -33814,7 +35831,7 @@
       "additionalProperties": false
     },
     "wind_at_altitude": {
-      "description": "The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for \"altitudes\".",
+      "description": "The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends; a light-and-variable level (FAA-H-8083-28B 27.2.1.1.1's 9900, under 5 kt) taken as 0 kt with the nearest level's direction, never skipped (the next level's wind in its place understated time and fuel, 14 CFR 91.151, 91.167); null with no level, never calm. A list for \"altitudes\".",
       "type": "object",
       "properties": {
         "input": {
@@ -34012,6 +36029,113 @@
             "headwind_kt",
             "crosswind_kt"
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "wind_marks": {
+      "description": "wind_arrow and wind_barb for many fields in one call, in the order asked: the map's airport weather marks for every METAR in view at each rebuild. Each field's arrow as wind_arrow gives it (10 kt or more, or gusting, the owner's pick, 2026-11-10; red past the airplane's maximum demonstrated crosswind, the POH's, 14 CFR 23.233(a) before amendment 23-64) and its barb as wind_barb (FAA-H-8083-28B, 25.2.3.4.5), null where no wind is reported.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "WindMarksInput",
+          "type": "object",
+          "properties": {
+            "fields": {
+              "type": "array",
+              "items": {
+                "title": "WindMarksField",
+                "type": "object",
+                "properties": {
+                  "speed_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "gust_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "crosswind_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The field's least crosswind (least_crosswind)."
+                  },
+                  "demonstrated_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The picked airplane's maximum demonstrated crosswind; null with none picked or no figure."
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "fields"
+          ]
+        },
+        "answer": {
+          "title": "WindMarksAnswer",
+          "type": "array",
+          "items": {
+            "title": "WindMark",
+            "type": "object",
+            "properties": {
+              "shown": {
+                "type": "boolean"
+              },
+              "over": {
+                "type": "boolean"
+              },
+              "barb": {
+                "anyOf": [
+                  {
+                    "title": "WindMarkBarb",
+                    "type": "object",
+                    "properties": {
+                      "calm": {
+                        "type": "boolean"
+                      },
+                      "flags": {
+                        "type": "integer"
+                      },
+                      "barbs": {
+                        "type": "integer"
+                      },
+                      "half_barbs": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "calm",
+                      "flags",
+                      "barbs",
+                      "half_barbs"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "shown",
+              "over",
+              "barb"
+            ]
+          }
         }
       },
       "required": [
@@ -34483,6 +36607,7 @@
     "airplane_figure_ranges",
     "airplane_figures",
     "airplane_needs",
+    "airplane_short_type",
     "airport_data_words",
     "airport_names",
     "airport_notams_none",
@@ -34591,6 +36716,7 @@
     "endorsement_lapse",
     "endorsement_records",
     "endorsement_render",
+    "endorsement_warnings",
     "endorsements_in_force",
     "endurance",
     "faa_ids",
@@ -34603,6 +36729,7 @@
     "field_status",
     "field_taf",
     "fields_along",
+    "fields_near",
     "filed_dof",
     "filed_duration",
     "filed_endurance",
@@ -34618,6 +36745,7 @@
     "floor_along_path",
     "floor_corridor_nm",
     "flow_cell",
+    "flow_ends",
     "flow_levels",
     "flow_sample",
     "forecast_hour",
@@ -34654,12 +36782,14 @@
     "gonogo_icing",
     "gonogo_icing_line",
     "gonogo_icing_unchecked",
+    "gonogo_input",
     "gonogo_pass_minutes",
     "gonogo_picked_end",
     "gonogo_risk",
     "gonogo_risk_line",
     "gonogo_route_figures",
     "gonogo_runway_checks",
+    "gonogo_runway_findings",
     "gonogo_runway_flown",
     "gonogo_runway_in_use",
     "gonogo_runway_number",
@@ -34684,6 +36814,7 @@
     "holding",
     "holding_leg_minutes",
     "holds_read",
+    "icing_forecast_hours",
     "icing_forecast_route",
     "icing_severity",
     "ifr_alternate_check",
@@ -34714,14 +36845,18 @@
     "logbook_read_check",
     "logbook_track_places",
     "lost_comms",
+    "magnetic_of",
     "magnetic_variation",
+    "map_dim_words",
     "mayday_call",
     "mode_c_veil",
     "model_weather_bands",
     "model_wind_levels",
     "morse",
     "n_number",
+    "name_case",
     "navaid_hours",
+    "navaid_kinds",
     "navlog_alternate_leg",
     "navlog_approach_end",
     "navlog_candidates",
@@ -34741,6 +36876,8 @@
     "night_on_the_way",
     "nm_along",
     "no_altitude",
+    "notam_affects",
+    "notam_card",
     "notam_read",
     "notam_subject",
     "notams_fns",
@@ -34749,6 +36886,7 @@
     "our_call",
     "own_altitude_caution",
     "own_ship_hex",
+    "oxygen_words",
     "passenger_briefing",
     "passenger_night_on_the_way",
     "pattern_altitude",
@@ -34818,6 +36956,8 @@
     "route_position",
     "route_procedures",
     "route_read",
+    "route_typed",
+    "route_typed_picks",
     "route_way_warning",
     "runway_calm",
     "runway_closure_marks",
@@ -34828,9 +36968,11 @@
     "runway_ends_traffic",
     "runway_hard_surface",
     "runway_proximity",
+    "runway_sketch",
     "runway_with_winds",
     "runways_read",
     "rvr_check",
+    "rvr_ends",
     "rvr_readings",
     "same_field",
     "select_cruise_altitude",
@@ -34865,6 +37007,7 @@
     "title_case",
     "tokens",
     "track_left_from",
+    "traffic_figures",
     "traffic_fresh",
     "traffic_marks",
     "traffic_pattern",
@@ -34880,6 +37023,7 @@
     "vfr_floors",
     "vfr_minimums",
     "vfr_not_recommended_reasons",
+    "visibility_reportable",
     "vor_check_limit_deg",
     "weather_expires_at",
     "weather_held_until",
@@ -34891,6 +37035,7 @@
     "wind_barb",
     "wind_calm",
     "wind_components",
+    "wind_marks",
     "wind_pick",
     "wind_steady_or_gust",
     "wind_triangle",
@@ -37829,6 +39974,13 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "closed": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "NASR lists the field closed (ARPT_STATUS CI or CP): never an alternate, a stop (decision 0043)."
                 }
               }
             },
@@ -37836,9 +39988,23 @@
               "type": "null"
             }
           ]
+        },
+        "failed": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True where the check was asked and could not be made: under IFR the alternate is then unknown, never ok (14 CFR 91.169(b))."
+        },
+        "pending": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True while an app still awaits the check: the alternate is then pending."
         }
       },
-      "description": "The planner's /api/alternate answer, as much as the finding reads."
+      "description": "The planner's /api/alternate answer, as much as the finding reads, or {\"failed\": true} where it could not be had, {\"pending\": true} while it is awaited."
     },
     "GonogoDistances": {
       "title": "GonogoDistances",
@@ -37916,6 +40082,341 @@
         "finding"
       ],
       "description": "One risk factor."
+    },
+    "GonogoFacts": {
+      "title": "GonogoFacts",
+      "type": "object",
+      "description": "The flight's facts the Go / No-Go is put together from (gonogo_input; gonogo_brief's `facts`): the briefing's, the nav log's, the loading's and the route's own figures (gonogo_route_figures).",
+      "properties": {
+        "briefed": {
+          "type": "boolean",
+          "description": "The briefing is in."
+        },
+        "failed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Why the briefing could not be had, in a line; null where it did not fail."
+        },
+        "ifr": {
+          "type": "boolean",
+          "description": "The flight is planned IFR."
+        },
+        "weather_unavailable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The briefing's sources that did not answer (its `weather_unavailable`); empty with no briefing."
+        },
+        "forecast": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The briefing's worst forecast along the route, and the stations whose forecast ceiling has no height; null with no briefing.",
+          "properties": {
+            "min_ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "min_visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ceiling_unknown_at": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The TAF stations along the route whose forecast has a broken or overcast layer with no height as its lowest."
+            }
+          }
+        },
+        "vfr_not_recommended": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The briefing's reasons for AIM 7-1-5's \"VFR flight not recommended\"; dropped under IFR."
+        },
+        "under_minimums": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Where the weather is under the pilot's own minimums (minimums)."
+        },
+        "icing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The icing finding's lines, in order: one line of them, joined."
+        },
+        "icing_unchecked": {
+          "type": "boolean",
+          "description": "Under IFR, the forecast icing could not be had."
+        },
+        "landings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Every field the flight lands at, each once: whose current report's ceiling with no height is said unchecked (14 CFR 91.103)."
+        },
+        "metars": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The briefing's METARs by ident (each null where none came); a report's `ceiling_unknown` (a broken or overcast layer with no height as its lowest, \"OVC///\") is read.",
+          "additionalProperties": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "ceiling_unknown": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "hazards": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The SIGMETs and G-AIRMETs along the route, by name."
+        },
+        "terminal_alerts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The ITWS alerts in force now at the route's airports, in words."
+        },
+        "flow_programs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The Command Center's programs at the route's airports, in words."
+        },
+        "route_figures": {
+          "type": "object",
+          "description": "gonogo_route_figures' answer: the fuel's and the TFRs'.",
+          "properties": {
+            "least_margin_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "required_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "reserve_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tfrs_in_force": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "tfrs_near": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "tfrs_in_force",
+            "tfrs_near"
+          ]
+        },
+        "special_use": {
+          "type": "array",
+          "description": "The special-use areas the legs cross, each with when it is in use at the pass.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "when": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "when"
+            ]
+          }
+        },
+        "nav": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.",
+          "properties": {
+            "flown": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string"
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "altitude_ft": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "altitude_ft"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "kind",
+                  "steps"
+                ]
+              }
+            },
+            "cautions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "reasons"
+                ]
+              }
+            }
+          }
+        },
+        "problem": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "No VFR altitude fits, in a line."
+        },
+        "legs_ft": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211); with none, the plan picked's highest step (`nav`)."
+        },
+        "totals": {
+          "type": "boolean",
+          "description": "The nav log's totals are in."
+        },
+        "aircraft": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding (14 CFR 91.211(a), (b))."
+        },
+        "runway_checks": {
+          "type": "array",
+          "description": "The runway checks, each with its field's `ident` (gonogo_runway_findings' `checks`).",
+          "items": {
+            "type": "object"
+          }
+        },
+        "loading": {
+          "type": "boolean",
+          "description": "The airplane has a POH loading."
+        },
+        "loaded": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "gonogo_balance's answer with the pilot's own load; null with no load.",
+          "properties": {
+            "takeoff": {
+              "type": "object",
+              "properties": {
+                "weight_lb": {
+                  "type": "number"
+                },
+                "arm_in": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "weight_lb"
+              ]
+            },
+            "problems": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "takeoff",
+            "problems"
+          ]
+        }
+      },
+      "required": [
+        "briefed",
+        "failed",
+        "ifr",
+        "route_figures"
+      ]
     },
     "GonogoFieldUse": {
       "title": "GonogoFieldUse",
@@ -38052,7 +40553,14 @@
                 "number",
                 "null"
               ],
-              "description": "91.409(b)."
+              "description": "91.409(b): weighed only where for_hire is not false."
+            },
+            "for_hire": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether the airplane carries anyone for hire or gives flight instruction for hire in an airplane the instructor provides, its owner's word: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null or left out weighs a due given, as the caller judged it."
             },
             "hours_now": {
               "type": [
@@ -38328,6 +40836,18 @@
             "number",
             "null"
           ]
+        },
+        "wind_variable_deg": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
         }
       },
       "description": "A field's METAR, as much as the rules read of it."
@@ -38902,6 +41422,10 @@
             "null"
           ]
         },
+        "closed": {
+          "type": "boolean",
+          "description": "NASR lists it closed: `good` false, never offered (decision 0043)."
+        },
         "meets_standard": {
           "type": "boolean"
         },
@@ -38922,6 +41446,7 @@
         "visibility_sm",
         "taf",
         "good",
+        "closed",
         "meets_standard",
         "reasons"
       ]
@@ -39012,6 +41537,13 @@
             null
           ],
           "description": "ifr_alternate_check's: \"military\" or \"joint\" for a field the armed services own. A private or military-only field is the pilot's to check (good null) with the permission said."
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's ARPT_STATUS: CI or CP (or any but O) is closed, never an alternate (decision 0043, field_status); null where NASR doesn't list it."
         }
       },
       "required": [
@@ -39152,6 +41684,34 @@
             "boolean",
             "null"
           ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "14 CFR 61.5 category, \"Airplane\": with `class`, the passenger currency's (61.57(a)(1)) group."
+        },
+        "class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "14 CFR 61.5 class, \"Single-engine land\"."
+        },
+        "tailwheel": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "A tailwheel airplane: only full-stop landings count toward its passenger currency (61.57(a)(1)(ii))."
+        },
+        "fullStopLandings": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Landings to a full stop, day and night, where logged."
         }
       },
       "required": [
@@ -39310,6 +41870,18 @@
             "number",
             "null"
           ]
+        },
+        "wind_variable_deg": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "A variable direction, \"230V310\" (FMH-1 chapter 12; AIM 7-1-28): its two bounds, true, clockwise from the first; the crosswind and tailwind are judged at the arc's worst. Null or missing for none."
         }
       },
       "description": "A METAR's wind; null, missing or empty for none."
@@ -42923,14 +45495,21 @@
                 "number",
                 "null"
               ],
-              "description": "The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log."
+              "description": "The highest altitude planned, feet MSL, for 14 CFR 91.211's oxygen (gonogo_brief's oxygen finding); null before the nav log."
             },
             "oxygen": {
               "type": [
                 "boolean",
                 "null"
               ],
-              "description": "Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked."
+              "description": "Whether the airplane picked carries supplemental oxygen (its profile's supplemental_oxygen). Read as JavaScript reads it; false, the safer side, with no airplane picked."
+            },
+            "pressurized": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether its cabin is pressurised (its profile's pressurized): 14 CFR 91.211(b)'s FL250 and FL350 then, not (a)'s heights. False with no airplane picked."
             }
           }
         },
@@ -43017,6 +45596,26 @@
               },
               "description": "Fields whose distances were read past the POH's table: a caution."
             },
+            "tailwind": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields whose runway has the wind behind it (the check's fit \"tailwind\"; AIM 4-3-6c): a caution."
+            },
+            "close": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields whose runway fits with less than SAFO 19001's 15 per cent to spare (a distance's close): a caution."
+            },
             "unchecked": {
               "type": [
                 "array",
@@ -43026,6 +45625,16 @@
                 "type": "string"
               },
               "description": "Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok."
+            },
+            "standard_day": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Fields with no temperature reported, whose distances assume a standard day: a caution (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b))."
             }
           }
         },
@@ -43045,6 +45654,13 @@
                 "null"
               ],
               "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+            },
+            "no_load": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The airplane has a POH loading but the pilot gave no load: the finding is unknown, 'give your load', never the POH's sample airplane as the flight's (14 CFR 91.9(a), 91.103). Read as JavaScript reads it."
             },
             "problems": {
               "type": [

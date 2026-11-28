@@ -7,7 +7,7 @@ import { routeKeyOf, useBriefPlan } from "../../lib/briefPlan";
 import { currencyInput } from "../../lib/frat";
 import { airplaneChosen, usePreferences } from "../../lib/preferences";
 import { pilotQuery } from "../../lib/queryClient";
-import { currencyQuery } from "../../lib/queryClientRecords";
+import { useCurrency } from "../../lib/useCurrency";
 
 /** The hours are asked once for a route, its airplane and the pilot's
  *  minimums, and kept for ten minutes: the forecasts they read change
@@ -29,7 +29,7 @@ export function useDepartureWindow() {
   const minimums = usePreferences((p) => p.minimums);
   const airplane = airplaneChosen(aircraft);
   const { data: pilot } = useQuery(pilotQuery);
-  const { data: currency } = useQuery({ ...currencyQuery, enabled: !!pilot });
+  const { data: currency } = useCurrency();
   const ask: DepartureWindowAsk = {
     dep: plan.dep,
     dest: plan.dest,
@@ -86,7 +86,7 @@ export function useDepartureWindow() {
     staleTime: KEPT_MS,
     // The hours before kept, dimmed, while the same route is asked again
     // for another airplane or minimums: the strip went back to its
-    // skeleton and the Brief under it moved (the flicker audit's E).
+    // skeleton and the Brief under it moved.
     placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === route ? previous : undefined),
     meta: { silent: true },
   });

@@ -25,8 +25,7 @@ def _logged(read):
     before it goes on: app.detection keeps only "Type: message" for the
     pages that follow the read, and is not edited (a kept read is hashed
     against its source, CLAUDE.md), so the traceback is logged here, at
-    the one place detection reads through (the 2026-11-14 audit's CODE-29;
-    the owner took option (c), log at the caller)."""
+    the one place detection reads through (the owner took option (c), log at the caller)."""
 
     @functools.wraps(read)
     def along(start, end, *args, **kwargs):

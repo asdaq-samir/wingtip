@@ -11,18 +11,16 @@ than re-fetched every notebook run: ensure_nasr_file() downloads a file
 that is missing, and wingtip.faa_editions a newer edition of one there.
 """
 
+import csv
 import io
-import json
 import logging
 import zipfile
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from datetime import date
 from pathlib import Path
 
-import requests
-import wingtip_native
 
-from . import apra, dof
+from . import apra, dof, outside
 
 # The obstacle file's reader is wingtip.dof; its callers read the table
 # through this module, which downloads it with the NASR tables.
@@ -30,7 +28,7 @@ from .dof import _DOF_COLUMNS, _OBSTACLES_CACHE, load_obstacles  # noqa: F401
 
 # FAA's site 403s a bare python-requests User-Agent.
 from .config import FAA_HEADERS
-from .retry import with_retries
+from .retry import BODY_CUT_OFF, with_retries
 
 # The table readers, the field sets, the contacts, the frequencies and the
 # route's candidates are each their own module; this one downloads the
@@ -46,6 +44,7 @@ from .faa_route_airports import (  # noqa: F401
     load_route_airports,
     load_vor_navaids,
 )
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -63,13 +62,29 @@ def download_and_extract(url: str, dest_dir: Path, retries: int = 3, only: Itera
     wanted = set(only) if only is not None else None
 
     def attempt() -> None:
-        resp = requests.get(url, headers=FAA_HEADERS, timeout=180)
+        resp = outside.get(url, headers=FAA_HEADERS, timeout=180)
         resp.raise_for_status()
         with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
             members = zf.namelist() if wanted is None else [m for m in zf.namelist() if Path(m).name in wanted]
             zf.extractall(dest_dir, members=members)
 
-    with_retries(attempt, describe=f"Download of {url}", retries=retries, transient=(requests.RequestException, zipfile.BadZipFile))
+    # outside's session asks again on a refused or dropped connection and
+    # a 429 or 5xx; this loop only on what it does not: a body cut off.
+    with_retries(attempt, describe=f"Download of {url}", retries=retries, transient=BODY_CUT_OFF)
+
+
+def zip_csv(archive: zipfile.ZipFile, name: str) -> Iterator[dict[str, str]]:
+    """A CSV file of a downloaded archive as rows keyed by its header's
+    names, upper case, every field stripped: the FAA's files carry a
+    byte-order mark, padded fields and a trailing comma. `name` is the
+    member's, or the end of its path (the airmen file is in a folder)."""
+    names = archive.namelist()
+    member = name if name in names else next(n for n in names if n.upper().endswith(name.upper()))
+    with archive.open(member) as raw:
+        reader = csv.reader(io.TextIOWrapper(raw, encoding="utf-8-sig", errors="replace"))
+        header = [h.strip().upper() for h in next(reader)]
+        for row in reader:
+            yield dict(zip(header, (cell.strip() for cell in row)))
 
 
 def _is_icloud_evicted(path: Path) -> bool:
@@ -309,7 +324,7 @@ def pattern_agl_ft(ident: str, cache_dir) -> float:
     (wingtip_engine::runway::pick::pattern_altitude, through
     wingtip_native.call), as wingtip.pattern and the phones ask it."""
     published = published_pattern_agl_ft(ident, cache_dir)
-    return json.loads(wingtip_native.call("pattern_altitude", json.dumps({"published_agl_ft": published})))["agl_ft"]
+    return engine("pattern_altitude", published_agl_ft=published)["agl_ft"]
 
 
 def preload_obstacles(cache_dir) -> None:

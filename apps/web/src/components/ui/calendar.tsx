@@ -112,7 +112,7 @@ function Calendar<T extends DateValue>({
                 // Its whole square the day's to a finger, its round corners
                 // too (a square ::after, taking no room and drawn by
                 // nothing): at the corners a tap went to the grid's cell
-                // round it (the iOS audit's P1 on the departure picker).
+                // round it.
                 <CalendarCell
                   date={date}
                   data-day={date.toString()}

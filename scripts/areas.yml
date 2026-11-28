@@ -20,6 +20,8 @@
 areas:
   web:
     ci: test-web
+    # Every generator's sources and outputs (`generators`, below) join its paths.
+    generators: all
     check: npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npm run format:check && npx knip && npm run layers && npx vitest run
     paths:
       - apps/web/**
@@ -31,21 +33,9 @@ areas:
       # The phones' models of the API documents, checked there.
       - scripts/build/api-models-apps.*
       - scripts/build/engine-contract-apps.*
-      # The design tokens and every app's generated copy, checked there.
+      # The design files (design/**), whose generators and every app's
+      # generated copy are the `generators` table's (below), checked there.
       - design/**
-      - scripts/build/design-tokens.sh
-      - scripts/build/design_tokens*.py
-      # The screens' links and every app's generated list, checked there.
-      - scripts/build/screens.*
-      - docs/navigation.md
-      - apps/ios/Wingtip/Navigation/Generated/**
-      - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/**
-      - apps/ios/Wingtip/Design/Generated/**
-      # The shared words and every app's generated copy, checked there.
-      - scripts/build/wording.sh
-      - scripts/build/wording.py
-      - docs/design/rules.md
-      - apps/android/app/src/main/res/values/wording_strings.xml
       - apps/ios/Wingtip/Assets.xcassets/**
       # The icons and launch art, drawn from docs/brand by
       # scripts/build/app-icons.sh and checked there (--check).
@@ -59,8 +49,6 @@ areas:
       - apps/android/app/src/main/res/values*/brand_colors.xml
       - apps/site/assets/**
       - docs/store/*.png
-      - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
-      - services/jobs/charts/map_zoom.py
       - apps/ios/Wingtip/API/Generated/**
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
       - apps/ios/Wingtip/Engine/Generated/**
@@ -177,8 +165,8 @@ areas:
       - design/**
       - scripts/ci/content-mtimes.py
       - scripts/build/ios-strings.sh
-      # the build and the tests, as native-ios.yml's test job runs them
-      - scripts/ci/ios_test.sh
+      # the build and the tests, as native-ios.yml's test job runs them (ios_test.sh, ios_products.py)
+      - scripts/ci/ios_*
       - .github/workflows/native-ios.yml
   android:
     ci: android
@@ -318,7 +306,7 @@ ci_only:
     - apps/ios/**
     - scripts/build/ios-strings.sh
     - scripts/ci/content-mtimes.py
-    - scripts/ci/ios_test.sh
+    - scripts/ci/ios_*
     - .github/workflows/native-ios.yml
   android-app:
     - apps/android/**
@@ -388,3 +376,83 @@ ci_only:
     - services/gateway/**
     - services/planner/openapi.json
     - engine/contract/**
+
+# generators: the design generators, one entry each, in the order they run:
+# what writes every app's copy of a design/ file (`script`, run with --check
+# to check), what it reads (`sources`) and what it writes (`outputs`), as
+# globs. Read through scripts/areas.py by scripts/build/regen-all.sh and
+# scripts/ci/web_generated.sh, and joined to the paths of an area that says
+# `generators: all` (the web's, so ci.yml's test-web filter has them), so a
+# new generator is one entry here. Each ends in scripts/build/emit.py.
+generators:
+  design-tokens:
+    title: The design tokens
+    script: scripts/build/design-tokens.sh
+    sources:
+      - design/tokens.json
+      - scripts/build/design-tokens.sh
+      - scripts/build/design_tokens*.py
+      - scripts/build/emit.py
+    outputs:
+      - apps/web/src/styles/tokens.css
+      - apps/web/src/lib/tokens.ts
+      - apps/web/src/lib/generated/mapTokens.ts
+      - apps/web/src/lib/fixtures/formats.json
+      - apps/ios/Wingtip/Design/Generated/Tokens.swift
+      - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/Tokens.kt
+      - services/jobs/charts/map_zoom.py
+      - engine/crates/core/src/map_dim_figures.rs
+  map-style:
+    title: The map's overlay layers
+    script: scripts/build/map-style.sh
+    sources:
+      - design/map-style.json
+      - design/tokens.json
+      - scripts/build/map-style.sh
+      - scripts/build/map_style*.py
+      - scripts/build/design_tokens_colour.py
+      - scripts/build/emit.py
+    outputs:
+      - apps/web/src/lib/generated/overlayLayers.ts
+      - apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/generated/OverlayStyle.kt
+  screens:
+    title: The screens and their links
+    script: scripts/build/screens.sh
+    sources:
+      - design/screens.json
+      - scripts/build/screens.*
+      - scripts/build/emit.py
+    outputs:
+      - apps/web/src/lib/navigation/generated/screens.ts
+      - apps/web/src/lib/navigation/generated/manifest-shortcuts.json
+      - apps/ios/Wingtip/Navigation/Generated/Screens.swift
+      - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/Screens.kt
+      - apps/android/app/src/main/res/xml/shortcuts.xml
+      - apps/android/app/src/main/res/values/screens_strings.xml
+      - docs/navigation.md
+  wording:
+    title: The words every app says the same
+    script: scripts/build/wording.sh
+    sources:
+      - design/wording.json
+      - scripts/build/wording.*
+      - scripts/build/emit.py
+    outputs:
+      - apps/web/src/lib/wording/generated/wording.ts
+      - apps/ios/Wingtip/Design/Generated/Wording.swift
+      - apps/android/app/src/main/res/values/wording_strings.xml
+      - docs/design/rules.md
+  card-actions:
+    title: Each card's actions
+    script: scripts/build/card-actions.sh
+    sources:
+      - design/card-actions.json
+      - design/wording.json
+      - scripts/build/card-actions.sh
+      - scripts/build/card_actions.py
+      - scripts/build/emit.py
+    outputs:
+      - apps/web/src/lib/generated/cardActions.ts
+      - apps/ios/Wingtip/Design/Generated/CardActions.swift
+      - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/CardActions.kt
+      - docs/design/icons.md

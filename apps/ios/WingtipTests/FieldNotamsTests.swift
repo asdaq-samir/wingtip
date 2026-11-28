@@ -29,32 +29,58 @@ import Testing
         #expect(FieldNotamWords.span(18 * 86400 + 3600) == "18d")
     }
 
-    @Test func aCornerIsMonthDayAnd24HourClock() throws {
-        let at = try #require(FieldNotamWords.date("2026-11-10T06:00:00Z"))
-        #expect(FieldNotamWords.corner(at, local: false, in: utc) == "11/10 06:00")
-        #expect(FieldNotamWords.corner(at, local: true, in: utc) == "11/10 06:00 local")
-        // A feed's time with no zone is UTC.
-        #expect(FieldNotamWords.date("2026-11-10T06:00:00") == at)
+    @Test func aTimeIsMonthDayClockAndTheFieldsZone() throws {
+        let at = try #require(FieldNotamWords.date("2026-05-27T18:43:00Z"))
+        let chicago = try #require(TimeZone(identifier: "America/Chicago"))
+        #expect(FieldNotamWords.when(at, zone: chicago, year: true) == "05/27/26 13:43 CDT")
+        #expect(FieldNotamWords.when(at, zone: chicago, year: false) == "05/27 13:43 CDT")
+        // No zone known: UTC, said so, never "local" or a Z.
+        #expect(FieldNotamWords.when(at, zone: nil, year: false) == "05/27 18:43 UTC")
+        #expect(FieldNotamWords.when(at, zone: chicago, year: true, clock: false) == "05/27/26")
+        // A feed's time with no zone is UTC: the same instant as with its Z.
+        #expect(FieldNotamWords.date("2026-11-10T06:00:00") == FieldNotamWords.date("2026-11-10T06:00:00Z"))
     }
 
     @Test func oneInForceSaysSinceAndEndsWithHowLongIsLeft() throws {
         let now = try #require(FieldNotamWords.date("2026-11-11T06:00:00Z"))
         let lines = FieldNotamWords.timeLines(notam("x", starts: "2026-11-10T06:00:00Z", ends: "2026-11-11T06:05:00Z"), read: reading(estimated: true),
-                                              now: now, in: utc)
-        #expect(lines == [.init(label: "Since", value: "11/10 06:00"), .init(label: "Ends", value: "11/11 06:05 local (est.) (in 5m)")])
+                                              untilCharts: false, zone: nil, now: now)
+        // An EST end is its time alone.
+        #expect(lines == [.init(label: "Since", value: "11/10 06:00 UTC"), .init(label: "Ends", value: "11/11 06:05 UTC", soon: "in 5m")])
     }
 
     @Test func oneToComeSaysStartsHowSoonAndHowLong() throws {
         let now = try #require(FieldNotamWords.date("2026-11-10T00:00:00Z"))
         let lines = FieldNotamWords.timeLines(notam("x", inForce: false, starts: "2026-11-10T06:00:00Z", ends: "2026-11-10T11:45:00Z"), read: reading(),
-                                              now: now, in: utc)
-        #expect(lines == [.init(label: "Starts", value: "11/10 06:00 (in 6h00m)"), .init(label: "Ends", value: "11/10 11:45 local (in 11h45m)"),
+                                              untilCharts: false, zone: nil, now: now)
+        #expect(lines == [.init(label: "Starts", value: "11/10 06:00 UTC", soon: "in 6h00m"), .init(label: "Ends", value: "11/10 11:45 UTC", soon: "in 11h45m"),
                           .init(label: "Duration", value: "5h45m")])
     }
 
     @Test func aPermanentOneEndsPermanent() throws {
-        let lines = FieldNotamWords.timeLines(notam("x", starts: "2026-01-01T00:00:00Z"), read: reading(permanent: true), now: .now, in: utc)
-        #expect(lines == [.init(label: "Since", value: "01/01 00:00 local"), .init(label: "Ends", value: "Permanent")])
+        let lines = FieldNotamWords.timeLines(notam("x", starts: "2026-01-01T00:00:00Z"), read: reading(permanent: true), untilCharts: false,
+                                              zone: nil, now: try #require(FieldNotamWords.date("2026-06-01T00:00:00Z")))
+        #expect(lines == [.init(label: "Since", value: "01/01 00:00 UTC"), .init(label: "Ends", value: "Permanent")])
+    }
+
+    /// FDC 6/3373 (the r7 audit's I-H1): a permanent condition with an EST
+    /// end the engine reads as until the charts are updated ends
+    /// "Permanent" on its row as on its card, never the EST date.
+    @Test func oneUntilTheChartsEndsPermanentNotItsEstimate() throws {
+        let now = try #require(FieldNotamWords.date("2026-11-23T00:00:00Z"))
+        let lines = FieldNotamWords.timeLines(notam("x", starts: "2026-05-27T18:43:00Z", ends: "2028-05-27T18:43:00Z"),
+                                              read: reading(estimated: true, permanent: true), untilCharts: true, zone: nil, now: now)
+        #expect(lines == [.init(label: "Since", value: "05/27/26 18:43 UTC"), .init(label: "Ends", value: "Permanent")])
+    }
+
+    /// The year is counted in the zone the date is shown in: 23:30 on 12/31
+    /// in Chicago is 05:30 UTC the next day, still this year's there.
+    @Test func theYearIsCountedInTheShownZone() throws {
+        let chicago = try #require(TimeZone(identifier: "America/Chicago"))
+        let now = try #require(FieldNotamWords.date("2026-12-31T12:00:00Z"))
+        let lateTonight = try #require(FieldNotamWords.date("2027-01-01T05:30:00Z"))
+        #expect(!FieldNotamWords.withYear([lateTonight], now: now, zone: chicago))
+        #expect(FieldNotamWords.withYear([lateTonight], now: now))
     }
 
     @Test func theNumberLosesTheFieldsOwnName() throws {
@@ -84,13 +110,23 @@ import Testing
                                  runways: [Runway(closed: false, ends: "04L/22R", lengthFt: 7500, lighted: true),
                                            Runway(closed: false, ends: "10L/28R", lengthFt: 13000, lighted: true)],
                                  towered: true)
-        let closed = notam("!ORD 11/439 ORD RWY 04L/22R CLSD 2611100600-2611301200")
-        let marks = FieldNotamWords.marks([closed], idents: try FieldNotamWords.idents("KORD"), place: place)
+        // Read as the planner reads it for the card (app.notam_reading's
+        // notam_subject with the card's runways), sent as its `subject`.
+        func read(_ raw: String, id: String = "ORD 11/439", inForce: Bool = true) throws -> APIRankedNotam {
+            var one = notam(raw, id: id, inForce: inForce)
+            one.subject = try Engine.recoded(Engine.notamSubject(text: raw, idents: try FieldNotamWords.idents("KORD"),
+                                                                 runways: place.runways.map { $0.ends ?? "" }))
+            return one
+        }
+        let closed = try read("!ORD 11/439 ORD RWY 04L/22R CLSD 2611100600-2611301200")
+        let marks = FieldNotamWords.marks([closed], place: place)
         #expect(marks.runway[0]?.unusable == true)
         #expect(marks.runway[0]?.notams.map(\.id) == ["ORD 11/439"])
         #expect(marks.runway[1] == nil)
-        let later = notam("!ORD 11/440 ORD RWY 04L/22R CLSD 2612100600-2612301200", id: "ORD 11/440", inForce: false)
-        #expect(FieldNotamWords.marks([later], idents: try FieldNotamWords.idents("KORD"), place: place).runway.isEmpty)
+        let later = try read("!ORD 11/440 ORD RWY 04L/22R CLSD 2612100600-2612301200", id: "ORD 11/440", inForce: false)
+        #expect(FieldNotamWords.marks([later], place: place).runway.isEmpty)
+        // Sent unread, it marks nothing: the phone reads no NOTAM itself.
+        #expect(FieldNotamWords.marks([notam(closed.raw)], place: place).runway.isEmpty)
     }
 
     /// The web's notamCoverage cases (decision 0059): from when, and that the

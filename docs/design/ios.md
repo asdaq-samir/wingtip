@@ -341,8 +341,8 @@ and replay views are.
   - a page 0.25 s
   - a fade 0.2 s
   - a press 0.1 s, scaling by `feel.press-scale` (0.97)
-- **Haptics** come from `haptic.*` through `.sensoryFeedback`, and never
-  play under Reduce Motion (`FeelHost`). HIG Playing haptics names
+- **Haptics** come from `haptic.*` through `.sensoryFeedback`, and play
+  under Reduce Motion too (a tap is not motion; `FeelHost`). HIG Playing haptics names
   three kinds ([HIG Haptics][hig-haptics]):
   - *selection*, "while the values of a UI element are changing": an
     altitude set
@@ -485,12 +485,18 @@ opened. Typing "traffic" offers Show Traffic in Do.
      whose card could not be fetched, says why in red under it (decision
      0043; `RouteFieldCards` asks each field's card once). Stops swipe
      off and drag into another order (Edit at the header's right); Add a
-     Stop is the last row, Type Route at its end (`TypeRouteButton`, the
-     web's keyboard chip: the keyboard glyph in a small bordered capsule
-     opening a sheet whose text field holds the route as it is, to edit
-     or paste a whole one, "KPWK DCT OBK V100 KLAS", read by the engine's
-     `route_read` as item 15 has it, a level group its cruise;
-     `TypedRoute`), then Add (or Remove) Fuel Stops (one tap puts
+     Stop is the last row, the box's round toggle at its end
+     (`RouteBoxToggle`, the web's TypeRouteButton), which turns the list
+     into the route's box in the same place and back (`RouteBoxSection`,
+     the web's RouteBox, the owner's canvas A of 2026-11-23): each point
+     a plain filled pill, the ident alone, in the order flown and wrapped
+     over lines (`FlowLayout`), its menu the point's actions; a closed or
+     unknown point a red pill, a short flight's departure a "!"; a
+     flight's suggested fuel stops one "+N fuel stops" pill; the box as
+     tall as its pills. What is typed after the last pill is the new
+     destination, or a whole route, "KPWK DCT OBK V100 KLAS", read by the
+     engine's `route_read` as item 15 has it, a level group its cruise
+     (`Plan.typeRoute`, `TypedRoute`). Then Add (or Remove) Fuel Stops (one tap puts
      in every stop the planner's rounds found, already checked; a flight
      short with none offered says why in their place, "No fuel stop in
      reach on KMSN → KDLH"). Once a field's card says it is open, its
@@ -948,6 +954,15 @@ edged in the waypoint magenta outside the turn, turned with the map
      seconds, as Mail and Photos offer one after a delete) all take it
      back; the iPad's sidebar keeps the bar's Undo button too
      (`UndoToolbarItem`). Never an alert ([HIG Alerts][hig-alerts]).
+     With two windows over the one plan, the route has one history, the
+     plan's own `UndoManager`, and each window's manager forwards a step
+     to it (`Plan+History`, `windowUndo`): an Undo in either window takes
+     back the latest edit to the route, wherever it was made, and never
+     a route from before it, since two histories over one route would
+     each hold a state the other had already changed (round 5, in place
+     of round 4's history per window; `PlanHistoryTests`'
+     `twoWindowsShareOneHistory` holds it). Undoing Clear Route on From and To typed but never
+     planned puts them back as typed, unplanned.
 6. **Options:** flight rules, departure time and airplane, as menus
    (`Picker` with `.menu`), not sliders.
 
@@ -1803,10 +1818,15 @@ PDF as SwiftData's external storage), carried by CloudKit to the
 pilot's own private iCloud database and to their other devices; those
 are written here as they arrive. Turned off (asked first), the copies
 in iCloud are deleted and the ones here stay. Markup, bookmarks and
-last pages stay on each device.
+last pages stay on each device. One document is in memory at a time:
+each PDF is read and written off the main actor (`DeviceDocuments`'
+`@concurrent` steps) and saved in a context of its own, the sends one
+after another. Adding, keeping for the air and opening a CFR part's
+text copy and decode off the main actor the same way.
 
 **Keyboard** (`WingtipCommands`, `ReaderActions`): ⌘F (the system's
-Edit > Find) finds in the document while the reader is in front; Edit's Find in
+Edit > Find) finds in the document while the reader is in front, in the
+key window alone where two are side by side (`KeyWindow`); Edit's Find in
 Document, Back (⌘[) and Forward (⌘]); Escape closes the reader.
 
 **Avoid:** a hand-built page renderer or find; a document in a sheet over

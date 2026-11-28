@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fieldNotamsQuery, type FieldNotams } from "../../lib/queryClient";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
-import { instantOf, twoFigures, zuluTime } from "../../lib/format";
+import { formatIn, instantOf, twoFigures } from "../../lib/format";
 
 // The field's NOTAMs and their query are lib/queryClient's, which Keep
 // for the Air asks for each of the route's fields too.
@@ -10,6 +10,8 @@ export type { FieldNotams };
 export type FieldNotam = FieldNotams["notams"][number];
 /** A NOTAM as the engine reads it for a pilot (notam_read). */
 export type NotamReading = EngineAnswer<"notam_read">;
+/** A NOTAM's own card as the engine reads it from its parts (notam_card). */
+export type NotamCardReading = EngineAnswer<"notam_card">;
 /** A TFR as the engine reads it for a pilot (tfr_read). */
 export type TfrReading = EngineAnswer<"tfr_read">;
 /** How many NOTAMs the card's section shows, the engine's first three
@@ -60,10 +62,19 @@ export function identsOf(ident: string): string[] {
   return callEngine("field_names", { ident });
 }
 
-/** The NOTAM read by the engine (notam_read): its heading, its words
- *  written out, its window. Drawn inside an EngineGate. */
-export function readNotam(n: FieldNotam, ident: string): NotamReading {
-  return callEngine("notam_read", { text: n.raw, idents: identsOf(ident) });
+/** The NOTAM as the engine read it on the planner (notam_read, the
+ *  NOTAM's `reading`, app.notam_reading): its heading, its words written
+ *  out, its window. */
+export function readNotam(n: FieldNotam): NotamReading {
+  return n.reading as unknown as NotamReading;
+}
+
+/** The NOTAM's card as the engine read it on the planner from its parts
+ *  (notam_card, the NOTAM's `card`): what happened, its category, one
+ *  sentence of its effect, the procedures it takes away, whether it is
+ *  permanent and so runs until the charts are updated. */
+export function cardOf(n: FieldNotam): NotamCardReading {
+  return n.card as unknown as NotamCardReading;
 }
 
 /** A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of it
@@ -79,22 +90,26 @@ export function readTfr(n: FieldNotam): TfrReading {
     floor_ref: t?.floor_ref,
     ceiling_ft: t?.ceiling_ft,
     ceiling_ref: t?.ceiling_ref,
+    // Areas some AGL, some MSL: the band says its one figure isn't the
+    // whole TFR's.
+    floor_varies: t?.floor_varies ?? false,
+    ceiling_varies: t?.ceiling_varies ?? false,
     over_field: t?.over_field,
     field: t?.field,
     edge: t?.edge,
   });
 }
 
-/** A NOTAM's first line: what it is and its condition in our words
- *  ("Runway 04L/22R closed except taxiing"), the engine's (notam_read's
- *  what), else its words written out, said once, not under a title that
+/** A NOTAM's first line: what happened in our words ("Runway 04L/22R
+ *  closed except taxiing"), the engine's (notam_card's title: notam_read's
+ *  what, else what its parts say, "Runway 18/36 closed" of a SID
+ *  NOTAM), else its words written out, said once, not under a title that
  *  repeats their start (the owner, 2026-11-11: "avoid redundant
  *  information"); a TFR's kind and rule ("Security TFR, 14 CFR 99.7",
  *  tfr_read). */
-export function whatOf(n: FieldNotam, ident: string): string {
+export function whatOf(n: FieldNotam): string {
   if (n.kind === "tfr") return readTfr(n).what;
-  const read = readNotam(n, ident);
-  return read.what ?? read.words;
+  return cardOf(n).title ?? readNotam(n).words;
 }
 
 /** Where it is, the engine's, only where that is not obvious: a NOTAM's
@@ -108,9 +123,9 @@ export function whereOf(n: FieldNotam, read: NotamReading): string | null {
  *  "Obstacle", the engine's heading; a TFR's kind, "Security TFR"), its
  *  first line under it saying which, so "TFR" is said once (the owner,
  *  2026-11-12). */
-export function headingOf(n: FieldNotam, ident: string): string {
+export function headingOf(n: FieldNotam): string {
   if (n.kind === "tfr") return readTfr(n).heading;
-  return readNotam(n, ident).heading ?? "NOTAM";
+  return readNotam(n).heading ?? "NOTAM";
 }
 
 /** Its number as a briefer reads it, the field's own name off it on the
@@ -133,43 +148,30 @@ export function windowOf(n: FieldNotam, read: NotamReading): Pick<FieldNotam, "i
   return { in_force: n.in_force, starts: n.starts ?? read.starts, ends: n.ends ?? read.ends };
 }
 
-/** One formatter per zone, made the first time it is asked for: an Intl
- *  formatter is costly to make (lib/format/time's note). Null where the
- *  browser does not know the zone. */
-const corners = new Map<string, Intl.DateTimeFormat | null>();
-function cornerIn(zone: string): Intl.DateTimeFormat | null {
-  if (!corners.has(zone)) {
-    let format: Intl.DateTimeFormat | null = null;
-    try {
-      format = new Intl.DateTimeFormat("en-US", {
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-        timeZone: zone,
-      });
-    } catch {
-      // RangeError: a zone this browser's time-zone data does not have.
-    }
-    corners.set(zone, format);
-  }
-  return corners.get(zone) ?? null;
-}
+const CORNER = {
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  year: "2-digit",
+  hourCycle: "h23",
+  timeZoneName: "short",
+} as const;
 
-const utcDay = (at: Date) => `${twoFigures(at.getUTCMonth() + 1)}/${twoFigures(at.getUTCDate())}`;
+const utcDay = (at: Date, year: boolean) =>
+  `${twoFigures(at.getUTCMonth() + 1)}/${twoFigures(at.getUTCDate())}${year ? `/${twoFigures(at.getUTCFullYear() % 100)}` : ""}`;
 
-/** "11/10 06:00 local (1200Z)": month/day and the
- *  24-hour clock in the field's own time zone (the planner's, `zone`), as
- *  a pilot writes it on a kneeboard, the zone not named (the owner,
- *  2026-11-11: "No need to mention time zone, just say local"), and UTC
- *  beside it, the time the NOTAM gives (FAA JO 7930.2 3-3-2; the owner,
- *  2026-11-12: "airport's local time with UTC beside"). Where the field's
- *  zone is not known, UTC alone with its day ("11/10 1200Z"): never the
- *  device's own time called the field's. */
-export function corner(at: Date, zone: string | null): string {
-  const format = zone ? cornerIn(zone) : null;
-  if (!format) return `${utcDay(at)} ${zuluTime(at)}`;
+/** "11/10 06:00 CST": month/day and the 24-hour clock in the field's own
+ *  time zone (the planner's, `zone`), named by its short name as a pilot
+ *  says it, "CST" at O'Hare (the owner, 2026-11-23: "no need to say the
+ *  word local or Z time, just say the time zone"). Where the field's zone
+ *  is not known, the same in UTC, said so ("11/10 12:00 UTC"): never the
+ *  device's own time called the field's. With `year`, the year's two
+ *  figures after the day ("05/27/28"), as the app says a year that is not
+ *  this one (tfrTimes; the owner, 2026-11-23). */
+export function corner(at: Date, zone: string | null, year = false): string {
+  const format = zone ? formatIn(zone, CORNER) : null;
+  if (!format) return `${utcDay(at, year)} ${twoFigures(at.getUTCHours())}:${twoFigures(at.getUTCMinutes())} UTC`;
   const part = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
-  return `${part.month}/${part.day} ${part.hour}:${part.minute} local (${zuluTime(at)})`;
+  return `${part.month}/${part.day}${year ? `/${part.year}` : ""} ${part.hour}:${part.minute} ${part.timeZoneName}`;
 }

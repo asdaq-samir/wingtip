@@ -19,15 +19,18 @@ import com.google.android.gms.location.Priority
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlin.math.roundToLong
 
 /**
  * Own ship: where the phone is, which way it is going and how fast, from
- * the fused location provider at one fix a second while the map is
- * shown, as the web app's useOwnShip and the iOS app's OwnShip keep it.
+ * the fused location provider while the map is shown (one fix a second
+ * at its best when flying, following or on a diagram; `request`), as the web app's useOwnShip and the iOS app's OwnShip keep it.
  * Nothing is worked out from the fix here but the figures of flying it:
  * what is ahead on the track (AheadAsking). The fix itself is DeviceFix's,
  * the position kept for the next launch KeptPosition's.
@@ -70,6 +73,12 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
 
     private val _fix = MutableStateFlow<Fix?>(null)
     val fix: StateFlow<Fix?> = _fix.asStateFlow()
+
+    /** The fix again each time the airplane has moved on a mile or so (a
+     *  minute of arc, as the iPhone's nearest list asks), the first fix
+     *  and its loss too: what a list of the nearest fields reloads by, so
+     *  a glide reach is never worked from a place miles behind. */
+    val byTheMile: Flow<Fix?> = fix.distinctUntilChanged { a, b -> mile(a) == mile(b) }
 
     private val _denied = MutableStateFlow(false)
     val denied: StateFlow<Boolean> = _denied.asStateFlow()
@@ -135,11 +144,11 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
     fun start() {
         // Checked here, in the method that asks the provider, so lint's
         // MissingPermission sees the check beside the call it guards.
-        val precise = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        _approximate.value = !precise && coarse
-        _denied.value = !precise && !coarse
-        if (!precise) {
+        _approximate.value = !fine && coarse
+        _denied.value = !fine && !coarse
+        if (!fine) {
             // Downgraded to approximate (or off) while reading: the
             // fixes stop with the permission.
             stop()
@@ -147,20 +156,82 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         }
         if (!reading) {
             reading = true
-            // One fix a second at the best accuracy, as the iOS app asks
-            // Core Location: what the alerts ahead and the path need.
-            val request = com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, EVERY_MS)
-                .setMinUpdateIntervalMillis(EVERY_MS)
-                .build()
-            try {
-                provider.requestLocationUpdates(request, callback, Looper.getMainLooper())
-            } catch (e: SecurityException) {
-                reading = false
-                _denied.value = true
-                return
-            }
+            if (!request()) return
         }
         if (aheadEvery == null) aheadEvery = Ticker.shared.every(AHEAD_EVERY_MS) { aheadAsking.ask(_fix.value, routeLine) }
+    }
+
+    /** Whether the map follows the airplane (the location button's second
+     *  tap): every fix at its best, as the map is moved by each. */
+    var mapFollows: Boolean = false
+        set(value) { field = value; tune() }
+
+    /** Whether an airport diagram with own ship on it is up: AC 120-76D
+     *  11.17.2.3 takes the airplane off once its fix is three seconds old,
+     *  which a ten-metre filter would do to an airplane holding short. */
+    var diagramShown: Boolean = false
+        set(value) { field = value; tune() }
+
+    /** At flying speed at the last fix (the trail's `underway`). */
+    private var flying = false
+
+    /** The engine's `underway` for the last fix, asked once and passed on
+     *  to the trail, the recorder and the instruments (InFlight, through
+     *  FlightSession), as the iPhone's OwnShip does: it was asked up to
+     *  three times a fix. */
+    private var underwayAt: Pair<Fix, Result<Boolean>>? = null
+
+    /** The answer asked for this fix, null for another. */
+    fun underwayOf(fix: Fix): Result<Boolean>? = underwayAt?.takeIf { it.first === fix }?.second
+
+    /** Whether the provider is asked for its best each second. */
+    private var precise = false
+
+    private fun tune() {
+        val want = flying || mapFollows || diagramShown
+        if (want == precise) return
+        precise = want
+        if (reading) request()
+    }
+
+    /**
+     * The provider asked in the accuracy `precise` says, as the iOS app
+     * picks Core Location's airborne or default configuration: one fix a
+     * second at the best accuracy in the air, following, or on a diagram
+     * (what the alerts ahead, the path and the runway advisor need). On
+     * the ground otherwise still the GPS, but a fix every GROUND_EVERY_MS
+     * and nothing new until the phone has moved 10 m: the balanced
+     * accuracy it had answered from Wi-Fi and the cell towers, fixes with
+     * no speed, so the takeoff roll was never seen at flying speed and the
+     * switch to the airborne reading (and with it the path, Start Flight,
+     * the alerts ahead and the recorder) might never come. The battery is
+     * saved by the interval and the distance, not the accuracy.
+     * Asking again with the same callback replaces the last request.
+     */
+    private fun request(): Boolean {
+        val request = if (precise) {
+            com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, EVERY_MS)
+                .setMinUpdateIntervalMillis(EVERY_MS)
+                .build()
+        } else {
+            com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, GROUND_EVERY_MS)
+                .setMinUpdateIntervalMillis(GROUND_EVERY_MS)
+                .setMinUpdateDistanceMeters(GROUND_MOVE_M)
+                .build()
+        }
+        // Checked here, beside the call it guards, for lint's MissingPermission.
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            reading = false
+            return false
+        }
+        return try {
+            provider.requestLocationUpdates(request, callback, Looper.getMainLooper())
+            true
+        } catch (e: SecurityException) {
+            reading = false
+            _denied.value = true
+            false
+        }
     }
 
     /** The fixes stopped: the map is put away on the ground. In the air
@@ -207,18 +278,24 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         // device fix handed back after the receiver's may be older than
         // the receiver's last, and is own ship again all the same.
         if (!reading) return
+        // Asked before the fix is told, so whoever reads it finds the answer.
+        val atSpeed = underway(fix.groundspeedKt).also { underwayAt = fix to it }
         _fix.value = fix
         kept.took(fix)
         // The path flown, and the phone's position kept with the screen
         // off only while flying and only once the pilot has said Start
         // Flight: offered as the airplane reaches flying speed, stopped as
         // it slows below it, when the next flight asks again.
-        flying(trail.took(fix))
+        flying(trail.took(fix, atSpeed))
         // The track the logbook is drawn from, ground and air alike.
-        FlightRecorder.of(context).took(fix)
+        FlightRecorder.of(context).took(fix, atSpeed)
     }
 
     private fun flying(now: Boolean) {
+        if (now != flying) {
+            flying = now
+            tune()
+        }
         val (offer, serveNow) = asked.took(now)
         _offer.value = offer
         serve(serveNow)
@@ -265,8 +342,17 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         @Volatile
         var routeLine: List<List<Double>>? = null
 
+        /** A fix's minute of arc, about a mile (byTheMile); null with none. */
+        private fun mile(fix: Fix?): Pair<Long, Long>? = fix?.let { (it.lat * 60).roundToLong() to (it.lon * 60).roundToLong() }
+
         /** One fix a second. */
         const val EVERY_MS = 1000L
+        /** On the ground, no new fix until the phone has moved this far, m. */
+        const val GROUND_MOVE_M = 10f
+        /** On the ground, a fix at most every two seconds: a takeoff roll
+         *  reaches flying speed within one or two of them, and the reading
+         *  is at its best each second from the first fix underway. */
+        const val GROUND_EVERY_MS = 2_000L
         /** How often what is ahead is asked while moving; the planner looks
          *  five minutes along the track, so twice this with the app put
          *  away still leaves minutes. */

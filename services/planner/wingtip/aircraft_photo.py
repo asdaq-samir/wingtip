@@ -14,7 +14,8 @@ here or by the app that shows it:
 - A server "must send a unique, descriptive User-Agent header that
   identifies the application ... and includes a contact URL or email":
   the planner's setting PLANESPOTTERS_CONTACT; unset, no photo is asked.
-- "API JSON responses may be cached for up to 24 hours": KEEP_S.
+- "API JSON responses may be cached for up to 24 hours": KEEP_S, in the
+  live store (wingtip.kept_answers), pruned past it each minute.
 - "Image binaries must be fetched straight from the thumbnail /
   thumbnail_large URLs we return, by the same browser or device that
   displays them", and "All URLs returned by the API ... must be used
@@ -37,12 +38,15 @@ from __future__ import annotations
 
 import logging
 import re
+import time
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from enum import Enum
 
 import requests
-from cachetools import TTLCache
 
-from . import outside
-from .config import get_settings
+from . import kept_answers, outside, ratelimit, single_flight
+from .figure import number
+from .config import get_settings, user_agent
 
 log = logging.getLogger(__name__)
 
@@ -51,12 +55,28 @@ API = "https://api.planespotters.net/pub/photos/{by}/{key}"
 KEEP_S = 24 * 3600
 TIMEOUT_S = 5.0
 SOURCE = "Planespotters.net"
-_KEPT: TTLCache = TTLCache(maxsize=2048, ttl=KEEP_S)
+#: The registration is asked too where the address has not answered in this
+#: long, s (a hedged ask): one after the other a cold card waited up to
+#: 2 x TIMEOUT_S where the address had none, and both at
+#: once doubled every card's requests to Planespotters.net.
+HEDGE_S = 1.0
+#: After a refusal, a 5xx or no answer in time, Planespotters.net is not
+#: asked for this long, s (its Retry-After where longer, held to an hour):
+#: while it failed every card's open asked it again, both ways, and the
+#: shared session asked each up to three times more on a 429 or 5xx,
+#: honouring Retry-After up to 30 s inside the card's request. Its terms limit the requests a server may send.
+HOLD_S = 60.0
+_SOURCE = ratelimit.Gate(hold_most_s=3600.0)
+_ASKING = ThreadPoolExecutor(max_workers=4, thread_name_prefix="planespotters")
 _HEX = re.compile(r"^[0-9a-f]{6}$")
 
 
-def _user_agent(contact: str) -> str:
-    return f"WingtipMaps/1.0 (+{contact})"
+class Asked(Enum):
+    """How one way's ask ended: a photo, none to be had, or not asked now (not kept)."""
+
+    PHOTO = "photo"
+    NONE = "none"
+    FAILED = "failed"
 
 
 def read(answer: dict) -> dict | None:
@@ -83,7 +103,10 @@ def read(answer: dict) -> dict | None:
 def photo(hex_id: str | None, registration: str | None) -> dict | None:
     """This airplane's photo by its address, else its registration; None
     where there is none, the API cannot be asked now, or no contact is set
-    to ask it with. Kept a day, a photo or its absence."""
+    to ask it with. The registration is asked once the address has none,
+    or has not answered in HEDGE_S; the address's photo is the one given
+    where both have one in hand. Kept a day, a photo or its absence; an
+    answer missing for a failed ask is not."""
     contact = get_settings().planespotters_contact
     hex_id = (hex_id or "").lower()
     reg = re.sub(r"\s+", "", registration or "").upper()
@@ -91,19 +114,61 @@ def photo(hex_id: str | None, registration: str | None) -> dict | None:
     tries += [("reg", reg)] if reg else []
     if not contact or not tries:
         return None
-    key = tuple(tries)
-    if key in _KEPT:
-        return _KEPT[key]
-    found = None
-    for by, value in tries:
-        try:
-            resp = outside.get(API.format(by=by, key=value), headers={"User-Agent": _user_agent(contact)}, timeout=TIMEOUT_S)
-            resp.raise_for_status()
-            found = read(resp.json())
-        except (requests.RequestException, ValueError):
-            log.info("Planespotters.net photo of %s not had now", value, exc_info=True)
+    key = "/".join(f"{by}:{value}" for by, value in tries)
+    kept, found = kept_answers.kept("photo", key, time.time())
+    if kept:
+        return found
+    # Two phones opening one airplane at once: one asks, the other waits for its answer.
+    with single_flight.one_at_a_time(("planespotters", key)):
+        kept, found = kept_answers.kept("photo", key, time.time())
+        if kept:
+            return found
+        if _SOURCE.held(time.monotonic()):
+            return None
+        headers = {"User-Agent": user_agent(f"+{contact}")}
+        answers = _hedged([lambda by=by, value=value: _ask(by, value, headers) for by, value in tries])
+        found = next((a for state, a in answers if state is Asked.PHOTO), None)
+        if found is None and any(state is Asked.FAILED for state, _ in answers):
             return None  # not kept: asked again next time
-        if found:
-            break
-    _KEPT[key] = found
-    return found
+        kept_answers.keep("photo", key, found, time.time() + KEEP_S)
+        return found
+
+
+def _hedged(asks: list) -> list[tuple[Asked, dict | None]]:
+    """Each way's answer that came, in the order asked, stopping at the
+    first photo: the first way asked in the pool, the next once it has
+    none or has not answered in HEDGE_S; a way's photo first in the list
+    wherever its answer is in hand."""
+    first = _ASKING.submit(asks[0])
+    done, _ = wait([first], timeout=HEDGE_S)
+    # A first way refused is not followed by the second: the source is held.
+    if len(asks) == 1 or (done and first.result()[0] is not Asked.NONE):
+        return [first.result()]
+    if done:
+        return [first.result(), asks[1]()]
+    second = _ASKING.submit(asks[1])
+    pending = {first, second}
+    while pending:
+        _, pending = wait(pending, return_when=FIRST_COMPLETED)
+        answers = [f.result() for f in (first, second) if f.done()]
+        if any(state is Asked.PHOTO for state, _ in answers):
+            return answers
+    return answers
+
+
+def _ask(by: str, value: str, headers: dict) -> tuple[Asked, dict | None]:
+    """One way's answer: (PHOTO, the photo as `read` gives it), (NONE, None) or (FAILED, None)."""
+    if _SOURCE.held(time.monotonic()):
+        return Asked.FAILED, None
+    try:
+        resp = outside.once_get(API.format(by=by, key=value), headers=headers, timeout=TIMEOUT_S)
+        if resp.status_code == 429 or resp.status_code >= 500:
+            _SOURCE.hold(max(HOLD_S, number(resp.headers.get("Retry-After")) or 0.0), time.monotonic())
+        resp.raise_for_status()
+        found = read(resp.json())
+    except (requests.RequestException, ValueError) as err:
+        if not isinstance(err, requests.HTTPError):
+            _SOURCE.hold(HOLD_S, time.monotonic())
+        log.info("Planespotters.net photo of %s not had now", value, exc_info=True)
+        return Asked.FAILED, None
+    return (Asked.PHOTO, found) if found else (Asked.NONE, None)

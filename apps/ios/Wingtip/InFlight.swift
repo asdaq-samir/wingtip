@@ -88,7 +88,7 @@ final class InFlight {
 
     /// The fix taken: the instruments worked out again from it and the
     /// plan. A nil fix (own ship off, no dry run) clears them.
-    func took(_ fix: OwnShip.Fix?, plan: Plan, emergency: Bool = false, now: Date = Date()) {
+    func took(_ fix: OwnShip.Fix?, plan: Plan, emergency: Bool = false, underway known: Bool? = nil, now: Date = Date()) {
         guard let fix else {
             self.fix = nil
             progress = nil
@@ -119,7 +119,9 @@ final class InFlight {
                 return nil
             }
         }
-        underway = asked("flying speed") { try Flight.underway(fix.groundspeedKt) } ?? false
+        // Own ship's flying speed is OwnShip's, already asked of this fix
+        // (`known`); the dry run's is asked here.
+        underway = known ?? asked("flying speed") { try Flight.underway(fix.groundspeedKt) } ?? false
         // Where the airplane is on the route only once it moves: parked,
         // the engine's answer is never on the route (ON_ROUTE_NM needs
         // motion), the strip shows the planned totals, and the whole line

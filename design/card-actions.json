@@ -1,0 +1,52 @@
+{
+  "$description": "Each kind of card's actions, in order, with one name and one glyph per action on every card and every app (docs/design/icons.md): the UI audit of 2026-11-09 found the same action named two ways and each app with its own set, and the three hand-written tables had drifted again by 2026-11-27 (round 6's common audit, N3). scripts/build/card-actions.sh generates apps/web/src/lib/generated/cardActions.ts (ACTION, CARD_ACTIONS), apps/ios/Wingtip/Design/Generated/CardActions.swift (CardAction, CardKind) and apps/android/.../design/generated/CardActions.kt (CardAction, CardKind), and the card table in docs/design/icons.md; CI generates them again and fails on a difference. An action's `wording` is its label's key in design/wording.json, and its `glyph` a concept of docs/design/icons.md's table, which each app draws from its own concept table (ICON, WingtipIcon, WingtipIcons). The first of a card's actions is its filled one. A card's `apps` (all three where none is given) are the apps that draw that row; an action is generated where a card it is on is, or where its own `apps` say. Each app keeps only its wiring: what a tap does, and whether the action can be done now.",
+  "actions": {
+    "flyHere": { "wording": "fly_here", "glyph": "directTo", "about": "A new route from the airplane to this field." },
+    "departFrom": {
+      "wording": "depart_from",
+      "glyph": "departFrom",
+      "apps": ["web", "ios"],
+      "about": "The field the route's departure, the rest of the route kept (the one-search design, 2026-11-09); the one search's and the airport mark's menus, on no card's row."
+    },
+    "directTo": { "wording": "direct_to", "glyph": "directTo", "about": "From the airplane to the point, then on along the route." },
+    "addStop": { "wording": "add_stop", "glyph": "addToRoute", "about": "The field a landing on the way (stops=), as Maps' Add Stop." },
+    "addToRoute": { "wording": "add_to_route", "glyph": "addToRoute", "about": "The point a turn on the way, where it bends the route least; not a landing." },
+    "holdHere": { "wording": "hold_here", "glyph": "holdHere", "about": "A hold at the point (AIM 5-3-8)." },
+    "call": { "wording": "call", "glyph": "call", "about": "The field's own phone, from the FAA's airport file." },
+    "favorite": {
+      "wording": "favorite",
+      "glyph": "favorite",
+      "about": "The airport or the airplane in the Favorites or out, a switch, in the action row rather than the head, so every card's head holds its Share and its close alone (the owner, 2026-11-11)."
+    },
+    "address": { "wording": "address", "glyph": "address", "about": "The field in Maps, by its street address where the FAA lists one." },
+    "copy": { "wording": "copy", "glyph": "copy", "about": "A frequency or an ident to the clipboard." },
+    "flyThis": { "wording": "fly_this", "glyph": "directTo", "about": "The airplane shown the one the plan flies." },
+    "track": { "wording": "track", "glyph": "track", "about": "An airplane in the air kept in sight on the map." },
+    "alerts": { "wording": "alerts", "glyph": "alerts", "about": "Alerts as the airplane takes off and lands, by its ICAO address." },
+    "figures": { "wording": "figures", "glyph": "figures", "about": "The airplane's book figures, opened over its card." }
+  },
+  "cards": {
+    "airport": {
+      "about": "An airport's (the owner, 2026-11-11: \"fly here, add stop, call and address ... no need for other buttons\", Favorite in Address's place since).",
+      "actions": ["flyHere", "addStop", "call", "favorite"]
+    },
+    "airportAsStop": {
+      "about": "An airport's, opened while the pilot adds a stop (the one search asked for one): Add Stop first and filled, no Fly Here, Address last (the owner, 2026-11-18).",
+      "actions": ["addStop", "call", "favorite", "address"]
+    },
+    "airportStopOff": {
+      "about": "An airport's where Add Stop cannot be used (the field on the route already, closed): Address last in its place, not a greyed tile (the owner, 2026-11-20).",
+      "actions": ["flyHere", "call", "favorite", "address"]
+    },
+    "point": { "about": "A point held on the map: the airspace card's.", "actions": ["directTo", "addToRoute", "holdHere"] },
+    "navaid": { "about": "A VOR, a fix or a VFR waypoint.", "actions": ["directTo", "addToRoute", "copy"] },
+    "airplane": {
+      "about": "An airplane's on the ground (the owner's design of 2026-11-26, on the phones since the owner's 2026-11-27 \"Yes, match the web\"), one greyed where it does nothing for this airplane, never hidden.",
+      "actions": ["flyThis", "alerts", "favorite", "figures"]
+    },
+    "airplaneAirborne": {
+      "about": "An airplane's in the air: Track in Fly This's place.",
+      "actions": ["track", "alerts", "favorite", "figures"]
+    }
+  }
+}

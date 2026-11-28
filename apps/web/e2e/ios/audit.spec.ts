@@ -13,7 +13,7 @@ import { extrasOn } from "../extras";
 test.beforeEach(({ page }) => pickAirplane(page));
 // The parked features its screens show, on: Practice's drills and another airplane's alerts
 // (Settings' Extras, src/lib/extras).
-test.beforeEach(({ page }) => extrasOn(page, "trainingTools", "otherAirplanes"));
+test.beforeEach(({ page }) => extrasOn(page, "trainingTools"));
 
 /**
  * The iOS audit, one test per screen on each iOS project

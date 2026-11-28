@@ -27,8 +27,11 @@ pub const CPA_MIN: f64 = 10.0;
 /// a pilot looks for now, so the bound keeps an airplane 40 nm off quiet.
 pub const TELL_WITHIN_NM: f64 = 5.0;
 /// A position older than this, s, is left out: the airplane is somewhere
-/// else by now. The planner's own bound on the feed (wingtip.traffic's
-/// STALE_S), which the phones hold the internet's answer to.
+/// else by now. A design choice, no rule: at 120 kt an airplane covers a
+/// mile in 30 s, about what a mark on the map can be off and still be the
+/// airplane a pilot looks for; the internet's traffic is for knowing what
+/// is about, never for avoiding it (the module's head). The planner's
+/// feed, the web's map and the phones all hold to it (traffic_figures).
 pub const STALE_S: f64 = 30.0;
 
 /// Whether two heights are within NEAR_FT of each other: the map's traffic
@@ -184,9 +187,7 @@ fn plane_of(name: &str, v: &Value) -> Result<Plane, String> {
     })
 }
 
-fn list<'a>(name: &str, v: &'a Value, key: &str) -> Result<&'a [Value], String> {
-    v.get(key).and_then(Value::as_array).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a list"))
-}
+use wingtip_core::ask::list_in as list;
 
 /// Own ship's place for `traffic_marks`, where the phone has a fix.
 fn own_at(name: &str, v: &Value) -> Result<Option<(f64, f64)>, String> {
@@ -254,6 +255,17 @@ pub(super) fn fresh_rule(v: &Value) -> Result<String, String> {
     }
     out.push(']');
     Ok(out)
+}
+
+/// `traffic_figures`: the figures the hosts' own traffic code holds to, so
+/// none keeps a copy: STALE_S, past which a position (the planner's feed)
+/// or a whole answer (the web's map, which says traffic is gone after it)
+/// is too old to draw.
+pub(super) fn figures_json() -> String {
+    let mut out = String::from("{\"stale_s\":");
+    json::number(&mut out, STALE_S);
+    out.push('}');
+    out
 }
 
 /// `own_ship_hex`: the hex or null, from `{"planes": [plane], "fix": fix |

@@ -115,8 +115,8 @@ impl Track {
     }
 
     /// [west, south, east, north] round the track, `pad_nm` wider: core's
-    /// box_over its points, read the short way round 180, so its west may
-    /// be under -180 or its east over 180 (the edge-places audit's S10).
+    /// box_over its points, read the short way over 180, so its west may
+    /// be under -180 or its east over 180.
     fn bbox(&self, pad_nm: f64) -> [f64; 4] {
         let points: Vec<(f64, f64)> = self.lats.iter().copied().zip(self.lons.iter().copied()).collect();
         let (s, w, n, e) = geo::box_over(&points, pad_nm).unwrap_or((self.lats[0], self.lons[0], self.lats[0], self.lons[0]));
@@ -252,5 +252,17 @@ mod tests {
         let track = Track::new(45.0, -92.95, 0.0, 120.0, Some(2000.0), 0.0, 300.0, 5.0);
         let far_box = shape_box(&tfrs_of(&lines)[1].shape).unwrap();
         assert!(!meets(far_box, &track.boxes(1.0)));
+    }
+
+    #[test]
+    fn the_kept_tfrs_read_once_are_read_anew_when_the_text_changes() {
+        let ring = "-93.0 45.05,-92.9 45.05,-92.9 45.15,-93.0 45.15,-93.0 45.05";
+        let (first, second) = (format!("6/7\tOne\t\t\t\t3000\tAGL\t\t\t{ring}"), format!("6/8\tTwo\t\t\t\t3000\tAGL\t\t\t{ring}"));
+        let none: [Pack; 0] = [];
+        // Each fix asks again with the same text, then with a changed one.
+        for (text, id, not) in [(&first, "tfr:6/7", "tfr:6/8"), (&first, "tfr:6/7", "tfr:6/8"), (&second, "tfr:6/8", "tfr:6/7")] {
+            let flying = ahead(&none, 45.0, -92.95, 0.0, 120.0, Some(2000.0), 0.0, 0, Some(text), Some(0));
+            assert!(flying.contains(&format!("\"id\":\"{id}\"")) && !flying.contains(not), "{flying}");
+        }
     }
 }

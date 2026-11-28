@@ -13,12 +13,7 @@ use crate::json::{self, Value};
 use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 use wingtip_flight::performance::Climber;
 
-fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
-    match v.get(key) {
-        Some(Value::Array(items)) => Ok(items),
-        _ => Err(format!("{name}: \"{key}\" is missing or not a list")),
-    }
-}
+use wingtip_core::ask::list_in as list;
 
 fn objs(name: &str, v: &Value, key: &str) -> R<Vec<Obj>> {
     list(name, v, key)?.iter().map(|o| Obj::read(name, o)).collect()

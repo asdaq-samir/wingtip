@@ -31,7 +31,10 @@ test("a CRAFT page is typed and written on, and is kept with its flight on this 
   for (let i = 1; i <= 10; i++) await page.mouse.move(box.x + 40 + i * 15, box.y + 60 + i * 5);
   await page.mouse.up();
   await expect(ink).toHaveAttribute("data-strokes", "1");
-  await expect(ink.locator("path")).toHaveCount(1);
+  // The kept stroke, and beside it the live path a stroke is drawn on as
+  // the finger moves (InkPad), empty once the finger lifts.
+  await expect(ink.locator("path:not([data-testid=scratchpad-live])")).toHaveCount(1);
+  await expect(ink.getByTestId("scratchpad-live")).toHaveAttribute("d", "");
 
   // Kept: the flight opened again in a new load has its page, with its
   // boxes and its ink (the stroke, kept at once, keeps the boxes typed

@@ -21,13 +21,7 @@ fn text<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a str> {
     v.get(key).and_then(Value::as_str).ok_or_else(|| format!("{name}: \"{key}\" is missing"))
 }
 
-fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(&[]),
-        Some(Value::Array(items)) => Ok(items),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a list")),
-    }
-}
+use wingtip_core::ask::opt_list_in as list;
 
 fn at(name: &str, v: &Value, key: &str) -> R<(f64, f64)> {
     route::points(Some(&Value::Array(vec![v.get(key).cloned().unwrap_or(Value::Null)])))

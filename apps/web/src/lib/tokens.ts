@@ -75,7 +75,7 @@ export const CATEGORY_CHIP: Record<string, string> = {
 };
 
 /** A field with no report: unknown, not fine. */
-export const CATEGORY_UNKNOWN = "#8fa3b0";
+export const CATEGORY_UNKNOWN = "#6b7f8c";
 
 /** Wingtip's mark. */
 export const BRAND = {
@@ -87,6 +87,14 @@ export const BRAND = {
   launchNight: "#0b1422",
   chartLand: "#d7e8c6",
 };
+
+/** Each look's tint on its sheet by day and at night, for its swatch in the Theme menu. */
+export const LOOK_SWATCH = {
+  wingtip: { day: { tint: "oklch(0.522 0.177 255.8)", ground: "#f2f2f7" }, night: { tint: "#57a8ff", ground: "#0b1422" } },
+  cockpit: { day: { tint: "#00707e", ground: "#f2f2f7" }, night: { tint: "#46d3e6", ground: "#0b1422" } },
+  ink: { day: { tint: "oklch(0.522 0.177 255.8)", ground: "#f7f2e7" }, night: { tint: "#5ac8fa", ground: "#14161c" } },
+  native: { day: { tint: "oklch(0.205 0 0)", ground: "oklch(1 0 0)" }, night: { tint: "oklch(0.922 0 0)", ground: "oklch(0.145 0 0)" } },
+} as const;
 
 export const BADGE = {
   tower: "#2465b8",
@@ -215,20 +223,21 @@ export const INK = {
 
 /** Each text role's classes (lib/text's TEXT reads these). */
 export const TYPE_CLASS = {
-  hero: "text-(length:--type-hero) leading-(--lead-hero)",
-  card: "text-(length:--type-card) leading-(--lead-card)",
-  heading: "text-(length:--type-heading) leading-(--lead-heading)",
+  hero: "text-(length:--type-hero) leading-(--lead-hero) tracking-[-0.02em] native:tracking-normal",
+  card: "text-(length:--type-card) leading-(--lead-card) tracking-[-0.015em] native:tracking-normal",
+  heading: "text-(length:--type-heading) leading-(--lead-heading) tracking-[-0.01em] native:tracking-normal",
   title: "text-base pointer-coarse:text-[1.0625rem] pointer-coarse:leading-[1.375rem]",
   row: "text-base pointer-coarse:text-[1.0625rem] pointer-coarse:leading-[1.375rem]",
+  pill: "text-(length:--type-pill) leading-(--lead-pill)",
   prose: "text-base pointer-coarse:text-[0.9375rem] pointer-coarse:leading-[1.25rem]",
   detail: "text-sm pointer-coarse:text-[0.9375rem] pointer-coarse:leading-[1.25rem]",
-  note: "text-(length:--type-note) leading-(--lead-note)",
+  note: "text-(length:--type-note) leading-(--lead-note) tracking-[0.005em] native:tracking-normal",
   tabBar: "text-(length:--type-tab-bar) leading-(--lead-tab-bar)",
-  badge: "text-(length:--type-badge) leading-(--lead-badge)",
-  caption: "text-(length:--type-caption) leading-(--lead-caption)",
+  badge: "text-(length:--type-badge) leading-(--lead-badge) tracking-[0.01em] native:tracking-normal",
+  caption: "text-(length:--type-caption) leading-(--lead-caption) tracking-[0.01em] native:tracking-normal",
   chip: "text-xs pointer-coarse:text-[min(0.8125rem,14px)]",
   label: "font-display text-(length:--type-label) leading-(--lead-label) font-semibold uppercase native:normal-case tracking-[0.1em] native:tracking-normal",
-  figure: "text-(length:--type-figure) leading-(--lead-figure) font-bold tabular-nums",
+  figure: "text-(length:--type-figure) leading-(--lead-figure) font-bold tracking-[-0.01em] native:tracking-normal tabular-nums",
   word: "font-display font-semibold uppercase native:normal-case tracking-[0.08em] native:tracking-normal",
 } as const;
 
@@ -239,6 +248,7 @@ export const TYPE_POINTS = {
   heading: 20,
   title: 17,
   row: 17,
+  pill: 16,
   prose: 15,
   detail: 15,
   note: 13,
@@ -285,9 +295,10 @@ export const MAP = {
   airspaceFaded: 0.35,
   airspaceHeld: 1.8,
   airspaceLabelFaded: 0.6,
+  routeTagOffEndsNm: 2,
 } as const;
 
-export { MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";
+export { CHART_LOOK, CHART_PAINT, DIMMER, MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */
 type FlowStop = [number, [number, number, number, number]];
@@ -349,6 +360,7 @@ export const SPACE = {
   sm: 8,
   md: 12,
   lg: 16,
+  group: 16,
   xl: 24,
   xxl: 32,
 } as const;

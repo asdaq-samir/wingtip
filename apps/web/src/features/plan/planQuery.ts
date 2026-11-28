@@ -1,6 +1,8 @@
 import { experimental_streamedQuery as streamedQuery } from "@tanstack/react-query";
-import { ApiError, api, isUnknownPlace } from "../../lib/api/client";
+import { ApiError, api, isUnknownPlace, plannerUnreachable } from "../../lib/api/client";
+import { checkpointsQuery, courseQuery, queryClient } from "../../lib/queryClient";
 import { inBatches, ended } from "../../lib/api/streams";
+import { retryDelay } from "../../lib/queryRetry";
 import type { AircraftChoice, AltitudeChoice, Briefing, Detour, NavLogMessage } from "../../lib/api/types";
 import type { FlightRules } from "../../lib/preferences";
 import { ownOf } from "../../lib/airplane/figures";
@@ -142,6 +144,16 @@ export function planKeyOf({
   ];
 }
 
+/** A route's three asks before the page draws it -- its course, its
+ *  checkpoints where they are on, its nav log -- as the page will ask
+ *  them: Fly Here's at the tap (useFlyHere), the next fuel stops' ahead of
+ *  the pilot (usePlanStops), written once where each wrote the trio. */
+export function prefetchRoute(plan: PlanParams, checkpointsToo: boolean) {
+  void queryClient.prefetchQuery(courseQuery(plan.dep, plan.dest, plan.stops));
+  if (checkpointsToo) void queryClient.prefetchQuery(checkpointsQuery(plan.dep, plan.dest, plan.stops));
+  void queryClient.prefetchQuery(navlogQuery(plan, checkpointsToo));
+}
+
 /** A plan's nav log, with its checkpoints or point to point: the page's
  *  own (usePlan), and Fly Here's, asked for at the tap before the page
  *  has drawn the route (PlanWorkspace). */
@@ -208,7 +220,21 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
       initialValue: [] as NavLogMessage[],
     }),
     staleTime: Infinity,
-    retry: false, // a retry would plan the whole route again behind the lines drawn
+    // Not asked again once its lines have begun: a retry would plan the
+    // whole route again behind the lines drawn. But a 5xx is an answer
+    // before the first line (the stream's own failures come as a 200's
+    // last line, lib/api/streams), so it is asked again, as every other
+    // query is (lib/queryRetry): a planner that dropped its connections
+    // for a second left the nav log at "The planner did not answer" for
+    // good, FPL without legs and Dry Run dimmed until Try Again (the
+    // gateway's 502s at 10:08:30 in run 45152106014, its desktop emergency
+    // spec's retry held two minutes).
+    // The planner not reached (its restart's 502s, the gateway's 404 for
+    // paths it has not read yet) too; asked again after by the client's
+    // refetchWhileUnreachable, so the route plans once it is back.
+    retry: (failures: number, error: unknown) =>
+      failures < 3 && error instanceof ApiError && (error.status >= 500 || plannerUnreachable(error)),
+    retryDelay,
     // No legal altitude is the page's to say, with what can be done about
     // it (PlanWorkspace): not the query client's plain toast.
     // Nor a point the planner does not know, the route box's (courseQuery).

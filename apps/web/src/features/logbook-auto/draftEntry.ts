@@ -1,4 +1,4 @@
-import type { FlightSummary, LogbookDraft, LogbookEntryRequest } from "../../lib/api/types";
+import type { AirplaneKind, FlightSummary, LogbookDraft, LogbookEntryRequest } from "../../lib/api/types";
 import type { EngineAnswer } from "../../lib/engine/engine";
 import type { RecordedPoint } from "./recorder";
 
@@ -40,8 +40,17 @@ export function flightEnded(local: Drafted | null, points: RecordedPoint[], aske
  * tracking (the draft's `instrument`) only where the pilot says the
  * flight was flown by instruments -- no track shows that (61.51(g)(1)).
  */
-export function entryRequest(draft: Drafted, edits: Edits, byInstruments: boolean, flightId: number | null): LogbookEntryRequest {
+export function entryRequest(
+  draft: Drafted,
+  edits: Edits,
+  byInstruments: boolean,
+  flightId: number | null,
+  kind: AirplaneKind | null = null,
+): LogbookEntryRequest {
   const e = draft.entry;
+  // The airplane picked's own category, class and gear, while the entry
+  // is still in it (the pilot has not typed another).
+  const own = edits.aircraft === undefined ? kind : null;
   return {
     flownOn: edits.flownOn ?? e.flownOn,
     aircraft: (edits.aircraft ?? e.aircraft) || null,
@@ -66,6 +75,13 @@ export function entryRequest(draft: Drafted, edits: Edits, byInstruments: boolea
     touchAndGoes: e.touchAndGoes,
     fromTrack: true,
     flightId,
+    // The track can't tell the airplane's category, class or gear (14 CFR
+    // 61.57(a)(1)(ii)): its profile's where it says them, else none; its
+    // full stops the gateway reckons from its touch-and-goes.
+    category: own?.category ?? null,
+    aircraftClass: own?.aircraftClass ?? null,
+    tailwheel: own?.tailwheel ?? null,
+    fullStopLandings: null,
   };
 }
 

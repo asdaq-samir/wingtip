@@ -46,9 +46,9 @@ pub(super) fn departure(cs: &str, fields: &[Field], legs: &[Leg], i: usize) -> P
         calls.push(c);
     } else {
         let mhz = ctaf_mhz(f);
-        calls.push(call(format!("{field} traffic"), mhz, format!("{field} traffic, {cs}, taxiing to {runway}, {field}.")));
-        let mut c = call(
-            format!("{field} traffic"),
+        calls.push(ctaf_call(&field, mhz, format!("{field} traffic, {cs}, taxiing to {runway}, {field}.")));
+        let mut c = ctaf_call(
+            &field,
             mhz,
             format!("{field} traffic, {cs}, departing {runway}, departing the pattern to the {heading}, climbing to {altitude}, {field}."),
         );
@@ -160,7 +160,7 @@ pub(super) fn arrival(cs: &str, fields: &[Field], legs: &[Leg], i: usize) -> Pha
         let mhz = ctaf_mhz(f);
         let side = here.landing.as_ref().and_then(|e| e.traffic.clone()).unwrap_or_else(|| "[left or right]".to_owned());
         let say = |words: String, note: Option<&str>| {
-            let mut c = call(format!("{field} traffic"), mhz, format!("{field} traffic, {cs}, {words}, {field}."));
+            let mut c = ctaf_call(&field, mhz, format!("{field} traffic, {cs}, {words}, {field}."));
             c.note = note.map(str::to_owned);
             c
         };

@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_brief::gonogo::route_figures::call",
-  "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).",
+  "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145), from the briefing's `tfrs`, by NOTAM id, with how many more it lists near it; none where no `tfrs` are sent; under IFR VFR not recommended's reasons are dropped (14 CFR 91.169); the hazards the risk counts are none where SIGMETs and G-AIRMETs both failed.",
   "type": "object",
   "properties": {
     "input": {
@@ -68,24 +68,134 @@
             }
           }
         },
-        "tfr_count": {
-          "description": "How many TFRs the briefing lists along the route.",
+        "tfrs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "The briefing's TFRs: those it says the route crosses (`crosses`) count in force by its `on_route.when` (\"during\") where it placed them on the legs, else by their window, half an hour wider either way, at the pass (14 CFR 91.137-91.145), else in force where the pass is not known.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "notam_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "crosses": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "along_track_nm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "on_route": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "when": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "effective": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "ISO 8601 UTC; none, open that way."
+              },
+              "expires": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "legs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "The nav log's legs, for when the flight passes each TFR.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "distance_nm": {
+                "type": "number"
+              },
+              "ete_min": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "distance_nm"
+            ]
+          }
+        },
+        "depart_us": {
           "type": [
             "number",
             "null"
-          ]
+          ],
+          "description": "The departure, microseconds since 1970."
         },
-        "crossed": {
-          "description": "The NOTAM ids of the TFRs the route crosses while they are in force.",
-          "type": "array",
+        "ifr": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Planned IFR: VFR not recommended's reasons are dropped (14 CFR 91.169)."
+        },
+        "vfr_not_recommended": {
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
-          }
+          },
+          "description": "The briefing's reasons for AIM 7-1-5's \"VFR flight not recommended\"."
+        },
+        "hazards": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "The SIGMETs and G-AIRMETs along the route, by name."
+        },
+        "weather_unavailable": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "The briefing's sources that did not answer."
         }
       },
       "required": [
-        "totals",
-        "crossed"
+        "totals"
       ]
     },
     "answer": {
@@ -118,6 +228,17 @@
         },
         "tfrs_near": {
           "type": "number"
+        },
+        "vfr_not_recommended": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The reasons that count: none under IFR."
+        },
+        "hazard_count": {
+          "type": "number",
+          "description": "The hazards the risk assessment counts: none where both SIGMETs and G-AIRMETs failed."
         }
       },
       "required": [
@@ -125,7 +246,9 @@
         "required_gal",
         "reserve_min",
         "tfrs_in_force",
-        "tfrs_near"
+        "tfrs_near",
+        "vfr_not_recommended",
+        "hazard_count"
       ],
       "additionalProperties": false
     }

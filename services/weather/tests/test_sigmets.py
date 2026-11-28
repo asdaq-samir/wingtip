@@ -62,7 +62,7 @@ NOW = datetime(2026, 11, 22, 0, 30, tzinfo=timezone.utc).timestamp()
 def test_the_sigmets_come_from_the_combined_file_in_the_stores_shape():
     xml = f'<?xml version="1.0" encoding="UTF-8"?><response version="1.1"><data num_results="2">{CONVECTIVE}{OCEANIC}</data></response>'
     resp = Mock(status_code=200, headers={}, content=gzip.compress(xml.encode()))
-    with patch("app.fetch.requests.get", return_value=resp) as get, patch("app.aviationweather.time.time", return_value=NOW):
+    with patch("app.fetch.outside.get", return_value=resp) as get, patch("app.aviationweather.time.time", return_value=NOW):
         aviationweather.fetch_source("airsigmets")
     assert get.call_args.args[0] == "https://aviationweather.gov/data/cache/sigmets.cache.xml.gz"
     with patch("wingtip.weather_store.time.time", return_value=NOW):

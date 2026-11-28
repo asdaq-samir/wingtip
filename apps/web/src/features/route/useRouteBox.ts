@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
+import { sameFields, useLatest } from "../../lib/steady";
 import type { Detour } from "../../lib/api/types";
 import { frdOf, identOf, isPosition, MAX_STOPS, stopOf } from "../../lib/identSchema";
 import { usePreferences, type RecentAirport } from "../../lib/preferences";
@@ -8,7 +9,7 @@ import { engineLoaded } from "../../lib/engine/engine";
 import { useAirportSearch } from "../../lib/useAirportSearch";
 import { pointsOf, readTyped, roleAt, routeOf, withoutPoint, withTyped, type RouteParts } from "./routeEdit";
 import { releaseTyped } from "./routeEdit";
-import { endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf } from "./routeTokens";
+import { endedWords, removedPoint, routeValue, takeTyped, tokensOf, typedOf } from "./routeTokens";
 import type { RouteValue } from "./routeTokens";
 import { useRouteCaret } from "./useRouteCaret";
 import { useStopAsked } from "./useStopAsked";
@@ -70,7 +71,7 @@ export function useRouteBox({
     );
     setShownRoute({ dep, stops, dest });
     const planned = pointsOf({ dep, stops, dest });
-    if (!samePoints(tokensOf(value), planned)) {
+    if (!sameFields(tokensOf(value), planned)) {
       const typed = typedOf(value);
       setValue(routeValue(planned, typed.text, typed.at, value));
     }
@@ -93,10 +94,7 @@ export function useRouteBox({
   const slideRow = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
   // The value now, for the field's blur, which acts after a tap elsewhere.
-  const valueNow = useRef(value);
-  useEffect(() => {
-    valueNow.current = value;
-  }, [value]);
+  const valueNowRef = useLatest(value);
 
   const change = (list: string[], withDep = hasDep, withDest = hasDest) => {
     const route = routeOf(list, withDep, withDest, isEnd);
@@ -128,12 +126,12 @@ export function useRouteBox({
     // the field's blur after Return, Done after a word -- finds nothing
     // typed, where it put the same words in a second time (KMSP the
     // destination and a stop, KMSN both ends of a cleared route).
-    valueNow.current = shown;
+    valueNowRef.current = shown;
     setValue(shown);
     if (ready.length) onTypedProcedures?.(ready, { dep: route?.dep ?? shownRoute.dep, dest: route?.dest ?? shownRoute.dest });
   };
   // Everything typed, put in where it was typed: false where nothing was.
-  const commit = (from: RouteValue = valueNow.current) => {
+  const commit = (from: RouteValue = valueNowRef.current) => {
     const taken = takeTyped(from);
     if (taken) put(taken.words, taken.at, taken.rest, true);
     return !!taken;
@@ -152,7 +150,7 @@ export function useRouteBox({
       return;
     }
     const list = tokensOf(next);
-    if (samePoints(list, points)) {
+    if (sameFields(list, points)) {
       setValue(next);
       return;
     }
@@ -181,7 +179,7 @@ export function useRouteBox({
   // The airports and waypoints that answer what is typed, under the box;
   // before anything is typed, Fly via's ways round. Put away with Escape
   // or a tap elsewhere, until the next thing typed.
-  const { rows, answered } = useAirportSearch(text, !!text, true);
+  const { rows, answered, airportsAnswered } = useAirportSearch(text, !!text, true);
   // The pilot's own point off a fix, typed as a flight plan writes one
   // ("VPBNG/090/30", at the owner's ask): offered first, as it reads.
   const ownPoint = stopOf(text) && frdOf(stopOf(text)) ? stopOf(text) : null;
@@ -199,9 +197,9 @@ export function useRouteBox({
   };
   // Return with no row lit (the list takes it on a lit row): the first row
   // shown, once the rows answer what is typed -- an airport first, as the
-  // list shows them, else a waypoint, as Maps' search does (the FPL
-  // audit's A1, 2026-11-08: typed key by key, as a phone's keyboard does,
-  // rows that come after the last change can be none lit). What is no
+  // list shows them, else a waypoint, as Maps' search does (typed key by key, as a phone's keyboard does,
+  // rows that come after the last change can be none lit).
+  // What is no
   // row's ident (a town's name, "madison", or a short one, "reno", which
   // stopOf takes for an ident) takes the first airport shown at once,
   // before the planner's waypoints answer; else what was typed goes in.
@@ -216,19 +214,21 @@ export function useRouteBox({
     commit();
   };
 
-  // A point's menu (its pill's ContextMenu) from the keyboard, as a hold
-  // or a right-click opens it: at the pill's foot.
-  const openMenu = (pill: HTMLElement) => {
-    const r = pill.getBoundingClientRect();
-    pill.dispatchEvent(new window.MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: r.left, clientY: r.bottom }));
-  };
+  // A point's menu (its pill's DropdownMenu, RoutePill) from the keyboard,
+  // as a tap opens it: the pill is the menu's trigger.
+  const openMenu = (pill: HTMLElement) => pill.click();
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-point]");
     // Delete (or Backspace) on a focused pill takes it out, as its menu
-    // does; Enter opens its menu.
+    // does; Enter opens its menu; the arrows go from pill to pill in the
+    // route's order, as a toolbar's buttons do (WAI-ARIA's roving focus).
     if (pill && (e.key === "Delete" || e.key === "Backspace")) {
       e.preventDefault();
       remove(Number(pill.dataset.point));
+    } else if (pill && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+      e.preventDefault();
+      const pills = [...(field.current?.querySelectorAll<HTMLElement>("[data-point]") ?? [])];
+      pills[pills.indexOf(pill) + (e.key === "ArrowLeft" ? -1 : 1)]?.focus();
     } else if (e.key === "Enter") {
       // A point selected in the field (Shift and an arrow, or a tap on its
       // token by a reader), or its pill focused: its menu, not Return's.
@@ -257,7 +257,7 @@ export function useRouteBox({
     field,
     slide,
     slideRow,
-    valueNow,
+    valueNow: valueNowRef,
     points,
     hasDep,
     typedAt: typed.at,
@@ -270,10 +270,11 @@ export function useRouteBox({
     via,
   });
 
-  // An arrow between two points: the one search asked for a stop there
+  // A point's Insert Before or After (its pill's menu), or the missing
+  // departure's word: the one search asked for a point there
   // (useStopAsked); the caret there where none is drawn.
   const { oneSearch, askAt } = useStopAsked({ points, hasDep, hasDest, isEnd, change });
-  const arrowAt = (before: number) => (oneSearch ? askAt(before) : focusAt(before));
+  const insertAt = (before: number) => (oneSearch ? askAt(before) : focusAt(before));
 
   const clearTyped = () => setValue(routeValue(points, "", typed.at, value));
 
@@ -302,8 +303,10 @@ export function useRouteBox({
     slideRow,
     toEnd,
     isRoom,
-    arrowAt,
-    suggestions: { open, rows: text ? rows : [], answered: !text || answered, via: !text ? (via ?? []) : [], ownPoint, pick },
+    insertAt,
+    // Dimmed only while the airports are not the answer: the copy's are at
+    // once, the planner's waypoints merged in as they come.
+    suggestions: { open, rows: text ? rows : [], answered: !text || airportsAnswered, via: !text ? (via ?? []) : [], ownPoint, pick },
     dismiss: () => {
       setDismissed(text);
       onAddingChange(false);

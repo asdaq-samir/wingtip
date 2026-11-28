@@ -168,6 +168,7 @@ def main(argv: list | None = None) -> int:
             p.add_argument(
                 "--workers", type=int, default=None, help="processes encoding the WebP; the cores but one, four at most, by default"
             )
+            p.add_argument("--out", type=Path, help="write the WebP archives under this folder's <cycle>/, leaving the served ones alone")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     if getattr(args, "tiles_dir", None):
@@ -260,7 +261,7 @@ def _run(args, parser) -> int:
         return 0
     if args.command == "transcode":
         for cycle in args.cycle or chart_cycle.cycles_on_disk(config.CHART_TILE_CACHE_DIR):
-            done = chart_archives.transcode(cycle, workers=args.workers)
+            done = chart_archives.transcode(cycle, workers=args.workers, out=args.out)
             log.info("%s: as WebP %s", cycle, done or "nothing (every archive is WebP already)")
         return 0
     if args.command == "check":

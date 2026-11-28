@@ -111,6 +111,12 @@ export type TerminalChart = Schemas["TerminalChart"];
 export type ProcedureList = Schemas["ProcedureList"];
 export type ProcedureSummary = Schemas["ProcedureSummary"];
 export type ProcedureDrawing = Schemas["ProcedureDrawing"];
+/** What the planner asks to teach an approach, and to debrief one or a flight against a flown track. */
+export type LessonAsk = Schemas["LessonAsk"];
+export type ApproachFindAsk = Schemas["ApproachFindAsk"];
+export type ApproachTransitionAsk = Schemas["ApproachTransitionAsk"];
+export type DebriefAsk = Schemas["DebriefAsk"];
+export type DebriefAnswer = Schemas["DebriefAnswer"];
 export type PlateOverlay = Schemas["PlateOverlay"];
 /** A plate's own georeference, for own ship on its page (plate_page_point). */
 export type PlateGeoreference = Schemas["PlateGeoreference"];
@@ -192,8 +198,6 @@ export type RunwayRvr = Schemas["RunwayRvr"];
 export type AirportAtis = Schemas["AirportAtis"];
 export type FlowAtAirports = Schemas["FlowAtAirports"];
 export type FlowProgram = Schemas["FlowProgram"];
-export type DepartureEvents = Schemas["DepartureEvents"];
-export type DepartureEvent = Schemas["DepartureEvent"];
 export type AheadAlert = Schemas["AheadAlert"];
 /** The airplanes ADS-B receivers hear near a point (wingtip.traffic). */
 export type Traffic = Schemas["Traffic"];
@@ -301,6 +305,8 @@ export type SignInCapabilities = Gateway["Capabilities"];
  *  fuel check. */
 export type Aircraft = Gateway["AircraftDto"];
 export type AircraftRequest = Gateway["AircraftRequest"];
+/** A saved airplane's category, class and gear (14 CFR 61.5(b)), each null where not said. */
+export type AirplaneKind = Gateway["AirplaneKind"];
 /** An airplane's own handbook figures on its record, each null where not given. */
 export type OwnFigures = Gateway["OwnFigures"];
 /** An airplane's handbook figures as its pilot confirmed them from a photo. */

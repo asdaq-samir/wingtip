@@ -1,15 +1,14 @@
 package app.wingtipmaps.android.ui
 
-import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.fieldNames
+import app.wingtipmaps.android.engine.generated.notamAffects
+import app.wingtipmaps.android.engine.generated.notamCard
 import app.wingtipmaps.android.engine.generated.notamRead
 import app.wingtipmaps.android.engine.generated.tfrRead
 import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
@@ -42,13 +41,34 @@ object FieldNotams {
     fun read(n: RankedNotam, ident: String): EngineContract.NotamReadAnswer? =
         Engine.notamRead(n.raw, identsOf(ident)).getOrNull()
 
+    /** A NOTAM's own card as the engine reads it from its parts
+     *  (`notam_card`, FAA Order JO 7930.2): its title, category, effect,
+     *  permanence, whether it runs until the charts are updated (given
+     *  the feed's end, a firm one keeps it from that) and the procedures it
+     *  takes away; null for a TFR, and where it fails, the card then saying
+     *  the NOTAM's words (notam_read). */
+    fun card(n: RankedNotam, ident: String): EngineContract.NotamCardAnswer? =
+        if (isTfr(n)) null else Engine.notamCard(n.raw, identsOf(ident), n.ends).getOrNull()
+
+    /** Which part of the planned flight a NOTAM affects, its chip: the
+     *  engine's `notam_affects` over the roles its field plays in the plan
+     *  (planRoles), the first it names, with whether it takes a procedure
+     *  that role flies (red) or is the field's (neutral). Only one in force
+     *  affects the flight; null for a TFR, where it reaches none of them,
+     *  or where the engine cannot say. */
+    fun affects(n: RankedNotam, ident: String, roles: List<String>): EngineContract.NotamAffectsAnswerAffectsItem? =
+        if (isTfr(n) || !active(n) || roles.isEmpty()) null else Engine.notamAffects(n.raw, identsOf(ident), roles).getOrNull()?.affects?.firstOrNull()
+
     /** A TFR read by the engine (tfr_read): its kind as a heading, its
-     *  kind and rule, its levels and where it is from the field, its place. */
+     *  kind and rule, its levels -- a floor or ceiling that varies said so
+     *  (the planner's floor_varies and ceiling_varies), never one figure --
+     *  and where it is from the field, its place. */
     fun readTfr(n: RankedNotam): EngineContract.TfrReadAnswer? {
         val t = n.tfr
         return Engine.tfrRead(
             kind = t?.kind, rule = t?.rule, title = t?.title,
             floorFt = t?.floorFt, floorRef = t?.floorRef, ceilingFt = t?.ceilingFt, ceilingRef = t?.ceilingRef,
+            floorVaries = t?.floorVaries, ceilingVaries = t?.ceilingVaries,
             overField = t?.overField,
             field = t?.field?.let { EngineContract.TfrPoint(it.lat, it.lon) },
             edge = t?.edge?.let { EngineContract.TfrPoint(it.lat, it.lon) },
@@ -56,7 +76,12 @@ object FieldNotams {
     }
 
     /** One NOTAM as the card says it: the engine's readings, once. */
-    class Said(val notam: RankedNotam, val read: EngineContract.NotamReadAnswer?, val tfr: EngineContract.TfrReadAnswer?) {
+    class Said(
+        val notam: RankedNotam,
+        val read: EngineContract.NotamReadAnswer?,
+        val tfr: EngineContract.TfrReadAnswer?,
+        val card: EngineContract.NotamCardAnswer? = null,
+    ) {
         /** Its first line: what it is and its condition in our words, else
          *  its words written out; a TFR's kind and rule. */
         val what: String get() = (if (tfr != null) tfr.what else read?.what ?: read?.words) ?: notam.raw
@@ -75,7 +100,8 @@ object FieldNotams {
         val kind: String? get() = if (isTfr(notam)) null else read?.heading
     }
 
-    fun say(n: RankedNotam, ident: String): Said = Said(n, if (isTfr(n)) null else read(n, ident), if (isTfr(n)) readTfr(n) else null)
+    fun say(n: RankedNotam, ident: String): Said =
+        if (isTfr(n)) Said(n, null, readTfr(n)) else Said(n, read(n, ident), null, card(n, ident))
 
     /** Its number as a briefer reads it, the field's own name off it on the
      *  field's card ("11/060", not "ORD 11/060"); another place's kept. */
@@ -99,11 +125,6 @@ object FieldNotams {
             .getOrNull()
     }
 
-    /** "11/10 06:00": month/day and the 24-hour clock in the device's own
-     *  time, as a pilot writes it on a kneeboard, the zone not named (the
-     *  owner, 2026-11-11: "No need to mention time zone, just say local"). */
-    fun corner(at: Instant, zone: ZoneId = ZoneId.systemDefault()): String = CORNER.withZone(zone).format(at)
-
     /** How long, as ForeFlight writes it: "5m" under an hour, "5h05m"
      *  under a day, "4d16h" under ten, "18d" past them. */
     fun span(ms: Long): String {
@@ -119,49 +140,10 @@ object FieldNotams {
         }
     }
 
-    /** One labelled line of a NOTAM's times. */
-    enum class Label { SINCE, STARTS, ENDS, DURATION }
-
-    /** A time line: its label, its time ("11/10 06:00") or how long,
-     *  with "local" once, "(est.)", how soon ("in 18d"), or Permanent. */
-    data class TimeLine(
-        val label: Label,
-        val value: String? = null,
-        val local: Boolean = false,
-        val estimated: Boolean = false,
-        val soon: String? = null,
-        val permanent: Boolean = false,
-    )
-
-    /**
-     * A NOTAM's times on lines of their own, as ForeFlight's NOTAM list
-     * gives them (the owner's screenshots, 2026-11-11): one in force
-     * "Since" its start and "Ends" with how long is left; one to come
-     * "Starts" with how soon, "Ends", and how long it lasts. An estimated
-     * end "(est.)", PERM "Permanent" (JO 7930.2 4-2-1). The times are the
-     * planner's, else the NOTAM's own as the engine reads them.
-     */
-    fun timeLines(n: RankedNotam, read: EngineContract.NotamReadAnswer?, now: Instant = AppClock.javaNow(), zone: ZoneId = ZoneId.systemDefault()): List<TimeLine> {
-        val starts = instantOf(n.starts ?: read?.starts)
-        val ends = instantOf(n.ends ?: read?.ends)
-        val active = active(n)
-        fun soon(at: Instant) = if (at.isAfter(now)) span(at.toEpochMilli() - now.toEpochMilli()) else null
-        return buildList {
-            if (starts != null) add(TimeLine(if (active) Label.SINCE else Label.STARTS, corner(starts, zone), local = ends == null, soon = if (active) null else soon(starts)))
-            if (ends != null) {
-                add(TimeLine(Label.ENDS, corner(ends, zone), local = true, estimated = read?.estimated == true, soon = soon(ends)))
-            } else if (read?.permanent == true) {
-                add(TimeLine(Label.ENDS, permanent = true))
-            }
-            if (!active && starts != null && ends != null) add(TimeLine(Label.DURATION, span(ends.toEpochMilli() - starts.toEpochMilli())))
-        }
-    }
-
     /** The words in red where they stand in a NOTAM's first line, and no
      *  other (the owner, 2026-11-11: "just the word closed and 'out of
      *  service' should be red and nothing else of the wording"). */
     val RED = Regex("""\bclosed\b|\bout of service\b""", RegexOption.IGNORE_CASE)
 
     private const val TFR = "tfr"
-    private val CORNER = DateTimeFormatter.ofPattern("MM/dd HH:mm", Locale.US)
 }

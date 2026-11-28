@@ -1,11 +1,12 @@
 import { Button as BaseButton } from "@base-ui/react/button";
-import { useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
+import { useContext, useEffect, useEffectEvent, useRef, useState, ViewTransition, type ReactNode } from "react";
 import { cn } from "cn";
 import { ListRow } from "./GroupedList";
 import { useShown } from "../lib/shown";
 import { holdOpenCard } from "../lib/openCards";
 import { useWantedPage } from "../lib/navigation/wantedPage";
 import { useScrollPlace } from "../lib/scrollPlace";
+import { PAGE_STEP, pageStep } from "../lib/viewTransition";
 import { CardHeadRow } from "./CardHead";
 import { PAGE_LINK } from "./pageLink";
 import CloseButton from "./CloseButton";
@@ -44,11 +45,6 @@ export function ConsolePages({
   // Opened straight from outside (useWantedPage), not from a row here.
   const [direct, setDirect] = useState(false);
   const leave = useContext(ConsoleLeave);
-  // The tab's own page eases in only coming back to it from a page, as a
-  // pop: drawn as Setup opens, it faded in from nothing every time, its
-  // switches' icons blinking out and back at each tap on the tab, at the
-  // owner's notice ("It's flickering the icons").
-  const [popped, setPopped] = useState(false);
   const top = useRef<HTMLDivElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
   // A page starts at its top, with its title the place a screen reader
@@ -63,8 +59,7 @@ export function ConsolePages({
       leave();
       return;
     }
-    setPopped(true);
-    setOpen(null);
+    pageStep(false, () => setOpen(null));
   };
   const shutNow = useEffectEvent(shut);
   useEffect(() => {
@@ -104,60 +99,66 @@ export function ConsolePages({
   const [wasShown, setWasShown] = useState(shown);
   if (shown !== wasShown) {
     setWasShown(shown);
-    if (!shown) {
-      setOpen(null);
-      setPopped(false);
-    }
+    if (!shown) setOpen(null);
   }
   const page = open ? pages[open] : undefined;
   return (
-    <div ref={top}>
-      {page ? (
-        // In from the right over motion.page, as a pushed page is (the
-        // tokens; Reduce Motion stills it, index.css). A page of a page --
-        // Personal's Flights, then a flight -- goes
-        // back to the page under it, as iOS's navigation does one level
-        // at a time: this page's head steps aside while one is open in it.
-        <div
-          key={open}
-          data-slot="console-page"
-          data-testid="console-page"
-          className="space-y-4 [animation-duration:var(--motion-page)] animate-in fade-in slide-in-from-right-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
-        >
-          {/* Its name and close pinned at the top, every card's one head row
-              (CardHeadRow), its slot the one a page over it hides. */}
-          <CardHeadRow
-            name={page.title}
-            level="h3"
-            nameRef={title}
-            slot="page-head"
-            end={
-              <CloseButton
-                label={direct && leave ? "Back to the map" : `Back to ${back}`}
-                onClick={shut}
-                data-testid="console-page-close"
-              />
-            }
-          />
-          {page.content}
-        </div>
-      ) : (
-        <div className={cn(popped && "[animation-duration:var(--motion-page)] animate-in fade-in")}>
-          <Pages.Provider
-            value={{
-              open: (p) => {
-                setFrom(p);
-                setOpen(p);
-                setDirect(false);
-              },
-              from,
-            }}
+    // A push slides the page in from the right and a pop slides it back
+    // out the way it came, the list returning from the left, as iOS's
+    // navigation does (lib/viewTransition's page step, the Brief's own;
+    // the design review of 2026-11-23, M2): the pop only faded before.
+    // Only a push or a pop moves: the tab's own page drawn as Setup opens
+    // stays still (the owner: "It's flickering the icons"), and Reduce
+    // Motion stills both (index.css).
+    <ViewTransition update={PAGE_STEP} enter="none" exit="none" default="none">
+      <div ref={top}>
+        {page ? (
+          // A page of a page --
+          // Personal's Flights, then a flight -- goes
+          // back to the page under it, as iOS's navigation does one level
+          // at a time: this page's head steps aside while one is open in it.
+          <div
+            key={open}
+            data-slot="console-page"
+            data-testid="console-page"
+            className="space-y-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
           >
-            {children}
-          </Pages.Provider>
-        </div>
-      )}
-    </div>
+            {/* Its name and close pinned at the top, every card's one head row
+              (CardHeadRow), its slot the one a page over it hides. */}
+            <CardHeadRow
+              name={page.title}
+              level="h3"
+              nameRef={title}
+              slot="page-head"
+              end={
+                <CloseButton
+                  label={direct && leave ? "Back to the map" : `Back to ${back}`}
+                  onClick={shut}
+                  data-testid="console-page-close"
+                />
+              }
+            />
+            {page.content}
+          </div>
+        ) : (
+          <div>
+            <Pages.Provider
+              value={{
+                open: (p) =>
+                  pageStep(true, () => {
+                    setFrom(p);
+                    setOpen(p);
+                    setDirect(false);
+                  }),
+                from,
+              }}
+            >
+              {children}
+            </Pages.Provider>
+          </div>
+        )}
+      </div>
+    </ViewTransition>
   );
 }
 

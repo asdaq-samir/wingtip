@@ -1,7 +1,8 @@
-import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import FindingIcon from "../../components/FindingIcon";
+import { ListRow } from "../../components/GroupedList";
+import { ItemGroup, ItemSeparator } from "../../components/ui/item";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "../../components/ui/accordion";
 import { TEXT } from "../../lib/text";
 import { Cited } from "../documents";
@@ -18,13 +19,17 @@ const FOLD = cn(
 /** An item of the list: the list's own hairline between rows, none of its own. */
 const ITEM = "not-last:border-b-0";
 
+/** A page of the Brief, and the section on it where a finding is said in
+ *  full (the overview's AdverseRows open theirs the same way). */
+type Open = (tab: PanelTab, section?: string) => void;
+
 /** A line a pilot acts on: the finding and what to do about it, in one
  *  sentence (features/brief/glance), the list's first rows, and under a
  *  tap what to do first, why it matters with the rule it rests on, the
- *  reports it was read from as sent, and the way to its page. Folded,
+ *  reports it was read from as sent, and the way to its section. Folded,
  *  since the owner's rule is to look and go: an item of the Brief's Base
  *  UI Accordion (docs/design/web.md §5, the APG's keys). */
-export function Line({ line, onOpen }: { line: Omit<GlanceLine, "key"> & { key: string }; onOpen: (tab: PanelTab) => void }) {
+export function Line({ line, onOpen }: { line: Omit<GlanceLine, "key"> & { key: string }; onOpen: Open }) {
   return (
     <AccordionItem value={line.key} className={ITEM} data-testid={`brief-line-${line.key}`} data-finding={line.finding}>
       <AccordionTrigger className={FOLD}>
@@ -53,10 +58,13 @@ export function Line({ line, onOpen }: { line: Omit<GlanceLine, "key"> & { key: 
             ))}
           </div>
         )}
+        {/* To the finding's own section, not its page's top (the owner,
+            2026-11-25: "it should be very clear what's happening with
+            the tap"). */}
         <Button
           variant="link"
           size="inline"
-          onClick={() => onOpen(line.tab)}
+          onClick={() => onOpen(line.tab, line.section ?? undefined)}
           className={cn("relative font-semibold no-underline! hit-x-2 hit-y-3", TEXT.detail)}
         >
           See It in Full
@@ -67,8 +75,12 @@ export function Line({ line, onOpen }: { line: Omit<GlanceLine, "key"> & { key: 
 }
 
 /** The rest of the findings folded into one row after the lines, each
- *  opening its page. */
-export function Rest({ rest, onOpen }: { rest: ReturnType<typeof glanceLines>["rest"]; onOpen: (tab: PanelTab) => void }) {
+ *  a row of the list's own look under it, its mark, its finding and the
+ *  chevron, opening its section (the owner, 2026-11-25: "it should be
+ *  very clear what's happening with the tap"), where they were lines of
+ *  small text that did not read as taps. Set in under the fold's words,
+ *  as a row's children are, a hairline between each. */
+export function Rest({ rest, onOpen }: { rest: ReturnType<typeof glanceLines>["rest"]; onOpen: Open }) {
   return (
     <AccordionItem value="rest" className={ITEM} data-testid="brief-rest" data-finding={rest.finding}>
       <AccordionTrigger className={cn(FOLD, "items-center")}>
@@ -77,23 +89,22 @@ export function Rest({ rest, onOpen }: { rest: ReturnType<typeof glanceLines>["r
           {rest.line}
         </span>
       </AccordionTrigger>
-      <AccordionContent className="px-3 pb-2 pl-10.5">
-        {rest.items.map((i) => (
-          <BaseButton
-            key={i.key}
-            onClick={() => onOpen(i.tab)}
-            data-testid={`brief-rest-${i.key}`}
-            className={cn(
-              "relative flex w-full items-start gap-2 py-1.5 text-left no-underline! outline-none after:inset-x-0 hit-y-1.5 focus-visible:ring-2 focus-visible:ring-ring",
-              TEXT.detail,
-            )}
-          >
-            <FindingIcon finding={i.finding} className="mt-0.5 size-4 shrink-0" />
-            <span className="min-w-0 flex-1">
-              <span className="font-medium">{i.label}</span> · {i.detail}
-            </span>
-          </BaseButton>
-        ))}
+      <AccordionContent className="pb-0 pl-7.5">
+        <ItemGroup role="group" className="gap-0">
+          {rest.items.map((i) => [
+            <ItemSeparator key={`${i.key}-rule`} className="my-0" />,
+            <ListRow
+              key={i.key}
+              media={<FindingIcon finding={i.finding} className="size-5 shrink-0" />}
+              title={i.label}
+              description={i.detail}
+              chevron
+              onClick={() => onOpen(i.tab, i.section)}
+              data-testid={`brief-rest-${i.key}`}
+              data-finding={i.finding}
+            />,
+          ])}
+        </ItemGroup>
       </AccordionContent>
     </AccordionItem>
   );

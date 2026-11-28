@@ -9,6 +9,10 @@
                             (scripts/dev/preflight.sh hands it to plan.py)
   areas.py write            regenerates ci.yml's paths-filter block
   areas.py check            fails when ci.yml's block is not what `write` makes
+  areas.py generators       the design generators, one a line, tab-separated:
+                            name, title, script, its sources and its outputs
+                            (each space-separated), for regen-all.sh and
+                            web_generated.sh
 
 Standard library only (the Mac's python3 and CI's both run it), so the file
 is read by a small parser for its own layout: two-space indents, `key: value`,
@@ -67,7 +71,14 @@ def parse(text):
 
 
 def load():
-    return parse(AREAS_FILE.read_text())
+    """The table, each area that says `generators: all` with every
+    generator's sources and outputs joined to its paths."""
+    data = parse(AREAS_FILE.read_text())
+    made = [p for g in data.get("generators", {}).values() for p in [*g["sources"], *g["outputs"]]]
+    for spec in data["areas"].values():
+        if spec.get("generators") == "all":
+            spec["paths"] = [*spec["paths"], *(p for p in dict.fromkeys(made) if p not in spec["paths"])]
+    return data
 
 
 def glob_regex(pattern):
@@ -105,7 +116,11 @@ def filters(data):
         out[name] = list(paths)
     for spec in data["areas"].values():
         joined = out.setdefault(spec["ci"], [])
-        joined.extend(p for p in spec["paths"] if p not in joined)
+        for p in spec["paths"]:
+            # A file a glob already listed covers adds nothing to the filter.
+            if p in joined or ("*" not in p and "?" not in p and any(glob_regex(q).match(p) for q in joined)):
+                continue
+            joined.append(p)
     return out
 
 
@@ -144,6 +159,9 @@ def main(argv):
         paths = [p for p in (line.strip() for line in sys.stdin) if p]
         named = filters(data)
         print(json.dumps([name for name in named if areas_for(paths, {name: {"paths": named[name]}})]))
+    elif cmd == "generators":
+        for name, g in data["generators"].items():
+            print("\t".join([name, g["title"], g["script"], " ".join(g["sources"]), " ".join(g["outputs"])]))
     elif cmd == "check-line":
         print(data["areas"][argv[2]]["check"])
     elif cmd in ("write", "check"):

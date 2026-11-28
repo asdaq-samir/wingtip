@@ -13,7 +13,7 @@ export type { BriefingPart } from "./briefSections";
 export { briefingLegs } from "./briefingLegs";
 export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, dryRunRow, runNmAt } from "./dryRun";
 export { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "./fieldLists";
-export { figuresLine, nextLanding, tripFigures } from "./figures";
+export { arrivalMin, figuresLine, nextLanding, tripFigures } from "./figures";
 export { type CourseLine, dryRunNext, gpsAhead, useFlyingTo } from "./flyingTo";
 export {
   PLAN_NAME,
@@ -40,15 +40,14 @@ export {
   windLine,
   windOnRunway,
   windText,
-  windsOutOfDate,
 } from "./format";
-export { type RouteAdiz, routeAdiz } from "./adiz";
-export { type RouteJurisdiction, routeJurisdiction, rowCautions } from "./jurisdiction";
+export { rowCautions } from "./jurisdiction";
 export {
   type NavLogRow,
   type RouteEnds,
   type RouteLeg,
   firstFlown,
+  fixMinutes,
   flownNmOf,
   groundMinAt,
   isLegPoint,
@@ -116,7 +115,7 @@ export { type AirplaneRow, useAirplaneHits } from "./useAirplaneHits";
 export { type Description, descriptionKey } from "./useCheckpointNotes";
 export { useLoad } from "./useLoad";
 export { type PanelList, type PanelView, useAddressCards, usePanelView } from "./usePanelView";
-export { type BriefingState, type PlanParams, type Unflyable, navlogQuery } from "./planQuery";
+export { type BriefingState, type PlanParams, type Unflyable, navlogQuery, prefetchRoute } from "./planQuery";
 export { usePlan } from "./usePlan";
 export { usePlanSetters } from "./usePlanSetters";
 export { type Browsing, type FuelCard, useRouteWays } from "./useRouteWays";

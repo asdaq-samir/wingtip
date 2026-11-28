@@ -23,10 +23,13 @@ import zipfile
 
 import requests
 
-from . import outside
+from cachetools import LRUCache
+
+from . import outside, ratelimit
 from .atomic import atomic_path
 from .config import DATA_DIR
 from .config import FAA_HEADERS as HEADERS
+from .engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -55,8 +58,19 @@ _RETRY_AT = 0.0
 #: answer past its time is still given when the geocoder does not answer,
 #: since an address does not move.
 ADDRESS_TTL_S = 3600
+#: The addresses kept at most, the least lately asked going first: the
+#: whole set was emptied at once at this many.
 ADDRESS_CACHE_MAX = 512
-_ADDRESSES: dict = {}
+_ADDRESSES: LRUCache = LRUCache(maxsize=ADDRESS_CACHE_MAX)
+#: How long the geocoder may take to answer, s: a search waits on it, and
+#: the field searches again as the pilot types (it was 8).
+GEOCODER_TIMEOUT_S = 3
+#: After the geocoder fails or does not answer in time it is not asked for
+#: this long, s, and searches answer with towns and airports alone: during a
+#: Census outage every keystroke of every pilot's search waited its whole
+#: timeout on a worker thread.
+GEOCODER_HOLD_S = 60
+_GEOCODER = ratelimit.Gate()
 
 
 def _towns_of(zipped: bytes) -> list:
@@ -141,8 +155,23 @@ def _address_label(matched: str) -> str:
     parts = [p.strip() for p in matched.split(",")]
     if len(parts) >= 4:
         street, town, state, zip_code = parts[0], parts[1], parts[2], parts[3]
-        return f"{street.title()}, {town.title()}, {state} {zip_code}"
-    return matched.title()
+        return f"{_street(street)}, {engine('place_name', text=town)}, {state} {zip_code}"
+    return _street(matched)
+
+
+def _street(text: str) -> str:
+    """An address in the geocoder's capitals as it is written (the engine's
+    name_case): "4000 INTERNATIONAL LN" as "4000 International Ln"."""
+    return engine("name_case", text=text, kind="street")
+
+
+def _is_outage(err: Exception) -> bool:
+    """Whether a failed ask says the geocoder is down for everyone: a timeout, a lost connection, a 429 or a 5xx.
+    A 4xx or a body that is no JSON is about this one query."""
+    if isinstance(err, (requests.Timeout, requests.ConnectionError)):
+        return True
+    status = getattr(getattr(err, "response", None), "status_code", None)
+    return status is not None and (status == 429 or status >= 500)
 
 
 def find_addresses(query: str, limit: int = 4) -> list:
@@ -156,11 +185,16 @@ def find_addresses(query: str, limit: int = 4) -> list:
         kept = _ADDRESSES.get(key)
     if kept and time.monotonic() < kept[0]:
         return kept[1][:limit]
+    if _GEOCODER.held(time.monotonic()):
+        return kept[1][:limit] if kept else []
     try:
         # Not wingtip.outside's retrying session: urllib3 logs a retried
         # request's URL, and this one carries the typed address.
         resp = requests.get(
-            GEOCODER_URL, headers=HEADERS, timeout=8, params={"address": query.strip(), "benchmark": "Public_AR_Current", "format": "json"}
+            GEOCODER_URL,
+            headers=HEADERS,
+            timeout=GEOCODER_TIMEOUT_S,
+            params={"address": query.strip(), "benchmark": "Public_AR_Current", "format": "json"},
         )
         resp.raise_for_status()
         matches = resp.json().get("result", {}).get("addressMatches", [])
@@ -168,15 +202,19 @@ def find_addresses(query: str, limit: int = 4) -> list:
         # The error's own text carries the URL, and with it the typed address:
         # only its kind is logged (docs/privacy-inventory.md, the Census row).
         log.warning("The Census geocoder did not answer for an address: %s", type(err).__name__)
-        return kept[1][:limit] if kept else []
+        if _is_outage(err):
+            _GEOCODER.hold(GEOCODER_HOLD_S, time.monotonic())
+            return kept[1][:limit] if kept else []
+        # A refusal of this query's own text (a 400): none for this key alone, the geocoder asked on for the others.
+        with _LOCK:
+            _ADDRESSES[key] = (time.monotonic() + ADDRESS_TTL_S, [])
+        return []
     found = [
         {"label": _address_label(m["matchedAddress"]), "lat": m["coordinates"]["y"], "lon": m["coordinates"]["x"]}
         for m in matches[:limit]
         if m.get("matchedAddress") and m.get("coordinates")
     ]
     with _LOCK:
-        if len(_ADDRESSES) >= ADDRESS_CACHE_MAX:
-            _ADDRESSES.clear()
         _ADDRESSES[key] = (time.monotonic() + ADDRESS_TTL_S, found)
     return found
 

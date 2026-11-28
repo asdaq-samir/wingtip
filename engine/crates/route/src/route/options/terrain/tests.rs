@@ -48,3 +48,30 @@ fn a_clear_line_needs_no_way_round() {
     let flat = vec![0.0; f.rows * PER_CELL * f.cols * PER_CELL];
     assert!(way_round(start, end, 10_950.0, &flat, &[]).unwrap().unwrap().is_empty());
 }
+
+#[test]
+fn the_fields_near_the_way_are_those_the_ellipsoid_puts_within_its_reach() {
+    // Fields on rings 30 to 50 nm round a way's points, the edge at 40 nm
+    // most of them, at the equator, 60 degrees north and across the
+    // antimeridian (a frame's longitudes past 180): near_way's sphere and
+    // box must keep exactly those every geodesic would.
+    for &(lat, lon) in &[(0.0, 0.0), (60.0, -100.0), (51.0, 179.5)] {
+        let way: Vec<Point> = (0..20).map(|i| (lat + 0.05 * i as f64, lon + 0.1 * i as f64)).collect();
+        let mut fields = Vec::new();
+        for (k, nm) in [30.0, 39.0, 39.6, 39.9, 39.99, 40.0, 40.01, 40.1, 40.4, 41.0, 50.0].iter().enumerate() {
+            for b in 0..24 {
+                let p = way[(k * 7 + b) % way.len()];
+                let (la, lo) = geo::destination(p.0, p.1, b as f64 * 15.0, *nm);
+                fields.push(field(&format!("F{k}_{b}"), la, wingtip_core::geo::lon_near(lo, lon)));
+            }
+        }
+        let every: Vec<&str> = fields
+            .iter()
+            .filter(|fd| way.iter().any(|p| geo::distance_nm(p.0, p.1, fd.at.0, fd.at.1) <= FIELD_NM))
+            .map(|fd| fd.ident.as_str())
+            .collect();
+        let near: Vec<&str> = near::near_way(&way, &fields).iter().map(|fd| fd.ident.as_str()).collect();
+        assert_eq!(near, every, "round ({lat}, {lon})");
+        assert!(every.len() > 100 && every.len() < fields.len());
+    }
+}

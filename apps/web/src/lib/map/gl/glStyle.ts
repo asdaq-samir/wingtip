@@ -1,16 +1,10 @@
-import type {
-  LayerSpecification,
-  LineLayerSpecification,
-  RasterLayerSpecification,
-  RasterSourceSpecification,
-  SymbolLayerSpecification,
-} from "maplibre-gl";
+import type { RasterLayerSpecification, RasterSourceSpecification } from "maplibre-gl";
 import type { ChartInfo } from "../../api/types";
 import type { AirspaceVolume } from "../sources/overlayTypes";
 import { chartPair, tileTemplate } from "../sources/tiles";
-import { CHART, MAP_ZOOM } from "../../tokens";
+import { CHART, CHART_PAINT } from "../../tokens";
 import { chartBrightness, chartContrast, NIGHT_DIM } from "../chartLook";
-import { labelText } from "./layers/common";
+import { OVERLAY_SOURCES } from "../../generated/overlayLayers";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -19,7 +13,8 @@ import { labelText } from "./layers/common";
  * the route and its checkpoints drawn by MapLibre GL in one WebGL map,
  * each in the frame the chart is drawn in, so nothing lags it under a
  * pinch. Plain data here, no map: what GlMap hands
- * MapLibre, and what the tests read.
+ * MapLibre, and what the tests read. The overlay tiles' layers are
+ * design/map-style.json's (lib/generated/overlayLayers, glOverlays).
  */
 
 /** MapLibre's zoom from the app's. The app counts its levels as the
@@ -47,10 +42,6 @@ export function absoluteTiles(template: string, origin: string): string {
   return template.startsWith("/") ? `${origin}${template}` : template;
 }
 
-/** The day chart's lift (chartPaint). */
-export const DAY_CONTRAST = 0.1;
-export const DAY_SATURATION = 0.1;
-
 export interface ChartStyle {
   sources: Record<string, RasterSourceSpecification>;
   layers: RasterLayerSpecification[];
@@ -62,8 +53,9 @@ export interface ChartStyle {
 /** The chart's ink by day, dimmed at night (half the brightness, a
  *  little more contrast) and brightened in sunlight (a fifth more contrast
  *  and colour, and never dimmed). By day a touch more contrast and colour
- *  than the scan (0.1 each), as ForeFlight's chart reads beside ours (the
- *  owner's screenshots, 2026-11-07). `dim` is the Map card's Dimmer, how
+ *  than the scan, as ForeFlight's chart reads beside ours (the owner's
+ *  screenshots, 2026-11-07): the figures are design/tokens.json's
+ *  chart-paint group (CHART_PAINT), the phones' the same. `dim` is the Map card's Dimmer, how
  *  far the tiles are dimmed (the night's half unless given), and
  *  `contrast` its Contrast, an offset on the look's own (lib/map/chartLook). */
 export function chartPaint(
@@ -82,8 +74,11 @@ export function chartPaint(
     // chart's type from shimmering as a pinch passes through them.
     "raster-resampling": "linear",
     "raster-brightness-max": chartBrightness(dim, sunlight, night),
-    "raster-contrast": chartContrast(sunlight ? 0.2 : night ? 0.13 : DAY_CONTRAST, contrast),
-    "raster-saturation": sunlight ? 0.2 : night ? 0 : DAY_SATURATION,
+    "raster-contrast": chartContrast(
+      sunlight ? CHART_PAINT.sunlightContrast : night ? CHART_PAINT.nightContrast : CHART_PAINT.dayContrast,
+      contrast,
+    ),
+    "raster-saturation": sunlight ? CHART_PAINT.sunlightSaturation : night ? CHART_PAINT.nightSaturation : CHART_PAINT.daySaturation,
   };
 }
 
@@ -147,229 +142,46 @@ export function chartStyle(
   return { sources, layers, maxZoom: glZoom(baseLayer.max_zoom + OVERZOOM) };
 }
 
+/** A chart style's layers as ChartGl adds them, shown or hidden, and as a new map's first style holds the chart
+ *  (makeMap): one spec, so the map's first tree claims those layers as they are. */
+export const chartLayersAs = (spec: ChartStyle, visibility: "visible" | "none"): RasterLayerSpecification[] =>
+  spec.layers.map((l) => ({ ...l, layout: { visibility } }));
+
 /** Class E has an ink for when the map draws it: the tiles carry it
- *  (wingtip.vector_tiles), the map draws B, C and D only. */
+ *  (wingtip.vector_tiles), the 2D map draws B, C and D only. */
 type AirspaceClass = AirspaceVolume["airspace_class"] | "E";
 
 /**
- * The airspace's inks: the FAA's
- * sectional symbology (Aeronautical Chart User's Guide, VFR Terms and
- * Symbols, Airspace) -- Class B solid blue, Class C solid magenta, Class
- * D dashed blue, Class E (surface) dashed magenta, drawn here faded -- in
- * ForeFlight's brighter blue and magenta, and bolder (B and C 4 px, D
- * 3.5), so they stand off the chart's own printed ring as ForeFlight's do
- * (the owner's screenshots, 2026-11-07). `band` is how strong the
- * translucent band along the inside of the line is (airspaceLayers).
+ * The airspace's inks, the FAA's sectional symbology (Aeronautical Chart
+ * User's Guide, VFR Terms and Symbols, Airspace) in ForeFlight's brighter
+ * blue and magenta: Class B and D blue, C and E magenta. The rings' widths,
+ * dashes and bands are design/map-style.json's; these are the colours the
+ * 3D view's volumes and the tabs' pictures wear with them.
  */
-export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number[]; opacity: number; width: number; band: number }> = {
-  B: { colour: CHART.airspaceBlue, opacity: 1, width: 4, band: 0.3 },
-  C: { colour: CHART.airspaceMagenta, opacity: 1, width: 4, band: 0.3 },
-  // A dash of 10 px and a gap of 5, in MapLibre's units, the line's own
-  // width.
-  D: { colour: CHART.airspaceBlue, dash: [10 / 3.5, 5 / 3.5], opacity: 1, width: 3.5, band: 0.22 },
-  E: { colour: CHART.airspaceMagenta, dash: [10 / 3, 5 / 3], opacity: 0.45, width: 3, band: 0 },
+export const AIRSPACE_INK: Record<AirspaceClass, { colour: string }> = {
+  B: { colour: CHART.airspaceBlue },
+  C: { colour: CHART.airspaceMagenta },
+  D: { colour: CHART.airspaceBlue },
+  E: { colour: CHART.airspaceMagenta },
 };
 
-/** From which zoom each class is drawn, in the app's levels, and every
- *  label: design/tokens.json's map.zoom, which every app and the charts
- *  job's overlay tiles read (B and C from a few states on a phone, with
- *  the towered fields they are named for, the owner's 2026-11-21 ask; the
- *  tabs from 9, the readability list's G of 2026-11-20). */
-const AIRSPACE_FROM: Record<AirspaceClass, number> = {
-  B: MAP_ZOOM.airspaceB,
-  C: MAP_ZOOM.airspaceC,
-  D: MAP_ZOOM.airspaceD,
-  E: MAP_ZOOM.airspaceESurface,
-};
-export const AIRSPACE_LABELS_FROM = MAP_ZOOM.airspaceLabels;
-
+/** The ring layers a tap on the airspace is looked for in (AirspaceGl). */
 export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map((c) => `airspace-${c}`);
 
 /** The dark tab an airspace's altitudes sit in (icon-text-fit stretches
  *  it to the text), bordered in its class's ink: its id by class, for
- *  the layer that draws it. */
+ *  the picture the airspace-labels layer asks for. */
 export const airspaceTab = (cls: string) => `airspace|tab|${cls}`;
 
 /** The cycle's overlay tiles' source (glOverlays, lib/map/sources/overlayTiles),
  *  in the map's first style. */
-export const OVERLAY_SOURCE = "faa-overlays";
-
-/** A shelf's altitudes as the sectional writes them, the ceiling over the
- *  floor in hundreds of feet MSL ("100" over "30", "T" over "SFC", "-30"
- *  for a Class D): the engine's words (airspace_shelf_label, the Chart
- *  User's Guide's), which the charts job writes into the tiles'
- *  `airspace_labels` (`tab`, wingtip.airspace_tabs), the 3D view's shelves
- *  the same, so the map formats no figure of its own. */
-const AIRSPACE_TAB = ["get", "tab"];
-
-/** A width by zoom, MapLibre's levels from the app's. */
-const byZoom = (stops: [appZoom: number, px: number][]) =>
-  ["interpolate", ["linear"], ["zoom"], ...stops.flatMap(([z, px]) => [glZoom(z), px])] as never;
-/** The band along the inside of a boundary, as ForeFlight draws the
- *  sectional's own vignette (the pale strip inside Madison's Class C
- *  line, the owner's screenshot, 2026-11-08): a few pixels at a
- *  region's zoom, wider as the map comes in. */
-const BAND_STOPS: [number, number][] = [
-  [MAP_ZOOM.airspaceFull, 3],
-  [9, 6],
-  [11, 10],
-  [13, 16],
-];
-const BAND_WIDTH = byZoom(BAND_STOPS);
-/** The band's middle off the boundary, inwards: half the band and a
- *  little over half the line, so its edge meets the line's. A positive
- *  offset is to the right of a line's way; a vector tile's outer ring
- *  runs clockwise on the screen and its holes anticlockwise (the Mapbox
- *  Vector Tile spec 2.1, 4.3.4.4, which tippecanoe writes), so the right
- *  is always the inside, round a ring and round a hole alike. */
-const BAND_OFFSET = byZoom(BAND_STOPS.map(([z, w]) => [z, w / 2 + 1.5]));
-/** Out past the band's first zoom a Class C's ring is some ten pixels
- *  across, which a full line and its band filled into a dot: there the
- *  line alone, half its width, as ForeFlight's thin rings at a few
- *  states' scale, its full width by the band's zoom. */
-const BAND_FROM = BAND_STOPS[0]![0];
-const lineWidth = (width: number) =>
-  byZoom([
-    [MAP_ZOOM.airspaceB, width / 2],
-    [BAND_FROM, width],
-  ]);
-
-/** An altitude tab's box, the Class B, C and D's and the special-use
- *  areas' alike: the lines close as the chart sets them (the ceiling over
- *  the floor), the tab hugging the words, two points kept round it. */
-export const TAB_BOX = {
-  "text-line-height": 1,
-  "icon-text-fit": "both" as const,
-  "icon-text-fit-padding": [1, 3, 1, 3] as [number, number, number, number],
-  "text-padding": 2,
-};
-
-/** Each class's band and line, a line layer each drawn from that class's
- *  zoom, and the labels: white bold type in a dark tab bordered in the
- *  class's ink, kept off each other and off the route's marks by
- *  MapLibre's own collision. From the overlay tiles: the rings their
- *  `airspace` layer's polygons; the labels one a shelf, on its ring and
- *  turned along it, from `airspace_labels` (the charts job's
- *  airspace_label_features). Class E is in the tiles but not drawn. */
-export function airspaceLayers(font: string[]): LayerSpecification[] {
-  const from = { source: OVERLAY_SOURCE, "source-layer": "airspace" };
-  const lines: LineLayerSpecification[] = (["D", "C", "B"] as const).flatMap((c) => {
-    const ink = AIRSPACE_INK[c];
-    const common = { type: "line" as const, ...from, minzoom: glZoom(AIRSPACE_FROM[c]), filter: ["==", ["get", "class"], c] as never };
-    return [
-      {
-        id: `airspace-${c}-band`,
-        ...common,
-        minzoom: glZoom(Math.max(AIRSPACE_FROM[c], BAND_FROM)),
-        layout: { "line-join": "round" },
-        paint: { "line-color": ink.colour, "line-opacity": ink.band, "line-width": BAND_WIDTH, "line-offset": BAND_OFFSET },
-      },
-      {
-        id: `airspace-${c}`,
-        ...common,
-        layout: { "line-join": "round", "line-cap": ink.dash ? "butt" : "round" },
-        paint: {
-          "line-color": ink.colour,
-          "line-width": lineWidth(ink.width),
-          "line-opacity": ink.opacity,
-          ...(ink.dash ? { "line-dasharray": ink.dash } : {}),
-        },
-      },
-    ];
-  });
-  const labels: SymbolLayerSpecification = {
-    id: "airspace-labels",
-    type: "symbol",
-    source: OVERLAY_SOURCE,
-    "source-layer": "airspace_labels",
-    minzoom: glZoom(AIRSPACE_LABELS_FROM),
-    filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "tab"]],
-    layout: {
-      "text-field": AIRSPACE_TAB as never,
-      // The map's smallest words at every zoom, in a tab hugging them
-      // (the readability list's G): they had grown to the large label's
-      // size in a roomy tab, the biggest marks on the chart. The special-use
-      // areas' tabs are the same (glSuaLabels' suaTabLayout).
-      "text-font": font,
-      "text-size": labelText("airspaceTab")["text-size"],
-      ...TAB_BOX,
-      "icon-image": ["concat", "airspace|tab|", ["get", "class"]] as never,
-      // Never on another tab or an airport's mark (the marks' layers are
-      // above and place first); where tabs compete the nearer class wins
-      // (B, C, D).
-      "text-allow-overlap": false,
-      "icon-allow-overlap": false,
-      "symbol-sort-key": ["match", ["get", "class"], "B", 0, "C", 1, 2] as never,
-      // Along the ring where it sits: the tiles' turn, upright on a
-      // north-up chart, and turned with the chart when the pilot turns the
-      // map, as the sectional's own printed tabs are.
-      "text-rotate": ["get", "angle"],
-      "icon-rotate": ["get", "angle"],
-      "text-rotation-alignment": "map",
-      "icon-rotation-alignment": "map",
-    },
-    paint: { "text-color": CHART.casing },
-  };
-  return [...lines, labels];
-}
+export const OVERLAY_SOURCE = OVERLAY_SOURCES.overlays;
 
 /** The special-use areas' inks, as ForeFlight draws them over the
  *  sectional (the owner's screenshot over Lake Michigan, 2026-11-08):
  *  restricted, prohibited, warning and danger areas orange-brown, MOAs
- *  and alert areas magenta, the Class C's. The sectional prints all of
- *  them as a line with a hatched band inside (Chart User's Guide, VFR
- *  Terms and Symbols, Airspace: prohibited, restricted and warning areas
- *  blue, MOAs and alert areas magenta); the owner's pick is ForeFlight's
- *  colours. By the FAA's TYPE_CODE (wingtip.sua TYPES). */
+ *  and alert areas magenta, the Class C's (design/map-style.json's
+ *  sua-line, by the FAA's TYPE_CODE). */
 export const SUA_INK = { restricted: CHART.specialUse, moa: AIRSPACE_INK.C.colour } as const;
-const SUA_RESTRICTED = ["P", "R", "W", "D"];
-const SUA_MOA = ["MOA", "A"];
-/** The hatch picture of each ink (glOverlays' SUA_PICTURES). */
+/** The hatch picture of each ink (glOverlayPictures' SUA_PICTURES). */
 export const suaHatch = (ink: keyof typeof SUA_INK) => `sua|hatch|${ink}`;
-/** From the app's zoom 7, a few states across, with Class D: tried at 6
- *  (2026-11-21), California's MOAs and restricted areas, some 160 hatched
- *  lines, hid the fields and the Class B and C under them. */
-const SUA_FROM = MAP_ZOOM.specialUse;
-export const SUA_LAYERS = ["sua-band", "sua-line", "sua-labels"];
-
-/** The special-use areas from the tiles' `special_use` layer: each
- *  boundary a solid line with a hatched band of short diagonal ticks
- *  along its inside (a line pattern, which MapLibre scales with the
- *  band's width), where two areas share an edge both drawn, each band
- *  on its own side. A restricted area is drawn over a MOA it lies in
- *  (line-sort-key), as R-6903 over the Minnow MOA in ForeFlight's: the
- *  MOA's line would cover the edges they share. */
-export function specialUseLayers(): LineLayerSpecification[] {
-  const from = { source: OVERLAY_SOURCE, "source-layer": "special_use", minzoom: glZoom(SUA_FROM) };
-  const restricted = ["in", ["get", "type"], ["literal", SUA_RESTRICTED]];
-  const filter = ["in", ["get", "type"], ["literal", [...SUA_RESTRICTED, ...SUA_MOA]]] as never;
-  const order = ["case", restricted, 1, 0] as never;
-  return [
-    {
-      id: "sua-band",
-      type: "line",
-      ...from,
-      filter,
-      layout: { "line-join": "round", "line-sort-key": order },
-      paint: {
-        "line-pattern": ["case", restricted, suaHatch("restricted"), suaHatch("moa")] as never,
-        "line-width": BAND_WIDTH,
-        "line-offset": BAND_OFFSET,
-      },
-    },
-    {
-      id: "sua-line",
-      type: "line",
-      ...from,
-      filter,
-      layout: { "line-join": "round", "line-cap": "round", "line-sort-key": order },
-      paint: {
-        "line-color": ["case", restricted, SUA_INK.restricted, SUA_INK.moa] as never,
-        "line-width": byZoom([
-          [7, 2],
-          [10, 3],
-        ]),
-      },
-    },
-  ];
-}

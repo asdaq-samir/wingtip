@@ -103,9 +103,10 @@ script can check, and the rest are for whoever writes a test or a job.
 9. **No live internet in pull-request tests.** Tests read recorded
    copies, not NOAA, AWC, FAA or adsb.lol; the night's `sources` job asks
    each live source once whether it still answers
-   (`scripts/ci/sources_answer.py`). Not yet true of the browser suite:
-   its stack's planner and weather service fetch live (below, "Live
-   sources"). *Guard:* `sources` at night.
+   (`scripts/ci/sources_answer.py`). The browser suite's weather is a
+   recorded day, its times moved to now (below, "Live sources"); its
+   radar and satellite times, the model layer and adsb.lol are still
+   live. *Guard:* `sources` at night.
 10. **A red night comes first, and a red main.** A scheduled run of CI,
     Native iOS or Native Android that fails writes its section of one
     issue, "Nightly CI failed"; main's push that fails after a merge (tier
@@ -204,7 +205,7 @@ script can check, and the rest are for whoever writes a test or a job.
     since its last pass before its push (`scripts/dev/branch-specs.sh`),
     and a spec red here alone is run on `scripts/dev/ci-stack.sh`, a copy
     of this job's stack; the whole reached set is this job's. *Guard:*
-    `test_tiers.py` (`specs`, `e2e-images` and `e2e` are tier 1 and in
+    `test_tiers.py` (`specs`, `e2e-page`, `e2e-page-push`, `e2e-images` and `e2e` are tier 1 and in
     the gate, and `e2e` runs what `specs` chose).
 19. **No job waits for what it does not use** (decision 0044). The
     guards' three legs waited about a minute each for the engine's wheel
@@ -224,14 +225,34 @@ seconds-long ones).
 ### Live sources
 
 The browser suite's stack (`infra/docker-compose.ci.yml`) turns the
-FAA's downloads off but still reaches, while a test runs: the weather
-service's AWC cache files, NOMADS' GFS winds (the fetch that once timed
-out), SPC, IEM's radar and nowCOAST; the TFRs (tfr.faa.gov); USGS
-elevations (seeded from `apps/web/e2e/fixtures/elevation_cache.csv` for
-the corridor only); adsb.lol traffic. The unit suites have no network
-guard either. Recording these (a fixture mode in the weather service and
-the planner's fetchers, and a socket guard in `pytest_guards.py`) is the
-follow-up that makes rule 9 true.
+FAA's downloads off, and its weather service replays a recorded day
+rather than fetching one (`WEATHER_REPLAY`, `services/weather/app/replay.py`;
+CI audit 2026-11-23, M2): the METARs, TAFs, winds aloft, SIGMETs, AIRMETs,
+G-AIRMETs, PIREPs, the SPC outlook, GLMP's modelled weather (cut to the
+corridor) and the TFRs in `apps/web/e2e/fixtures/weather` (1.1 MB), written
+at the start with every time in them moved by the whole hours from the
+recording to now, the reports' own day-and-time groups too. So a spec reads
+the same weather every night: brief-glance's private-field line and
+pass-times' TFRs went red on one night's reports alone. A new recording,
+from a live store, is
+`python -m app.replay record data/raw/weather apps/web/e2e/fixtures/weather`
+in the weather image. Still reached live while a test runs: the radar's
+and the satellite's newest times (IEM, nowCOAST), the model layer
+(NOMADS), USGS elevations (seeded from
+`apps/web/e2e/fixtures/elevation_cache.csv` for the corridor only) and
+adsb.lol traffic. The unit suites have no network guard either; a socket
+guard in `pytest_guards.py` is the follow-up.
+
+**Waits in the browser specs.** No time is slept before a measure: a
+spec waits on what the page says (a web-first assertion, `expect.poll`,
+`toPass`, `settled()`, the page's own marks), and `e2e/pacing.ts` is the
+one home of `waitForTimeout`, for time that is the test's input (`hold`:
+a finger held, a gesture's beat) or its claim (`watchFor`: nothing
+happens in a window), and `steady` for a reading with no mark of its own.
+ESLint refuses a `waitForTimeout` anywhere else, and a route glob whose
+`**` follows a word (`"**/api/x**"` is `[^/]*` at its end: a URL
+predicate instead). The shared session (`auth.setup.ts`) signs in by
+API, with no page to wait on.
 
 ## The tiers
 
@@ -255,14 +276,14 @@ they are what the budgets allow, to be lowered once runs show them:
 | `changes` | The path filter, and whether a pull request is words only | under 30 s |
 | `engine-wheel` | The engine's Python wheel, once a run, for every job that imports it (cached: seconds; an engine change compiles only what it changed, from main's last build) | 20 s warm, 1-2 min on an engine change |
 | `guards` | Every quick check, in three legs on a runner each (`repo`, `web`, `engine`), each leg's checks all started at once (`scripts/ci/guards.sh`): the paths filter, the rules boundary, the legal pages, the tiers, warnings fatal, the workflows' rules, the links; file sizes, toolchain versions, the brand tokens, unused Python, the simplicity rules (Semgrep, jscpd, the ratchet); ruff and the Python's layout; where the change touched them, the website, the web app's tsc, ESLint, Prettier, knip and layers, SwiftLint and detekt, the web's engine rules, and the engine's layering, WebAssembly size, cargo-machete, rustfmt, clippy and open-source notices (`scripts/build/licences.sh engine --check`); and the engine's flight-critical examples | 1-3 min (its slowest check: ESLint on a web change, clippy on an engine change) |
-| `test-web` | Three legs, a runner each (`scripts/ci/web_suite.sh`; one after the other they were 4.0 minutes, and two at once on one runner slower still): `tests`, Vitest over the tests the change reaches (`--changed`); `build`, `vite build` and the first-load budget; `generated`, the generated files are the committed ones, on a pull request only those it touched (`scripts/ci/web_generated.sh`: the phones' models and engine calls, the tokens, the screens, the icons, each by its generator, source and output) | 1.5-2.5 min |
+| `test-web` | Three legs, a runner each (`scripts/ci/web_suite.sh`; one after the other they were 4.0 minutes, and two at once on one runner slower still): `tests`, Vitest over the tests the change reaches (`--changed`); `build`, `vite build` and the first-load budget; `generated`, the generated files are the committed ones, on a pull request only those it touched (`scripts/ci/web_generated.sh`: the phones' models and engine calls, the icons, and each design generator of `scripts/areas.yml`'s `generators` table, the tokens, the map style, the screens, the words and the card actions, each by its generator, source and output) | 1.5-2.5 min |
 | `test-engine` | The committed WebAssembly, where its inputs changed, first; then `cargo test` over the touched crates, those that use them and the contract test (`scripts/ci/engine_affected.py`) | 1-3 min |
 | `test-python` | One leg per suite the change touches: `test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-weather` (`scripts/ci/python_suite.sh`); and `test-flight`, the planner's flight-critical test alone, on every change but words that does not run the planner's suite | 1-3 min each |
 | `test-gateway` | The Java's layout and `mvn test`, when the gateway changed | 2-3 min |
 | `api-compat`, `dependency-review`, `infra` | An API document's breaking changes; a manifest's or lock's new advisories; the production files | under 1 min |
 | `android` | `native-android.yml`: the engine (cached), compiled, `testDebugUnitTest lintDebug` with Gradle's caches | 4-5 min |
 | `ios` | `native-ios.yml` with `unit_only`: XcodeGen, the build, the string catalog held to what the Swift says, then the unit tests (`WingtipTests`) on the newest iPhone simulator (`scripts/ci/ios_test.sh`), DerivedData restored from main | 4-6 min |
-| `specs`, `e2e-images`, `e2e` | On a change to the web app or an API document: the browser specs it reaches (rule 18), against the stack built from the commit, on the phone project, three a shard, dealt to the shards by their time | 6-15 min |
+| `specs`, `e2e-page`, `e2e-page-push`, `e2e-images`, `e2e` | On a change to the web app or an API document: the browser specs it reaches (rule 18), against the stack built from the commit, on the phone project, three a shard, dealt to the shards by their time | 6-15 min |
 
 A pull request that leaves the web app alone is about 3 minutes in all: `changes`, then the wheel from
 its cache, then `guards` beside the tests. One that changes the engine
@@ -276,7 +297,7 @@ under a minute.
 
 | What | Expected |
 |---|---|
-| `e2e-images`: the browser suite's images and page, each built once per key (on a pull request too, for its specs) | 1-3 min |
+| `e2e-images`: the browser suite's images, each built once per key (on a pull request too, for its specs); the page is built by `e2e-page` with a read-only token and pushed by `e2e-page-push`, which runs nothing of the branch (security review 2026-11-23, H2) | 1-3 min |
 | `e2e` (3 shards): the `@smoke` and `@flight-critical` browser tests on the phone project and on `webkit-ipad` (Safari's engine on an 11-inch iPad Pro upright, touch: the iPad is the primary device, decision 0058; its project runs only that set, at night too), and `sheet-webkit.spec.ts` on `webkit-phone`, against the whole stack, in a slim copy of the Playwright image (`.github/ci-images.hcl`: no full Chrome or Firefox; WebKit kept, keyed on the recipe too by `scripts/ci/playwright_slim_key.sh`) | 5-8 min |
 | `build-images`: every service image whose inputs changed, pushed as `:sha-<commit>` for Promote | 1-4 min |
 | Native iOS's own run: the unit tests, the `CardSmokeTests` UI smoke and `IPadLayoutTests` on the iPhone and the iPad, and `DocumentsIPadTests` on the iPad alone, each its own runner (`test`, `test (iPad)`: the iPad is the primary users', the owner 2026-11-21), then TestFlight and, once Apple has processed the build, the beta group (`testflight_beta.py`, up to 20 min more; docs/store/beta.md) | 6-8 min, then up to 20 |
@@ -289,11 +310,20 @@ one issue, "Main CI failed (after merge)", labelled `ready`
 Promote publishes only a commit whose whole run on main passed.
 
 **Tier 3, every night** (CI at 09:17 UTC, Native iOS at 09:37, Native
-Android at 09:47), or by hand (Run workflow), unchanged:
+Android at 09:47, as asked: GitHub has started them 7 to 9 hours late), or
+by hand (Run workflow), unchanged. While a wave is open the three run on
+`claude/integration` too (`night-integration`, `night_integration.sh`),
+its reds in an issue of their own, "Nightly CI failed (claude/integration)"
+(the owner took the CI audit's H4, 2026-11-23). Playwright stops itself at
+28 minutes, under the shard's `timeout 1800`, so a long shard still
+writes its report, and each shard names every red test in one annotation
+(`e2e_summary.py`) past GitHub's ten a step; a failed iOS or Android test
+or lint error is an annotation of its own (`ios_failures.py`,
+`android_failures.py`).
 
 | What | Expected |
 |---|---|
-| CI: every unit suite in full, every browser test on the phone, desktop, the iPhones and the iPad, the whole iOS audit (WebKit), WCAG 2.2 and Lighthouse, over ten shards; the API reference, Javadoc and wingtip's pdoc; the flake hunt | ~15 min |
+| CI: every unit suite in full, every browser test on the phone, desktop, the iPhones and the iPad dealt by time over twelve shards, the whole iOS audit (WebKit, every device) on four of its own (over ten by `--shard`, six to eight shards a night met the 1800 s wrapper; CI audit 2026-11-23, H1), WCAG 2.2 and Lighthouse; the API reference, Javadoc and wingtip's pdoc; the flake hunt | ~15 min |
 | Native iOS, `full`: the whole suite (launch, flow and accessibility tests, the store shots, `CardRuleTests`, `CardScrollTests`) and the device's first screen, on the iPhone, the iPad and iPhone Duo, each its own runner (`test`, `test (iPad)`, `test (iPhone Duo)`): the three on one runner took over 80 minutes and were cancelled at the limit twice (#572) | ~30 min each |
 | Native Android: the build, a debug APK, then the instrumented tests on an API 35 emulator, `device (phone)` every test and `device (tablet)` (a Pixel Tablet, 1280 x 800 dp) the `@LargeScreen` ones, each its own runner; a wave's validation runs both too, a pull request neither | ~15 min |
 
@@ -380,6 +410,10 @@ through the API, the `changes` job takes:
   - when the browser tests never ran at all (the images or the plan
     failed), the whole suite runs again.
 
+  The specs job says which it did, in its log and its summary: how many
+  specs it picked of how many the commits reach, with the known reds and
+  lost shards, or that it fell back to every spec and why.
+
 `GH_TOKEN=$(gh auth token) python3 scripts/ci/validation.py show <run>`
 prints what a rerun of a run would take. Run 45089884568 gives 53 reds (by file and line),
 one lost shard, both phones, the engine, wingtip and the X-Plane leg.
@@ -394,13 +428,18 @@ the flake hunt and the issue, and with CI's usual retry:
 |---|---|---|
 | `guards` (three legs), `test-web` (three), `test-engine` (every crate), `test-python` (every suite), `test-gateway`, `test-sim`, `infra` | one runner each | 1-5 min |
 | `build-images`: every service image, built, not pushed | 1 | 2-6 min |
-| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone`, and on `webkit-ipad` the smoke set and the `ipad-*` specs (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
-| `ios`: `native-ios.yml` without `unit_only`: on the newest iPhone the build, `WingtipTests` and `CardSmokeTests`, as main's push runs them; on the newest iPad its whole suite, as the night runs it, in four legs (`test (iPad 1/4)` to `test (iPad 3/4)`, the UI classes `ios_test.sh`'s `IPAD_LEG_1` to `IPAD_LEG_3` name, and `test (iPad 4/4)`, every other test; decision 0058), on macOS | 3 | 6-10 min (iPhone), ~30-35 min (each iPad leg) |
-| `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run) | 1 | 4-6 min |
+| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone`, and on `webkit-ipad` the smoke set and the `ipad-*` specs (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images`; dealt to the shards by time, slowest first to the least loaded, from the night's seconds or else the last whole validation's (`spec_seconds.py latest`, each spec's seconds summed over its shards), and by Playwright's `--shard` where neither is there | 16 | ~13-14 min (4.5-20 by `--shard`, run 45127491141) |
+| `e2e`, the iOS audit: `e2e/ios` on every device (`IOS_AUDIT`), by project as at night (`browser_specs.py`'s `AUDIT_PROJECTS`), so a wave green here is not red the first night after its merge (the owner, 2026-11-27: "Add it") | 4 | ~15-17 min passing (some 200 tests a shard) |
+| `ios`: `native-ios.yml` without `unit_only`: on the newest iPhone the build, once for every leg (`ios_products.py`), then `WingtipTests` and `CardSmokeTests`, as main's push runs them; on the newest iPad its whole suite, as the night runs it, in four legs (`test (iPad 1/4)` to `test (iPad 3/4)`, the UI classes `ios_test.sh`'s `IPAD_LEG_1` to `IPAD_LEG_3` name, and `test (iPad 4/4)`, every other test; decision 0058), each booting its simulator while the iPhone builds and testing that build, on macOS | 5 | 8-13 min to the build, ~20 (iPhone), ~25-30 min (each iPad leg) |
+| `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run), and beside it, not after it, the emulator's tests on the phone and the tablet | 3 | 4-14 min, ~8-15 min (each device) |
 
-About 30 to 35 minutes from the push, the iPad's legs and the browser
-shards being the longest (wave 3's runs, 2026-11-22); the night's ten
-shards take half an hour. GitHub runs 20 jobs at once on
+About 25 to 30 minutes from the push, the iPad's legs the longest: the
+iPhone's build (some 8 to 13 minutes, the engine and the app) and then the
+longest leg's tests (the card rule's suite alone some 15). Before the
+build was shared and the shards dealt by time it was 33 (run
+45127491141, 2026-11-23: each iPad leg's own build 13 minutes before its
+first test, the slowest of sixteen shards 20 and the Android devices
+starting at minute 14). GitHub runs 20 jobs at once on
 a free account, so the sixteen shards and the short jobs share them.
 `CI passed` is the verdict; `budget` holds the run to the night's budgets
 and names each failure with its narrow command (`failure_summary.py`),
@@ -546,6 +585,13 @@ starts no workflow and the pull request would sit with no checks; the
 owner's token's merge commit starts CI like the owner's push. One that
 main does not merge into cleanly gets the label `needs-merge`, taken off
 once its branch is current again: merge main into it by hand.
+
+Each night and after each push to main, `tidy-branches.yml` deletes the
+`claude/` branches on GitHub whose work is on main, by
+`scripts/dev/tidy-branches.sh --github` (the Mac's rules without its
+worktrees: a branch with a commit in the last six hours or an open pull
+request stays), in one push, with a bundle of what it deleted in the
+run's artifact for 90 days.
 
 GitHub starts no pull-request workflow on a branch that conflicts with
 its base, so a conflicted pull request shows no failing check: #579 sat
@@ -734,7 +780,7 @@ agents' edit-time hook (`scripts/dev/simplicity_hook.py`, a Claude Code
 | Stock components on the web: no raw `<button>`, `<details>` or `role="alert"` outside `components/ui` | ESLint's `no-restricted-syntax` | `apps/web/eslint-suppressions.json` |
 | The web's feature layers | dependency-cruiser | none |
 | The phones' dead code; no HTTP library outside Android's `api/` (`scripts/ci/phone_lint.sh`, on a phone change) | SwiftLint, detekt | `scripts/ci/phones/` |
-| The simplicity ratchet: the audit's counts (`scripts/ci/simplicity_ratchet.py`; `--report` adds the median files a change touches, not gated) | the standard library | `scripts/ci/simplicity_baseline.json` |
+| The simplicity ratchet: the audit's counts (`scripts/ci/simplicity_ratchet.py`; `--report` adds the median files a commit touches, merges left out, not gated), and the route link's JavaScript budget (`e2e/route-load.spec.ts`), the wave's start figure: never raised, lowered only on `claude/integration` at the wave's end | the standard library | `scripts/ci/simplicity_baseline.json` |
 
 ## API compatibility
 

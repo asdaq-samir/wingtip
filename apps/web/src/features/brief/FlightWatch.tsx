@@ -2,16 +2,16 @@ import { useMemo, useState } from "react";
 import { useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { Switch } from "../../components/ui/switch";
+import { ListGroup, ListRow } from "../../components/GroupedList";
 import { api, describeError } from "../../lib/api/client";
 import type { FlightWatch as Watch, SaveFlightRequest } from "../../lib/api/types";
 import { flightWatch } from "../../lib/api/flightWatch";
 import { useBriefPlan, type FlightToSave } from "../../lib/briefPlan";
 import { clockTime } from "../../lib/format";
-import { useMinuteClock } from "../../lib/useMinuteClock";
 import { pilotQuery } from "../../lib/queryClient";
+import { sameFields } from "../../lib/steady";
 import { TEXT } from "../../lib/text";
 import SourceChips from "../../components/SourceChips";
-import { DepartPicker } from "../navlog/lazy";
 import { planOf, SAVE_FLIGHT, useSaveRequest } from "./saveFlightRequest";
 import { FieldError } from "../../components/ui/field";
 
@@ -35,10 +35,14 @@ const watchQuery = (flightId: number | null) => ({
 });
 
 /**
- * "Watch this flight": a switch (iOS's own 51 by 31 to a finger) with the
- * departure it is watched for beside it -- the plan's own time, or two
- * hours from now -- and under it what changed since, in words with the
- * reports that changed (SourceChips). The watch is on the saved flight,
+ * "Watch This Flight": a plain grouped row with a switch (iOS's own 51 by
+ * 31 to a finger), for the plan's own departure, or two hours from now
+ * where it has none -- its own time picker gone, the plan's time the one
+ * there is, and the row's line saying the switch saves the flight (the
+ * owner, 2026-11-25: "it should be very clear what's happening with the
+ * tap") -- and under it what changed since, in words with the reports
+ * that changed (SourceChips). The plan's time moved, the plan is another
+ * flight, with its own watch or none. The watch is on the saved flight,
  * so switching it on saves the plan first where it is not yet, through
  * Save's own mutation, and Save in the route's ••• menu then says Saved;
  * a plan saved earlier is found in the pilot's flights by its route and
@@ -51,13 +55,9 @@ export default function FlightWatch() {
   const request = useSaveRequest(plan.flight ?? NOTHING);
   const planKey = useMemo(() => request && planOf(request), [request]);
   // When it leaves: the plan's departure, else two hours from when the
-  // Brief opened (read once: the clock is not read in a render), until
-  // the pilot picks one here.
-  const [picked, setPicked] = useState<string | null>(null);
+  // Brief opened (read once: the clock is not read in a render).
   const [twoHoursOut] = useState(() => new Date(Date.now() + DEFAULT_AHEAD_MS).toISOString());
-  const departAt = picked ?? (plan.depart || twoHoursOut);
-  // The minute, for the earliest the picker allows: not before now.
-  const minute = useMinuteClock();
+  const departAt = plan.depart || twoHoursOut;
   // The flight saved this session for this plan (Save's own mutations),
   // or earlier, in the pilot's flights.
   const filed = useMutationState({
@@ -71,10 +71,11 @@ export default function FlightWatch() {
     staleTime: 60_000,
     meta: { silent: true },
   });
-  const sameStops = (a: string[], b: (string | null)[] | null | undefined) => {
-    const stops = (b ?? []).filter((s): s is string => s !== null);
-    return a.length === stops.length && a.every((s, i) => s === stops[i]);
-  };
+  const sameStops = (a: string[], b: (string | null)[] | null | undefined) =>
+    sameFields(
+      a,
+      (b ?? []).filter((s) => s !== null),
+    );
   const flightId: number | null =
     (planKey ? filed.find((f) => f.plan === planKey)?.id : undefined) ??
     (request
@@ -107,36 +108,23 @@ export default function FlightWatch() {
   const on = !!watch.data;
   const busy = start.isPending || stop.isPending;
   const problem = start.error ?? stop.error;
-  const setDepart = (iso: string) => {
-    setPicked(iso || null);
-    // Moved while watched: the watch moved with it.
-    if (on && iso) start.mutate(iso);
-  };
   return (
     <section className="flex flex-col gap-2" data-testid="flight-watch" aria-label="Flight watch">
-      {/* The picker's 44-point area reaches 10 past it and the switch's 12
-          (their ::after insets): gap-6 keeps the two apart. */}
-      <div className="flex items-center gap-6 rounded-(--radius-card) bg-card px-3.5 py-2.5 shadow-hairline">
-        <label htmlFor="flight-watch-switch" className={cn("min-w-0 flex-1 font-medium", TEXT.row)}>
-          Watch this flight
-        </label>
-        <DepartPicker
-          value={departAt}
-          onChange={setDepart}
-          look="time"
-          label="Watched departure"
-          testId="flight-watch-depart"
-          leavesNow={false}
-          earliest={minute}
-        />
-        <Switch
+      <ListGroup>
+        <ListRow
           id="flight-watch-switch"
-          checked={on}
-          disabled={!request || busy}
-          data-testid="flight-watch-switch"
-          onCheckedChange={(next) => (next ? start.mutate(departAt) : stop.mutate())}
-        />
-      </div>
+          title="Watch This Flight"
+          description={`Saves the flight and tells you if anything changes before it leaves at ${clockTime(new Date(departAt))}`}
+        >
+          <Switch
+            id="flight-watch-switch"
+            checked={on}
+            disabled={!request || busy}
+            data-testid="flight-watch-switch"
+            onCheckedChange={(next) => (next ? start.mutate(departAt) : stop.mutate())}
+          />
+        </ListRow>
+      </ListGroup>
       {problem && (
         <FieldError className={cn("px-1 text-destructive-ink", TEXT.note)} data-testid="flight-watch-problem">
           {describeError(problem, "The watch could not be set.")}

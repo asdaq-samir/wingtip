@@ -3,6 +3,7 @@ import {
   useDeferredValue,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ComponentType,
@@ -24,8 +25,8 @@ import { useFocusKept } from "./useFocusKept";
  *  of the redesign ("I like C concept"): Preflight -- the go / no-go and
  *  what is done at home -- then Depart, En route (the nav log, its profile
  *  and the weather on the way) and Arrive, each only what that part of the
- *  flight needs, where they were the Nav Log, the Brief, the Weather and
- *  Performance, a pilot hunting across four for a field's runway. */
+ *  flight needs, so a pilot finds a field's runway, its weather and its
+ *  figures together, not across four tabs by kind. */
 const TABS: { value: PanelTab; label: string }[] = [
   { value: "preflight", label: "Preflight" },
   { value: "depart", label: "Depart" },
@@ -64,8 +65,8 @@ export default function PanelTabs({
   printing,
   marks,
   onLegs,
-  route,
   overview: Overview,
+  routeKey,
 }: {
   /** What shows before any page, its rows each opening one (`open`), at
    *  a section of it where a row names one: the Brief's glance
@@ -85,19 +86,29 @@ export default function PanelTabs({
   /** The legs asked for (LEGS): FPL's nav log, under which the fuel is
    *  checked, in place of the Brief. */
   onLegs?: () => void;
-  /** Which route the contents are of: drawn just after the frame that
-   *  shows a new one (below). */
-  route: string;
+  /** The route the pages are of (usePlanRoute's routeKey): while the pages
+   *  drawn are another route's, they are dimmed as stale. */
+  routeKey?: string;
 }) {
   // The tabs' contents drawn just after the frame that shows a new route,
   // not in it: the route's box, its figures and the map first, the nav
   // log's rows and the briefing's sections a moment later, in the
-  // background (useDeferredValue's first value) -- at half the panel ends
-  // at the tabs, and they are out of sight anyway. In the same frame they
-  // held Fly Here's route back 2.5 to 3.6 s at a phone's speed (measured
-  // 2026-10-08). On paper at once.
-  const drawnFor = useDeferredValue(route, "");
-  const drawn = printing || drawnFor === route;
+  // background -- at half the panel ends at the tabs, and they are out of
+  // sight anyway. In the same frame they held Fly Here's route back 2.5
+  // to 3.6 s at a phone's speed (measured 2026-10-08). Nothing at first
+  // (useDeferredValue's first value); after that the last contents drawn
+  // stay while the next are drawn, so the pages keep their places. On
+  // paper at once.
+  const keyed = useMemo(() => ({ contents, routeKey }), [contents, routeKey]);
+  const deferred = useDeferredValue<typeof keyed | null>(keyed, null);
+  const shown = printing ? contents : (deferred?.contents ?? null);
+  // Another route's pages while this route's are drawn: dimmed, marked busy
+  // and inert, never read or tapped as this route's weather and NOTAMs (2.5
+  // to 3.6 s of them on a phone). Only when the
+  // route itself changed: a new figure or report on the same route redraws
+  // its pages without a dim. The dim waits a moment (index.css's tab-stale),
+  // so a draw that lands within a frame or two never shows it.
+  const stale = !printing && deferred !== null && deferred.routeKey !== routeKey;
   // Preflight up to begin with -- whether to go is what is read first --
   // or the overview where there is one (null).
   const [tab, setTab] = useState<PanelTab | null>(Overview ? null : "preflight");
@@ -233,8 +244,7 @@ export default function PanelTabs({
           fixed size (it does not grow with the text, as iOS's tab bar's
           does not), so the five share the line evenly -- a 24-point glyph
           over a note's 13, at the pilot's ask: at 20 over 11 the way into
-          the panel was its smallest type, under the content's 17 and 20
-          (the proportion audit, 2026-10-07). A
+          the panel was its smallest type, under the content's 17 and 20. A
           tab whose findings (lib/verdict) have something to fix carries a
           red mark, something to look at an amber one, as its sections'
           titles do. */}
@@ -246,7 +256,7 @@ export default function PanelTabs({
           <TabsList
             data-testid="panel-tabs"
             // The stock 36 at every pointer, never grown to a finger's 44
-            // (CLAUDE.md: controls never grow; the audit's WEB-7): each
+            // (CLAUDE.md: controls never grow): each
             // segment's 44 a ::before (its ::after the stock indicator),
             // 7 over and under its 30, the segments' areas meeting.
             className="mx-4 my-2 w-auto shrink-0 group-data-[orientation=horizontal]/tabs:h-9 print:hidden"
@@ -284,15 +294,14 @@ export default function PanelTabs({
           data-testid="brief-scroller"
         >
           {/* The notice over every page, but under the verdict on the
-              overview, which says first whether to go (decision 0012; the
-              UI audit's C6, 2026-11-17). */}
+              overview, which says first whether to go (decision 0012). */}
           {tab === null && !printing && Overview ? <Overview onOpen={openPage} notice={notice} /> : notice}
           <SectionsOpen.Provider value>
             <GoToTab.Provider value={goTo}>
               {/* Every page's sections one under another, each under its
                 title, not pills to pick one by, at the owner's ask ("Make
                 the subtabs into sections Legs, Profile"). */}
-              {drawn &&
+              {shown &&
                 (printing ? PRINTED : TABS.map((t) => t.value).filter((t) => opened.includes(t))).map((t) => {
                   return (
                     <TabsContent
@@ -307,9 +316,13 @@ export default function PanelTabs({
                       hidden={false}
                       data-testid={`panel-${t}`}
                       data-tab={t}
-                      className={cn("mt-0", !printing && "tab-page")}
+                      data-stale={stale || undefined}
+                      aria-busy={stale || undefined}
+                      // Only while stale: a page not up is Base UI's to make inert.
+                      {...(stale ? { inert: true } : {})}
+                      className={cn("mt-0", !printing && "tab-page tab-stale")}
                     >
-                      {contents[t]}
+                      {shown[t]}
                     </TabsContent>
                   );
                 })}

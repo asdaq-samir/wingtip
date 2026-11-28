@@ -24,14 +24,11 @@ import xml.etree.ElementTree as ET
 
 from . import live_reports
 from .engine import ask as engine
+from . import xml_names
 
 KIND = "datis"
 #: Which broadcast it is, from its first words ("MSP ARR INFO I").
 _WHICH = re.compile(r"\b(ARR|DEP)\s+INFO\b")
-
-
-def _local(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
 
 
 def broadcast(xml: str) -> dict | None:
@@ -42,7 +39,7 @@ def broadcast(xml: str) -> dict | None:
         root = ET.fromstring(xml)
     except ET.ParseError:
         return None
-    fields = {_local(e.tag): (e.text or "").strip() for e in root.iter()}
+    fields = {xml_names.local(e.tag): (e.text or "").strip() for e in root.iter()}
     airport, text = fields.get("airportID", "").upper(), " ".join(fields.get("dataBody", "").split())
     if not airport or not text:
         return None

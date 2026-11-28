@@ -8,7 +8,7 @@
  * zones are the browser's, which the engine has no database of.
  */
 import type { Leg } from "../../lib/api/types";
-import { clockTime, utcFigures } from "../../lib/format";
+import { clockTime, formatIn, utcFigures } from "../../lib/format";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 
 /** When the flight is `alongNm` along its route: the departure plus the
@@ -42,22 +42,15 @@ export type SuaWhen = EngineAnswer<"gonogo_sua_when">;
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 /** A clock's formatter for each zone, made once: Intl's are slow to make. */
-const clocks = new Map<string, Intl.DateTimeFormat>();
+const CLOCK = { weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" } as const;
 
 /** The day of the week (0 Sunday) and the minute of the day of `pass` in
  *  `zone` -- "UTC", or an IANA zone the browser's own Intl reads, daylight
  *  saving time and all -- or null for a zone it does not know. */
 function clockIn(pass: Date, zone: string): { day: number; minute: number } | null {
   if (zone === "UTC") return { day: pass.getUTCDay(), minute: pass.getUTCHours() * 60 + pass.getUTCMinutes() };
-  let clock = clocks.get(zone);
-  if (!clock) {
-    try {
-      clock = new Intl.DateTimeFormat("en-US", { timeZone: zone, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-    } catch {
-      return null;
-    }
-    clocks.set(zone, clock);
-  }
+  const clock = formatIn(zone, CLOCK);
+  if (!clock) return null;
   const parts = clock.formatToParts(pass);
   const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   return { day: DAYS.indexOf(part("weekday").toUpperCase()), minute: Number(part("hour")) * 60 + Number(part("minute")) };

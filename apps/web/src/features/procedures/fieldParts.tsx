@@ -1,11 +1,24 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import type { Runway } from "../../lib/api/types";
 import { sameField } from "../../lib/procedures";
-import { groundMinAt, type Landing, type NavLogRow, type ProcedureAirport, type ProcedureKind, type RunwayEnd } from "../plan";
+import {
+  groundMinAt,
+  runwayNumber,
+  type Landing,
+  type NavLogRow,
+  type ProcedureAirport,
+  type ProcedureKind,
+  type RunwayEnd,
+} from "../plan";
 import { DepartPicker } from "../navlog/lazy";
-import ProcedureMenu from "./ProcedureMenu";
+import type ProcedureMenu from "./ProcedureMenu";
+import { ProcedureMenuChunk } from "./procedureMenuChunk";
+import { ProcedureDropdown } from "./ProcedureDropdown";
 import type { TriggerLook } from "./ProcedureTrigger";
 import { PatternChips } from "./PatternChips";
+import { RunwayPill } from "./RunwayPill";
+import { endChoice, runwayEnds } from "./runwayChoice";
+import { WindLine } from "./FieldHead";
 import { patternNote } from "./procedureWords";
 import { endFit } from "./runwayFit";
 import { DAY_MIN, type ProceduresRouteModel } from "./useProceduresRoute";
@@ -19,9 +32,15 @@ type Kind = ProcedureKind;
 export type FieldPart = {
   role: "Arrive" | "Depart";
   kinds: Kind[];
-  chips: (trailing: ReactNode) => ReactNode;
+  /** Its runway's chips, with what follows them; or, on FPL's Landing and
+   *  Takeoff (`pill`), its runway's slim pill and its menu (RunwayPill). */
+  chips: (trailing: ReactNode, pill?: boolean) => ReactNode;
   leaves: ReactNode;
   line: { key: string; chosen: string | null };
+  /** A runway end of the field by its number ("23") as a choice
+   *  (endChoice): how it fits a landing today, for a straight-in
+   *  approach's own runway, said where it is not offered. */
+  choiceOf?: (id: string) => ReturnType<typeof endChoice> | null;
 };
 
 /** A kind's pull-down at a field (ProcedureMenu): the one in the route said
@@ -33,25 +52,38 @@ export function kindMenu(vm: ProceduresRouteModel, a: ProcedureAirport, kind: Ki
   const i = airports.findIndex((f) => sameField(f.ident, a.ident));
   const wind = windOf(a.ident);
   const placed = inRoute.find((p) => sameField(p.ident, a.ident) && p.kind === kind);
+  const props: Parameters<typeof ProcedureMenu>[0] = {
+    ident: a.ident,
+    kind,
+    list: lists[i]?.data,
+    query: lists[i],
+    look,
+    face,
+    picked: pickOf(a.ident, kind),
+    label: placed?.label ?? null,
+    fixes: placed?.fixes?.map((f) => f.ident),
+    runway: chosenAt(a.ident),
+    windward: wind && !wind.calm ? wind.ident : null,
+    onOpen: () => ask(a.ident),
+    onPick: (next) => pick(a.ident, kind, next),
+    onAll: () => onAt({ ident: a.ident, kind }),
+    onLearn: kind === "approach" ? () => setLesson(pickOf(a.ident, kind)) : undefined,
+    onDeactivate: kind === "approach" && placed && !placed.loaded ? () => vm.onApproach(a.ident, placed.id, { loaded: true }) : undefined,
+  };
+  // FPL's Landing and Takeoff pills pick from the stock dropdown, as their
+  // runway's does (ProcedureDropdown); the list read in flight keeps the
+  // sheet of pages.
+  if (look !== "slim" && look !== "wide")
+    return (
+      // Nothing in its place for the moment its chunk takes, if it is not in yet (procedureMenuChunk).
+      <Suspense key={kind} fallback={null}>
+        <ProcedureMenuChunk {...props} />
+      </Suspense>
+    );
+  const reported = vm.reportedOf(a.ident);
+  const wordsOfWind = kind === "approach" ? windWords(reported) : null;
   return (
-    <ProcedureMenu
-      key={kind}
-      ident={a.ident}
-      kind={kind}
-      list={lists[i]?.data}
-      query={lists[i]}
-      look={look}
-      face={face}
-      picked={pickOf(a.ident, kind)}
-      label={placed?.label ?? null}
-      fixes={placed?.fixes?.map((f) => f.ident)}
-      runway={chosenAt(a.ident)}
-      windward={wind && !wind.calm ? wind.ident : null}
-      onOpen={() => ask(a.ident)}
-      onPick={(next) => pick(a.ident, kind, next)}
-      onAll={() => onAt({ ident: a.ident, kind })}
-      onLearn={kind === "approach" ? () => setLesson(pickOf(a.ident, kind)) : undefined}
-    />
+    <ProcedureDropdown key={kind} {...props} windHead={wordsOfWind && <WindLine direct={false} wind={wordsOfWind} reported={reported} />} />
   );
 }
 
@@ -79,12 +111,16 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
   const { airports, cards, fit, ground, startMs, windOf, chosenAt, takeoffAt, hasKind, landingOf, landedAt } = vm;
   const { onPick, onTakeoff, onGround } = vm;
   const wind = windOf(a.ident);
+  const reported = vm.reportedOf(a.ident);
+  const wordsOfWind = windWords(reported);
   const has = (kind: Kind) => hasKind(a.ident, kind) || kindPicked(vm, a, kind);
   // Each runway end's fit today (runwayFit): its crosswind against the
   // airplane's demonstrated, and its length against the distance needed,
   // marked on its chip, at the owner's ask.
   const card = cards[airports.findIndex((f) => sameField(f.ident, a.ident))]?.data;
-  const reportedWind = card?.metar ?? card?.nearby_metar?.metar ?? null;
+  // The wind the runway is picked into, the forecast's where there is one
+  // (useFieldWinds' fitWindOf), not the METAR's alone.
+  const fitWind = vm.fitWindOf(a.ident);
   const fitOf = (kind: "takeoff" | "landing") => (runway: Runway, end: RunwayEnd) =>
     fit
       ? endFit({
@@ -92,11 +128,7 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
           runway,
           end,
           kind,
-          wind: reportedWind && {
-            dirTrueDeg: reportedWind.wind_dir_true_deg,
-            speedKt: reportedWind.wind_speed_kt,
-            gustKt: reportedWind.wind_gust_kt,
-          },
+          wind: fitWind,
           elevationFt: a.elevationFt ?? null,
           altimeterInHg: card?.metar?.altimeter_in_hg,
           tempC: card?.metar?.temp_c,
@@ -112,19 +144,32 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
       pick: (end: string) => void,
       label?: string,
     ) =>
-    (trailing: ReactNode) => (
-      <PatternChips
-        airport={a}
-        wind={wind}
-        chosen={chosen}
-        landing={landing}
-        label={label}
-        onPick={pick}
-        fitOf={fitOf(kind)}
-        note={note}
-        trailing={trailing}
-      />
-    );
+    (trailing: ReactNode, pill?: boolean) =>
+      pill ? (
+        <RunwayPill
+          airport={a}
+          wind={wind}
+          chosen={chosen}
+          landing={landing}
+          fitOf={fitOf(kind)}
+          label={label ?? `${a.ident} runway`}
+          note={note}
+          onPick={pick}
+          windHead={wordsOfWind && <WindLine direct={false} wind={wordsOfWind} reported={reported} />}
+        />
+      ) : (
+        <PatternChips
+          airport={a}
+          wind={wind}
+          chosen={chosen}
+          landing={landing}
+          label={label}
+          onPick={pick}
+          fitOf={fitOf(kind)}
+          note={note}
+          trailing={trailing}
+        />
+      );
   const landingChips = chips(
     "landing",
     chosenAt(a.ident),
@@ -150,6 +195,10 @@ export function fieldParts(vm: ProceduresRouteModel, a: ProcedureAirport, row: N
     chips: landingChips,
     leaves: null,
     line: landingLine,
+    choiceOf: (id) => {
+      const at = runwayEnds(a).find((e) => runwayNumber(e.end.ident) === id);
+      return at ? endChoice(at.runway, at.end, wind && !wind.calm ? wind.ident : null, fitOf("landing")) : null;
+    },
   };
   if (a.role === "Departure") {
     // A round trip's departure is left from its own runway (`takeoff`),

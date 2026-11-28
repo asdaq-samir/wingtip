@@ -1,22 +1,27 @@
-import type { ReactNode } from "react";
+import { Fragment, useId, type ReactNode } from "react";
+import { PlaneLanding, PlaneTakeoff } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
+import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
+import { approachRunway } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
-import type { NavLogRow, ProcedureAirport } from "../plan";
+import { landingRunway, type NavLogRow, type ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
-import { FuelSet } from "./FuelSet";
 import { WindLine } from "./FieldHead";
 import { kindMenu, windWords } from "./fieldParts";
-import { PartTray } from "./RunwayTray";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
 import { TimelineProcedureRows } from "./TimelineProcedureRows";
-import { LoadedApproach, MissedApproach } from "./TimelineApproachParts";
+import { MissedApproach } from "./TimelineApproachParts";
+import { approachAt } from "./approachState";
 import { lineModel, type TimelinePoint } from "./lineModel";
 import { LineIdent, LineNotes } from "./TimelineMark";
+import { PhaseCards, PhaseMark, PhaseSection } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
+
+/** No procedure's rows out: one list, not a new one each render. */
+const NONE: readonly never[] = [];
 
 /**
  * One line of FPL's timeline (TimelineRoute): its mark (its menu), the
@@ -41,6 +46,7 @@ export function TimelineLine({
   last,
   open,
   onOpen,
+  trailing,
 }: {
   vm: ProceduresRouteModel;
   point: TimelinePoint;
@@ -54,38 +60,176 @@ export function TimelineLine({
   last: boolean;
   open: boolean;
   onOpen: (open: boolean) => void;
+  /** At the line's end, over its tap: half a route's box's toggle, inside
+   *  the line's own right inset (TIMELINE_END), as every row's last
+   *  control is (TimelineAction). */
+  trailing?: ReactNode;
 }) {
-  const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn, onPast } = lineModel(vm, point, row, field, last);
-  // Each part's tray, a stop's takeoff a region of its own as the list
-  // read in flight names it ("KMSN · Depart"); a kind not picked as
-  // "+ APCH"; the destination's hold last, once it has one.
-  const chips = parts.map(({ part, add, hold }, i) => {
-    const tray = (
-      <PartTray
-        key={part.role}
-        vm={vm}
-        a={field!}
-        part={part}
-        trailing={[
-          ...add.map((k) => kindMenu(vm, field!, k, "add")),
-          ...(hold
-            ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
-            : []),
-        ]}
-      />
+  const { opens, refused, tank, reported, parts, before, after } = lineModel(vm, point, row, field);
+  // The field the heading of its group (the owner, 2026-11-24: "that
+  // airport should be the heading and than it should have the folding
+  // runways and folding procedures inside, which should connect with
+  // magenta line when unfolded"): under its line, while the line is open,
+  // its runways, then its arrival, its approach, the approach's missed
+  // approach and its departure, each a section that folds (FoldSection),
+  // the route's magenta running down through them. Out of sight with the
+  // line shut (the owner, 2026-11-23: "Keep the pill hidden like runway"),
+  // so at half a field's line is its ident alone. A line that does not
+  // open, in flight or a dry run where the list is read, not edited, shows
+  // its procedures, a suspended missed approach's Unsuspend at a glance.
+  const out = opens ? open : true;
+  const beforeOut = out ? before : NONE;
+  const afterOut = out ? after : NONE;
+  const approach = field && !point.problem ? approachAt(vm, field) : undefined;
+  const missedHere = out && !!approach && !approach.loaded && (approach.missedFixes?.length ?? 0) > 0;
+  // A straight-in approach picked lands on its own runway, so the landing's
+  // runway is not offered beside it; a circling-only one ("VOR-A") lands on
+  // any, and keeps it (the owner, 2026-11-24: "Changing runway would
+  // conflict with the selected approach. So runway section can hide unless
+  // a circling approach?"). Its procedures' pills stay, the approach's
+  // among them, so the part always shows (the owner, 2026-11-25).
+  const straightIn = !!approach && approachRunway(approach.name ?? "") !== null;
+  // Only "Direct to" under the ident: the field's wind is at the head of
+  // its runway's menu (the owner's option 1, 2026-11-25).
+  const windShown = !!field && !point.problem && end.direct;
+  // Two blocks under the field's line, Landing and Takeoff, each its row
+  // with its runway's pill beside its name, a stop both, the destination
+  // Landing, the departure Takeoff (the owner, 2026-11-24: "Maybe each stop
+  // should have two sections, Landing and Takeoff. No need for runways in
+  // the section title because that can be seen from the pill"): Landing's
+  // arrival, approach and missed approach under its row, Takeoff's
+  // departure under its.
+  const editing = opens && open;
+  // What the line's toggle opens, its Landing and Takeoff: Base UI's
+  // trigger points aria-controls at a CollapsibleContent this line does
+  // not have, an id in no element (axe's aria-valid-attr-value, critical).
+  const partsId = useId();
+  const partOf = (role: "Arrive" | "Depart") => (editing ? parts.find((p) => p.part.role === role) : undefined);
+  const landingPart = partOf("Arrive");
+  const takeoffPart = partOf("Depart");
+  const landingOut = editing && (!!landingPart || beforeOut.length > 0 || missedHere);
+  const takeoffOut = editing && (!!takeoffPart || afterOut.length > 0);
+  // The route's own magenta goes on past the field's rows to the next line
+  // where it is not the last, or ends at the last one's last row.
+  const sections = beforeOut.length + afterOut.length + (missedHere ? 1 : 0);
+  const onPast = !last || sections > 0 || (takeoffOut && !last);
+  const grouped = sections > 0 || landingOut || takeoffOut;
+  // A phase's pills on its line after its title, each the route box's slim
+  // pill opening its menu (the owner, 2026-11-25: "landing or takeoff
+  // should have pills in front of the title. Old pills style should be
+  // replaced with the slimmer route box pill style ... we don't need the
+  // folding runways"): its runway's (RunwayPill), then "+ ARR", "+ APCH"
+  // or "+ DEP" for a kind not yet picked -- one picked is a pill as wide as
+  // the card under the line (TimelineProcedureRows) -- and the
+  // destination's hold. A straight-in approach's own runway in the pill's
+  // shape, said, not offered (the owner's review, 2026-11-24).
+  // Said alone only where it may land on no other: a plate with circling
+  // minimums lets it circle to another (AIM 5-4-20; the engine's
+  // landing_runway), and the runway's menu stays, the others it may not
+  // land on greyed in it.
+  const circles = landingRunway(vm.landingOf(point.ident), null, false).othersAllowed;
+  const ownRunway = straightIn && !circles ? approachRunway(approach?.name ?? "") : null;
+  const ownChoice = ownRunway ? (landingPart?.part.choiceOf?.(ownRunway) ?? null) : null;
+  const phasePills = (role: "Arrive" | "Depart") => {
+    const linePart = role === "Arrive" ? landingPart : takeoffPart;
+    return (
+      <>
+        {role === "Arrive" && ownRunway ? (
+          // Words, not a pill: it is no control, the approach fixing it
+          // (the owner, 2026-11-25: "Fix them", of "RWY 23 looks tappable
+          // but isn't"); with how it fits a landing today, a tailwind in
+          // amber (the engine's runway_end_fit; AIM 4-3-6).
+          <span
+            className={cn("flex items-center gap-1.5 py-0.5", TEXT.pill)}
+            data-testid="landing-runway"
+            role="img"
+            aria-label={`${ownChoice?.words ?? `Runway ${ownRunway}`}, straight in`}
+          >
+            RWY <span className="font-semibold">{ownRunway}</span>
+            {ownChoice?.note && (
+              <span
+                className={cn(
+                  TEXT.note,
+                  ownChoice.fit === "short" ? "text-destructive" : ownChoice.fit ? "text-caution" : "text-muted-foreground",
+                )}
+              >
+                {ownChoice.note}
+              </span>
+            )}
+          </span>
+        ) : (
+          // "RWY" before the runway where its line has room, measured
+          // (PhaseSection's useLineRoom; the owner, 2026-11-26: "When there
+          // is space, add the RWY").
+          linePart?.part.chips(null, true)
+        )}
+        {(linePart?.add ?? []).map((k) => (
+          <Fragment key={k}>{kindMenu(vm, field!, k, "slim")}</Fragment>
+        ))}
+        {linePart?.hold && <HoldChip ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />}
+      </>
     );
-    return i === 0 ? (
-      tray
-    ) : (
-      // The chips row's width and no wider, as the first part's field-part
-      // is: a flex item of its own, a stop's Depart line took its runways'
-      // whole width, KMSN's six ran 126 past a phone's 390 and its 32 was
-      // out of reach under the summary's clip (stops.spec).
-      <section key={part.role} aria-label={`${point.ident} · ${part.role}`} className="w-full min-w-0">
-        {tray}
-      </section>
-    );
-  });
+  };
+  // Landing's procedures and missed approach, Takeoff's departure, each
+  // a pill as wide as the card that folds its fixes (FoldSection's pill).
+  // In flight or a dry run, where the list is read, the procedures alone.
+  const landingRows = (
+    <>
+      {beforeOut.map((k, i) => (
+        <TimelineProcedureRows
+          key={k}
+          vm={vm}
+          field={field!}
+          kind={k}
+          fixTime={point.fixTime}
+          stop={last && !missedHere && afterOut.length === 0 && i === beforeOut.length - 1}
+        />
+      ))}
+      {missedHere && <MissedApproach vm={vm} field={field!} stop={last && afterOut.length === 0} />}
+    </>
+  );
+  const takeoffRows = (
+    <>
+      {afterOut.map((k, i) => (
+        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} fixTime={point.fixTime} stop={last && i === afterOut.length - 1} />
+      ))}
+    </>
+  );
+  const landingFlown = beforeOut.length > 0 || missedHere;
+  const landing = landingOut ? (
+    <PhaseSection
+      mark={<PhaseMark icon={<PlaneLanding />} />}
+      // "Land", not "Landing", so its pills keep its line (the owner,
+      // 2026-11-25), as the runway tray's head read "Land RWY"; a reader
+      // still hears "landing" (its label).
+      title="Land"
+      pills={phasePills("Arrive")}
+      thread={landingFlown || takeoffOut || !last ? "solid" : "none"}
+      testId="field-landing"
+      label={`${point.ident} landing`}
+      phase="Arrive"
+    >
+      {landingRows}
+    </PhaseSection>
+  ) : (
+    landingRows
+  );
+  const takeoff = takeoffOut ? (
+    <PhaseSection
+      mark={<PhaseMark icon={<PlaneTakeoff />} />}
+      title="Takeoff"
+      pills={phasePills("Depart")}
+      time={takeoffPart?.part.leaves || undefined}
+      thread={afterOut.length > 0 || !last ? "solid" : "none"}
+      testId="field-takeoff"
+      label={`${point.ident} takeoff`}
+      phase="Depart"
+    >
+      {takeoffRows}
+    </PhaseSection>
+  ) : (
+    takeoffRows
+  );
   const line = (
     <Collapsible
       open={opens && open}
@@ -107,9 +251,9 @@ export function TimelineLine({
           under it into the next line, centred under the marks. */}
       <span className="relative flex w-8 shrink-0 justify-center">
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
-        {(onPast || missedOn) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
+        {onPast && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
-      <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || before.length > 0) && "border-t border-border")}>
+      <div className={cn("min-w-0 flex-1", TIMELINE_END, !first && "border-t border-border")}>
         {/* Wrapping where the ident, its fuel and its time do not fit on one
             line, the time going under them at the right: at the owner's
             19.65 px on a 375-point phone KDEN's ident was cut to "KD…" by
@@ -117,6 +261,7 @@ export function TimelineLine({
         <div className="relative flex min-h-11 min-w-0 flex-wrap items-center gap-x-2 py-0.5">
           {opens && (
             <CollapsibleTrigger
+              aria-controls={editing ? partsId : undefined}
               render={
                 <Button
                   variant="ghost"
@@ -124,61 +269,59 @@ export function TimelineLine({
                   type="button"
                   data-testid="timeline-toggle"
                   aria-label={`${point.ident}: runways and procedures`}
-                  // Greyed under a finger as iOS's rows are, under the line's words
-                  // (the grouped box's audit, 2026-11-20).
-                  className="absolute inset-0 rounded-lg outline-none hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent pointer-coarse:active:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                  // Greyed under a finger as iOS's rows are, under the line's words,
+                  // and under a mouse's
+                  // press, lighter as it points, as every other row answers a
+                  // pointer.
+                  className="absolute inset-0 rounded-lg outline-none hover:bg-muted/50 aria-expanded:bg-transparent dark:hover:bg-muted/50 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
                 />
               }
             />
           )}
-          <div className="flex min-w-0 shrink flex-col">
-            <LineIdent point={point} change={end.change} onInfo={() => vm.onInfo(point.ident)} fuelSet={!!fuelSet} />
+          {/* As wide as its name, the fuel right after it (the owner,
+              2026-11-25: "Fuel tanks move to the left next to airport
+              ids"), where it was four letters wide at least so the fuel and
+              the wind, since gone from the rows, lined up. */}
+          <div className={cn("flex shrink flex-col", TEXT.row)}>
+            <LineIdent point={point} change={end.change} onInfo={() => vm.onInfo(point.ident)} />
           </div>
           {/* The fuel right after the ident, the time at the right (the
               owner, 2026-11-17: "Fuel should go right after airport"; kept
               as the gauge, 2026-11-20: "I like the previous fuel tanks"). */}
-          {/* Tapped to set the fuel leaving a field (FuelSet), where the
-              list edits the route: the departure's on board, a stop's after
-              fuelling; the destination's and a waypoint's read only. */}
-          {fuelSet && tank ? (
-            <FuelSet
-              tank={tank}
-              ident={fuelSet.ident}
-              stop={fuelSet.stop}
-              tone={tank.low ? "low" : undefined}
-              onSet={(gallons) => vm.onTanks?.(fuelSet.ident, gallons)}
-            />
-          ) : (
-            // As far from the ident as a gauge that is a control (FuelSet's
-            // 18), so every line's gauge stands in one place.
-            tank && (
-              <span className="ml-2.5 flex shrink-0">
+          {/* A gauge to read, no control (the owner, 2026-11-25: "Tapping
+              fuel tanks should not do anything"), where it set the fuel
+              leaving the departure and a stop. */}
+          {/* The fuel over the field's wind, as the time over the altitude
+              at the right (the owner, 2026-11-24: "Fuel and wind can be over
+              each other like the eta and alt"). */}
+          <span className="flex shrink-0 flex-col items-start">
+            {/* 12 from the ident, the row's gap and its ml-1 (the owner,
+                2026-11-25: "Can those fuel tanks be moved a bit to the
+                left"). */}
+            {tank && (
+              <span className="ml-1 flex shrink-0">
                 <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
               </span>
-            )
-          )}
+            )}
+            {windShown && <WindLine className="ml-2.5" direct={end.direct} wind={windWords(reported)} reported={reported} />}
+          </span>
           <span className="flex-1" />
-          <span className={cn("relative z-10 ml-auto shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
-            {point.time}
+          {/* Its time over its altitude, as a procedure's fixes have theirs
+              (the owner, 2026-11-24: "Under now just put altitude instead of
+              time to match others"): a field's elevation, a waypoint's
+              altitude flown, the pilot's own where set. */}
+          <span className="relative z-10 ml-auto flex shrink-0 items-center" data-testid="timeline-time">
+            {/* Its time over its elevation, or the altitude set or flown to
+                it (the owner, 2026-11-25: "Sure do it", the elevation back
+                under each stop's time). */}
+            {end.figures}
           </span>
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove
               the chevrons"): the line itself is the tap that opens it. */}
           {end.grip}
+          {trailing && <span className="relative z-10 flex h-11 shrink-0 items-center">{trailing}</span>}
         </div>
         <LineNotes point={point} refused={refused} />
-        {opens && (
-          <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
-            {/* The elevation under the time (the owner, 2026-11-17: "the
-                elevation should be under the time"). */}
-            <div className="flex min-h-6 items-center justify-between gap-2">
-              <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
-              {end.elevation}
-            </div>
-            <div className="flex flex-wrap items-center gap-2" data-testid="timeline-chips">
-              {chips}
-            </div>
-          </CollapsibleContent>
-        )}
       </div>
     </Collapsible>
   );
@@ -186,16 +329,26 @@ export function TimelineLine({
   // read in flight names its step ("KDLH · Arrive"), so VoiceOver goes
   // from field to field.
   return (
-    <div role={parts[0] ? "region" : undefined} aria-label={parts[0] ? `${point.ident} · ${parts[0].part.role}` : undefined}>
-      {before.map((k) => (
-        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} />
-      ))}
+    <div
+      role={parts[0] ? "region" : undefined}
+      aria-label={parts[0] ? `${point.ident} · ${parts[0].part.role}` : undefined}
+      data-testid={grouped ? "field-group" : undefined}
+      // No box of its own: the field is a line as every other is, its
+      // separator over it, and its Landing and Takeoff the cards under it
+      // (the owner, 2026-11-24: "The airport should not become a card, just
+      // keep the separated. Only the landing and takeoff are cards").
+    >
       {line}
-      {field && !point.problem && <MissedApproach vm={vm} field={field} stop={!onPast} />}
-      {field && !point.problem && <LoadedApproach vm={vm} field={field} through={onPast} />}
-      {after.map((k, i) => (
-        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} stop={last && i === after.length - 1} />
-      ))}
+      <div id={partsId} className="contents">
+        {landingOut || takeoffOut ? (
+          <PhaseCards landing={landingOut && landing} takeoff={takeoffOut && takeoff} into={onPast} out={!last} />
+        ) : (
+          <>
+            {landing}
+            {takeoff}
+          </>
+        )}
+      </div>
     </div>
   );
 }

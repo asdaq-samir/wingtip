@@ -117,7 +117,7 @@ private fun nowWords(sample: RunSample?): String {
         sample.ceilingFt == null -> stringResource(R.string.forecast_no_ceiling)
         else -> stringResource(R.string.forecast_ceiling, Format.altitude(sample.ceilingFt))
     }
-    val visibility = sample.visibilitySm?.let { stringResource(R.string.forecast_visibility, Format.visibility(it)) }
+    val visibility = sample.visibilitySm?.let(Format::visibility)?.let { stringResource(R.string.forecast_visibility, it) }
     // No wind speed is not calm: it is not known.
     val wind = sample.windSpeedKt?.let { kt ->
         val from = sample.windDirTrueDeg?.let { Format.heading(it) + " true" } ?: "variable"

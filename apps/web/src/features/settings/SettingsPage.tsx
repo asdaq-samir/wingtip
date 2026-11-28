@@ -114,7 +114,7 @@ function MapGroup() {
         <GlideRingRow />
         {/* Own ship's path flown (OwnTrailGl), put away here: it starts again with the next flight.
             Greyed with why while there is none, as Glide Ring says what it waits for: alone it read
-            as a link that did not work (UI audit C16, 2026-11-17). */}
+            as a link that did not work. */}
         <ListRow
           title="Clear Your Path"
           description={trailed ? undefined : "None yet: it is drawn as you fly"}

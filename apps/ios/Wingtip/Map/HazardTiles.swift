@@ -130,7 +130,7 @@ final nonisolated class HazardTileOverlay: MKTileOverlay, @unchecked Sendable {
     /// dem.ts): past its 13th the 13th is enlarged.
     static let minLevel = 3, maxLevel = 13
 
-    private final nonisolated class Heights {
+    private final nonisolated class Heights: Sendable {
         let side: Int
         let metres: [Float]
         init(side: Int, metres: [Float]) { self.side = side; self.metres = metres }
@@ -143,6 +143,10 @@ final nonisolated class HazardTileOverlay: MKTileOverlay, @unchecked Sendable {
         cache.totalCostLimit = 32 << 20
         return cache
     }()
+
+    /// The tiles' heights being fetched, by tile: a second load of a tile
+    /// under way waits on the first, not the planner again.
+    private let running = OSAllocatedUnfairLock<[String: Task<Heights?, Never>]>(initialState: [:])
 
     var bands: HazardBands? {
         get { lines.withLock { $0 } }
@@ -157,20 +161,40 @@ final nonisolated class HazardTileOverlay: MKTileOverlay, @unchecked Sendable {
     }
 
     override func loadTile(at path: MKTileOverlayPath, result: @escaping @Sendable (Data?, (any Error)?) -> Void) {
-        guard let bands else { return result(nil, nil) }
+        guard bands != nil else { return result(nil, nil) }
         let (z, x, y) = (path.z, path.x, path.y)
         Task.detached(priority: .utility) { [self] in
-            let key = "\(z)/\(x)/\(y)" as NSString
-            var heights = kept.object(forKey: key)
-            if heights == nil, let data = try? await Planner.terrainTile(z: z, x: x, y: y),
-               let read = HazardPaint.heights(png: data) {
-                let made = Heights(side: read.side, metres: read.metres)
-                kept.setObject(made, forKey: key, cost: read.metres.count * 4)
-                heights = made
-            }
-            // A tile the planner has none of stays clear: no error on the map.
-            guard let heights else { return result(nil, nil) }
+            // A tile the planner has none of stays clear: no error on the
+            // map. Coloured with the lines as they are once its heights
+            // come, not as they were when it was asked.
+            guard let heights = await heights(z: z, x: x, y: y), let bands else { return result(nil, nil) }
             result(HazardPaint.png(heights.metres, side: heights.side, bands: bands), nil)
         }
+    }
+
+    /// A tile's heights: kept, else fetched once however many loads ask.
+    private func heights(z: Int, x: Int, y: Int) async -> Heights? {
+        let key = "\(z)/\(x)/\(y)"
+        if let made = kept.object(forKey: key as NSString) { return made }
+        let task = running.withLock { running in
+            if let task = running[key] { return task }
+            let task = Task.detached(priority: .utility) { [self] () -> Heights? in
+                let made: Heights? = if let data = try? await Planner.terrainTile(z: z, x: x, y: y), let read = HazardPaint.heights(png: data) {
+                    Heights(side: read.side, metres: read.metres)
+                } else {
+                    nil
+                }
+                // Kept before it stops being under way, and once, by the
+                // fetch itself: a load between the two finds one of them.
+                // (The entry is in `running` already: it is set under the
+                // lock this waits on.)
+                if let made { kept.setObject(made, forKey: key as NSString, cost: made.metres.count * 4) }
+                self.running.withLock { $0[key] = nil }
+                return made
+            }
+            running[key] = task
+            return task
+        }
+        return await task.value
     }
 }

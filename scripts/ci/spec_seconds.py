@@ -11,12 +11,21 @@ together.
 
   spec_seconds.py collect RESULTS.json OUTDIR   a shard's seconds a spec, OUTDIR/seconds.json
   spec_seconds.py merge DIR OUT.json            every seconds.json under DIR, the median of each
+  spec_seconds.py latest OUT.json               the last whole validation of a wave's, where OUT is not there
 
 Each e2e shard collects (beside its flaky list, in the e2e-flaky-N
 artifact); the night's flake-report job, which already downloads the last
 day's e2e-flaky artifacts, merges them into the Actions cache
 e2e-spec-seconds-<run>, which a pull request's specs job restores. With
 no figures at all every spec weighs the same, which is the count.
+
+A wave's validation (validate-wave.yml) deals its shards so too
+(browser_specs.py): where the night's figures are not there, `latest`
+takes the last whole validation's (claude/validate-<wave>, kept three days)
+and sums each spec's seconds over its shards, as Playwright's --shard,
+which split that run, may put a spec's tests on one project in two. Run
+45127491141's sixteen shards so split took 4.5 to 20 minutes, the run
+waiting on the slowest.
 """
 
 from __future__ import annotations
@@ -24,11 +33,19 @@ from __future__ import annotations
 import json
 import os
 import statistics
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 # A spec never timed yet: the median of those that were, or this.
 UNKNOWN = 60.0
+# A validation's shards that timed their specs, of the wave's sixteen, for its figures to count as the whole suite's.
+WHOLE = 12
+# The validations `latest` downloads at most: it runs in the specs job, which
+# every shard waits on, and each download is a run's sixteen artifacts, so
+# twenty tries were minutes on the run's critical path (CI audit 2026-11-23, L5).
+TRIES = 3
 
 
 def collect(results: Path, outdir: Path) -> None:
@@ -78,6 +95,36 @@ def merge(runs: Path, out: Path) -> None:
             output.write("timed=true\n")
 
 
+def latest(out: Path) -> None:
+    """The last whole validation's seconds, each spec's summed over the shards (gh, with GH_TOKEN and GH_REPO)."""
+    if out.exists():
+        return
+    runs = ["gh", "run", "list", "--workflow", "validate-wave.yml", "--status", "completed", "--limit", "20"]
+    listed = subprocess.run([*runs, "--json", "databaseId,headBranch"], capture_output=True, text=True)
+    candidates = [
+        run
+        for run in (json.loads(listed.stdout) if listed.returncode == 0 else [])
+        if run["headBranch"].startswith("claude/validate-") and not run["headBranch"].startswith("claude/validate-failed/")
+    ]
+    for run in candidates[:TRIES]:
+        branch = run["headBranch"]
+        with tempfile.TemporaryDirectory() as tmp:
+            got = ["gh", "run", "download", str(run["databaseId"]), "--pattern", "e2e-flaky-*", "--dir", tmp]
+            subprocess.run(got, capture_output=True)
+            shards = sorted(Path(tmp).glob("**/seconds.json"))
+            if len(shards) < WHOLE:
+                continue
+            total: dict[str, float] = {}
+            for path in shards:
+                for key, value in json.loads(path.read_text()).items():
+                    total[key] = total.get(key, 0.0) + float(value)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps({k: round(v, 1) for k, v in total.items()}, sort_keys=True) + "\n")
+        print(f"spec seconds: {len(total)} from run {run['databaseId']} ({branch}, {len(shards)} shards)", file=sys.stderr)
+        return
+    print(f"spec seconds: none of the last {TRIES} validations timed every spec (or no gh); Playwright's --shard splits", file=sys.stderr)
+
+
 def load(path: str | None, project: str) -> dict[str, float]:
     """The figures for one project, by spec path (e2e/name.spec.ts); none where there is no file."""
     try:
@@ -105,5 +152,7 @@ if __name__ == "__main__":
         collect(Path(sys.argv[2]), Path(sys.argv[3]))
     elif sys.argv[1:2] == ["merge"] and len(sys.argv) == 4:
         merge(Path(sys.argv[2]), Path(sys.argv[3]))
+    elif sys.argv[1:2] == ["latest"] and len(sys.argv) == 3:
+        latest(Path(sys.argv[2]))
     else:
         sys.exit(__doc__)

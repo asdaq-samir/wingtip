@@ -3,7 +3,7 @@ import Foundation
 /// A pilot's own document: a POH, a checklist, the insurance, the club's
 /// rules. On this device, and in their own iCloud only if they turn it on
 /// (DocumentCloud); never sent to Wingtip's servers.
-struct OwnDocument: Codable, Hashable, Identifiable, Sendable {
+nonisolated struct OwnDocument: Codable, Hashable, Identifiable, Sendable {
     let id: String
     var name: String
     var bytes: Int
@@ -13,7 +13,7 @@ struct OwnDocument: Codable, Hashable, Identifiable, Sendable {
 
 /// A library document kept for the air, with its shelf's entry as it was
 /// kept, so the library lists it with no signal.
-struct KeptDocument: Codable, Hashable, Sendable {
+nonisolated struct KeptDocument: Codable, Hashable, Sendable {
     let doc: String
     let edition: String
     let bytes: Int
@@ -26,7 +26,9 @@ struct KeptDocument: Codable, Hashable, Sendable {
 /// its markup beside it; the library's kept for the air there too, out of
 /// the backup since the planner has them again; the ones read without
 /// keeping in Caches, which iOS may clear when it needs the room.
-struct DeviceDocuments: Sendable {
+/// Nonisolated: its copies and reads of PDFs of tens of megabytes run off
+/// the main actor, through the `@concurrent` steps at its foot.
+nonisolated struct DeviceDocuments: Sendable {
     let root: URL
     let cache: URL
 
@@ -203,6 +205,7 @@ struct DeviceDocuments: Sendable {
     /// own document's folder (so it goes where the document goes), and for
     /// the library's beside its kept folder, by edition, since a new
     /// edition's pages are not the old one's.
+    @MainActor
     func markupFolder(_ place: DocPlace, edition: String?) -> URL {
         if let id = place.ownID { return ownFolder(id).appending(path: "markup", directoryHint: .isDirectory) }
         return keptFolder(place.doc).appending(path: "markup", directoryHint: .isDirectory)
@@ -220,5 +223,56 @@ struct DeviceDocuments: Sendable {
 
     func loadShelf() -> [LibraryEntry]? {
         (try? Data(contentsOf: shelfFile)).flatMap { try? Self.decoder.decode([LibraryEntry].self, from: $0) }
+    }
+}
+
+// MARK: Off the main actor
+
+/// The library's file work of any size, each step run off the main actor
+/// so a handbook kept, a stack of PDFs dropped or a long CFR part opened
+/// never holds up the screen (DocumentLibrary, DocumentCloud).
+extension DeviceDocuments {
+    /// PDFs handed over added as the pilot's own: those added, and the
+    /// names of the files that were not PDFs.
+    @concurrent
+    func addingOwn(_ urls: [URL]) async -> (added: [OwnDocument], refused: [String]) {
+        var added: [OwnDocument] = [], refused: [String] = []
+        for url in urls {
+            if let doc = try? addOwn(from: url) { added.append(doc) } else { refused.append(url.lastPathComponent) }
+        }
+        return (added, refused)
+    }
+
+    @concurrent
+    func keeping(_ entry: LibraryEntry, edition: String, from file: URL) async throws -> KeptDocument {
+        try keep(entry, edition: edition, from: file)
+    }
+
+    /// A CFR part's text, decoded from its file.
+    @concurrent
+    func text(_ file: URL) async throws -> CfrText {
+        try JSONDecoder().decode(CfrText.self, from: Data(contentsOf: file))
+    }
+
+    /// A pilot's own document from iCloud (DocumentCloud) written here
+    /// under the same id and name, so the two are one document.
+    @concurrent
+    func adoptOwn(_ doc: OwnDocument, pdf: Data) async {
+        guard (try? fm.createDirectory(at: ownFolder(doc.id), withIntermediateDirectories: true)) != nil,
+              (try? pdf.write(to: ownFile(doc.id), options: .atomic)) != nil else { return }
+        var mine = doc
+        mine.bytes = pdf.count
+        if mine.name.isEmpty { mine.name = String(localized: "Document") }
+        try? write(mine)
+    }
+
+    /// What the library shows of this device as the app opens: the
+    /// deletes an earlier launch held behind their Undo gone for good,
+    /// then the shelf as last read and the pilot's own and kept documents
+    /// (each its info.json or kept.json), read after the first frame.
+    @concurrent
+    func opening() async -> (shelf: [LibraryEntry]?, own: [OwnDocument], kept: [KeptDocument]) {
+        purge()
+        return (loadShelf(), ownList(), keptList())
     }
 }

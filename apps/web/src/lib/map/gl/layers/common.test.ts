@@ -1,14 +1,15 @@
 import type { ExpressionSpecification } from "maplibre-gl";
 import { describe, expect, it } from "vitest";
 import { CHART, MAP_LABEL, type MapLabelKind } from "../../../tokens";
-import { rgbOf } from "../../../rgb";
-import { airspaceLayers } from "../glStyle";
+import { luminanceOf } from "../../../rgb";
+import { OVERLAY_LINES } from "../../../generated/overlayLayers";
 import { suaTabLayout } from "../glSuaLabels";
 import { GL_FONT, GL_FONT_BOLD, LABEL_HALO, labelHalo, labelInk, labelScale, labelText, type LabelKind } from "./common";
 
 // The labels' scale as every size reads it (LABEL_SCALE, 1 unless set).
 const S = ["coalesce", ["global-state", "labelScale"], 1];
-const NIGHT = ["boolean", ["global-state", "labelNight"], false];
+const LIGHT = ["number", ["global-state", "labelNight"], 0];
+const NIGHT = [">", LIGHT, 0];
 
 describe("the map's words (map.label)", () => {
   it("letter a kind at its size by zoom, the token's zooms the app's levels", () => {
@@ -35,7 +36,7 @@ describe("the map's words (map.label)", () => {
   });
 
   it("letter the Class tabs and the special-use tabs alike", () => {
-    const tab = airspaceLayers(GL_FONT_BOLD).find((l) => l.id === "airspace-labels")!;
+    const tab = OVERLAY_LINES.find((l) => l.id === "airspace-labels")!;
     const sua = suaTabLayout(GL_FONT_BOLD);
     const layout = (tab as { layout: Record<string, unknown> }).layout;
     for (const key of ["text-size", "text-line-height", "icon-text-fit-padding", "text-padding"] as const)
@@ -51,33 +52,37 @@ describe("the map's words (map.label)", () => {
     expect(labelScale(true, Number.NaN)).toBe(1);
   });
 
-  it("turn a light-haloed word's ink light after dark, on the dark halo", () => {
-    expect(labelInk(CHART.towered)).toEqual(["case", NIGHT, MAP_LABEL.nightInk[CHART.towered], CHART.towered]);
-    // A colour with no night ink keeps its own (a VOR's white on its tag).
-    expect(labelInk(CHART.casing)).toEqual(["case", NIGHT, CHART.casing, CHART.casing]);
-    const get: ExpressionSpecification = ["get", "ink"];
-    const ink = labelInk(get) as unknown[];
-    expect(ink[2]).toEqual(["match", get, ...Object.entries(MAP_LABEL.nightInk).flat(), get]);
-    expect(LABEL_HALO["text-halo-color"]).toEqual([
+  it("turn a light-haloed word's ink light after dark, at the words' light, on the whole dark halo", () => {
+    // The towered blue, the inks' light, as it is; at the words' light.
+    expect(labelInk(CHART.towered)).toEqual([
       "case",
       NIGHT,
-      `${CHART.tag}${Math.round(MAP_LABEL.haloNight * 255).toString(16)}`,
-      CHART.casing,
+      ["interpolate", ["linear"], LIGHT, 0, "black", 1, MAP_LABEL.nightInk[CHART.towered]],
+      CHART.towered,
     ]);
+    // The chart's white (a VOR's on its tag, a runway's number, a tab's) the fixes' near white, levelled with the
+    // rest (R7-5); a colour with no night ink keeps its own.
+    expect(night(CHART.casing)).toBe(night(CHART.fixInk));
+    expect(night("#123456")).toBe("#123456");
+    const get: ExpressionSpecification = ["get", "ink"];
+    const match = ((labelInk(get) as unknown[])[2] as unknown[])[6] as unknown[];
+    expect(match[0]).toBe("match");
+    expect(match[1]).toEqual(get);
+    expect(LABEL_HALO["text-halo-color"]).toEqual(["case", NIGHT, CHART.tag, CHART.casing]);
   });
 
-  it("give every day ink of a light-haloed kind its night ink, at 4.5:1 or more on the night's halo", () => {
+  it("bring every night ink no lighter than the towered blue, so no word outshines the paper", () => {
     for (const day of [CHART.towered, CHART.untowered, CHART.vfrGreenText, CHART.fixInk, CHART.tfr, CHART.warning])
       expect(MAP_LABEL.nightInk[day], day).toBeDefined();
-    // The night's halo at its lightest: the tag at halo-night over an
-    // undimmed white chart (WCAG 2.x relative luminance).
-    const lum = (rgb: readonly number[]) => {
-      const [r, g, b] = rgb.map((v) => v / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-      return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
-    };
-    const a = MAP_LABEL.haloNight;
-    const halo = rgbOf(CHART.tag).map((v) => v * a + 255 * (1 - a));
-    for (const night of Object.values(MAP_LABEL.nightInk))
-      expect((lum(rgbOf(night)) + 0.05) / (lum(halo) + 0.05), night).toBeGreaterThanOrEqual(4.5);
+    const blue = luminanceOf(MAP_LABEL.nightInk[CHART.towered]!);
+    for (const day of Object.keys(MAP_LABEL.nightInk)) {
+      const ink = night(day);
+      expect(luminanceOf(ink), day).toBeLessThanOrEqual(blue + 0.005);
+    }
   });
 });
+
+/** The night ink labelInk sets for a day ink, before the words' light. */
+function night(day: string): string {
+  return ((labelInk(day) as unknown[])[2] as unknown[])[6] as string;
+}

@@ -260,10 +260,13 @@ interface GatewayApi {
      * Responses:
      *  - 200: OK
      *
+     * @param category  (optional)
+     * @param aircraftClass  (optional)
+     * @param tailwheel  (optional)
      * @return [app.wingtipmaps.android.api.generated.gateway.CurrencyDto]
      */
     @GET("api/logbook/currency")
-    suspend fun currency(): Response<app.wingtipmaps.android.api.generated.gateway.CurrencyDto>
+    suspend fun currency(@Query("category") category: kotlin.String? = null, @Query("aircraftClass") aircraftClass: kotlin.String? = null, @Query("tailwheel") tailwheel: kotlin.Boolean? = null): Response<app.wingtipmaps.android.api.generated.gateway.CurrencyDto>
 
     /**
      * POST api/instructor/reviews/{id}/decline

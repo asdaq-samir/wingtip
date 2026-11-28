@@ -14,8 +14,10 @@ export default function RouteControls({ vm, flightInputs }: { vm: PlanSlices<"pl
   return (
     // One line, never wrapped: it is FPL's bar (FplBar), the one search's
     // field's size (the owner, 2026-11-14), so the airplane and the
-    // altitude give way (navlog/pillLook) rather than run off it.
-    <div className="flex w-full min-w-0 flex-nowrap items-center gap-x-1">
+    // altitude give way (navlog/pillLook) rather than run off it. At gap-2,
+    // the rows' gap, so the chips' areas meet without crossing: at 4 apart
+    // the time aloft's area (hit-x-1) ran into the departure's chip.
+    <div className="flex w-full min-w-0 flex-nowrap items-center gap-x-2">
       {/* The chips' room while their code comes (routePanel). */}
       <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>{flightInputs}</Suspense>
       {s.local && (

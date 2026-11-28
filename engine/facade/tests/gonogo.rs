@@ -57,6 +57,8 @@ fn numbers_are_written_as_javascript_writes_them() {
     assert_eq!(words::one(2.25), 2.3);
     assert_eq!(words::ceiling_and_visibility(Some(3500.0), Some(6.0)), "3,500 ft · 6 sm");
     assert_eq!(words::ceiling_and_visibility(None, None), "no ceiling · —");
+    // To the hundredth, down: 4000 m is 2.4854... sm, never 2.49.
+    assert_eq!(words::ceiling_and_visibility(None, Some(2.485_485)), "no ceiling · 2.48 sm");
 }
 
 #[path = "gonogo/audit_cases.rs"]

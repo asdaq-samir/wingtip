@@ -33,129 +33,13 @@ export interface VerdictItem extends Where {
   detail: string;
 }
 
-export interface VerdictInput {
-  weather: {
-    /** The briefing is still being fetched, or failed (its words). */
-    pending: boolean;
-    failed: string | null;
-    /** AIM 7-1-5's "VFR flight not recommended", its reasons. */
-    vfrNotRecommended: string[];
-    /** Under the pilot's own minimums (lib/minimums). */
-    underMinimums: string[];
-    /** Under IFR, icing possible at an altitude flown (features/brief/icing), in a
-     *  line. */
-    icing?: string | null;
-    /** The SIGMETs and G-AIRMETs along the route, by name. */
-    hazards: string[];
-    /** The sources that did not answer, by name. */
-    unchecked: string[];
-    /** The worst the forecast says along the route, in words. */
-    worst: string | null;
-    /** The ITWS alerts in force now at the route's airports, each in its
-     *  words with its airport (lib/liveReports). */
-    terminalAlerts?: string[];
-    /** The Command Center's programs at the route's airports, in words:
-     *  a finding under IFR only (`ifr`). */
-    flowPrograms?: string[];
-    ifr?: boolean;
-  };
-  airspace: {
-    pending: boolean;
-    /** tfr.faa.gov did not answer. */
-    unchecked: boolean;
-    /** TFRs the route goes through while in force when it gets there. */
-    inForce: string[];
-    /** TFRs near the route that are not. */
-    near: number;
-    /** Special-use areas the legs cross, as their times of use read for
-     *  the pass (features/plan/passTimes), or as SFDPS says they are now
-     *  (active-now, cold-now: lib/liveReports). */
-    specialUse: { name: string; when: "active" | "not-scheduled" | "by-notam" | "unknown" | "active-now" | "cold-now" }[];
-  };
-  altitude: {
-    pending: boolean;
-    /** No VFR altitude fits, in a line. */
-    problem: string | null;
-    /** A pilot's own altitude's broken rules (AltitudeCaution). */
-    cautions: string[];
-    /** The altitude flown, as the FL chip says it. */
-    flown: string | null;
-    /** The highest the nav log flies, feet MSL, for the engine's oxygen
-     *  finding (14 CFR 91.211(a)); null before it. */
-    highestFt?: number | null;
-    /** The airplane carries oxygen or a pressurised cabin. */
-    oxygen?: boolean;
-  };
-  fuel: {
-    pending: boolean;
-    /** The least the tanks hold over the fuel and its reserve, any flight
-     *  of the route; null where the usable fuel is not known. */
-    marginGal: number | null;
-    requiredGal: number | null;
-    reserveMin: number | null;
-    /** Under IFR: the reserve is 14 CFR 91.167's, not 91.151's. */
-    ifr?: boolean;
-  };
-  runways: {
-    pending: boolean;
-    /** Not worked out: no POH tables for this airplane. */
-    worked: boolean;
-    short: string[];
-    crosswind: string[];
-    /** Fields whose distances were read past the POH's table. */
-    beyond: string[];
-    /** Fields whose distances could not be held to the runway: its length
-     *  or the field's elevation not known. */
-    unchecked: string[];
-  };
-  balance: { pending: boolean; worked: boolean; problems: string[]; takeoff: string | null };
-  risk: { level: "low" | "caution" | "high"; line: string } | null;
-}
+/** The sections the engine's Go / No-Go reads, as it reads them
+ *  (gonogo_input's answer and the risk; the contract's VerdictInput). */
+export type VerdictInput = NonNullable<EngineInput<"gonogo_brief">["verdict"]>;
 
-/** The input as the engine reads it, the planner's VerdictInput in
- *  snake_case. */
-function engineInput({ weather, airspace, altitude, fuel, runways, balance, risk }: VerdictInput) {
-  return {
-    weather: {
-      pending: weather.pending,
-      failed: weather.failed,
-      vfr_not_recommended: weather.vfrNotRecommended,
-      under_minimums: weather.underMinimums,
-      icing: weather.icing ?? null,
-      hazards: weather.hazards,
-      unchecked: weather.unchecked,
-      worst: weather.worst,
-      terminal_alerts: weather.terminalAlerts ?? [],
-      flow_programs: weather.flowPrograms ?? [],
-      ifr: weather.ifr ?? false,
-    },
-    airspace: {
-      pending: airspace.pending,
-      unchecked: airspace.unchecked,
-      in_force: airspace.inForce,
-      near: airspace.near,
-      special_use: airspace.specialUse,
-    },
-    altitude: {
-      pending: altitude.pending,
-      problem: altitude.problem,
-      cautions: altitude.cautions,
-      flown: altitude.flown,
-      highest_ft: altitude.highestFt ?? null,
-      oxygen: altitude.oxygen ?? false,
-    },
-    fuel: {
-      pending: fuel.pending,
-      margin_gal: fuel.marginGal,
-      required_gal: fuel.requiredGal,
-      reserve_min: fuel.reserveMin,
-      ifr: fuel.ifr ?? false,
-    },
-    runways,
-    balance,
-    risk,
-  };
-}
+/** The flight's facts the engine puts those sections together from
+ *  (gonogo_input's input; the contract's GonogoFacts). */
+export type VerdictFacts = NonNullable<EngineInput<"gonogo_brief">["facts"]>;
 
 /** What the Go / No-Go comes to: the findings and the line over them. */
 export interface Verdict {
@@ -164,20 +48,27 @@ export interface Verdict {
 }
 
 /**
- * The Brief's Go / No-Go put together by the engine (gonogo_brief): each
- * tab's finding in the order a pilot goes through them, the IFR
- * alternate's in the weather's (`alternate`, /api/alternate's answer,
- * undefined while it is awaited), the fields row for a closed, private or
- * military-only field (`fields`, useRouteFields), the airplane's findings
- * left out where none is picked, and the line over them.
+ * The Brief's Go / No-Go put together by the engine (gonogo_brief): from
+ * the flight's facts (`facts`, which it builds into its sections itself,
+ * gonogo_input, with the `risk` beside them) or from the sections built
+ * (`input`); each tab's finding in the order a pilot goes through them,
+ * the IFR alternate's in the weather's (`alternate`, /api/alternate's
+ * answer, undefined while it is awaited), the fields row for a closed,
+ * private or military-only field (`fields`, useRouteFields), the
+ * airplane's findings left out where none is picked, and the line over
+ * them. The page makes none of the shapes either way.
  */
 export function briefVerdict({
+  facts,
+  risk,
   input,
   alternate,
   fields,
   airplane,
 }: {
-  input: VerdictInput;
+  facts?: VerdictFacts;
+  risk?: VerdictInput["risk"];
+  input?: VerdictInput;
   alternate?: EngineInput<"gonogo_brief">["alternate"];
   fields?: EngineInput<"gonogo_brief">["fields"];
   airplane: boolean;
@@ -185,7 +76,7 @@ export function briefVerdict({
   // The engine's items are plain strings; its keys, tabs and findings are
   // the ones VerdictItem names (gonogo/verdict.rs verdict_items).
   return callEngine("gonogo_brief", {
-    verdict: engineInput(input),
+    ...(facts ? { facts, risk: risk ?? null } : { verdict: input }),
     alternate: alternate ?? null,
     fields: fields ?? null,
     airplane,

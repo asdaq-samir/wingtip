@@ -104,7 +104,8 @@ def all_tfrs() -> list:
     """Every TFR in force or to come, one per NOTAM: {"notam_id", "title",
     "kind", "state", "geometry" (GeoJSON, a MultiPolygon of its areas)}
     and its detail ({"effective", "expires", "rule", "purpose",
-    "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref"}, where its file
+    "floor_ft", "floor_ref", "floor_varies", "ceiling_ft", "ceiling_ref",
+    "ceiling_varies"}, where its file
     could be read). TfrUnavailable where the service has stored none."""
     record = _record()
     return list(map(dict, filter(_keeps(record), record.data)))
@@ -185,7 +186,7 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
         point = geometry.representative_point()
         # Measured, not buffered in degrees: a buffer sized at the route's
         # middle latitude reached 4.1 of 5 nm east and west at 49 N on a
-        # route from 25 N (cos 49 / cos 37, the stock audit's bug 2).
+        # route from 25 N (cos 49 / cos 37).
         apart = shape_distance_nm(nearby, geometry, (point.y, point.x))
         if apart > near_nm or not in_force(tfr, start, end):
             continue

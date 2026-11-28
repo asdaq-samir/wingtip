@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import { altitudeLines, decorationOf, type BranchFix } from "../../lib/procedures";
@@ -8,11 +9,11 @@ import { PointFigures, PointMenu } from "../route/lazy";
 
 /** A fix's altitude at its row's end: the pilot's own to cross it at, in
  *  the tint, else the chart's, its line over or under it as drawn. */
-export function FixFigures({ fix, own }: { fix: BranchFix; own: number | null }) {
+export function FixFigures({ fix, own, time = null }: { fix: BranchFix; own: number | null; time?: ReactNode }) {
   const charted = altitudeLines(fix).lines[0] ?? null;
   return (
     <PointFigures
-      time={null}
+      time={time}
       kind={own != null ? "set" : "pub"}
       spoken={
         own != null

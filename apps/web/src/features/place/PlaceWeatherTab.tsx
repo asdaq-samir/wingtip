@@ -8,8 +8,8 @@ import type { AirportPlace } from "../../lib/api/types";
 import { zuluTime } from "../../lib/format";
 import Observed from "../../components/Observed";
 import { compassPoint } from "../../lib/compass";
-import type { Hour } from "./hourly";
 import { tafLine, type TafValidity } from "./tafValidity";
+import { usePlaceHourly, type HourlyFrom } from "./placeHourly";
 import { BADGE } from "../../lib/rowBadges";
 import { TEXT } from "../../lib/text";
 import { feet, miles, nm } from "../../lib/format";
@@ -30,10 +30,9 @@ export function PlaceWeatherTab({
   place,
   known,
   chip,
-  hourly,
+  forecast,
   weatherLine,
   observedAt,
-  arrival,
 }: {
   /** The ident the card was opened on. */
   ident: string;
@@ -42,16 +41,14 @@ export function PlaceWeatherTab({
   known: unknown;
   /** Its category's chip, in the FAA's colour (PlaceCard). */
   chip: ReactNode;
-  /** Hour by hour, a sentence of what the hours say (features/place/hourly),
-   *  and the TAF's own valid period (features/place/tafValidity). */
-  hourly: { hours: Hour[]; sentence: string | null; taf: TafValidity | null };
+  /** What its hour by hour is made from, read here each minute (usePlaceHourly). */
+  forecast: HourlyFrom;
   /** The weather in a line where there is no forecast to say. */
   weatherLine: string;
   /** When its report (or the nearest station's) was observed, for its age. */
   observedAt: string | null;
-  /** The planned flight's landing hour, where this is its destination. */
-  arrival: { index: number; at: number } | null;
 }) {
+  const { hourly, arrival } = usePlaceHourly(forecast);
   const metar = place?.metar ?? null;
   // The nearest station's within 30 nm, for one with no report of its own
   // (wingtip.weather.nearest_report), and its category.
@@ -87,12 +84,12 @@ export function PlaceWeatherTab({
                 "refresh can go in the weather tab itself"), the round glass
                 button at its own 44 as every one is (IconButton's `round`,
                 the owner's "make all buttons same size as Apple Maps",
-                2026-11-20), where it was held to 32 (the iOS audit's P18). */}
+                2026-11-20), where it was held to 32. */}
             {place && <RefreshNow card="airport" label={`Refresh ${place.ident}`} />}
           </ListRow>
           {/* The hours only where there is a forecast to show (a TAF): Now
               alone was a column of the summary's own figures in a mostly
-              empty strip (UI audit C10, 2026-11-17). */}
+              empty strip. */}
           {place && hourly.hours.length > 1 && (
             <div className="min-w-0">
               <HourlyForecast hours={hourly.hours} arrival={arrival} />
@@ -113,7 +110,7 @@ export function PlaceWeatherTab({
                 {/* When it was observed, first: a report's age is what a
                     pilot weighs it by (and where it came from, where it is
                     own ship's receiver); said once, in the summary over
-                    it, where that is this report's (UI audit C10). Its
+                    it, where that is this report's. Its
                     wind is true, as reported. */}
                 {metar.observed_at && metar.observed_at !== observedAt && (
                   <ListRow title={<Observed at={metar.observed_at} />} data-testid="place-observed" />
@@ -140,7 +137,11 @@ export function PlaceWeatherTab({
                     </RowBadge>
                   }
                   title="Visibility"
-                  value={<span className="font-semibold text-foreground">{miles(metar.visibility_sm, metar.visibility_plus)}</span>}
+                  value={
+                    <span className="font-semibold text-foreground">
+                      {miles(metar.visibility_sm, metar.visibility_plus, metar.visibility_minus)}
+                    </span>
+                  }
                 />
                 <ListRow
                   media={

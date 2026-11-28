@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import { ACTION } from "../../lib/cardActions";
+import { ACTION } from "../../lib/generated/cardActions";
 import { useRadioActions } from "../../lib/atcRadio";
 import { usePointActions } from "../../lib/map/cards/pointActions";
 import { TEXT } from "../../lib/text";
@@ -27,7 +27,7 @@ export default function DirectToField({ vm }: { vm: EmergencyModel }) {
   const Icon = ACTION.directTo.icon;
   // While the fields are asked for, the button in its place, not to be
   // pressed yet: it came in over the list once they were in, and the list
-  // jumped down under a pilot's thumb (the flicker audit's FL-9).
+  // jumped down under a pilot's thumb.
   if (!picked && vm.fix && !vm.ranked) {
     return (
       <div className="grid gap-1">

@@ -46,7 +46,9 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
   const parts = { layout, onFootTap };
   const barRow = slots.bar && <SheetBarRow bar={slots.bar} shown={barShown} hairline layout={layout} panelSize={panelSize} />;
 
-  const foot = !!slots.foot && (footShown || cardsUp) && (
+  // A phone's bottom sheet's foot is a bar beside the sheet, not in it
+  // (sheet/FootBar, SheetFoot's BesideSheet; MapPanel's `foot`).
+  const foot = !!slots.foot && !layout.footBar && (footShown || cardsUp) && (
     <SheetFoot foot={slots.foot} pillFoot={pillFoot} floats={!!pages?.floats} {...parts} />
   );
 
@@ -61,37 +63,35 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
     const routeShown = !flying && !cardsUp && !atPill && slots.top != null;
     const searchAlone = atPill && !flying && !barShown;
     const routeAlone = atPill && !flying && !planShown && !footShown;
-    // At the pill whose face is the route's figures held on the foot's
-    // edge (FplRoute), FPL's bar and route are laid out out of sight and
+    // At the pill whose face is the route's figures (the foot bar's,
+    // sheet/FootBar), FPL's bar and route are laid out out of sight and
     // rise with the sheet (RISEN_FACE): the airport card's way, nothing
     // swapped as a finger takes it (the owner, 2026-11-16). On a phone only:
-    // the side panel has no detents, so its pill is the figures alone
-    // (DESK_PILL), not 503 px mostly empty (the owner, 2026-11-19).
-    const pillFace = atPill && footShown && !flying && !cardsUp && slots.top != null;
-    const rises = onPhone && pillFace;
-    const deskPill = !onPhone && pillFace;
+    // the side panel has no detents, so its pill is the foot's figures
+    // alone, not 503 px mostly empty (the owner, 2026-11-19).
+    const rises = onPhone && atPill && footShown && !flying && !cardsUp && slots.top != null;
     // One page up at a time (SheetPage), turned by its toggle (PageToggle);
     // the other kept, inert.
     content = (
       <div data-testid="sheet-pages" data-page={at} className="flex min-h-0 flex-1 flex-col print:block">
         <SheetPage at={0} up={at === 0}>
-          <SheetScroller band={barRow} body={slots.children} alone={searchAlone} off={at !== 0} head={sheetHead} cut={false} {...parts} />
+          <SheetScroller band={barRow} body={slots.children} alone={searchAlone} off={at !== 0} head={sheetHead} {...parts} />
         </SheetPage>
         <SheetPage at={1} up={at === 1}>
           <SheetScroller
             band={
               <>
-                <SheetBarRow bar={bar} shown={planShown} hairline={false} rises={rises} layout={layout} panelSize={panelSize} />
-                <SheetHeadBlock shownAtRest={routeShown} alone={false} rises={rises} pillRow={deskPill} slots={slots} layout={layout} />
+                <SheetBarRow bar={bar} shown={planShown} hairline={false} rises={rises} pinned layout={layout} panelSize={panelSize} />
+                <SheetHeadBlock shownAtRest={routeShown} alone={false} rises={rises} slots={slots} layout={layout} />
               </>
             }
             body={second}
             alone={routeAlone}
             off={at !== 1}
             head="0px"
-            cut={footShown && !pages.floats}
-            endRoom={footShown && !!pages.floats}
+            endRoom={layout.footBar ? "bar" : undefined}
             rises={rises}
+            bandScrolls
             {...parts}
           />
           {foot}
@@ -112,7 +112,7 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
         alone={headAlone}
         off={false}
         head={sheetHead}
-        cut={footShown}
+        endRoom={layout.footBar ? "bar" : undefined}
         {...parts}
       />
     );

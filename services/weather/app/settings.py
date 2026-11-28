@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     #: Gridded LAMP (NOMADS): asked for a new issue this often.
     glmp_every_s: float = 600.0
     glmp_idle_every_s: float = 3600.0
+    #: The icing (the CIP and the IFI from NOMADS, app.icing): each comes
+    #: hourly and is fetched once when newer (about 25 MB and 85 MB), so
+    #: looked for four times an hour while planning, every three otherwise.
+    icing_every_s: float = 900.0
+    icing_idle_every_s: float = 10800.0
     #: The SPC's Day 1 convective outlook (issued five times a day).
     outlook_every_s: float = 1800.0
     outlook_idle_every_s: float = 3600.0
@@ -62,6 +67,10 @@ class Settings(BaseSettings):
     #: review, 2026-11-21), off by default in every app, and its GFS, HRRR
     #: and DAFS downloads are the service's largest feed and memory.
     flow_on: bool = False
+    #: Whether the Brief's forecast icing grids (app.icing: the NWS CIP and
+    #: IFI, about 110 MB an hour) are fetched. On but for the browser-test
+    #: stack (infra/docker-compose.ci.yml), whose icing answers are mocked.
+    icing_on: bool = True
     #: The map's flow layer (app.flow): the HRRR runs hourly, so looked for
     #: four times an hour while planning; a frame already held is not
     #: downloaded again. Every three hours otherwise.
@@ -71,6 +80,11 @@ class Settings(BaseSettings):
     #: the last hour and now (two HRRR files, about 21 MB an hour); 12
     #: the whole timeline (eight, about 84 MB an hour). The GFS beyond.
     flow_hrrr_ahead_h: int = 0
+    #: A recording to replay instead of fetching (app.replay): its products
+    #: written once at the start with their times moved to now, and never
+    #: fetched. The browser suite's stack sets it (infra/docker-compose.ci.yml),
+    #: so no spec depends on the day's weather; empty fetches everything.
+    replay: str = ""
 
 
 class SettingsError(ValueError):

@@ -31,11 +31,10 @@ import logging
 import re
 import time
 import zipfile
-from datetime import datetime, timezone
 from urllib.parse import urljoin
 
 from apscheduler.schedulers.base import BaseScheduler
-from wingtip import notams, outside, schedule
+from wingtip import notams, outside, schedule, utc
 
 from .settings import get_settings
 
@@ -154,7 +153,7 @@ def initial_load(client: Client) -> int:
 
 
 def _stamp(t: float) -> str:
-    return datetime.fromtimestamp(int(t), timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return utc.iso(t)
 
 
 def update(client: Client, since: float) -> int:

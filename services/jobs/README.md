@@ -119,7 +119,12 @@ the refresh lock and needs room for the largest archive again beside it:
 scripts/dev/one-at-a-time.sh "charts transcode" docker compose run --rm charts transcode --cycle 10-29-2026 --workers 4
 ```
 
-then `charts publish --cycle 10-29-2026` where the cycle is published (on
+With `--out <folder>` it writes each WebP archive under `<folder>/<cycle>/`
+instead, the served PNG ones left alone, to be moved over them in one
+step later (a stopped run resumes, skipping what is already there as
+WebP); the planner reopens an archive whose file changed.
+
+Then `charts publish --cycle 10-29-2026` where the cycle is published (on
 AWS the next refresh packs new cycles as WebP by itself). About 1.4
 million tiles at some 9 ms each, twice (once for each tile's length, once
 to write it), so about 7 CPU-hours: under two hours on four workers.

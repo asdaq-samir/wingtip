@@ -3,6 +3,7 @@ import { callEngine } from "../../lib/engine/engine";
 import { categoryOf } from "../../lib/map/marks/flightCategory";
 import { clockTime } from "../../lib/format";
 import { altFt } from "../../lib/format";
+import { capitalised } from "../../lib/capitals";
 
 /**
  * A field's weather hour by hour, as Apple's Weather lays out its hourly
@@ -104,7 +105,7 @@ export function sentenceOf(hours: Hour[], time: (ms: number) => string = clock, 
   if (!hours.length) return null;
   const forecast = hours.filter((h) => !h.now);
   const first = hours[0]!;
-  if (!forecast.length) return first.category ? `${first.category} now, ${none}.` : `${none[0]!.toUpperCase()}${none.slice(1)}.`;
+  if (!forecast.length) return first.category ? `${first.category} now, ${none}.` : `${capitalised(none)}.`;
   const within = hours.filter((h) => h.at <= first.at + SENTENCE_HOURS * HOUR_MS);
   const last = hours.at(-1)!;
   const said: string[] = [];

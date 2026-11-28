@@ -1,21 +1,25 @@
 import { describe, expect, it } from "vitest";
 import type { ChartInfo } from "../../api/types";
 import type { LineLayerSpecification, SymbolLayerSpecification } from "maplibre-gl";
-import {
-  absoluteTiles,
-  airspaceLayers,
-  OVERLAY_SOURCE,
-  chartPaint,
-  chartRole,
-  chartSource,
-  chartStyle,
-  DAY_CONTRAST,
-  DAY_SATURATION,
-  glZoom,
-  specialUseLayers,
-} from "./glStyle";
-import { legPiece, routeFeature, routeLayers, selectedLegFilter } from "./glRoute";
+import { absoluteTiles, OVERLAY_SOURCE, chartPaint, chartRole, chartSource, chartStyle, glZoom } from "./glStyle";
+import { legPiece, routeCasingPaint, routeFeature, routeLayers, selectedLegFilter } from "./glRoute";
+import { dimLayer, dimmedColour } from "./mapDim";
+import { CHART, CHART_PAINT } from "../../tokens";
 import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryFrom } from "./closeZoom";
+import { OVERLAY_LINES } from "../../generated/overlayLayers";
+
+/** design/map-style.json's airspace layers, as the map takes them before the Dimmer. */
+const airspaceLayers = () => OVERLAY_LINES.filter((l) => l.id.startsWith("airspace-"));
+/** A Class C's or D's ring's opacity: only with its field drawn, by its feature state (placedRings), unless the map
+ *  draws every ring. */
+const ringOfPlacedField = (opacity: number) => [
+  "case",
+  ["!", ["boolean", ["global-state", "ringsByField"], false]],
+  opacity,
+  ["boolean", ["feature-state", "placed"], false],
+  opacity,
+  0,
+];
 
 const chart = {
   chart_cycle: "10-29-2026",
@@ -77,8 +81,11 @@ describe("chartStyle", () => {
   });
 
   it("lifts the chart's contrast and colour by day, leaving the night and the sunlight as they were", () => {
-    expect(chartPaint(false, false)).toMatchObject({ "raster-contrast": DAY_CONTRAST, "raster-saturation": DAY_SATURATION });
-    expect([DAY_CONTRAST, DAY_SATURATION]).toEqual([0.1, 0.1]);
+    expect(chartPaint(false, false)).toMatchObject({
+      "raster-contrast": CHART_PAINT.dayContrast,
+      "raster-saturation": CHART_PAINT.daySaturation,
+    });
+    expect([CHART_PAINT.dayContrast, CHART_PAINT.daySaturation]).toEqual([0.1, 0.1]);
     expect(chartPaint(true, false)).toMatchObject({ "raster-contrast": 0.13, "raster-saturation": 0, "raster-brightness-max": 0.5 });
     expect(chartPaint(false, true)).toMatchObject({ "raster-contrast": 0.2, "raster-saturation": 0.2 });
   });
@@ -90,9 +97,9 @@ describe("chartStyle", () => {
   });
 });
 
-describe("airspaceLayers", () => {
+describe("the airspace layers (design/map-style.json)", () => {
   it("writes each shelf's tab in the engine's words the tiles carry, ceiling over floor", () => {
-    const label = airspaceLayers(["Inter"]).find((l) => l.id === "airspace-labels") as SymbolLayerSpecification;
+    const label = airspaceLayers().find((l) => l.id === "airspace-labels") as SymbolLayerSpecification;
     // "100" over "30", the sectional's (wingtip.airspace_tabs): the map
     // formats no figure of its own.
     expect(label.layout!["text-field"]).toEqual(["get", "tab"]);
@@ -100,7 +107,7 @@ describe("airspaceLayers", () => {
   });
 
   it("draws the tiles' rings each with its band along the inside, Class E left out", () => {
-    const layers = airspaceLayers(["Inter"]);
+    const layers = airspaceLayers();
     expect(layers.map((l) => l.id)).toEqual([
       "airspace-D-band",
       "airspace-D",
@@ -112,14 +119,18 @@ describe("airspaceLayers", () => {
     ]);
     expect(layers.every((l) => "source" in l && l.source === OVERLAY_SOURCE)).toBe(true);
     const band = layers.find((l) => l.id === "airspace-C-band") as LineLayerSpecification;
-    // Inwards, wider as the map comes in, the line's own ink faint.
-    expect(band.paint).toMatchObject({ "line-color": "#e02ad8", "line-opacity": 0.3 });
+    // Inwards, wider as the map comes in, the line's own ink faint; a Class C's
+    // ring only with its field drawn, by its feature state (placedRings), a
+    // Class B's always.
+    expect(band.paint).toMatchObject({ "line-color": "#e02ad8", "line-opacity": ringOfPlacedField(0.3) });
+    expect(band.filter).toEqual(["==", ["get", "class"], "C"]);
+    expect((layers.find((l) => l.id === "airspace-B-band") as LineLayerSpecification).paint!["line-opacity"]).toBe(0.3);
     const offset = band.paint!["line-offset"] as unknown as (string | number)[];
     expect(offset.slice(3).filter((_, i) => i % 2 === 1)).toEqual([3, 4.5, 6.5, 9.5]);
   });
 
   it("draws the special-use areas' lines and hatched bands, restricted orange-brown and MOAs magenta", () => {
-    const [band, line] = specialUseLayers();
+    const [band, line] = OVERLAY_LINES.filter((l) => l.id === "sua-band" || l.id === "sua-line") as LineLayerSpecification[];
     expect(band!.paint!["line-pattern"]).toEqual([
       "case",
       ["in", ["get", "type"], ["literal", ["P", "R", "W", "D"]]],
@@ -131,7 +142,7 @@ describe("airspaceLayers", () => {
   });
 
   it("draws each class from its own zoom, the bands from 7 and the labels from 9", () => {
-    const layers = airspaceLayers(["Inter"]);
+    const layers = airspaceLayers();
     const from = Object.fromEntries(layers.map((l) => [l.id, l.minzoom]));
     expect(from).toMatchObject({
       "airspace-B": glZoom(5),
@@ -145,7 +156,7 @@ describe("airspaceLayers", () => {
   });
 
   it("draws a ring half its width out at a few states, its full width from 7", () => {
-    const line = airspaceLayers(["Inter"]).find((l) => l.id === "airspace-C") as LineLayerSpecification;
+    const line = airspaceLayers().find((l) => l.id === "airspace-C") as LineLayerSpecification;
     expect(line.paint!["line-width"]).toEqual(["interpolate", ["linear"], ["zoom"], glZoom(5), 2, glZoom(7), 4]);
   });
 });
@@ -173,6 +184,15 @@ describe("the course's casing", () => {
     expect(by["route-outer"]!.filter).toEqual(selectedLegFilter(null));
     expect(selectedLegFilter("b")).toEqual(["all", ["==", ["get", "part"], "leg"], ["==", ["get", "leg"], "b"]]);
     expect(layers.map((l) => l.id)).toEqual(["route-outer", "route-edge", "route-casing", "route-core"]);
+  });
+
+  it("is dimmed at night once, with the chart, by its colours (the round-4 themes audit)", () => {
+    const core = dimLayer(routeLayers().find((l) => l.id === "route-core")!) as LineLayerSpecification;
+    // Its colour times the chart's brightness; its opacity left solid.
+    expect(core.paint?.["line-color"]).toEqual(dimmedColour(CHART.course));
+    expect(core.paint?.["line-opacity"]).toBeUndefined();
+    // The casing no see-through of its own at night, which the dim took down again.
+    expect(routeCasingPaint(true)["line-opacity"]).toBe(1);
   });
 
   it("gives each leg its own piece of the course to be cased", () => {

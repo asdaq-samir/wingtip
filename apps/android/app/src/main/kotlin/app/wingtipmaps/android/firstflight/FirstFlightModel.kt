@@ -107,7 +107,7 @@ class FirstFlightModel @Inject constructor(app: Application, private val flight:
      *  has no position for it. */
     private suspend fun nearestToPilot(): String? = coroutineScope {
         // Said only past a moment's wait, so a fix in hand flashes nothing
-        // (the errors-and-onboarding audit, 2026-11-21: a first route's
+        // (a first route's
         // wait for a position said nothing for up to four seconds).
         val saying = launch {
             delay(FINDING_AFTER_MS)

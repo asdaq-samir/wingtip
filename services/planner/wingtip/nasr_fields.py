@@ -9,7 +9,7 @@ OurAirports, community data, stays only for a field NASR does not list.
 OurAirports' local codes have been reused for other fields: its 32TX is
 Hinson Airport at Kenney, TX, 365 ft, with a 1,866 ft runway 12/30, where
 NASR's 32TX is Rockpile Ranch 300 nm west, 5,386 ft, one turf runway 05/23
-of 3,931 ft (the aviation audit's AV-1, 2026-11-14). An OurAirports row more
+of 3,931 ft. An OurAirports row more
 than MATCH_NM from NASR's ARP for the same ident is another field: it lends
 the field nothing -- no elevation, runways, frequencies or photo.
 
@@ -29,6 +29,7 @@ import pandas as pd
 
 from . import faa_data, geo
 from .engine import ask as engine
+from .figure import number
 from .single_flight import once
 
 #: How far OurAirports' position for an ident may be from NASR's ARP for it
@@ -63,14 +64,6 @@ def _faa_file(beside, name: str) -> tuple[str, float]:
         return "", 0.0
 
 
-def _number(text) -> float | None:
-    try:
-        value = float(text)
-    except (TypeError, ValueError):
-        return None
-    return value if value == value else None
-
-
 @once(maxsize=2)
 def _base_of(path: str, _mtime: float) -> dict[str, dict]:
     """Every field NASR lists, by its FAA identifier and then its ICAO one:
@@ -86,9 +79,9 @@ def _base_of(path: str, _mtime: float) -> dict[str, dict]:
         record = {
             "faa_id": faa_id.strip().upper(),
             "icao_id": icao.strip().upper() if isinstance(icao, str) and icao.strip() else None,
-            "lat": _number(lat),
-            "lon": _number(lon),
-            "elevation_ft": _number(elev),
+            "lat": number(lat),
+            "lon": number(lon),
+            "elevation_ft": number(elev),
             "city": city.strip() if isinstance(city, str) else "",
             "state": state.strip().upper() if isinstance(state, str) else "",
         }
@@ -126,7 +119,7 @@ def far(lat, lon, record: dict | None) -> bool:
     """Whether a position is more than MATCH_NM from NASR's ARP in `record`:
     an OurAirports row there is another field. False with no record or no
     position to compare."""
-    if record is None or record["lat"] is None or record["lon"] is None or _number(lat) is None or _number(lon) is None:
+    if record is None or record["lat"] is None or record["lon"] is None or number(lat) is None or number(lon) is None:
         return False
     return float(geo.distance_nm(float(lat), float(lon), record["lat"], record["lon"])) > MATCH_NM
 
@@ -167,7 +160,7 @@ def overlay(us: pd.DataFrame, faa_path: str, faa_mtime: float) -> pd.DataFrame:
 
 
 def _feet(text) -> int | None:
-    value = _number(text)
+    value = number(text)
     return int(value) if value is not None else None
 
 
@@ -203,12 +196,12 @@ def _runways_of(rwy: str, _rwy_mtime: float, ends: str, _ends_mtime: float, rema
             continue
         end_list = by_runway.get((airport, runway)) or [{"RWY_END_ID": e} for e in runway.split("/")]
         names = [str(e.get("RWY_END_ID") or "").strip().upper() for e in end_list]
-        positions = {n: (_number(e.get("LAT_DECIMAL")), _number(e.get("LONG_DECIMAL"))) for n, e in zip(names, end_list)}
+        positions = {n: (number(e.get("LAT_DECIMAL")), number(e.get("LONG_DECIMAL"))) for n, e in zip(names, end_list)}
         # Each end's DISPLACED_THR_LEN, "displaced threshold length in feet
         # from runway end", and LNDG_DIST_AVBL, the landing distance
         # available (LDA) in feet, as APT_RWY_END files them; None where NASR
         # gives none. A landing is checked against these, not the runway's
-        # whole length (the web audit's WEB-1; wingtip.pattern puts them on
+        # whole length (wingtip.pattern puts them on
         # each runway end).
         distances = {
             n: {"displaced_threshold_ft": _feet(e.get("DISPLACED_THR_LEN")), "lda_ft": _feet(e.get("LNDG_DIST_AVBL"))}
@@ -216,12 +209,12 @@ def _runways_of(rwy: str, _rwy_mtime: float, ends: str, _ends_mtime: float, rema
             if n
         }
         surface = str(row.get("SURFACE_TYPE_CODE") or "").strip().upper()
-        length, width = _number(row.get("RWY_LEN")), _number(row.get("RWY_WIDTH"))
+        length, width = number(row.get("RWY_LEN")), number(row.get("RWY_WIDTH"))
         out.setdefault(airport, []).append(
             {
                 "ends": runway,
                 # TRUE_ALIGNMENT: each end's true heading, None where NASR has none.
-                "end_headings": [(n, _number(e.get("TRUE_ALIGNMENT"))) for n, e in zip(names, end_list) if n],
+                "end_headings": [(n, number(e.get("TRUE_ALIGNMENT"))) for n, e in zip(names, end_list) if n],
                 "end_positions": {n: p for n, p in positions.items() if n and None not in p},
                 "end_distances": distances,
                 "length_ft": int(length) if length is not None else None,

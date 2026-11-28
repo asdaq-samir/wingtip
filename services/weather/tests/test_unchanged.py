@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, Mock
 
 import requests
 from wingtip import tfr as planner_tfr
-from wingtip import weather, weather_store
+from wingtip import ratelimit, weather, weather_store
 
 from app import aviationweather, fetch, main, tfr
 
@@ -40,7 +40,7 @@ def test_the_same_body_under_new_validators_is_not_parsed_or_written_again(monke
 
     now = [1000.0]
     monkeypatch.setattr(aviationweather.time, "time", lambda: now[0])
-    monkeypatch.setattr(fetch.requests, "get", get)
+    monkeypatch.setattr(fetch.outside, "get", get)
     # A held-until that does not move with the fetch: an advisory's own end.
     monkeypatch.setitem(aviationweather.SOURCES, "airsigmets", ("https://example/airsigmets", parse, lambda data, at: 9000.0))
     aviationweather.fetch_source("airsigmets")
@@ -60,7 +60,7 @@ def test_the_same_body_under_new_validators_is_not_parsed_or_written_again(monke
 def test_an_unchanged_held_until_that_moves_is_written(monkeypatch):
     # An empty set is held a while from its fetch: the copy is written
     # again so its time to be served on moves with each confirmation.
-    monkeypatch.setattr(fetch.requests, "get", lambda *a, **kw: _body(b"<response/>", 1))
+    monkeypatch.setattr(fetch.outside, "get", lambda *a, **kw: _body(b"<response/>", 1))
     now = [1000.0]
     monkeypatch.setattr(aviationweather.time, "time", lambda: now[0])
     monkeypatch.setitem(aviationweather.SOURCES, "pireps", ("https://example/pireps", lambda body: [], lambda data, at: at + 3600))
@@ -102,7 +102,7 @@ def test_an_unchanged_tfr_list_is_not_written_again_and_its_age_is_the_last_try(
         return Mock(json=lambda: {"features": [feature]}, raise_for_status=lambda: None)
 
     monkeypatch.setattr(tfr, "_DETAILS", tfr.LRUCache(maxsize=8))
-    monkeypatch.setattr(tfr, "DETAIL_PAUSE_S", 0)
+    monkeypatch.setattr(tfr, "_DETAILS_GATE", ratelimit.Gate())
     monkeypatch.setattr(tfr.outside, "get", get)
     now = [1000.0]
     monkeypatch.setattr(tfr.time, "time", lambda: now[0])

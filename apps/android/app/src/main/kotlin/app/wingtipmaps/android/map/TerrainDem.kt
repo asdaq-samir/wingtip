@@ -1,6 +1,6 @@
 package app.wingtipmaps.android.map
 
-import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.api.PlannerPaths
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.ColorReliefLayer
 import org.maplibre.android.style.layers.HillshadeLayer
@@ -24,7 +24,7 @@ object TerrainDem {
     /** The source, added where it is not yet in the style. */
     fun add(style: Style) {
         if (style.getSource(ID) != null) return
-        val tiles = TileSet("2.2.0", Config.gateway + Config.plannerPath("/api/terrain-tile/{z}/{x}/{y}.png")).apply {
+        val tiles = TileSet("2.2.0", PlannerPaths.address(PlannerPaths.TERRAIN_TILES)).apply {
             encoding = "terrarium"
             minZoom = 3f
             maxZoom = MAX_ZOOM

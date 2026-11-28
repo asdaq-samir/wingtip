@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ApiError, api, describeError, isUnknownPlace, unknownPlaceIn } from "../../lib/api/client";
+import { ApiError, api, describeError, isUnknownPlace, plannerUnreachable, unknownPlaceIn } from "../../lib/api/client";
 import { chartQuery, checkpointsQuery, courseQuery } from "../../lib/queryClient";
 import { identOf, routeOf } from "../../lib/identSchema";
 import type { Candidate, Leg, NavLogAltitude, NavLogMessage, Totals } from "../../lib/api/types";
@@ -84,8 +84,7 @@ export function usePlan({
   // Asked once the chart's cycle is known (kept from the last visit, or
   // the chart's answer, about a millisecond), which is in their keys: on a
   // first visit the course and the checkpoints were asked without it and
-  // again with it, and the first draw rendered twice (the speed audit of
-  // 2026-11-21). A chart that fails, or has not answered in a second,
+  // again with it, and the first draw rendered twice. A chart that fails, or has not answered in a second,
   // lets them go without it.
   const chartCycleQuery = useQuery({ ...chartQuery, select: (chart) => chart.chart_cycle });
   const cycle = chartCycleQuery.data;
@@ -188,7 +187,7 @@ export function usePlan({
   // altitudes…" over them, for the half second to seconds a re-plan takes.
   // Only over the same flight with another altitude (typed, picked on the
   // wheel, or one of the four plans): a new route, airplane or time is a
-  // log of its own; nor once the planner says no altitude is legal. And
+  // log of its own; nor once the planner says no altitude is legal, but kept while it cannot be reached (FL-___ in a restart, 2026-11-23). And
   // over another runway, left from (`runways`) as landed on (`patterns`,
   // the key's last): the runways picked into the wind as the field's report
   // comes in are the ones the first plan already flew (the planner's
@@ -197,8 +196,7 @@ export function usePlan({
   // which changes no leg, only the fuel checks: FPL's gauges are walked on
   // the device from the legs on screen and the figure just set (the
   // engine's fuel_in_tanks, routeTanks), so the gauge shows the new gallons
-  // at Done, where the legs went and it waited 543 ms on the re-plan (the
-  // speed audit of 2026-11-21).
+  // at Done, where the legs went and it waited 543 ms on the re-plan.
   const holdKey = planKey
     .filter((_, i) => i < 3 || (i >= 5 && i !== PLAN_KEY_RUNWAYS && i !== PLAN_KEY_TANKS && i < planKey.length - 1))
     .join("|");
@@ -207,7 +205,7 @@ export function usePlan({
   if (whole && !pointToPoint && (held?.messages !== streamed || held.key !== holdKey)) {
     setHeld({ key: holdKey, messages: streamed });
   }
-  const holding = !whole && !navlog.error && navlog.isFetching && held?.key === holdKey;
+  const holding = !whole && held?.key === holdKey && (plannerUnreachable(navlog.error) || (!navlog.error && navlog.isFetching));
   const messages = holding ? held.messages : streamed;
   // Each message narrowed by its own `type`, not cast: the "altitude" line was cast to a hand-written
   // copy of its shape, whose comments had gone stale while the cast kept compiling.
@@ -329,7 +327,7 @@ export function usePlan({
     refetchInterval: 5 * 60_000,
     // The answer before kept up only while the route is the same -- a new
     // departure time, ETE or Load again -- not under a new route, where the
-    // old route's hazards and TFRs showed for a moment (the audit's finding).
+    // old route's hazards and TFRs showed for a moment.
     placeholderData: (previous, previousQuery) =>
       previousQuery && sameRoute(previousQuery.queryKey, [dep, dest, via]) ? previous : undefined,
     // A point not known, the route box's to say (courseQuery); the Brief
@@ -381,6 +379,7 @@ export function usePlan({
     stage,
     unflyable,
     unknownPlace,
+    unreachable: briefable && [course.error, checkpoints.error, navlog.error].some(plannerUnreachable),
     // The nav log failed (no legal altitude, the winds, the planner down):
     // what waits on the plan asks without it (usePlanAnswer's Routes).
     planFailed: !!navlog.error,

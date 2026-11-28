@@ -46,8 +46,9 @@ _VHF = (118.0, 137.0)
 
 def _name_case(text: str) -> str:
     """A facility's name in the FAA's capitals as a name is written:
-    "CHICAGO" as "Chicago", "DULUTH RCO" as "Duluth RCO"."""
-    return " ".join(w if w in ("RCO", "TWR") else w.capitalize() for w in text.split())
+    "CHICAGO" as "Chicago", "DULUTH RCO" as "Duluth RCO" (the engine's
+    name_case)."""
+    return engine("name_case", text=text, kind="facility")
 
 
 def _sector_case(text: str, idents: frozenset = frozenset()) -> str:

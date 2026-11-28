@@ -18,8 +18,7 @@ import { TEXT } from "../../lib/text";
  * sheet stay the pilot's. Nothing while the toggle shows the magnifier
  * (FPL up) or is not drawn (flying, under Settings), nor with the sheet
  * all the way up, where the toggle is at the screen's top, the tip had no
- * room over it and dropped onto Nearest with its arrow at nothing (the UI
- * audit's B5, 2026-11-17); and once the toggle has been used it is not
+ * room over it and dropped onto Nearest with its arrow at nothing; and once the toggle has been used it is not
  * shown again (PageToggle sees it), the way it points being known.
  * In a side panel (from `md` up) the toggle is at the window's top at
  * every size, at the panel's left edge, with no room over it or beside

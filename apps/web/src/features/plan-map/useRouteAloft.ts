@@ -20,10 +20,15 @@ export function useRouteAloft(mode: TerrainMode, rows: NavLogRow[] | undefined, 
     // The leg a point is on is the row the run reaches next (rowT, a time
     // a row): the leg that row ends.
     let row = 1;
-    return run.points.map((p) => {
+    // A point with no height carries the last good one, and none before
+    // the first is drawn: never at 0 ft.
+    let last: number | null = null;
+    return run.points.flatMap((p) => {
       while (row < run.rowT.length - 1 && p.t > run.rowT[row]!) row++;
-      const altFt = p.alt_ft ?? 0;
-      return { lat: p.lat, lon: p.lon, altFt, legFt: legOf(rows[row]!)?.altitude_ft ?? altFt };
+      const altFt = p.alt_ft ?? last;
+      if (altFt == null) return [];
+      last = altFt;
+      return [{ lat: p.lat, lon: p.lon, altFt, legFt: legOf(rows[row]!)?.altitude_ft ?? altFt }];
     });
   }, [mode, rows, line]);
 }

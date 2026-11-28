@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -13,7 +14,9 @@ import org.jspecify.annotations.Nullable;
  *  (V20) are none when not sent; so are those of an entry drawn from
  *  the app's track (V34): its air time, its touch-and-goes, that it came
  *  from a track and the saved flight it was flown as (the pilot's own,
- *  else none kept). */
+ *  else none kept); and the airplane's category, class and tailwheel
+ *  and the full-stop landings (V57), which passenger currency is judged
+ *  by (14 CFR 61.57(a)(1)), none where not said. */
 public record LogbookEntryRequest(
         @NotNull(message = "flownOn is required") LocalDate flownOn,
 
@@ -76,4 +79,22 @@ public record LogbookEntryRequest(
         int touchAndGoes,
 
         boolean fromTrack,
-        @Nullable Long flightId) {}
+        @Nullable Long flightId,
+
+        @Schema(description = "14 CFR 61.5 category, \"Airplane\"; none where not said (61.57(a)(1))")
+        @Size(max = 20, message = "category must be at most 20 characters")
+        @Nullable
+        String category,
+
+        @Schema(description = "14 CFR 61.5 class, \"Single-engine land\"; none where not said (61.57(a)(1))")
+        @Size(max = 24, message = "aircraftClass must be at most 24 characters")
+        @Nullable
+        String aircraftClass,
+
+        @Schema(description = "A tailwheel airplane (61.57(a)(1)(ii)); none where not said") @Nullable
+        Boolean tailwheel,
+
+        @Schema(description = "Landings to a full stop, day and night; none where not said (61.57(a)(1)(ii))")
+        @PositiveOrZero(message = "fullStopLandings must be zero or more")
+        @Nullable
+        Integer fullStopLandings) {}

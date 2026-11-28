@@ -26,6 +26,12 @@ final class FlightRecorder {
     /// The engine reads the track at most once a minute of points: whether
     /// the flight has ended is a question of minutes.
     nonisolated static let lookEvery = 12
+    /// At flying speed, once ten minutes of points: a flight cannot have
+    /// come to rest while the airplane is still at flying speed, and each
+    /// look sends the whole track (some 3,000 points four hours in). The
+    /// look in the air is kept, rarer, so a flight once found ended and
+    /// then flown on is no longer offered.
+    nonisolated static let lookEveryFlying = 120
     /// Before flying speed, the minutes of taxi kept.
     nonisolated static let groundKeptMs = 10 * 60 * 1000.0
     private static let writeEveryS = 30.0
@@ -49,6 +55,13 @@ final class FlightRecorder {
     /// offered: the sheet opens on it.
     private(set) var endedAt: Double?
     @ObservationIgnored private var lastWritten = Date.distantPast
+    /// The track kept from before read (load), or made moot by a forget
+    /// or an erase: until then nothing is written, so a fix taken in the
+    /// moment before the read does not write over the flight on the disk.
+    @ObservationIgnored private var loaded = false
+    @ObservationIgnored private var loading: Task<Void, Never>?
+    /// The engine's reading of the track under way (look), off the main actor.
+    @ObservationIgnored private var looking: Task<Void, Never>?
     /// Written off the main actor (BackgroundFile).
     @ObservationIgnored private let disk: BackgroundFile
     /// The logged tracks not yet sent to their saved flight, in a file
@@ -59,8 +72,33 @@ final class FlightRecorder {
         .appending(path: "flight-recorder.json")) {
         disk = BackgroundFile(file)
         unsent = UnsentTracks(file: file.deletingPathExtension().appendingPathExtension("unsent.json"))
-        kept = (try? JSONDecoder().decode(Kept.self, from: Data(contentsOf: file))) ?? Kept()
+        kept = Kept()
+    }
+
+    /// The track kept from before, read off the main actor once, after the
+    /// app's first frame (ScreenModels.loadKept): four hours are some
+    /// 3,000 points, which the launch decoded on the main thread before
+    /// it drew anything. Any points taken meanwhile go on after it.
+    func load() async {
+        if loading == nil { loading = Task { await read() } }
+        await loading?.value
+    }
+
+    private func read() async {
+        let before = await disk.read(Kept.self)
+        await unsent.load()
+        guard !loaded else { return }
+        loaded = true
+        if let before { kept = Self.joined(before, kept) }
         look()
+    }
+
+    /// The track read from the disk with the points taken while it was
+    /// being read after it, at most `most` of them.
+    nonisolated static func joined(_ before: Kept, _ now: Kept) -> Kept {
+        let after = now.points.filter { $0.t > before.points.last?.t ?? -.infinity }
+        return Kept(points: Array((before.points + after).suffix(most)), askedTo: before.askedTo ?? now.askedTo,
+                    flown: before.flown || now.flown)
     }
 
     var points: [Point] { kept.points }
@@ -69,15 +107,17 @@ final class FlightRecorder {
     /// whether the phone should keep reading its position in the
     /// background for it (a flight under way, not yet ended).
     @discardableResult
-    func took(_ fix: OwnShip.Fix) -> Bool {
+    /// `underway` is OwnShip's answer for this fix, where it has asked.
+    func took(_ fix: OwnShip.Fix, underway known: Bool? = nil) -> Bool {
         let t = fix.at.timeIntervalSince1970 * 1000
         if let last = kept.points.last, t - last.t < Self.everyMs { return wantsBackground }
         guard kept.points.count < Self.most else { return wantsBackground }
-        let takeoff = !kept.flown && (try? Flight.underway(fix.groundspeedKt)) == true
+        let underway = known ?? (try? Flight.underway(fix.groundspeedKt)) == true
+        let takeoff = !kept.flown && underway
         if takeoff { kept.flown = true }
         kept.points.append(Point(t: t, lat: fix.coordinate.latitude, lon: fix.coordinate.longitude, altFt: fix.altitudeFt))
         if !kept.flown { kept.points.removeAll { t - $0.t > Self.groundKeptMs } }
-        if kept.points.count % Self.lookEvery == 0 { look() }
+        if kept.points.count % (underway ? Self.lookEveryFlying : Self.lookEvery) == 0 { look() }
         if takeoff || Date().timeIntervalSince(lastWritten) >= (kept.flown ? Self.writeEveryS : Self.groundWriteEveryS) { write() }
         return wantsBackground
     }
@@ -86,11 +126,23 @@ final class FlightRecorder {
     var wantsBackground: Bool { kept.flown && endedAt == nil }
 
     /// The engine's own reading of the track on the phone: has a flight
-    /// landed and come to rest?
+    /// landed and come to rest? Read off the main actor (the engine has no
+    /// thread of its own, and reads the whole track, some 3,000 points
+    /// four hours in), a newer look cancelling one not yet answered.
     private func look() {
+        looking?.cancel()
         guard kept.flown, kept.points.count >= 2 else { endedAt = nil; return }
-        let answer = try? Engine.logbookFromTrack(points: kept.points)
-        endedAt = Self.flightEnded(answer, points: kept.points, askedTo: kept.askedTo)
+        let (points, askedTo) = (kept.points, kept.askedTo)
+        looking = Task { [weak self] in
+            let ended = await Self.ended(points, askedTo: askedTo)
+            guard !Task.isCancelled else { return }
+            self?.endedAt = ended
+        }
+    }
+
+    @concurrent
+    private nonisolated static func ended(_ points: [Point], askedTo: Double?) async -> Double? {
+        flightEnded(try? Engine.logbookFromTrack(points: points), points: points, askedTo: askedTo)
     }
 
     /// Whether the recorded flight has ended, by the engine's reading of
@@ -108,6 +160,7 @@ final class FlightRecorder {
     /// Not now: kept recording, and not offered again until a later landing.
     func later() {
         guard let endedAt else { return }
+        looking?.cancel()
         kept.askedTo = endedAt
         self.endedAt = nil
         write()
@@ -115,6 +168,8 @@ final class FlightRecorder {
 
     /// The track let go: logged, or not a flight to log.
     func forget() {
+        looking?.cancel()
+        loaded = true
         kept = Kept()
         endedAt = nil
         write()
@@ -124,6 +179,8 @@ final class FlightRecorder {
     /// yet sent: the pilot signed out or deleted the account
     /// (Session.forgetDevice).
     func erase() {
+        looking?.cancel()
+        loaded = true
         kept = Kept()
         endedAt = nil
         disk.remove()
@@ -131,6 +188,7 @@ final class FlightRecorder {
     }
 
     private func write() {
+        guard loaded else { return }
         lastWritten = Date()
         disk.write(kept)
     }

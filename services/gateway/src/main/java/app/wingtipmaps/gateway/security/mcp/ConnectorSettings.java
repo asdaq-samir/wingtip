@@ -106,7 +106,7 @@ public class ConnectorSettings {
      * records the planner reads (MCP_ENABLED). Off, every one of its
      * addresses is a 404 (ConnectorOff) -- in production until the
      * connector launches, so nobody can register clients or reach its
-     * routes before then (the security audit's M3, 2026-11-10).
+     * routes before then.
      */
     public boolean enabled() {
         return enabled;

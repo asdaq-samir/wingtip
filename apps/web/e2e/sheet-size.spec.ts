@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeNavLog, frontSheet, grabberTo, navLogSheet, settle, settled, sideDrawer, slow, tapTheChart } from "./helpers";
+import { closeNavLog, frontSheet, grabberTo, navLogSheet, settle, settled, sideDrawer, sheetFoot, slow, tapTheChart } from "./helpers";
 
 /**
  * The sheet keeps the size the pilot left it at, as Apple Maps' does (the
@@ -34,7 +34,7 @@ test("the Nav Log opened over the sheet all the way up opens at half, as every c
   await page.goto(ROUTE);
   await settle(page);
   await grabberTo(page, "full");
-  await sideDrawer(page)
+  await sheetFoot(page)
     .getByTestId("route-navlog")
     .click({ timeout: slow(60_000) });
   await expect(navLogSheet(page)).toBeVisible();

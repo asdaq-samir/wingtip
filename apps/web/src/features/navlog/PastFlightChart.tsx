@@ -44,7 +44,9 @@ const FlightChart = memo(function FlightChart({
   laid?: (fraction: number) => number;
 }) {
   const data = useMemo(
-    () => points.map((p, i) => ({ t: p.t, nm: alongNm?.[i] ?? null, alt: p.alt_ft ?? 0, kt: p.gs_kt ?? null })),
+    // A report with no height is none on the chart, so the line ends at
+    // the last good one rather than dipping to 0 ft.
+    () => points.map((p, i) => ({ t: p.t, nm: alongNm?.[i] ?? null, alt: p.alt_ft ?? null, kt: p.gs_kt ?? null })),
     [points, alongNm],
   );
   const plain = !!alongNm;
@@ -200,7 +202,7 @@ function Now({ points, alongNm, fromStart }: { points: PastFlightPoint[]; alongN
   return (
     <>
       <line x1={cx} x2={cx} y1={area.y} y2={area.y + area.height} stroke="var(--tint)" strokeWidth={2} />
-      {alongNm && atNm !== null && <NowMarks nm={atNm} alt={mix(a.alt_ft, b.alt_ft) ?? 0} kt={mix(a.gs_kt, b.gs_kt)} />}
+      {alongNm && atNm !== null && <NowMarks nm={atNm} alt={mix(a.alt_ft, b.alt_ft)} kt={mix(a.gs_kt, b.gs_kt)} />}
     </>
   );
 }
@@ -227,7 +229,7 @@ const CONTROLS_PX = { width: 194, height: 44 };
  * top set under its line. Each on a box of the background, over the
  * airspace's names.
  */
-function NowMarks({ nm, alt, kt }: { nm: number; alt: number; kt: number | null }) {
+function NowMarks({ nm, alt, kt }: { nm: number; alt: number | null; kt: number | null }) {
   const x = useXAxisScale(),
     yAlt = useYAxisScale("alt"),
     yKt = useYAxisScale("kt"),
@@ -235,7 +237,8 @@ function NowMarks({ nm, alt, kt }: { nm: number; alt: number; kt: number | null 
   const cx = x?.(nm);
   if (cx === undefined || !yAlt || !area) return null;
   const marks = [
-    { key: "alt", dot: yAlt(alt), words: feet(alt), colour: "var(--color-alt)" },
+    // No height known there: no mark, never one at 0 ft.
+    { key: "alt", dot: alt == null ? undefined : yAlt(alt), words: feet(alt ?? 0), colour: "var(--color-alt)" },
     { key: "kt", dot: kt == null ? undefined : yKt?.(kt), words: knots(kt ?? 0), colour: "var(--color-kt)" },
   ].flatMap((m) => (m.dot === undefined ? [] : [{ ...m, dot: m.dot }]));
   const before = cx > area.x + area.width * 0.6;

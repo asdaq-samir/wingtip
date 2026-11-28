@@ -105,11 +105,16 @@ export function nameOwnPoints(stops: readonly string[]) {
   ownPointNames = new Map(own.map((stop, i) => [stop, `POS${i + 1}`]));
 }
 
-/** A point's name as the route shows it: a present position as "My
- *  Location" (POSITION_NAME), the
- *  pilot's own points POS1 on (nameOwnPoints), the rest by their idents. */
+/** The name the route gives a present position, POS0, as a GPS does, the
+ *  pilot's own points going on from it (the owner, 2026-11-24: "Replace my
+ *  location to POS0"); the search's action to pick it keeps POSITION_NAME. */
+const POSITION_POINT = "POS0";
+
+/** A point's name as the route shows it: a present position as POS0
+ *  (POSITION_POINT), the pilot's own points POS1 on (nameOwnPoints), the
+ *  rest by their idents. */
 export function pointName(ident: string): string {
-  return isPosition(ident) ? POSITION_NAME : (ownPointNames.get(ident) ?? ident);
+  return isPosition(ident) ? POSITION_POINT : (ownPointNames.get(ident) ?? ident);
 }
 
 /** A point's name where it is told after the flight -- a saved or recent
@@ -153,10 +158,19 @@ export function routeOf(
     a = identOf(dest);
   if (!d || !a) return null;
   const idents = [d, ...stops, a];
-  // Before the engine is in (the page's first draw reads the address's
-  // route), the idents alike as written; never a throw that takes the page down.
-  const same = (x: string, y: string) => (engineLoaded() ? callEngine("same_field", { a: x, b: y }) : x === y);
-  return idents.every((ident, i) => i === 0 || !same(ident, idents[i - 1]!)) ? { dep: d, dest: a } : null;
+  return idents.every((ident, i) => i === 0 || !sameField(ident, idents[i - 1]!)) ? { dep: d, dest: a } : null;
+}
+
+/** Whether two idents name one field: the CIFP names it by its ICAO ident
+ *  (KBUR) where the route may have the FAA's (BUR), and a typed one may
+ *  come with a space round it. The one test for the app, which the
+ *  traffic's (fbo) had a second of. */
+export function sameField(a: string, b: string): boolean {
+  // Before the engine is in (a page's first draw can ask, a kept route's
+  // ways read on load): the idents alike as written, never a throw that
+  // takes the page down; the engine's answer, KBUR for BUR, once it is.
+  if (!engineLoaded()) return a.trim().toUpperCase() === b.trim().toUpperCase();
+  return callEngine("same_field", { a, b });
 }
 
 const ARROW = " → ";
@@ -192,8 +206,7 @@ export function altitudesOf(value: string | null | undefined): Record<string, nu
 
 /** The key a point's own altitude is kept by in the address: its ident,
  *  or at a point the route is at more than once, its `visit`'s, counted
- *  from 1 ("VPBNG@2"), so a second visit's is not the first's (the web
- *  audit's WEB-2). */
+ *  from 1 ("VPBNG@2"), so a second visit's is not the first's. */
 export const visitKey = (ident: string, visit?: number) => (visit === undefined ? ident : `${ident}@${visit}`);
 
 /** The point a key of altitudesOf is for: "VPBNG@2" is VPBNG's. */

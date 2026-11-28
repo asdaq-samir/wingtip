@@ -41,7 +41,7 @@ struct NotamStateBadge: View {
     var body: some View {
         TimelineView(.everyMinute) { context in
             let active = notam.inForce != false
-            let starts = notam.starts.flatMap { try? Date($0, strategy: .iso8601) }
+            let starts = FieldNotamWords.date(notam.starts)
             let later = !active && (starts.map { $0 > context.date } ?? false)
             StatusBadge(active ? .active : later ? .later : .cold, words: active || later ? nil : "Inactive")
         }
@@ -84,24 +84,52 @@ struct NotamWhatText: View {
     var body: some View { Text(Self.marked(what)) }
 }
 
-/// Its times, labelled, a line each (FieldNotamWords.timeLines), and where it is
-/// only where that is not obvious.
+/// A NOTAM's times (FieldNotamWords.timeLines), labelled, one line each and
+/// never wrapped, on its row and on its own card (the owner, 2026-11-23:
+/// "one line each", at 390 pt and the owner's larger text): where how long
+/// until it ("· in 551d") would not fit beside the time, the line drops
+/// it, so the time stays whole (the web's NotamTimeLines).
+struct NotamTimeLinesView: View {
+    let lines: [FieldNotamWords.TimeLine]
+
+    var body: some View {
+        if !lines.isEmpty { column }
+    }
+
+    private var column: some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+            ForEach(lines, id: \.label) { line in
+                ViewThatFits(in: .horizontal) {
+                    if let soon = line.soon { text(line, "\(line.value) · \(soon)") }
+                    text(line, line.value)
+                }
+            }
+        }
+        .monospacedDigit()
+        .accessibilityIdentifier("place-notam-when")
+    }
+
+    /// Its label in the secondary ink before it, as ForeFlight's list gives them.
+    private func text(_ line: FieldNotamWords.TimeLine, _ value: String) -> some View {
+        Text("\(Text(line.label).foregroundStyle(.secondary)) \(value)").lineLimit(1)
+    }
+}
+
+/// Its times, a line each (NotamTimeLinesView), and where it is only where
+/// that is not obvious.
 struct NotamLinesView: View {
     let notams: FieldNotams
     let notam: APIRankedNotam
 
     var body: some View {
-        let times = notams.times(notam)
         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-            // A line each, its label in the secondary ink before it, as
-            // ForeFlight's list gives them; a line too long wraps whole.
-            ForEach(times, id: \.label) { line in
-                Text("\(Text(line.label).foregroundStyle(.secondary)) \(line.value)").monospacedDigit()
+            // On the minute, so "in 18d" moves on as Android's rows do.
+            TimelineView(.everyMinute) { context in NotamTimeLinesView(lines: notams.times(notam, now: context.date)) }
+            if let place = notams.place(notam) {
+                Text(place).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            if let place = notams.place(notam) { Text(place).foregroundStyle(.secondary) }
         }
         .font(WingtipType.detail)
-        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -204,49 +232,6 @@ struct FieldNotamsSection: View {
             Spacer()
             if notams.long && !notams.all {
                 Text("\(notams.shown.count) of \(notams.notams.count)").monospacedDigit().accessibilityHidden(true)
-            }
-        }
-    }
-}
-
-/// One NOTAM in full, a page of the card's stack: its kind as the title and
-/// its number under it ("NOTAM 11/439"), its badge and what, its times and
-/// where, its words written out where the what says them shorter (both the
-/// engine's, notam_read); a TFR's place, instructions and whom to call; and
-/// its text as sent, folded, never rewritten.
-struct FieldNotamPage: View {
-    let notams: FieldNotams
-    let notam: APIRankedNotam
-
-    var body: some View {
-        let number = "NOTAM \(FieldNotamWords.number(notam, idents: notams.idents))"
-        let tfr = notam.kind == "tfr"
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: WingtipSpace.sm) {
-                    NotamStateBadge(notam: notam)
-                    NotamWhatText(what: notams.what(notam)).font(WingtipType.title)
-                        .foregroundStyle(notam.inForce == false ? .secondary : .primary)
-                    NotamLinesView(notams: notams, notam: notam)
-                    if !tfr, let read = notams.reading(notam), read.what != nil {
-                        Text(read.words).font(WingtipType.note).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            if tfr { TfrDetailsSections(notam: notam, read: notams.tfr(notam)) }
-            Section {
-                DisclosureGroup(tfr ? "TFR as Sent" : "As Sent") {
-                    Text(notam.raw).font(.footnote.monospaced()).textSelection(.enabled)
-                }
-            }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle(notams.heading(notam))
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationSubtitle(number)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                ShareLink(item: notam.raw) { Label("Share", systemImage: WingtipIcon.share) }
             }
         }
     }

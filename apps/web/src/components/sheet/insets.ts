@@ -1,4 +1,5 @@
 import type { Drawer } from "@base-ui/react/drawer";
+import { feel } from "../../lib/haptics";
 import { SHEET_MARGIN, type MapInsets, type PanelState } from "../../lib/mapChrome";
 import { REACH } from "../../lib/sheetCards";
 import { MOTION, SIZE } from "../../lib/tokens";
@@ -41,7 +42,9 @@ export const SETTLE_MS = DRAWER_MS + 50;
  * - All the way up: 1, the whole of the Drawer's viewport, which the popup's
  *   own height (MapPanel) keeps clear of the status bar.
  */
-const BOTTOM_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { peek: "4.25rem", half: "23rem", full: 1 };
+/** The pill: a card's title row with its room, as the search's band. */
+export const PILL_HEIGHT = "4.25rem";
+const BOTTOM_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { peek: PILL_HEIGHT, half: "23rem", full: 1 };
 const TOP_SNAPS: Readonly<Record<PanelState, Drawer.Root.SnapPoint>> = { ...BOTTOM_SNAPS, peek: "5.25rem" };
 const BOTTOM_POINTS = [BOTTOM_SNAPS.peek, BOTTOM_SNAPS.half, BOTTOM_SNAPS.full];
 const TOP_POINTS = [TOP_SNAPS.peek, TOP_SNAPS.half, TOP_SNAPS.full];
@@ -59,39 +62,25 @@ const SIZES: PanelState[] = ["peek", "half", "full"];
  * iPhone, 2026-11-12, KORD's card; in WebKit at 390x844 none of its 23
  * parts in sight painted at any step of the drag). `visibility` keeps it
  * laid out and its pictures loaded, so there is nothing to build mid-drag.
- * Nothing in it is eased while the sheet is at the pill: a stock Button
- * eases all its properties (transition-all), visibility too, so hidden at
- * the settle it stayed in sight for its transition's time, FPL's ••• over
- * the pill's figures (the owner's screen recording, 2026-11-16: "Better
- * but just a bit left at the end"). Up from the pill the class is gone and
- * its controls ease as they do. Not a row parked at the foot (data-pin-foot,
- * sheet/pinAtFoot's PIN_AT_FOOT): its ease is what holds it still as the
- * sheet slides, and stopped at the pill it rode the sheet's last stretch
- * down and came back up (the owner's screen recording, 2026-11-16).
+ * Nothing in it eases its visibility: the stock Button lists what it eases
+ * (no longer shadcn's transition-all, which eased visibility too and kept
+ * FPL's ••• over the pill's figures for its transition's time, the owner's
+ * screen recording of 2026-11-16), so no rule here stops its children's
+ * transitions any more.
  */
-export const PILL_BODY = "invisible group-data-swiping/sheet:visible [&_*:not([data-pin-foot])]:transition-none";
+export const PILL_BODY = "invisible group-data-swiping/sheet:visible";
 /** And a body that is the pill's one surface: its title row kept in sight,
  *  and only the row: what a head shows under its name (CardHead's `below`,
  *  the Brief's verdict) is not laid out there, as it made the head taller
  *  than the pill's room and pushed the row's ✕ off the screen's foot. */
 export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible [&_[data-head-below]]:hidden`;
 
-const HANDED = "transition-opacity duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none";
 /** What a sheet shows risen where its pill is not simply its top (FPL's
- *  bar and route over its figures, the pill): laid out at the pill but out
+ *  bar and route, over the foot bar's figures, the pill: sheet/FootBar): laid out at the pill but out
  *  of sight (PILL_BODY), in sight as the finger takes it and held till the
  *  sheet has settled (the popup's data-risen, SheetDrawer), all in CSS,
- *  nothing built or swapped mid-drag -- the airport card's way. Not faded:
- *  the pill's own row inside it (FplRoute's figures) is in sight at rest
- *  by its own visibility, which an opacity round it would hide. */
+ *  nothing built or swapped mid-drag -- the airport card's way. */
 export const RISEN_FACE = `${PILL_BODY} group-data-risen/sheet:visible`;
-/** And a risen face over the pill (FPL's actions' bar, under the figures
- *  held there, FlightFoot): in sight only while a finger has the
- *  sheet, not held while it settles, so settled at the pill it does not
- *  show over the figures for the settle's frames (the owner's screen
- *  recording, 2026-11-16: "Still see the flicker at the end"). */
-export const RISEN_OVER = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100`;
-
 /** Eight points at a bottom sheet's foot where there is no home indicator
  *  (its viewport ends over the indicator, SheetDrawer), none while the
  *  keyboard is up: the Drawer's --drawer-keyboard-inset is 0 or a
@@ -102,59 +91,94 @@ export const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(
 
 /** The room under a card's content (SheetCard), 16 points or the home
  *  indicator's inset: its last row clear of the screen's foot. A card's
- *  floating tab bar (CardTabBar) takes it back, so the bar rests in the
- *  same place scrolled to the end as it does pinned. */
+ *  floating tab bar in the card (CardTabBar, beside the side panel and on
+ *  a top sheet) takes it back, so the bar rests in the same place scrolled
+ *  to the end as it does pinned; on a phone's bottom sheet, where the bar
+ *  stands in the card's foot slot (sheet/CardFoot), the slot's height is
+ *  the room in its place (SheetCard). */
 export const CARD_FOOT_ROOM = "max(1rem, env(safe-area-inset-bottom))";
 
-/** Held at a sheet's free edge however far the sheet is slid: moved back by
- *  the Drawer's snap offset and the finger's movement, on its curve, held
- *  still under a finger -- the foot's figures and bar (SheetParts), a
- *  card's tabs (CardTabBar), sticky at its scroller's foot. Read through
- *  the popup's own copies (--sheet-offset and --sheet-swipe, SheetDrawer
- *  and CardStack): Base UI registers its variables with `inherits: false`,
- *  so under the popup they were 0 and nothing followed -- a top sheet's
- *  search rode off the screen at the pill (consoles.spec, 2026-11-10). 0
- *  beside the side panel. */
-export const HOLD_AT_EDGE =
-  "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+/** What slides with a sheet, its popup and a card's:
+ *  eased under Reduce Motion too (index.css), as iOS keeps a sheet's slide
+ *  there -- a move along one axis that the pilot made, not the zoom or
+ *  parallax the setting is for -- where it jumped between its sizes and
+ *  the pilot lost where it went (the owner took the recommendation). */
+export const SHEET_SLIDE = "sheet-slide";
 
-/** A sheet's snap points and each size's, one constant per edge. */
-export function snapsOf(fromBottom: boolean) {
-  return fromBottom ? { at: BOTTOM_SNAPS, points: BOTTOM_POINTS } : { at: TOP_SNAPS, points: TOP_POINTS };
+type Snaps = { at: Readonly<Record<PanelState, Drawer.Root.SnapPoint>>; points: Drawer.Root.SnapPoint[] };
+/** The last FPL pill's snap points, kept so a render hands the Drawer the same array. */
+let footPillSnaps: { px: number; snaps: Snaps } | null = null;
+
+/**
+ * A sheet's snap points and each size's, one constant per edge -- but for
+ * FPL's pill on a phone's bottom sheet (`pillPx`, footPillPx), whose
+ * height is the foot bar's own at the pill and the grabber's room, so the
+ * sheet stands behind the bar there with its grabber alone over it.
+ */
+export function snapsOf(fromBottom: boolean, pillPx = 0): Snaps {
+  if (!fromBottom) return { at: TOP_SNAPS, points: TOP_POINTS };
+  if (pillPx <= 0) return { at: BOTTOM_SNAPS, points: BOTTOM_POINTS };
+  if (footPillSnaps?.px !== pillPx) {
+    const at = { ...BOTTOM_SNAPS, peek: `${pillPx}px` };
+    footPillSnaps = { px: pillPx, snaps: { at, points: [at.peek, at.half, at.full] } };
+  }
+  return footPillSnaps.snaps;
+}
+
+/**
+ * FPL's pill, px, from the foot bar's height folded at the pill (`barPx`,
+ * sheet/FootBar, 0 until measured): the bar and the grabber's 1 rem room
+ * over it, so the pill shows the bar's strip and the grabber, nothing of
+ * the sheet's head. A rem pill was the bar's 3.25 rem and the grabber's 1
+ * only while the Drawer's root size was the page's: Base UI 1.9.0 reads
+ * the root's font size only when its viewport is resized
+ * (useDrawerSnapPoints), where lib's Dynamic Type sets it again as the page
+ * comes back from the background, and a larger text size grows the bar
+ * past 3.25 rem (FlightFoot's min-height); the owner's iPhone rested at
+ * the pill once with the head half over the bar and once without (its
+ * recording, 2026-11-23). In px from the bar measured, its own resize
+ * tells the Drawer anew.
+ */
+export function footPillPx(barPx: number, rem = rootRem()): number {
+  return barPx > 0 ? Math.round(barPx + rem) : 0;
 }
 
 /** The size the Drawer let go at: its snap point is one of ours, by
  *  identity, so no measure is matched to the nearest. */
-export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint): PanelState | undefined {
-  const { at } = snapsOf(fromBottom);
+export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint, pillPx = 0): PanelState | undefined {
+  const { at } = snapsOf(fromBottom, pillPx);
   return SIZES.find((size) => Object.is(at[size], point));
 }
 
 /**
  * A drag let go, the sheet's or a card's (MapPanel, CardStack), as the
  * Drawer tells it (onSnapPointChange): the size of the snap point it
- * picked, one of ours, asked for. Let go past the pill (no snap point),
- * the Drawer reads a close, refused here before it starts one, and the
- * surface goes to the pill (`park`: half for a settings card) -- let
- * through, the close had begun, the card faded out and dropped off the
- * screen's foot before onOpenChange took it back, and it faded in again
- * at the pill (the flicker audit, 2026-11-14, FL-3). A settings card at
- * half (`close`) is the one that closes on a swipe down, the Drawer's own
- * close carrying it, and down to a lower size too.
+ * picked, one of ours, asked for. With no `close` (the main sheet), let
+ * go past the pill (no snap point) the Drawer reads a close, refused here
+ * before it starts one, so it never begins to fade out, and the sheet goes to `park`. With a `close` (a card
+ * at half), a swipe down closes it, the Drawer's own close carrying it,
+ * and so does one down to a lower size.
  */
 export function letGo(
   point: Drawer.Root.SnapPoint | null,
   details: Pick<Drawer.Root.SnapPointChangeEventDetails, "cancel">,
-  s: { fromBottom: boolean; at: PanelState; ask: (size: PanelState) => void; park: PanelState; close?: () => void },
+  s: { fromBottom: boolean; pillPx?: number; at: PanelState; ask: (size: PanelState) => void; park: PanelState; close?: () => void },
 ) {
+  // A light tick as a swipe lands the sheet or a card at another size, as
+  // iOS's sheet gives one (lib/haptics: Chrome on Android; Safari has
+  // none): from the pilot's own drag alone, not as the app raises it.
   if (point === null) {
     if (s.close) return;
     details.cancel();
-    if (s.park !== s.at) s.ask(s.park);
+    if (s.park !== s.at) {
+      feel("detent");
+      s.ask(s.park);
+    }
     return;
   }
-  const target = sizeAt(s.fromBottom, point);
+  const target = sizeAt(s.fromBottom, point, s.pillPx);
   if (!target || target === s.at) return;
+  feel("detent");
   if (s.close && REACH[target] < REACH[s.at]) s.close();
   else s.ask(target === "peek" ? s.park : target);
 }
@@ -162,16 +186,17 @@ export function letGo(
 /**
  * How much of a sheet or a card is in sight at rest at `size`, px, as the
  * stock Drawer resolves its snap point (useDrawerSnapPoints, @base-ui/react
- * 1.9.0: a rem value at the page's root font size, a fraction of its
+ * 1.9.0: a px value as it is, a rem value at the page's root font size, a fraction of its
  * viewport, either no taller than the popup; the viewport is never shorter
  * than the popup here, MapPanel's height). Worked out from the size the
  * page holds, not read off a popup: Base UI writes its offset as 0 until it
  * has measured, which read as the whole card in sight for a frame as one
- * opened (the flicker audit, 2026-11-14, FL-4).
+ * opened.
  */
-export function shownPx(size: PanelState, fromBottom: boolean, popupHeight: number, rem = rootRem()) {
-  const point = snapsOf(fromBottom).at[size];
-  return typeof point === "number" ? popupHeight : Math.min(parseFloat(point) * rem, popupHeight);
+export function shownPx(size: PanelState, fromBottom: boolean, popupHeight: number, rem = rootRem(), pillPx = 0) {
+  const point = snapsOf(fromBottom, pillPx).at[size];
+  if (typeof point === "number") return popupHeight;
+  return Math.min(parseFloat(point) * (point.endsWith("px") ? 1 : rem), popupHeight);
 }
 
 /** The page's root font size, px, which the Drawer's rem snap points use. */
@@ -199,7 +224,7 @@ export const FLOAT_PX = 16;
  * corner its head (`cover`, its height at rest) rests in. The width was
  * the token's by the pointer, 384 for a touch screen, while the CSS drew
  * the wide 448 from 1024 on every screen: on a 13-inch iPad the map was
- * fitted 64 px under the panel (the iPad audit, 2026-11-21). And `right`,
+ * fitted 64 px under the panel. And `right`,
  * the inspector's column at the map's right while a card is in it
  * (MapPanel) and its float at the window's edge: the room ends at its
  * edge as it begins at the side panel's (ipad-layout.spec measures both),
@@ -208,7 +233,7 @@ export const FLOAT_PX = 16;
  * The screen's top under a sheet from the bottom is the status bar's and
  * the Dynamic Island's (`safeTop`, env(safe-area-inset-top)): kept out of
  * the map's room, as HIG's layout keeps content inside the safe area,
- * where a fit put KOSH at y = 38 under it (the FPL audit's A11). A sheet
+ * where a fit put KOSH at y = 38 under it. A sheet
  * from the top covers it.
  */
 /** What the inspector's column, `column` wide, covers at the map's right:

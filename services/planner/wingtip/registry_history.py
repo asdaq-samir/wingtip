@@ -32,12 +32,12 @@ zip code and county are not.
 
 from __future__ import annotations
 
-import contextlib
 import sqlite3
 from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from . import registry_codes as codes
+from .registry_reader import _reading, ready
 
 _SCHEMA = """
 CREATE TABLE deregistered (n_number TEXT, serial TEXT, model_code TEXT, engine_code TEXT, year INTEGER,
@@ -46,6 +46,7 @@ CREATE TABLE deregistered (n_number TEXT, serial TEXT, model_code TEXT, engine_c
     mode_s_hex TEXT, kit TEXT, co_owners INTEGER);
 CREATE INDEX deregistered_n ON deregistered (n_number);
 CREATE INDEX deregistered_serial ON deregistered (serial);
+CREATE INDEX deregistered_mode_s ON deregistered (mode_s_hex);
 CREATE TABLE documents (n_number TEXT, document_id TEXT, kind_code TEXT, received TEXT, entered TEXT,
     corrected TEXT, correction TEXT);
 CREATE INDEX documents_n ON documents (n_number);
@@ -97,20 +98,14 @@ def build(archive, db: sqlite3.Connection, rows: Rows) -> dict[str, int]:
     db.executescript(_SCHEMA)
     names = set(archive.namelist())
     counts = {}
+    # Each file's rows go in as they are read (executemany over a generator),
+    # never held whole: RESERVED's 126,157 were one list.
     if "DEREG.txt" in names:
         insert = f"INSERT INTO deregistered VALUES ({','.join('?' * 20)})"
-        batch, count = [], 0
-        for r in rows(archive, "DEREG.txt"):
-            batch.append(_deregistered(r))
-            if len(batch) >= 5000:
-                db.executemany(insert, batch)
-                count += len(batch)
-                batch = []
-        db.executemany(insert, batch)
-        counts["deregistered"] = count + len(batch)
+        counts["deregistered"] = db.executemany(insert, (_deregistered(r) for r in rows(archive, "DEREG.txt"))).rowcount
     if "DOCINDEX.txt" in names:
         # Type Collateral 1 alone: an aircraft, by its N-number.
-        docs = [
+        docs = (
             (
                 _n(r.get("COLLATERAL", "")),
                 r.get("DOC-ID") or None,
@@ -122,11 +117,10 @@ def build(archive, db: sqlite3.Connection, rows: Rows) -> dict[str, int]:
             )
             for r in rows(archive, "DOCINDEX.txt")
             if r.get("TYPE-COLLATERAL") == "1" and r.get("COLLATERAL")
-        ]
-        db.executemany("INSERT INTO documents VALUES (?,?,?,?,?,?,?)", docs)
-        counts["documents"] = len(docs)
+        )
+        counts["documents"] = db.executemany("INSERT INTO documents VALUES (?,?,?,?,?,?,?)", docs).rowcount
     if "RESERVED.txt" in names:
-        held = [
+        held = (
             (
                 _n(r.get("N-NUMBER", "")),
                 codes.name_or_none(r.get("REGISTRANT")),
@@ -140,23 +134,17 @@ def build(archive, db: sqlite3.Connection, rows: Rows) -> dict[str, int]:
             )
             for r in rows(archive, "RESERVED.txt")
             if r.get("N-NUMBER")
-        ]
-        db.executemany("INSERT OR REPLACE INTO reserved VALUES (?,?,?,?,?,?,?,?,?)", held)
-        counts["reserved"] = len(held)
+        )
+        counts["reserved"] = db.executemany("INSERT OR REPLACE INTO reserved VALUES (?,?,?,?,?,?,?,?,?)", held).rowcount
     return counts
 
 
 def _read(db_path: Path, sql: str, args: tuple) -> list[dict]:
-    """Rows of a query, [] where the file or its table (an older shape's,
-    until the next read) is not there."""
-    if not db_path.exists():
+    """Rows of a query, [] where the file is not there or is of an older shape (registry_reader.ready)."""
+    if not ready(db_path):
         return []
-    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
-        db.row_factory = sqlite3.Row
-        try:
-            return [dict(r) for r in db.execute(sql, args).fetchall()]
-        except sqlite3.OperationalError:
-            return []
+    with _reading(db_path) as db:
+        return [dict(r) for r in db.execute(sql, args).fetchall()]
 
 
 #: The fewest characters of a serial number matched to another

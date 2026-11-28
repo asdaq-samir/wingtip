@@ -109,7 +109,7 @@ describe("visibilities", () => {
   test("a field's reported visibility as the pilot reads it, none where the report gives none", () => {
     const data = planner();
     const [first, second] = data.fields;
-    const metar = { raw: "", visibility_sm: null, visibility_plus: false };
+    const metar = { raw: "", visibility_sm: null, visibility_plus: false, visibility_minus: false };
     const fields = [
       { ...first!, ident: "KAAA", metar: { ...metar, visibility_sm: 10, visibility_plus: true } },
       { ...second!, ident: "KBBB", metar: { ...metar, visibility_sm: 3 } },

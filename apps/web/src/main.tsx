@@ -10,7 +10,7 @@ import { api } from "./lib/api/client";
 import { flushPendingDeletes } from "./lib/pendingDeletes";
 import { routeOf, stopsOf } from "./lib/identSchema";
 import AppToaster from "./components/AppToaster";
-import { BrandLook } from "./lib/brand";
+import { BrandLook, followKeptBrand } from "./lib/brand";
 import SafariEdges from "./components/SafariEdges";
 import ErrorAlert from "./components/ErrorAlert";
 import { PageErrorBoundary } from "./components/PageError";
@@ -26,8 +26,10 @@ import { startLoadLog } from "./lib/loadLog";
 import MapPage from "./features/shell/MapPage";
 import { prefetchRouteMap } from "./features/plan-map/routeMapChunk";
 import { prefetchRouteBox } from "./features/route/routeBoxChunk";
+import { prefetchTripFigures } from "./features/navlog";
 import { prefetchShareMenu } from "./features/share/shareMenuChunk";
 import { loadPopups } from "./components/popupsChunk";
+import { TooltipProvider } from "./components/ui/tooltip-provider";
 import "./index.css";
 // Inter, the text face, here rather than in index.css, which the
 // connector's live view shares (claude-view.html): its host's sandbox
@@ -46,7 +48,7 @@ import "@fontsource/barlow/latin-700.css";
 import { loadEngine } from "./lib/engine/engine";
 import { preconnectTiles, preloadFirstLoad } from "./lib/preloads";
 import { usePreferences } from "./lib/preferences";
-import { THEME_KEY } from "./lib/prefs/migrate";
+import { THEME_KEY } from "./lib/prefs/theme";
 import { takeSharedLinkFrom } from "./features/shared-flight";
 
 // The shared Rust engine (lib/engine), asked for first: the rules it
@@ -61,11 +63,14 @@ const engineLoaded = loadEngine();
 // The reader's text size from the iPhone's Settings, before the first
 // render, so the page is never drawn at the wrong size first.
 followDynamicType();
+followKeptBrand();
 
 // The map's chunk (routeMapChunk) and the search's (routeBoxChunk),
 // fetched while the page draws.
 prefetchRouteMap();
 prefetchRouteBox();
+// The figures strip at FPL's foot (TripFigures), drawn once the engine is in.
+prefetchTripFigures();
 // The menus, popovers and tooltips (popupsChunk), and the route's menu.
 void loadPopups().catch(() => {});
 prefetchShareMenu();
@@ -89,9 +94,10 @@ startLoadLog();
 // (features/shell/newBuild); that reload keeps the route on screen, a
 // person's starts clean (features/shell/freshLoad).
 // Registered once the page has loaded, not during it: the worker's
-// install fetches every chunk it precaches (2.7 MB), which competed
-// with the map, its tiles and the planner on a cold start and after
-// each deploy.
+// install fetches every file it precaches (10.4 MB in 343 files on
+// 2026-11-27, the engine's .wasm, pdf.js and MapLibre the largest; after
+// a deploy only those changed), which competed with the map, its tiles
+// and the planner on a cold start and after each deploy.
 const takeNewBuild = takeNewBuildsWhenAway(registerSW);
 startFresh();
 
@@ -113,8 +119,7 @@ startFresh();
 //
 // React Router's declarative mode (BrowserRouter and Routes), not the data
 // router: the app has no loader, action or fetcher left, and the data
-// router's own code was 59.5 KB of the first load (the speed audit,
-// 2026-11-12). nuqs's React Router adapter reads the address through
+// router's own code was 59.5 KB of the first load. nuqs's React Router adapter reads the address through
 // useNavigate and useSearchParams, which both modes have (nuqs.dev,
 // "Adapters", React Router).
 
@@ -274,14 +279,18 @@ const render = () =>
       {/* Light, dark, or the OS's own choice -- the settings' Theme
         sets it, next-themes keeps it and puts the `dark` class on
         <html>, which is what every colour token in index.css keys off
-        (and what the Toaster below already reads). */}
+        (and what the Toaster below already reads). The first frame's
+        class is first-frame.js's (lib/prefs/firstFrame), put on before the body paints:
+        next-themes' own inline script never runs in a client root. */}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey={THEME_KEY} disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
-          {/* No tooltip provider: each tooltip opens at once (its trigger's
-          delay 0, popups/IconTip), as the provider's did, and the
-          provider would bring Base UI's tooltips into the first load
-          (popupsChunk). */}
-          <>
+          {/* Base UI's tooltip provider: the first label waits its 600 ms,
+          and once one is up the next opens at once, with no entrance
+          (ui/tooltip's data-instant), so a pointer sweeping the map's
+          buttons reads each label as it passes (the design review of
+          2026-11-23, M1). Only the provider's context is on the first
+          load; the tooltips themselves stay in the popups' chunk. */}
+          <TooltipProvider>
             {/* The address's keys read and written by nuqs (lib/address),
             by its plain React adapter, from the browser's address itself
             (useSyncExternalStore): React Router's adapter kept its own copy
@@ -294,7 +303,7 @@ const render = () =>
             <ErrorAlert />
             <BrandLook />
             <SafariEdges />
-          </>
+          </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </React.StrictMode>,

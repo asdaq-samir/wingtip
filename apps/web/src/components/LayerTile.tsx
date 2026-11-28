@@ -213,7 +213,10 @@ export function LayerMenuTile<V extends string>({
   on?: boolean;
   testId: string;
 }) {
-  const words = String(options.find((o) => o.value === value)?.label ?? "");
+  // An option's words: its text where its label is more than words (a
+  // look's swatch beside its name).
+  const picked = options.find((o) => o.value === value);
+  const words = picked?.text ?? String(picked?.label ?? "");
   return (
     <PullDown
       label={name}

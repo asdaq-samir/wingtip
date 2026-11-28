@@ -258,7 +258,7 @@ def airspace_transits(route_start: tuple, route_end: tuple, shp_path, fixes: lis
     from .geo import along_track_distance_nm
 
     path = list(fixes) if fixes and len(fixes) >= 2 else [route_start, route_end]
-    # The short way round 180, the line cut there (geo_boxes: Adak to Shemya).
+    # The short way over 180, the line cut there (geo_boxes: Adak to Shemya).
     polygons = load_controlled_airspace(shp_path, geo_boxes.path_box(path, buffer_nm=2.0))
     route_line = geo_boxes.line_across(path)
 

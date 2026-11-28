@@ -40,19 +40,23 @@ Compose. Nothing here is built by hand where a stock part does it.
    (`components/sheet/CardStack`), with the sheet's sizes, grabber and
    swipe and the map's buttons on its top. The welcome (`WelcomeSheet`)
    stays its own sheet; questions stay the stock alert (7), menus
-   Popovers, and a plate or diagram full screen its viewer. The page
+   Popovers (on the web a finger's drag down from the top of a menu's
+   list closes it, as a sheet's does: `components/ui/dragClose`, every
+   DropdownMenu and ContextMenu; the owner, 2026-11-26), and a plate or diagram full screen its viewer. The page
    toggle stays in sight over any card, riding the front card's top, and
    a tap on it closes the cards and turns the page (the owner,
    2026-11-13: "airport card hides the fpl toggle"; §4a, §7).
 
 2. **What opens inside a card stays in that card's stack, with Back**
    (NOTAMs, a diagram's details, a past flight, a page of Settings).
-   **Every card opens at half** (the medium detent), whatever it covers
-   and wherever it is opened from -- the search, the map, a list, the
-   plan, a link, the account button -- then goes where the pilot drags it,
-   as Apple Maps' cards do (the owner, 2026-11-11: "I thought stock was to
-   open each card medium by default"); Emergency alone opens all the way
-   up (4). A page opened inside a card stays at the height the card is at
+   **A card opened from another card opens at that card's size**: all
+   the way up over one all the way up, at half over one at half, as Apple
+   Maps' cards do (the owner, 2026-11-26). **Opened from anywhere else it
+   opens at half** (the medium detent) -- the search, the map, a list, the
+   plan, a link, the account button -- and over a card at its pill at half
+   too, so it can be seen; then it goes where the pilot drags it (the
+   owner, 2026-11-11: "I thought stock was to open each card medium by
+   default"). Emergency always opens all the way up (4). A page opened inside a card stays at the height the card is at
    (owner decision 2026-11-10, on the Android sheet audit's SC-1). Each
    card sizes its own sheet (the owner, 2026-11-11): on the web its own
    nested drawer's snap point, asked through `useCardSize`, the sheet
@@ -167,14 +171,13 @@ Compose. Nothing here is built by hand where a stock part does it.
     its start, its name centred, and ✕ at its end -- in the pill's room, and nothing else of it; a tap on
     the row or a drag up raises the sheet back to half with the card as it
     was; ✕ there closes the card and the pill then shows the search. A
-    swipe down past the pill parks a content card there (an airport, an
-    airspace, traffic, an airplane, a past flight, Nearest, the Nav Log,
-    the Profile, the Stops, the Brief), and Emergency, which closes by ✕
-    alone; a settings card -- You (Settings in it) and the Map card --
-    closes on a swipe down from half instead, its close as ✕'s (the
-    owner, 2026-11-14: "Apple Maps closes all setting drawers on swipe
-    down"), as Apple Maps dismisses its account and settings sheets while
-    a place stays at hand; all the way up, a swipe down brings it to half,
+    swipe down from half closes a card, its close as ✕'s, on the web
+    every card, Emergency too; the main sheet alone, Search and FPL,
+    stays at its pill (the owner, 2026-11-26: "The main sheet with search
+    and FPL are the ones that should stay to a pill", where it was the
+    settings cards alone, You and the Map
+    card, 2026-11-14: "Apple Maps closes all setting drawers on swipe
+    down"); all the way up, a swipe down brings it to half,
     the Drawer's own next snap point, and it stays open (the owner,
     2026-11-14: "Settings cards should only close from a swipe down when
     in medium detents"). A form with an edit still asks first (6). A
@@ -216,7 +219,7 @@ Compose. Nothing here is built by hand where a stock part does it.
 | Questions     | `SheetDialog`: a confirmation (`useConfirm`) is the stock centred alert at every width, Cancel beside its action (2026-11-20); Ready to Fly's prompt and the other alerts a bottom sheet on a phone with ✕ or Cancel, centred from `md` up                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `.alert` and `.confirmationDialog`, hung on the top of the stack (`TopHosts`) so they always show                                                                                                                                                                                                                                                                                                                                                                                              | `AlertDialog` (`ui/SourceDialog` for a source report)                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Emergency     | The one full-height card, ✕ at the top right, the map not dimmed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | A card on the system sheet (`SheetPage.emergency`) at the large detent, the card's own close; the iPad's inspector                                                                                                                                                                                                                                                                                                                                                                             | A card on the sheet's stack (`SheetPage.Emergency`) at full height, the card's bar; at half the glide ring shows                                                                                                                                                                                                                                                                                                                                      |
 | One search    | Search's page, turned to by one round toggle button at the end of the sheet's first row, where the account button was (`PageToggle`; the owner, 2026-11-14, "Swap the fpl toggle and account buttons"), its magnifier showing while FPL is up; it finds airplanes too -- the pilot's, the kept, those the map hears by callsign or address, the FAA registry's -- with no traffic page or airplane field of its own (the owner, 2026-11-14), and the airplanes' Favorites and Recents are its page's, after the airports'; the airplanes' Adds ask it ("Search for your airplane"), as Home's and a Favorite airport's do; Nearest's place is the one field scoped to it, at its card's top (`nearSearch`), where the card covers the sheet's first row; the route's points ask it for an airport (`askSearchPick`), the ask's title (Add Stop, Change Stop, Departure) large in the first row with a ✕ that cancels back to FPL and the field under it, as Apple Maps' Add Stop sheet (the owner, 2026-11-20; `OneSearchField`, `SearchBox`) | The one `.searchable` field, on the TabView's `Tab(role: .search)`; it finds the airplanes heard too, their Favorites and Recents after the airports', and the airplanes' Adds open it with "Search for your airplane" or "Search for an airplane to keep" (`OneSearchModel.Keeping`), no traffic page of its own (2026-11-14)                                                                                                                                                                 | Search a `NavigationBar` item beside FPL's; Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`)                                                                                                                                                                                                                                                                                                                           |
-| At the pill   | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller), with its short line under its name (`CardHead`'s `sub`); a tap on the row raises the card to half. A swipe down parks a card there; a settings card's frame has `onSwipeClose` (`lib/sheetCards`; You's `CardLayer`, the Map card's `SheetCard swipeCloses`), and a swipe down from half closes it by the Drawer's own close, from all the way up brings it to half (the owner, 2026-11-14: "Settings cards should only close from a swipe down when in medium detents")                                                                                                                                                                                                                                                                                                                                                                                                  | The system sheet's smallest detent shows the card's bar, where a swipe down parks a content card (`SheetPage.detents`) and a drag past it leaves it there (every card but the settings cards `interactiveDismissDisabled`, `Navigation/CardHost`), so Emergency too closes by its ✕ alone; You, Settings and the Map card have no pill detent, so from all the way up a swipe brings them to half, the next detent, and from half closes them (`SheetPage.swipeCloses`, the owner, 2026-11-14) | No pill with a card open: the sheet's peek is half the window while a card is up (`halfWindow`), and a drag down from half closes nothing -- but under You, its pages (Pilot Details, Minimums, Settings and Settings' pages) and the Map card (`SheetPage.swipeCloses`), where the sheet may take its Hidden value and a swipe down closes the cards and brings the search back at its peek (the owner, 2026-11-14); Emergency closes by its ✕ alone |
+| At the pill   | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller), with its short line under its name (`CardHead`'s `sub`); a tap on the row raises the card to half. Only the main sheet parks there; every card's frame has `onSwipeClose` (`lib/sheetCards`; `SheetCard`'s `onClose`, each `CardLayer`'s own, 2026-11-26), and a swipe down from half closes it by the Drawer's own close, from all the way up brings it to half (the owner, 2026-11-14: "Settings cards should only close from a swipe down when in medium detents")                                                                                                                                                                                                                                                                                                                                                                                                  | The system sheet's smallest detent shows the card's bar, where a swipe down parks a content card (`SheetPage.detents`) and a drag past it leaves it there (every card but the settings cards `interactiveDismissDisabled`, `Navigation/CardHost`), so Emergency too closes by its ✕ alone; You, Settings and the Map card have no pill detent, so from all the way up a swipe brings them to half, the next detent, and from half closes them (`SheetPage.swipeCloses`, the owner, 2026-11-14) | No pill with a card open: the sheet's peek is half the window while a card is up (`halfWindow`), and a drag down from half closes nothing -- but under You, its pages (Pilot Details, Minimums, Settings and Settings' pages) and the Map card (`SheetPage.swipeCloses`), where the sheet may take its Hidden value and a swipe down closes the cards and brings the search back at its peek (the owner, 2026-11-14); Emergency closes by its ✕ alone |
 | By name       | `useOpenScreen` through `lib/navigation/wanted`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `RootView.openScreen`, which opens the card by `Navigator.open`                                                                                                                                                                                                                                                                                                                                                                                                                                | `OpenScreen` through `ScreenRequests`                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 Each "by name" path is a `switch` or `when` over the generated list of
@@ -293,7 +296,21 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    instead so it takes less space"), every tab showing its word under its icon (the owner, 2026-11-14, from an iOS 26 tab bar: "similar size and see through"), in the one floating bar FPL's actions are drawn in too (`components/FloatingBar`; the owner, 2026-11-18: "Yes make it common. Also I meant shorter not narrower, but apply the same height and width for both"): items 48 points tall in a 56-point capsule, the glyph 24 over the word on the `tab-bar` type (12/16 regular, iOS 26's tab bar), its items one width on every bar, 73 points (a quarter of 18.75 rem less the capsule's sides, so four tabs make it 300 and FPL's three 227; growing with the text size as the words do, capped at a quarter of the room there is, never narrower than its words; the owner, 2026-11-21: "fpl and other tabs placement look different"), 4 points over the screen's foot or the home indicator's inset, so FPL's figures at half clear it), centred, with equal columns, the glass much more see-through (`material.bar-fill` 0.6, the blur kept), so nothing moves on a switch, each named by its aria-label
    ("Weather, VFR"), the dot and count over the icon's corner. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
+   On a phone's bottom sheet the bar comes in, a short fade, once the card
+   has come to rest under it, and goes at once as a finger takes the card.
+   It stands outside the card's sliding popup, so a drag that starts on
+   its capsule does not move the card: Base UI's Drawer has no part that
+   hands a drag on another element to an open drawer (its `SwipeArea`
+   only opens a closed one), and the bar inside the popup, counter-moved,
+   slid apart from the card on the iPhone (the sheet-motion audit of
+   2026-11-23). The card's grabber and its ground above the bar take the
+   drag; the bar is for taps.
    This replaces T4's tabs under the actions and its one-line report.
+   The sketch's runways are laid out by the engine (`runway_sketch`):
+   between NASR's surveyed ends, else, where no runway has them, guessed
+   along a runway's true heading through the field's point, 75 ft wide
+   where NASR gives no width (the drawing's assumption); the web and iOS
+   draw its answer.
    A closed runway is crossed out on the pictures' runway sketch where
    the airport marks it on the ground, the engine's
    `runway_closure_marks` (2026-11-17; AC 150/5340-1M 5.6 and 5.7, AIM
@@ -309,11 +326,22 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    yellow (Figure A-27): the owner's to change.
    The airplane cards are laid out the same way, with the same parts (the
    owner, 2026-11-14: "make sure the airplane card looks similar to
-   airport card"): an N-number's card and a tracked flight's have their
-   facts in the strip (Type, Year, Seats, Engines, Registration, Owner)
-   and their photos as the same picture tiles at the head of their Info
-   tab alone, and their tabs (Flights, Info,
-   Figures, icons too: History, Info, Gauge; a flight's Info and Flights) in the same floating glass bar. On
+   airport card"; one card an airplane since the owner's design of
+   2026-11-26): its facts in the strip (its maker over its model, "Airbus" over "A321", Year, Seats, Engines,
+   Weight, Operator, five at the most and one row, its maker the small grey name,
+   its model the value, Engines giving way to Operator, spread with
+   no sideways scroll as the airport card's, 2026-11-27; its registration and owner in its Registration section, the
+   owner, 2026-11-27) under its actions and over its pictures (the
+   owner, 2026-11-26: "It should be buttons, info strip and then the
+   pictures"), then two tabs in the glass bar at its foot as the airport
+   card's (the owner, 2026-11-27: "let's have two tabs, info and flights.
+   by default info opens, and then flights are fetched in the
+   background"; "info can show the pictures, flights can show the in the
+   air card"): Info, its photos and sketch then its record; Flights, its
+   flight now then its flights. Each section its first three rows and its
+   title the rest, as the airport card's sections ("make the sections of
+   3 entries like airport card"), its Figures a fourth button opening
+   their own card. On
    Android, at half height a
    card shows the small bar, its title and actions on one row, and at
    full the large flexible bar, folding as it scrolls (owner decision
@@ -332,9 +360,9 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
 
 |                   | Web                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | iPhone                                                                                                                                                                                                                                                                                                            | Android                                                                                                                                                                                                                               |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pinned head       | One scroller per sheet (`sheet/SheetScroller`'s `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, and in the flow while it is taller than the scroller (`sheet/bandFits`: FPL's open route ran 795 points in a 757-point scroller and hid the route's field, 2026-11-19), the grabber's room inside it; on a phone frosted only all the way up, the sheet's solid ground at the pill and half, where its body does not scroll and the frost redrawn as the sheet slid striped the route's card in iPhone Safari (`SOLID_BAND`, 2026-11-17), and solid too while the sheet moves from all the way up, a finger on it or settling (`FULL_BAND`, 2026-11-18); tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the head fill, 0.94 (tokens.json `head-fill`), over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs float at its foot instead (C1, the owner, 2026-11-14): a glass bar sticky at its scroller's foot, held at the foot of the part in sight by the Drawer's offset (`CardTabBar`, the airport's `place/PlaceTabBar`), its pages starting under the head (`PINNED_BELOW`, `CardTabPages`); the airplane cards' the same (2026-11-14) | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport and airplane cards' tabs are the stock `.tabs` picker in the system's bottom toolbar, floating Liquid Glass at the card's foot and put away at the pill (`Design/CardParts`' `CardTabBar`, C1, 2026-11-14) | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs Info, Weather, Runways and Charts in Material 3 Expressive's floating toolbar at the foot of the card in sight, the stock short navigation bar's items in it, each glyph over its word (`ui/AirportTabs`' `AirportTabBar`, lifted over the window's foot at half by `sheet/SheetFoot`'s `InSightFoot`; C1, 2026-11-14) |
+| Pinned head       | One scroller per sheet (`sheet/SheetScroller`'s `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, and in the flow while it is taller than the scroller (`sheet/bandFits`: FPL's open route ran 795 points in a 757-point scroller and hid the route's field, 2026-11-19), FPL's band always in the flow with its title row alone pinned (`bandScrolls`: its route near the scroller's height crossed that line and back as cards opened, and the list jumped, 2026-11-25), the grabber's room inside it; on a phone frosted only all the way up, the sheet's solid ground at the pill and half, where its body does not scroll and the frost redrawn as the sheet slid striped the route's card in iPhone Safari (`SOLID_BAND`, 2026-11-17), and solid too while the sheet moves from all the way up, a finger on it or settling (`FULL_BAND`, 2026-11-18); tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the head fill, 0.94 (tokens.json `head-fill`), over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs float at its foot instead (C1, the owner, 2026-11-14): a glass bar sticky at its scroller's foot, held at the foot of the part in sight by the Drawer's offset (`CardTabBar`, the airport's `place/PlaceTabBar`), its pages starting under the head (`PINNED_BELOW`, `CardTabPages`); the airplane cards' the same (2026-11-14) | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport and airplane cards' tabs are the stock `.tabs` picker in the system's bottom toolbar, floating Liquid Glass at the card's foot and put away at the pill (`Design/CardParts`' `CardTabBar`, C1, 2026-11-14) | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs Info, Weather, Runways and Charts in Material 3 Expressive's floating toolbar at the foot of the card in sight, the stock short navigation bar's items in it, each glyph over its word (`ui/AirportTabs`' `AirportTabBar`, lifted over the window's foot at half by `sheet/SheetFoot`'s `InSightFoot`; C1, 2026-11-14) |
 | Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the sheet's scroller and any in its body are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, the sheet left at its size                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page                                                                                                                                                                           | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height                                                                      |
-| Detents           | A card's nested drawer has its own snap point among the sheet's three sizes, the same fixed values in the Drawer's own units (`"4.25rem"`, `"23rem"`, `1`; `components/sheet/insets`), never px worked out from the window: it opens at half, every card but Emergency (`lib/sheetCards`' `cardOpening`), and the sheet under it stays where it was; what is drawn follows the snap point the moment it is set; a swipe moves one size however fast, by the Drawer's own `snapToSequentialPoints` (the owner, 2026-11-11, "enforce the detents, regardless of how fast you swipe")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Every card opens at `.medium` (Emergency at `.large`) and the pilot's drag sizes it, a card opened inside a card keeping the height; the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal                                                            | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height                                                                                                                          |
+| Detents           | A card's nested drawer has its own snap point among the sheet's three sizes, the same fixed values in the Drawer's own units (`"4.25rem"`, `"23rem"`, `1`; `components/sheet/insets`), never px worked out from the window: it opens at the size of the card it is opened from, else at half, Emergency all the way up (`lib/sheetCards`' `cardOpening`), and the sheet under it stays where it was; what is drawn follows the snap point the moment it is set; a swipe moves one size however fast, by the Drawer's own `snapToSequentialPoints` (the owner, 2026-11-11, "enforce the detents, regardless of how fast you swipe")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Every card opens at `.medium` (Emergency at `.large`) and the pilot's drag sizes it, a card opened inside a card keeping the height; the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal                                                            | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height                                                                                                                          |
 | Sideways rows     | The Embla carousels (`CardPictures`, `RecentCards`, a field's hours `HourlyForecast` and the Brief's departure hours `DepartureWindowStrip`, shadcn's Carousel since 2026-11-17 where they were scroll-snap rows) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain` and, in the sheet, `overflow-y: hidden` (index.css: `overflow-x: auto` alone made it a few points' vertical scroller, which took a drag up at half); the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | No control takes the sheet's drag: the Profile's upright altitude slider is a stock `Slider` the sheet does not take; the flown track's chart moves the replay on a tap                                                                                                                                           | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest                                                                                                                                                   |
 | Place kept        | A card under a card keeps its place in its own drawer's scroller, and a card opened anew is a new drawer, at its top (CardStack); a kept tab keeps its place in the sheet's one scroller (`TabKept`'s `useKeptScroll`), and a tab's page opened anew starts at its top (`useStartAtTop`); the airport card's tabs each open at their own top under the actions, Info's too when picked again, and a short one leaves the pages where they were (`useTabScroll`; the owner, 2026-11-14: "Switching tabs should not show those"), Settings' list its place after a page (`lib/scrollPlace`); the suggestions, a sent search's results and its Filters page each have their own scroll box                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | The stack's own behaviour                                                                                                                                                                                                                                                                                         | Each card is its own back stack entry with its own scroll and title state                                                                                                                                                             |
 | Footers           | The card's own content                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Every footer is the system's bar, `safeAreaBar` (`glassFoot`); a card's toolbar the stock bottom bar                                                                                                                                                                                                              | The card's own content                                                                                                                                                                                                                |
@@ -424,30 +452,71 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   Stop, filled, in Fly Here's place, then Call, Favorite and Address (the
   owner, 2026-11-18; the web first); an airplane its profile with Fly This Airplane; an
   action runs.
-- **The airplane card** (its profile), however it is reached (the search,
-  the plan's Airplane, a link, the pickers), the pilot's own airplanes
-  too, is laid out as the airport card is (the owner's pick of P1,
-  2026-11-14, "Ok I take your rec"; canvas
-  <https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253>): its N-number and,
-  under it, the registry's make, model and year ("Piper PA-28-140, 1971");
-  one row of four buttons, the first filled -- Fly This, Follow (the
-  flight card's alerts: takes off, lands, comes near), Favorite and Share,
-  Follow and Favorite greyed where the registry gives no ICAO address;
-  one status line under them; and the tabs, Info's page starting with
-  the facts in a sideways strip, as the airport card's (Type, Year, Seats,
-  Engines, Registration, Owner), and its photo as the airport card's
-  picture tiles (the owner, 2026-11-14); the tabs **Flights ·
-  Info · Figures** in that order in the airport card's floating glass bar
-  at the card's foot (C1; the owner, 2026-11-14: "make sure the airplane
-  card looks similar to airport card"), Flights first with its count as
-  the hint. The status line says "In the air · 4,500 ft · 112 kt" from
-  the live find, else "On the ground · landed KPWK 2h ago" from its last
-  flight, else "Not heard in the last 6 weeks", and "Checking whether
-  it's in the air…" while the find is out. Flights is the flight card's
-  list of past flights (the last ten, more on asking, a day picked), each
-  ▶ opening its replay over the card (the owner, 2026-11-14: "How do I
-  see the flights of airplane and play them?"); Info the airplane's
-  public record in groups, in this order -- Registration (owner, owner
+- **The airplane card** is one card an airplane, however it is reached:
+  by its N-number (the search, the plan's Airplane and its ⓘ, a link's
+  `airplane=`, the pickers), the pilot's own airplanes too, or by its ICAO
+  address (traffic tapped on the map, a link's `flight=`). The owner's
+  design of 2026-11-26 (mockups Main, Ground, Figures and Unregistered)
+  merged the airplane card and the traffic card into it: the registry
+  gives an N-number's address and adsb.lol's detail an address's US
+  registration, so a flight with an N-number is that N-number's card, and
+  its "In the air" opens nothing more. Laid out as the airport card is:
+  Share at the head's start, the title, ✕ at its end; the title its
+  N-number, else its call sign; under it its call sign while it flies and
+  what it is ("Piper PA-28, 1998", else its ICAO type). Four action
+  tiles, always the four in their places, the first filled, by its state:
+  in the air **Track** (the map keeps it in sight, a switch), on the
+  ground **Fly This** ("Flying This", greyed, once it is the plan's
+  airplane); then **Alerts** (takes off, lands, comes near),
+  **Favorite** and **Figures**. A tile that does nothing for this
+  airplane is greyed, not taken away (the owner, 2026-11-27: "Keep four
+  buttons on top, just disable the one when needed"); the phones draw the
+  same row from design/card-actions.json (the owner, 2026-11-27: "Yes,
+  match the web"; iOS's `AirplaneActions`, Android's `AirplaneActionRow`),
+  Figures a page pushed over the card: Fly This and
+  Figures for an airplane the planner cannot fly (it can fly one the
+  FAA's registry holds, or the pilot's own). Alerts is offered
+  where its history is, greyed where the registry gives no ICAO address.
+  Then two tabs, the glass bar at its foot (the owner, 2026-11-27): Info,
+  where it opens, and Flights, its flights asked for in the background as
+  the card opens (OpenSky's take seconds). Flights opens with its flight
+  now (the owner, 2026-11-27: "flights can show the in the air card"): in the air the
+  status badge, its ends with the bar of the way flown, height, speed and
+  track, when it arrives, how far and how high from own ship, carried on
+  each second; on the ground one line ("On the ground · landed KPWK 2h
+  ago", "Not heard in the last 6 weeks", "Checking whether it's in the
+  air…" while the live find is out). Info opens with its pictures, one sideways row as the
+  airport card's ("info can show the pictures"): its photo, credited and
+  linked to its page, then, where it has flown two reports at the least,
+  the sketch of where it has flown; none where it has neither. Who flies it and its
+  squawk are facts in the strip over the pictures, as is traffic's ICAO
+  address where the FAA's
+  registry does not hold it (the owner, 2026-11-27: no Now section, its
+  scheduled route and departure being the flight slide's). Opened by
+  its N-number while it flies, it is tracked without the map moving.
+  Each section its first three rows, its title opening the rest and "3
+  of 12" at its right (FirstFew): on Flights its flights, Earlier
+  while it flies, newest first (the last ten, Show Earlier Flights once
+  the section is open, a day picked), each ▶ opening its replay and
+  debrief over the card (the owner, 2026-11-14: "How do I see the
+  flights of airplane and play them?"); on Info its public record, its
+  identifiers with it (ICAO address, Mode S octal, call sign).
+  **Figures**, the fourth action button for an airplane the
+  planner can fly (the owner, 2026-11-26: "It should be the fourth
+  button above"), opens a card of its own over this one, open at once
+  from the plan's N-number's ⓘ or a figure asked for: every planning
+  figure, edited in place, a missing one asked for there, then its **POH** (the owner, 2026-11-26): the app ships
+  none, the manufacturers' being copyrighted, so the row is Add Your POH,
+  a PDF from the device kept in the pilot's own documents and linked to
+  the N-number, with "Use for All <model>" under it (the registry's make
+  and model, else the profile's type); linked, it opens in the reader, and
+  its menu changes or unlinks it, the document kept. An airplane with no
+  Figures has the row after its record. Traffic the FAA's registry does not hold is the same
+  card titled with its call sign, its registration, type, model, ICAO
+  address and call sign in its first section, its registration row
+  saying it is not in the FAA's registry, then its flights, its photo by
+  its address in the row. Its record is the airplane's
+  public record in sections, in this order -- Registration (owner, owner
   type, town, co-owners, issued and expires, last action, FAA region,
   fractional), Airplane (type, category, builder certification, seats,
   engines, weight class, the FAA's reference cruise said as a reference
@@ -460,8 +529,7 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   then other airplanes that held the N-number) and Documents filed with
   any reservation -- each group saying in place where it has nothing; its
   Planespotters.net photo in the card's pictures once one is found, the
-  photographer named on it and the picture a link to its page; Figures every
-  planning figure, edited in place, a missing one asked for there.
+  photographer named on it and the picture a link to its page.
 - **The owner rule:** the FAA aircraft registry is public data, so Info's
   Owner group always shows the registry's owner for every airplane --
   name, town and state, kind of owner and co-owners -- as the FAA
@@ -528,23 +596,11 @@ off by default (the owner, 2026-11-13).
    row greyed under a finger, a drag button shown while the keyboard has
    it, and Add a Stop saying "Up to 16 stops" when the route is full (the
    grouped box's audit, 2026-11-20); after a hairline inset to the
-   text its ident (a link to its card), the fuel in the tanks there (past empty the gallons short, "−12 gal", the owner, 2026-11-20) right
-   after it -- at the departure and at a stop the gauge is a button
-   (the owner, 2026-11-21: "can we set the fuel tank by tapping on it?";
-   `procedures/FuelSet`), named with its gallons ("36 gal, fuel on
-   board: change"; its 44-point area 13 above and below, meeting the
-   ident's 9 past the name so neither takes the other's taps), opening a
-   stock Popover from a tablet's width up and on a phone a card over FPL
-   (the stock Drawer's nested drawer, `SheetCard`) with Cancel and Done in
-   its head, so FPL and the gauge stay in sight under it (the HIG review,
-   2026-11-21; iOS stacks a sheet over a sheet), its gallons field 44 tall
-   with "gal" at the figure's size: at the departure the fuel on board at engine start,
-   Full (the airplane's usable fuel) or the gallons; at a stop what the
-   tanks are fuelled to, Full, No fuel (what it lands with, kept) or the
-   gallons -- a segmented control and a number field, no Tabs pick, as
-   no airplane profile carries a tabs figure and none is assumed. More
-   than the tanks hold is kept, said under the field (warn, never
-   limit). The figure is the address's `tanks` ("C81:20,KMSN:0"), the
+   text its ident (a link to its card), the fuel in the tanks there (past empty the gallons short, "12 gal short" in the short's red, 2026-11-23; it was "−12 gal", the owner, 2026-11-20) right
+   after it -- a gauge to read, no control (the owner, 2026-11-25:
+   "Tapping fuel tanks should not do anything"; it set the fuel at the
+   departure and after a stop from 2026-11-21). The figure is the
+   address's `tanks` ("C81:20,KMSN:0"), the
    engine's `fuel_in_tanks` walks the gauges from it and the planner's
    fuel check, fuel stops and loading fly the same (its `tanks` query,
    `navlog_fuel_plan`'s `on_board_gal`). A gauge is red under the reserve
@@ -639,11 +695,51 @@ off by default (the owner, 2026-11-13).
    grouped box's bottom right, after Add a Stop and the fuel stops' pill on
    one line (2026-11-22: "pinned to the bottom right"), is a toggle that
    turns the same box into the route's field and back, its size and shape
-   kept and the route wrapped in it, pressed while it is the field,
+   kept at the least and the route wrapped in it, each pill and chip whole,
+   never cut at the edge, the box growing to hold every
+   line and the toggle's row under the last, below full no further than
+   the room above the foot bar, past which its lines scroll inside the
+   box with the toggle's row kept in sight, the sheet left where it is
+   (`useFieldRoom`, the owner, 2026-11-25) (the owner's iPhone,
+   2026-11-23; the row takes no tap but on its own two controls, the
+   field's last line under it the field's), pressed while it is the field,
    with no "Route" row and no Done (the owner, 2026-11-22: "It should make
    the same grouped box into route box and the other way"), what is typed
    read as the field is left, the plan's Undo as ever; the
-   figures under it and the Routes' chips put away; a present position is "My Location" (Apple Maps' words)
+   figures under it and the Routes' chips put away (Routes not offered). **The route box's
+   pills** are ForeFlight's route editor's (the owner's screenshot,
+   2026-11-23): in the order flown, left to right with no arrows, `gap-2`
+   between two (each one's 44-point area half the gap wider each side),
+   wrapping whole; a field's arrival and approach chips sit before its
+   pill and its departure's after it at a gap of 4, each chip its own
+   piece that may wrap, a long title cut with "…"; nothing written after
+   the last point ("Destination" is the timeline's word). A tap on a pill
+   is its menu, the stock DropdownMenu with the same items as the
+   timeline's "⋯" (`PointMenuItems`, one menu for both): Info (an
+   airport's card), Insert Before and Insert After (the one search asked
+   for the point, put in there; after the destination it is the new
+   destination), Show on Map (the map brought to it and ringed, the sheet
+   down to half from full), Procedures (where the FAA publishes one of the
+   kind the route flies there, its d-TPP DP, IAP or STR), then Change,
+   Direct To, the altitude, Move Up and Down, and Remove last, its Undo the
+   plan's toast. Enter on a pill opens it, the left and right arrows go
+   from pill to pill, Delete takes one out. What is wrong is on the pill:
+   a point not known, or a field NASR lists closed (the engine's
+   `field_status` on its card; decision 0043), is red, "Closed" or "not
+   known" in its name and the reason at its menu's head; a caution there
+   (the altitude's, a flight short of fuel with no stop offered) is a red
+   "!" at its top right, its words at the menu's head. A suggested fuel
+   stop stays dashed after the point its flight leaves (`fuelStopsAt`, by
+   both the flight's ends): one tap puts it in the route there, no menu; a
+   swipe to the left (`SwipeRow`), its held or right-clicked menu's
+   Dismiss, or Delete dismisses it for this plan. A flight with more than
+   one suggested is one dashed pill in that place, the same look and
+   height, "+3 fuel stops" ("+3 stops" for breaks; `FuelStopFold`, the
+   owner, 2026-11-23: a long route's box was mostly dashed pills): a tap
+   or Enter puts them all in there; held, right-clicked or the menu key,
+   the stock menu lists them, each with its own Add to Route and Dismiss,
+   then Add All and Dismiss All; a swipe to the left or Delete dismisses
+   the flight's suggestions. The map keeps a pin for each. A present position is "My Location" (Apple Maps' words)
    wherever the route shows it, never an ident (decision 0047); under the
    timeline the route's figures (To,
    Distance, ETE (ETA for an arrival), Track: short words, ETE and ETA the FAA's (2026-11-20), the distance whole
@@ -666,22 +762,54 @@ off by default (the owner, 2026-11-13).
    in degrees magnetic, three figures and north 360 ("274°", "004°"): the
    fix's true course (the W3C Geolocation API's `coords.heading`; a dry
    run's, the plan's track) less the engine's WMM variation at the fix
-   (`magnetic_variation`; `trackFigure`), asked again only a mile on or
+   (`magnetic_variation`, turned by `magnetic_of`; `trackFigure`), asked again only a mile on or
    on a new UTC day (`lib/magnetic`'s `nearVariation`: the WMM's field
    changes over miles and years, its track written in whole degrees), "—" with no position, no course
    or below flying speed (the engine's `underway`), a column always. The
    fuel stays on the timeline's tank gauges, the nav log and the Brief,
-   no longer on the strip, so the strip no longer opens its breakdown. At the sheet's very foot from
-   half up, the Apple way, the strip held just over it and sliding under
-   it to the pill as the sheet goes down (the owner, 2026-11-22), the strip one
-   thin line at half and full (each value a detail's 15 after its name in a
-   note's 13, the names dropping first where the line is short; "make the
-   figures strip very thin when fpl is half or full") and full size as the pill, a floating glass bar, the one floating bar the airport card's
+   no longer on the strip, so the strip no longer opens its breakdown. The
+   strip and FPL's tab bar are one fixed bar over the screen's foot, outside
+   the sliding sheet (`sheet/FootBar`, a sibling of the Drawer's popup on a
+   phone; the side panel's foot beside it): the sheet slides behind it and
+   nothing in it follows the sheet, iOS 26's tab bar with its bottom
+   accessory (the sheet-motion audit of 2026-11-23, option B, which the
+   owner took, after the strip held at the foot from inside the sliding
+   sheet led it, jumped into the route and cut the tabs out mid-slide).
+   Always in sight at the bottom (the owner's rule); at the pill the figures
+   alone at the pill's size in the pill's room under the grabber, the tabs
+   folded away (about 50 points of map), and at half and all the way up the
+   strip one thin line on the tab bar, one stack (each value a detail's 15
+   after its name in a note's 13, two by two where the line is too short
+   for every figure whole; the owner, 2026-11-22, "make the figures strip
+   very thin when fpl is half or full"). The pill is one row of at most
+   four figures, the GPS altitude the first left out, a figure still too
+   wide cut short with "…", never stacked; at a large text size the bar
+   grows taller than the pill's room and the map's room follows its
+   measured height (the r6 UI audit's H1). It changes between the two only once the sheet
+   has come to rest (`sheet/sheetMotion`, from Base UI's own data-swiping
+   and the popup's transform transition), with a 200 ms fade, never with
+   the finger. It is opaque on the sheet's ground with no fade or scrim
+   over the route above it (the owner, 2026-11-23: "the strip fades the
+   route buttons above it"); the page ends with room as tall as the bar
+   (`--foot-bar`, set as the bar is resized), so the route's last row
+   scrolls clear above it all the way up; the map's room is never less than
+   the bar, and a row tabbed to stops clear above it (scroll padding as tall
+   as the bar). Its ground takes no touch at any size, only its buttons
+   do, so a drag on it is the sheet's, as on Apple Maps; at the pill a tap
+   raises the sheet to half, and from half up a tap on its ground does
+   nothing. Only what it holds fades as it changes, never its ground; it
+   goes at once, with no fade, under a card (before the card rises), on
+   Search's page and while the keyboard is up, as iOS puts a tab bar away. The tab bar is a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of four buttons: Brief and Nav Log, each opening its card over FPL;
    Routes, the route glyph FPL's button had before it read "FPL", pressed
-   while the suggested routes are out (Route Options, More's first item
+   while the suggested routes are out, their chips then in the figures'
+   place in the foot bar, at the pill too, the same slot over the tabs so
+   nothing else moves; a chip tapped is flown and the chips stay out to
+   compare; Routes again, Brief or Nav Log bring the figures back (the
+   owner, 2026-11-23: "When routes is tapped, show the routes instead of
+   the figures strip") (Route Options, More's first item
    until the owner's 2026-11-22: "route option can show in the tab bar
    instead with the previous fpl icon we used"), always in the bar and
    greyed, named "No route options", while there are no ways to suggest
@@ -721,16 +849,14 @@ off by default (the owner, 2026-11-13).
    of sight, and comes into sight by CSS the moment a finger takes the
    sheet, nothing built or swapped while it moves (on a phone: the
    desktop's side panel has no detents, nothing is laid out out of sight
-   there, and its cards keep one height; the owner, 2026-11-19); where the pill's face
-   is not the sheet's top (FPL's figures at the foot), it fades out as
-   the risen face (the actions' bar) fades in, in the sheet's settle
-   time. A light tick as it settles where the browser has one. In flight the
+   there, and its cards keep one height; the owner, 2026-11-19); FPL's
+   figures stay in the foot bar beside the sheet meanwhile. A light tick as it settles where the browser has one. In flight the
    four are a row of tiles at the top of the flying drawer and the foot
-   the figures, large, with Done flying. The Routes' chips are behind a
-   button at the start of the first row, out above the stops while it is
-   on (RoutesToggle; the owner, 2026-11-17), their ways drawn on the map
-   only then; put away as the route's ends change or its ways go, and
-   the button not offered while the route's field is open. The first
+   the figures, large, with Done flying. The Routes' chips are behind the
+   tab bar's Routes, out in the figures' place in the foot while it is
+   pressed (they were a row above the stops until 2026-11-23), their ways
+   drawn on the map only then; put away as the route's ends change or its
+   ways go, and Routes greyed while the route's field is open. The first
    row is three columns, the airplane's bar centred between the routes'
    button's slot (kept empty without it) and the page toggle, giving way
    in a narrow row, its airplane's pill first. What the Brief found
@@ -805,8 +931,8 @@ off by default (the owner, 2026-11-13).
    the others' chips left out where
    they would overlap (the owner's pick of the routes canvas, board 5,
    2026-11-16); then the route in order, and
-   the actions' bar pinned at the foot, the figures at the pill, both
-   FPL's alone; the Brief, the Nav Log, the Profile and the Stops are cards over it. With
+   the figures and the actions' bar in the one foot bar, the figures alone
+   at the pill, both FPL's alone; the Brief, the Nav Log, the Profile and the Stops are cards over it. With
    no route, the route is open to edit, "Route" over the departure's and
    the destination's cards to fill and the route's field, and the bar keeps
    the airplane and the menu, with a Close that goes back to the card or Search it came from
@@ -944,8 +1070,8 @@ At each airport the chart already shows, from the map's own
   full width with their band; the other public fields from 8, every field
   named from there, private ones from 10, heliports from 11, and the
   altitude tabs from 9; the VORs from 8, the VFR waypoints and the low
-  enroute chart's fixes from 10. The names are capped so on the web (glOverlays'
-  `AIRPORT_IDENT_FAR`, the tiles' `towered`): the cap thins only the
+  enroute chart's fixes from 10. The names are capped so on the web (design/map-style.json's
+  `airportIdentFar`, the tiles' `towered`): the cap thins only the
   untowered fields' names below 8, the long hard runways' some 2,400
   idents at 7 having been about a second of a phone's main thread a wheel
   notch out (the speed
@@ -954,6 +1080,37 @@ At each airport the chart already shows, from the map's own
   job's overlay tiles hold each kind from (`map_zoom`, a zoom less in the
   tiles' own levels), so no app keeps a tier of its own. Where marks
   would overlap, the rule's order keeps them, each 2 px from the next.
+- **The route over the whole country** (the owner's iPhone screenshot,
+  2026-11-23): out there the route is its line, its ends and its stops.
+  The Class B fields' weather marks are half size and unnamed below
+  `map.zoom.class-b-named` (5), and give way to the route's marks, a
+  stop's pin and own ship; the tops of climb and descent come in at
+  `route-tags` (6), and a procedure's and a plate's fix tags at
+  `procedure-words` (9). A route field's ident goes first on the side
+  outside the course's turn there, off the line, then round the field
+  before it gives way; a stop's pin and its field are drawn under the
+  route's names, its ident giving way to them; own ship's room is kept
+  clear by an empty symbol the airplane's size under the HTML arrow, so
+  no label is drawn under it. A label shows whole or not at all (the
+  owner's iPhone screenshot, 2026-11-23: a chart field's "KLW…" clipped
+  against KBUF's mark, a lone "W" by own ship): every mark that is always
+  drawn (a route field's mark, a turn's dot, a stop's field, a Class B's
+  field, own ship's room) still takes its room in MapLibre's collision,
+  and the route's names are placed before everything and drawn on top,
+  the route's marks under them.
+  No chart field is drawn bare (the owner's iPhone screenshot,
+  2026-11-23, the Great Lakes at 6): a field's mark and its ident are
+  placed together, so one whose ident has no room, or isn't named yet at
+  that zoom, is not drawn there, the bigger field winning
+  (`symbol-sort-key`, the engine's `field_mark_rank`, which orders only
+  within a tile, so a Class C's fields are placed first in a layer of
+  their own and their rings don't stand bare). A Class B's field
+  and the one whose card is open always keep their mark, only the ident
+  giving way; the route's fields and stops wear their own marks. A
+  Class C's or D's ring is drawn only round a field that is (the tiles'
+  airspace `ident` against the placed fields' `faa_id`, written at each
+  rest of the map: placedRings), so no ring stands bare; a Class B's
+  ring always, as its field's mark is.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
   the engine's `wind_barb` (5, 10 and 50 kt barbs and flags, a ring for
   calm, 0 to 2 kt calm), and two lines beside the field, the visibility with its weather
@@ -1206,7 +1363,31 @@ way: three homes, and every control in one of them.
    light sensor misreading in a dark cockpit cannot blind the pilot (the
    owner, 2026-11-18); sunlight still adds its contrast. Contrast is an offset on the look's own
    contrast by day, at night or in sunlight, -30% to +40%, 0 the look as it
-   is. Both set the chart's layers as they move. Appearance's Dark +
+   is. Both set the chart's layers as they move, in memory, and are kept,
+   with what is drawn on the chart following, as the finger lifts (the
+   slider's commit; round 6). At night the Dimmer
+   reaches what is drawn on the chart too -- its words, marks, lines and
+   an approach plate, at the chart's own brightness -- so nothing on the
+   map is brighter than the chart under it (AIM 8-1-6; the themes audit,
+   2026-11-27); a plate is white on black at night until the pilot picks.
+   The base map's imagery and the weather loop's radar and satellite
+   take the chart's brightness, the 3D airspace its share as its
+   opacity (round 4); the terrain's hazard tint is a warning and is never
+   dimmed, as own ship is not; the route is dimmed by
+   its colours, solid, so it stays the most visible line, and once, its
+   edges the day's dark (round 5); a TFR's edge and an obstacle are
+   dimmed by their colours too, not made see-through (the owner,
+   2026-11-27: "Dim by colour"), the reds under the paper's own light, so
+   they hold 3:1 over it at the default Dimmer across the whole Contrast
+   range, and each obstacle on a dark ring in the course's edge colour,
+   day and night, the amber 3:1 on it and the ring 4:1 or more on the
+   paper (round 6; a white ring vanished on the sectional's white). The Dimmer keeps its whole range: past about 65%
+   the paper is too dark for any warning to reach 3:1 against it, even
+   black, and that is the pilot's choice (the owner, 2026-11-27: "Allow
+   it, say so"; warn, never limit).
+   Sunlight at night keeps the look's own dark grounds and lifts only the
+   grey words and the edges, never its white sheets; the device's
+   Increase Contrast does the same by day and at night. Appearance's Dark +
    Bright went with them: the night's look of the route, the sky and the
    rest follows the dark theme alone. Every section is four tiles two by two in the layers'
    size and form, the sections lined up (the owner, 2026-11-14: "every
@@ -1234,13 +1415,14 @@ second home; the web first (`features/pilot`, `features/settings`,
 parked features' switches are one Settings group, Extras, right after In
 Flight on every app: a stock switch each, its title and a one-line
 description, all off to start (the web's `lib/extras`, the iPhone's
-`Extra`, Android's `Extras`, the same keys). Web: ATC Copilot, Other
-Airplanes, Model Weather, 3D, Training Tools. iPhone: ATC Copilot, ADS-B
+`Extra`, Android's `Extras`, the same keys). Web: ATC Copilot, Model Weather, 3D, Training Tools (every
+airplane's flights, alerts and history shown, public, the owner,
+2026-11-26; the phones keep Other Airplanes until they follow). iPhone: ATC Copilot, ADS-B
 Receiver, Other Airplanes, Model Weather, Training Tools. Android: ATC
 Copilot, ADS-B Receiver, Other Airplanes, Model Weather, Ask. Off, a
 feature's controls are not drawn, nothing of it starts or is fetched,
 and a setting inside it saved on acts as off; the pilot's own airplane
-keeps its history, Follow and flights whatever Other Airplanes says.
+keeps its history, Alerts and flights whatever Other Airplanes says.
 What each hides is in [../navigation.md](../navigation.md), "Settings'
 Extras"; why, in [../store/feature-review.md](../store/feature-review.md).
 A parked feature gets its switch here, never a second home.
@@ -1256,7 +1438,11 @@ None first, the Approach Plates switch under them while a chart is
 drawn, the four layers (Aeronautical, Weather, Traffic, Private/Military;
 the web's words are Private & Military since 2026-11-14)
 as the stock toggle's button style, and Look, Theme and Appearance as
-menus (2026-11-14), with no overlay row (Google's tiles are not drawn on the iPhone, and the USGS
+menus (2026-11-14), Appearance the web's three since Dark + Bright went
+(a kept one is Dark with the chart undimmed), and the chart's Dimmer
+(one for light, one for dark) and Contrast as two stock sliders under
+them (`Design/ChartLook`, the web's 2026-11-18 rows, the themes audit
+2026-11-27), with no overlay row (Google's tiles are not drawn on the iPhone, and the USGS
 imagery already comes in by itself close in). Show Route As (Route Box or
 Strip) went with the route's ••• menu's other items; the web has one
 layout since 2026-11-17 (decision 0047), the iPhone's to follow at the
@@ -1272,10 +1458,17 @@ filled icon toggle over its name), and has no chart or overlay pictures,
 as the phone draws one chart and no imagery overlay yet; 3D and the
 pages' toggle are the left column's floating toolbar on the sheet
 (`SheetSideButtons`), the toggle the only way between Search and FPL;
-the welcome is Material's modal bottom sheet with Settings' own Theme
+the welcome is Material's modal bottom sheet with the Map card's own Theme
 and Appearance rows (`firstflight/WelcomeSheet`), the FPL tip the stock
 rich tooltip at the toggle; the route's Plan or Strip layout stays in
 Settings › Look, as Android has no route box, line or cards to choose.
+Theme and Appearance are the Map card's Look, as the web's and the
+iPhone's are (the owner, 2026-11-14; moved 2026-11-27), Appearance the
+web's three (a kept Dark + Bright is Dark with the chart undimmed), with
+the chart's Dimmer (one for light, one for dark) and Contrast as two
+stock sliders under them (`ui/ChartLook`); the app's Light or Dark is
+handed to the system (`NightMode`, Android 12 and later) so the launch's
+window is in it, not the phone's.
 
 ## 9. A status is a badge (the owner, 2026-11-14)
 
@@ -1305,7 +1498,12 @@ stay text beside it, never in the badge.
    white words at 4.5:1 or more in every look (WCAG 1.4.3;
    `lib/looksContrast.test.ts`), its words the `badge` type role (iOS's
    Caption 1, semibold). A screen reader hears the status's word: it is
-   the badge's own text, never only its colour.
+   the badge's own text, never only its colour. A flight category set as
+   words with no chip (a search row's "MVFR") is in the scheme's
+   `category-*-ink` (`color.theme`), the dot's hue at 4.5:1 and more on
+   every surface, a lighter shade at night (the owner, 2026-11-27); its
+   dot, chip and map mark keep the FAA's colour, ringed in the chart's
+   casing on a dark surface as the map's marks are.
 3. **Where it is now (2026-11-14):** airport rows in the search and
    Nearest (Closed, Private, Military, Joint use); the airspace card's
    special-use areas (Active or Cold from SFDPS, else the engine's
@@ -1382,11 +1580,19 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    route typed whole ("KPWK V100 KLAS", "N0110A065 KPWK DCT OBK V100
    KLAS"), the engine reading the words (`route_read`, AIM Appendix 4);
    the empty field says what it takes ("From, to, or a whole route").
-   On the web, before the route is whole, the field is folded into the
-   route's card's last row, "Type or Paste a Route", the ends still to
-   pick rows of the same card (the owner, 2026-11-18); and a route file
-   (.fpl, .gpx) opened from the row under it or dropped on the card,
-   previewed as a shared flight is before it is used.
+   On the web the route's box has two faces, the grouped rows and the
+   field, swapped in the same place by one toggle (a stock Toggle in the
+   tint: the keyboard glyph on the tint's wash in a chip's 32-point
+   circle, filled while the field is the face) at the box's bottom right,
+   inset by the box's own padding, the field's words left-aligned at that
+   same padding with no ghost word after the last point, nothing outside the box changing as it turns,
+   inside its last row on every face (the empty route's Destination, half
+   a route's last row, a whole route's Add a Stop, the field's last line),
+   never a row of its own and with no Undo beside it (the owner,
+   2026-11-18; 2026-11-23: "the same area and not a separate entry row",
+   "No undo needed next to toggle"). The web opens no
+   route file (the owner, 2026-11-23: "No need for open a route file");
+   the Android app keeps its own (`FlightFiles`).
 3. **Explain on tap.** An abbreviation (MH, MC, ETE, TOC, TOD, FL, the VFR
    and IFR levels ...) is a tap on the word itself, in the tint, which
    opens one plain sentence with its source in the stock Popover; nothing
@@ -1431,6 +1637,11 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    7350.9): KIGN was planned 7,191 nm to Indagen, Papua New Guinea, whose
    local code is IGN (2026-11-17). Web: `unknownPlaceIn`, usePlan's
    `unknownPlace`.
+9. **One gap between groups, 16.** Between the page's groups (chips and
+   the route's box, the suggested routes and the box, the box and what
+   follows, a page's sections, the last row and the foot bar) the one
+   token `space.group` (16, the side gutter's); inside a group `space.sm`,
+   8 (the owner, 2026-11-23).
 
 ## 12. A list's rows: swipe to remove, hold to move (the owner, 2026-11-17)
 
@@ -1542,7 +1753,18 @@ word and figure drawn on the map, on all three apps, follows these rules:
    half each ink is 6.5:1 or more, and 4.9:1 or more over an undimmed
    white, so no word glares white and none falls under 4.5:1. Under the
    white halo at 0.6 the coloured idents fell to about 2.5:1. The day
-   inks are the chart's own and stay as they are.
+   inks are the chart's own and stay as they are. On the web the halo is
+   the tag's dark whole, not faded with the Dimmer, and the words alone
+   are dimmed, by colour: each night ink no lighter than the towered blue,
+   at the share of light that brings it to the paper's under the Dimmer
+   and the Contrast (`mapDim`'s `wordLight`), so no word is brighter than
+   the chart and each reads about 5:1 on its halo at the night's default
+   Dimmer, where faded with its halo it was about 2:1. Under the night's
+   own contrast the words' share keeps to `map-dim.word-floor` (0.75, or
+   the paper's own light where the Dimmer takes it lower), so a flatter
+   chart leaves them 4.5:1 and more. Android and iOS letter their words
+   the same way, from the same tokens (`map-dim`), held to the web by
+   one fixture (`lib/fixtures/mapDim.json`).
 7. **A field's ident looks the same whoever draws it.** Its colour is
    blue where it is towered and magenta where it is not, as the chart
    sets it. Its size follows the zoom. This holds on the tiles, a Class B
@@ -1565,7 +1787,7 @@ word and figure drawn on the map, on all three apps, follows these rules:
 
 |       | Web                                                                                                                                                                                                                                                                                                                                                 | iPhone                                                                        | Android           |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------- |
-| Where | `lib/map/gl/layers/common` (`labelText`, `labelHalo`, `labelInk`, `labelScale`, `LABEL_HALO`), ChartGl's `LABEL_NIGHT` and `LABEL_SCALE`, MapLayers' Larger Map Labels, `glStyle`'s `airspaceLayers` and `TAB_BOX`, `glSuaLabels`, `glOverlays`' marks' order, `airportIcons`' `AIRPORT_IDENT_INK`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
+| Where | `lib/map/gl/layers/common` (`labelText`, `labelHalo`, `labelInk`, `labelScale`, `LABEL_HALO`), ChartGl's `LABEL_NIGHT` and `LABEL_SCALE`, MapLayers' Larger Map Labels, `design/map-style.json`'s layers, their `tabBox` and their order (`lib/generated/overlayLayers`), `glSuaLabels`, `airportIcons`' `AIRPORT_IDENT_INK`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
 | Tests | `layers/common.test`, `glStyle.test`, `glOverlays.test`, `procedureMarks.test`, `plateTags.test`, `weatherMap.test`; `airspace-lines.spec`, `plates-map.spec`, `weather-map.spec`, `route-line.spec`; the tiles' `tab` in `services/jobs/charts/tests/test_overlays.py`, `services/planner/tests_wingtip/test_airspace_tabs.py`                     | --                                                                            | --                |
 
 ## 14. What is picked on the map (the owner, 2026-11-18)
@@ -1634,10 +1856,11 @@ its figures are (decision
 1. **The words are the engine's** (`route_jurisdiction`): "Canada: rules
    not checked — figures use US rules", Mexico's, the Bahamas' or
    "Outside the US" by the same pattern, for a point or a leg (checked
-   every 2 nm) outside the United States.
-2. **Under the point's row in FPL's timeline**, in the caution's ink, for
-   the point or the legs since the point before; a stop with it keeps the
-   stops listed, as one that cannot be flown to does.
+   every 2 nm) outside the United States. The planner asks it with the
+   course (`/api/course`, `app.route_borders`), each point carrying its
+   own warning and its leg's, so the web's module carries no outlines.
+2. **Not in FPL's timeline**: the plan's space is limited, so the warning
+   lives in the Brief, not the plan (the owner, 2026-11-23).
 3. **On the nav log's rail**, once before the first row of each stretch
    outside, not on every row.
 4. **Once in the Brief**, a caution among its findings citing 14 CFR
@@ -1646,7 +1869,7 @@ its figures are (decision
 
 |       | Web                                                                                                                                                                                         | iPhone                                       | Android |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------- |
-| Where | `features/plan/jurisdiction` (`routeJurisdiction`, `rowCautions`) over the nav log's rows; RouteTimeline's `caution` (TimelineLine), NavLogList's rail line, the Brief's glance `outside` line | Not yet: on the owner's word (decision 0038) | Not yet |
+| Where | `features/plan/jurisdiction` (`routeJurisdiction`, `rowCautions`) over the nav log's rows; NavLogList's rail line, the Brief's glance `outside` line | Not yet: on the owner's word (decision 0038) | Not yet |
 | Tests | `engine/crates/flight/src/jurisdiction_tests.rs`, `engine/facade/tests/jurisdiction.rs` (`lib/fixtures/jurisdiction.json`); `features/plan/jurisdiction.test.ts`, `features/brief/GlanceLines.test.tsx`; `e2e/jurisdiction.spec.ts` (KDET to KBUF, across Ontario) | --                                           | --      |
 
 ## 16. Times, figures and the phone's region (the audit of 2026-11-21)
@@ -1654,14 +1877,20 @@ its figures are (decision
 On all three apps:
 
 - **A product's time says whose it is.** A report's, a forecast's, a
-  NOTAM's, a TFR's or a hazard's time is written on the device's clock
+  TFR's or a hazard's time is written on the device's clock
   with its zone and UTC beside it, "15:00 CST (2100Z)" (the web's
   `clockAndZulu` and `tfrTimes`, the iPhone's TfrCard), or in Zulu alone
-  where the product's line is short. A local time with no zone is the
+  where the product's line is short. A NOTAM's time is the field's own
+  clock with its zone's short name alone, "13:43 CDT", or "UTC" where the
+  zone is not known (section 20). A local time with no zone is the
   airplane's own (the nav log's ETAs), and where that can be read as
   another clock it names its zone: the nav log's ETA column, the printed
   kneeboard and its head, the FPL timeline once the device keeps another
-  clock than the departure field's.
+  clock than the departure field's. An arrival on another day than the
+  flight left says its day, "Tue 15:54 CST", "11/30 09:10" a week or more
+  on (the web's `arrivalDay`, in `etaAt` and the timeline), each day in
+  its own field's zone: a bare "15:54" a day on read as 87 minutes after
+  a 14:27 departure (2026-11-23).
 - **A time from a feed with no zone is UTC** (the web's `instantOf`), and
   one that does not read is no bound, never "not in force".
 - **A day is the pilot's own.** A logbook's or a currency's date is
@@ -1677,14 +1906,17 @@ On all three apps:
 - **A figure typed reads a decimal comma** ("8,5" is 8.5): the web's
   NumberField reads the browser's locale, the phones' `Typed`.
 - **A visibility is written as a report gives it and never rounded up**:
-  "5/8 SM", "1 1/8 sm", the sixteenth below 3 sm and the whole mile from
-  3 (the engine's `statute_miles_down` for a metric report, each app's
-  `reportedVisibility`).
+  "5/8 SM", "1 1/8 sm", the reportable value at or below it of the
+  Federal Meteorological Handbook No. 1's Table 6-1 (sixteenths to 3/8,
+  eighths to 2, quarters to 3, whole miles on; never 11/16), the engine's
+  `visibility_reportable`, which each app's `reportedVisibility` asks. A
+  metric report reads its metres as the value they stand for: 1,600 m is
+  1 sm, 800 m 1/2 (`metres_to_sm`).
 - **Units are the FAA's, one set, each said**: nm for distance, sm for
   visibility, ft, kt, inHg (a Q group converted), °C, US gallons and
   pounds. There is no metric setting.
 
-## 16. Unusual places and routes (the owner, 2026-11-21)
+## 17. Unusual places and routes (the owner, 2026-11-21)
 
 Most routes are flown over the Midwest; the edge-places audit of
 2026-11-21 ("Yes to all") holds the rest to the same rules:
@@ -1695,7 +1927,8 @@ Most routes are flown over the Midwest; the edge-places audit of
    Mexico (99.43's line), says so once among the Brief's findings, a
    caution with what part 99 asks there (a flight plan, a listening
    watch, the transponder, a report before crossing) and 99.1(b)'s
-   exceptions for under 180 kt. Warn, never limit.
+   exceptions for under 180 kt. Warn, never limit. The course carries it
+   (`/api/course`'s `adiz`), as it does the jurisdiction's line.
 2. **An airplane lands on ground**: a field NASR files as a heliport, a
    balloonport or a seaplane base is in no list of fields to land at (the
    nearest, the Stops, a glide's), wherever OurAirports calls it an
@@ -1722,7 +1955,7 @@ Most routes are flown over the Midwest; the edge-places audit of
 | Where | `features/plan/adiz` (`routeAdiz`), the Brief's glance `adiz` line; `lib/geo` `unwrapLine`, `lonBounds`                                                          | Not yet: on the owner's word (decision 0038) | Not yet |
 | Tests | `engine/crates/flight/src/adiz_tests.rs`, `engine/facade/tests/edge_places.rs` (`lib/fixtures/edgePlaces.json`), `core/src/geo_tests.rs`, `weather/src/forecast/route/tests.rs`; `tests_wingtip/test_geo_boxes.py`; `features/plan/adiz.test.ts`, `lib/geo.test.ts` | --                                           | --      |
 
-## 17. Registry names in the store apps (the owner, 2026-11-21)
+## 18. Registry names in the store apps (the owner, 2026-11-21)
 
 Decision 0055. The airplane card's Info, its facts strip and a tracked
 airplane's FAA section name the FAA registry's owner and co-owners on the
@@ -1742,7 +1975,7 @@ Store.
 | Rule  | Not applied: every name (`AirplaneInfo`) | `Airplane/RegistryNames.swift`, drawn by `AirplaneInfoSections`, `AirplaneFacts` and `FAARecordSection` | `airplane/RegistryNames.kt`, drawn by `AirplaneInfo` |
 | Tests | -- | `RegistryNamesTests` | `RegistryNamesTest` |
 
-## 18. The app's words (the owner, 2026-11-21)
+## 19. The app's words (the owner, 2026-11-21)
 
 The owner took the words audit's fixes on 2026-11-21 ("Yes to all").
 Every word a pilot reads, on all three apps, follows these rules
@@ -1823,6 +2056,17 @@ The words the three apps share, generated from `design/wording.json`:
 | `clear_route` | label | Clear Route | The menu item that clears the route. |
 | `clear_route_question` | label | Clear Route? | The question before the route is cleared. |
 | `direct_to` | label | Direct To | Flies straight to the point picked, the avionics' own name. |
+| `fly_here` | label | Fly Here | A new route from the airplane to the airport shown (design/card-actions.json). |
+| `depart_from` | label | Depart From | The airport shown the route's departure, the rest of the route kept. |
+| `hold_here` | label | Hold Here | A hold at the point shown (AIM 5-3-8). |
+| `call` | label | Call | The airport's own telephone, from the FAA's airport file. |
+| `favorite` | label | Favorite | The airport or airplane shown in the Favorites or out, a switch in a card's row. |
+| `address` | label | Address | The place shown in the maps app, by its street address where the FAA lists one. |
+| `copy` | label | Copy | A frequency or an ident to the clipboard. |
+| `fly_this` | label | Fly This | The airplane card's first tile: the airplane shown the one the plan flies. |
+| `track` | label | Track | The airplane card's first tile while it flies: the map keeps it in sight. |
+| `alerts` | label | Alerts | The airplane card's menu of alerts as it takes off and lands, by its ICAO address. |
+| `figures` | label | Figures | The airplane card's tile that opens its book figures. |
 | `enter_route` | label | Enter Route | Puts a clearance's route into the plan. |
 | `read_back` | label | Read Back | Starts the pilot's read back of a clearance. |
 | `read_back_again` | label | Read Back Again | Reads the clearance back once more. |
@@ -1925,6 +2169,53 @@ The words the three apps share, generated from `design/wording.json`:
 | ----- | --- | ------ | ------- |
 | Words | `lib/wording/generated/wording.ts` (`WORDING`) | `Design/Generated/Wording.swift` (`Wording`), kept by `Localizable.xcstrings` | `res/values/wording_strings.xml` (`R.string.wording_*`) |
 | Tests | `lib/wording/wording.test.ts` | `WingtipTests/WordingTests.swift` | `WordingTest` |
+
+## 20. A NOTAM's own card (the owner, 2026-11-23)
+
+The owner, of FDC 6/3373 at KARR on his iPhone: the card said "SID" and
+lowercased the departures' names. A NOTAM's own card now says, top to
+bottom (web first, `features/place/NotamCard.tsx`; the phones on the
+owner's word):
+
+1. **Its title is what happened**, "Runway 18/36 closed", not its
+   keyword; under it the field and its number, "KARR Aurora Municipal ·
+   FDC 6/3373" (an FDC NOTAM with its accountability, JO 7930.2 4-2-1).
+2. **Its category is a small label** ("Departure procedures", "Arrival
+   procedures", "Instrument approaches", else Runway, Taxiway, Navaid,
+   Airspace ...).
+3. **Chips**: Active (or Later, Inactive), Permanent where the condition
+   is (PERM, or PERMANENTLY in its words), and "Affects your departure"
+   (arrival, alternate) where the field is the planned flight's. Stock
+   Badge and StatusBadge.
+4. **One plain sentence of its effect**: "Runway 18/36 is permanently
+   closed, so its RNAV departures are not authorized."
+5. **What it takes away**, under "Not authorized", by the procedures'
+   charted names in capitals and their numbers: "ADELL 8 · BLOKR 8 ·
+   CARYN 8 · DARCY 8 · ELANR 9 · OBENE 3 (RNAV)".
+6. **Its times, one line each**, as the list's rows say them
+   (`NotamTimeLines`): "Since 05/27/26 13:43 CDT", "Ends 05/27/28 13:43
+   CDT · in 551d" (Starts, with how soon, for one to come). In the
+   field's own time named by its zone's short name ("CST" at O'Hare),
+   "UTC" where the zone is not known; never "local", never a Z time
+   beside it, never "estimated" (the owner, 2026-11-23). A permanent
+   one's end is "Permanent" (the engine's `until_charts`: a permanent
+   condition with an EST end, or none; or a PERM end). The year on both
+   lines only where either is not this year's. Each line stays one line
+   at 390 pt and the owner's 19.65 px text: where "· in 551d" would not
+   fit, it is dropped, never wrapped.
+7. **As sent**, folded (the stock Collapsible), never rewritten.
+
+Title, category, effect, the list and permanence are the engine's
+(`notam_card`, read from the NOTAM's parts), and so is the chip saying
+which part of the flight it affects (`notam_affects`: a departure
+procedure taken is red at the departure and a stop, an arrival's at the
+destination, a stop and the alternate, and what happened to the field
+itself neutral at every role there); where it cannot structure a
+NOTAM they are null and the card says its words written out
+(`notam_read`) under its heading, as before. In those words a
+procedure's name keeps its capitals and its number is a word ("BLOKR
+Eight departure (RNAV)"), every one of a list alike. The list's rows say
+the same title, with the same Since and Ends lines.
 
 ## Changing a rule
 

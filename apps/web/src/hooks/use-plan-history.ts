@@ -129,9 +129,8 @@ export function usePlanHistory(address: Address, setAddress: SetAddress) {
     // Heard on the way down, before the page's own handlers: React Aria's
     // keyboard handlers stop every key's propagation by default, so with the
     // focus on a control inside FPL's route list (a GridList), as it is
-    // once a field's fuel gauge has been set and its popover gives the focus
-    // back, Cmd-Z never reached a listener on the way up and undid nothing
-    // (fuel-gauge.spec on CI's slower runner).
+    // once a popover there gives the focus back, Cmd-Z never reached a
+    // listener on the way up and undid nothing (seen on CI's slower runner).
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, [undo, redo]);

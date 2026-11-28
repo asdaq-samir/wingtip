@@ -247,8 +247,9 @@ def options(
     }
     frame = engine("route_options_frame", **asked)
     lats, lons = _samples(frame)
+    terrain = None
     try:
-        asked["terrain_ft"] = np.rint(terrain_detour.heights_ft(lats, lons)).astype(int).ravel().tolist()
+        terrain = terrain_detour.heights_ft(lats, lons)
     except (OSError, ValueError) as error:
         # The terrain tiles not to be had (requests' errors are OSErrors):
         # the ways offered over level ground, and the pilot told.
@@ -295,4 +296,6 @@ def options(
         logger.warning("route options: fuel fields not read (%s)", error)
     asked["food"] = food is not None
     asked["fixes"] = _fixes(frame["data_box"])
-    return engine("route_options", **asked)
+    if terrain is None:
+        return engine("route_options", **asked)
+    return terrain_detour.ask_with_terrain("route_options", terrain, **asked)

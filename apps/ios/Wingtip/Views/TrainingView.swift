@@ -101,12 +101,8 @@ struct TrainingView: View {
                     if let e = signed[kind.code] {
                         SignedEndorsementRow(label: kind.label, rule: kind.rule, e: e)
                     } else {
-                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                            OptionalDayRow(title: kind.label, day: Binding(get: { recorded[kind.code]?.endorsedOn }, set: { day in
-                                Task { await act { try await Gateway.recordEndorsement(kind.code, on: day) } }
-                            }), upTo: Date())
-                            Text(kind.rule).font(.footnote).foregroundStyle(.secondary)
-                            if let until = recorded[kind.code]?.until { GoodToText(until: until).font(.footnote) }
+                        PaperEndorsementRow(kind: kind, recorded: recorded[kind.code]) { day, makeModel in
+                            Task { await act { try await Gateway.recordEndorsement(kind.code, on: day, makeModel: makeModel) } }
                         }
                     }
                 }

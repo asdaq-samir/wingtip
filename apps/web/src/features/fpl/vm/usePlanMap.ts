@@ -4,6 +4,7 @@ import { useFlyHere } from "./useFlyHere";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanCards } from "./usePlanCards";
+import { useKept } from "./useKept";
 
 /**
  * Where the map is brought to (useMapPins), and Fly Here from a card on
@@ -21,7 +22,8 @@ export function usePlanMap(
   const pins = useMapPins({ place, heldPoint, nearFrom, nearOpen, planned, course });
   // Fly Here (useFlyHere).
   const { flyHere } = useFlyHere({ planned, place, depart, aircraft, load, setLoad, showWaypoints, flightRules, setPanel, setAddress });
-  return { ...pins, flyHere };
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({ ...pins, flyHere });
 }
 
 /** Where the map is brought to, as the workspace's hooks read it. */

@@ -16,6 +16,7 @@ export function CardFact({
   className,
   note,
   onPick,
+  shrink = false,
   children,
 }: {
   label: string;
@@ -23,12 +24,23 @@ export function CardFact({
   className?: string;
   note?: string | null;
   onPick?: () => void;
+  /** The one fact that gives way in a row that never wraps (CardFacts'
+   *  `oneRow`): only the room the others leave, its name cut short with
+   *  an ellipsis and its value on two lines at the most. */
+  shrink?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="flex shrink-0 flex-col gap-0.5" data-testid={testId}>
-      <dt className={cn("text-muted-foreground", TEXT.note)}>{label}</dt>
-      <dd className={cn("font-semibold whitespace-nowrap text-foreground tabular-nums", TEXT.row, className)}>
+    <div className={cn("flex flex-col gap-0.5", shrink ? "min-w-0 shrink" : "shrink-0")} data-testid={testId}>
+      <dt className={cn("text-muted-foreground", shrink && "truncate", TEXT.note)}>{label}</dt>
+      <dd
+        className={cn(
+          "font-semibold text-foreground tabular-nums",
+          shrink ? "line-clamp-2 break-words" : "whitespace-nowrap",
+          TEXT.row,
+          className,
+        )}
+      >
         {onPick ? (
           <Button
             variant="link"
@@ -62,16 +74,20 @@ export function CardFact({
  * `fit`, the airport card's five, spread across the card's width with no
  * sideways scroll (the owner, 2026-11-14: "keep the info strip compact
  * enough so pilot doesn't have to scroll"), the last of them wrapping to a
- * second row where larger text leaves no room (UI audit B9, 2026-11-17).
+ * second row where larger text leaves no room. With `oneRow` as well, never
+ * a second row (the airplane card's; the owner, 2026-11-27, a Weight
+ * wrapped under "Airbus Helicopters"): the fact marked `shrink` gives way.
  */
-export function CardFacts({ testId, fit, children }: { testId: string; fit?: boolean; children: ReactNode }) {
+export function CardFacts({ testId, fit, oneRow, children }: { testId: string; fit?: boolean; oneRow?: boolean; children: ReactNode }) {
   return (
     <dl
       // A sideways drag the row's, an up or down one the sheet's (rules.md, Sideways rows).
       data-base-ui-swipe-ignore={fit ? undefined : "x"}
       className={cn(
         "flex pt-4",
-        fit ? "flex-wrap justify-between gap-x-2 gap-y-3" : "-mx-4 gap-6 overflow-x-auto overscroll-x-contain px-4",
+        fit
+          ? cn("justify-between gap-x-2 gap-y-3", oneRow ? "flex-nowrap" : "flex-wrap")
+          : "-mx-4 gap-6 overflow-x-auto overscroll-x-contain px-4",
       )}
       data-testid={testId}
     >

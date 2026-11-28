@@ -121,6 +121,10 @@ pub fn metars(text: &str) -> Result<String, String> {
         r.push_str(",\"visibility_sm\":");
         json::opt_number(&mut r, vis);
         r.push_str(&format!(",\"visibility_plus\":{}", vis_plus.unwrap_or(false)));
+        // "M1/4SM", read from the text (the cache file's figure drops the M):
+        // less than the figure, said "less than 1/4 sm".
+        let minus = el.text_at(&["raw_text"]).and_then(metar::parse).is_some_and(|m| m.visibility_minus);
+        r.push_str(&format!(",\"visibility_minus\":{minus}"));
         for (key, tag) in [
             ("wind_dir_true_deg", "wind_dir_degrees"),
             ("wind_speed_kt", "wind_speed_kt"),
@@ -134,6 +138,13 @@ pub fn metars(text: &str) -> Result<String, String> {
             r.push_str(&format!(",\"{key}\":"));
             // "VRB" is no number: a direction the arithmetic cannot use.
             json::opt_number(&mut r, num(el.text_at(&[tag])));
+        }
+        // The variable direction, "250V310", read from the text: the
+        // cache file has no member for it (metar::variable_direction).
+        r.push_str(",\"wind_variable_deg\":");
+        match el.text_at(&["raw_text"]).and_then(metar::variable_direction) {
+            Some((from, to)) => r.push_str(&format!("[{},{}]", from, to)),
+            None => r.push_str("null"),
         }
         r.push('}');
         if !latest.contains_key(ident) {

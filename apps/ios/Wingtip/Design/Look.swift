@@ -89,7 +89,9 @@ private struct LookTint: ViewModifier {
             .tint(picked.appliedTint(dark: scheme == .dark))
             .environment(\.look, picked)
             .environment(\.lookAccent, picked.appliedTint(dark: scheme == .dark) ?? .blue)
-            .background(WindowTint(tint: picked.windowTint, style: Appearance.style(appearance)).allowsHitTesting(false).accessibilityHidden(true))
+            .background(WindowTint(tint: picked.windowTint, style: Appearance.style(appearance), look: look).allowsHitTesting(false).accessibilityHidden(true))
+            // The states' and sheet's colours follow the look picked (WingtipInk).
+            .onChange(of: look, initial: true) { WingtipInk.keep(look: look) }
     }
 }
 
@@ -110,18 +112,21 @@ extension Look {
 private struct WindowTint: UIViewRepresentable {
     let tint: UIColor?
     let style: UIUserInterfaceStyle
+    let look: String
 
     func makeUIView(context _: Context) -> Probe { Probe() }
 
     func updateUIView(_ view: Probe, context _: Context) {
         view.tint = tint
         view.style = style
+        view.look = look
         view.apply()
     }
 
     final class Probe: UIView {
         var tint: UIColor?
         var style: UIUserInterfaceStyle = .unspecified
+        var look = ""
 
         override func didMoveToWindow() {
             super.didMoveToWindow()
@@ -129,8 +134,23 @@ private struct WindowTint: UIViewRepresentable {
         }
 
         func apply() {
-            window?.tintColor = tint
-            window?.overrideUserInterfaceStyle = style
+            // The look kept first, with or without a window, so the colours
+            // resolved before the root is in one are the look's.
+            WingtipInk.keep(look: look)
+            guard let window else { return }
+            window.tintColor = tint
+            window.overrideUserInterfaceStyle = style
+            // Then put on the window as a trait that changes its colours'
+            // appearance (LookTrait), so every colour UIKit has resolved
+            // (WingtipInk) is resolved again at once in the new look, not
+            // at the next trait change. UIKit raises on reading an
+            // override that was never set ("Can't return value for trait
+            // ... that has no override"), the first launch's case, so it
+            // is asked whether one is set before it is read.
+            let overrides = window.traitOverrides
+            if !overrides.contains(LookTrait.self) || overrides[LookTrait.self] != look {
+                window.traitOverrides[LookTrait.self] = look
+            }
         }
     }
 }
@@ -151,7 +171,7 @@ private struct FigureFont: ViewModifier {
     @Environment(\.look) private var look
     /// The token's size scaled as Title 1 is, redrawn as the text size
     /// changes: WingtipType.figure, a UIFont scaled once, was not, and
-    /// Apple's audit found the emergency's squawk and Guard not growing.
+    /// The emergency's squawk and Guard did not grow.
     @ScaledMetric(relativeTo: .title) private var size = WingtipType.figureSize
 
     func body(content: Content) -> some View {

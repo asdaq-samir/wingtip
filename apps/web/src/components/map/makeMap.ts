@@ -1,5 +1,5 @@
 import * as maplibregl from "maplibre-gl";
-import type { LayerSpecification, PaddingOptions, StyleSpecification } from "maplibre-gl";
+import type { LayerSpecification, MapSourceDataEvent, PaddingOptions, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // The worker MapLibre parses its sources in (worker.ts).
 import "../../lib/map/gl/worker";
@@ -37,15 +37,16 @@ import type { MapInsets } from "../../lib/mapChrome";
 import { watchMapErrors } from "./mapErrors";
 import type { OverlayTiles } from "../../lib/api/types";
 import { usePreferences } from "../../lib/preferences";
-import { overlayTilesQuery, queryClient } from "../../lib/queryClient";
+import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
 import { prefetchRing, registerOverlayProtocol } from "../../lib/map/sources/overlayTiles";
 import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../../lib/map/position/ownShip";
-import { SLOTS, slotId, type Slot } from "../../lib/map/gl/glLayer";
+import { SLOTS, firstStyleLayers, slotId, type Slot } from "../../lib/map/gl/glLayer";
 import type { DrawnImage } from "../../lib/map/gl/drawSvg";
-import { OVERLAY_SOURCE, overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
-import { glZoom } from "../../lib/map/gl/glStyle";
+import { overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
+import { chartLayersAs, chartRole, chartStyle, glZoom } from "../../lib/map/gl/glStyle";
 import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { fewerPixelsOnSoftware } from "../../lib/map/gl/softwareGl";
+import { RINGS_BY_FIELD } from "../../lib/map/gl/placedRings";
 
 /** The map GlMapShell makes (makeMap) and what every map of the page
  *  shares: the overlays' pictures, drawn once, the overlay tiles each map
@@ -87,26 +88,46 @@ export function padOf({ top, bottom, left, right = 0 }: MapInsets): Required<Pad
   return { top, bottom, left, right };
 }
 
+/** The chart as ChartGl draws it first (the pilot's base, from the chart's
+ *  answer kept before the map is made), for the map's first style: its
+ *  tiles asked with the style's, not after React has drawn the map's tree.
+ *  None with the chart None or no answer kept; ChartGl adds it then. */
+function firstChart() {
+  const chart = queryClient.getQueryData(chartQuery.queryKey);
+  const base = usePreferences.getState().base;
+  const spec = chart && base !== "none" ? chartStyle(chart, base, true, window.location.origin) : null;
+  return spec ? { sources: spec.sources, layers: chartLayersAs(spec, "visible") } : null;
+}
+
 /**
  * A map made in `holder`, at the pilot's last position or the country, in
  * the middle of what the panel leaves (padding), its first style the
- * slots' empty layers with the cycle's FAA overlays (glOverlays) among
- * them, so the airspace, the airports and the navaids load per tile with
- * the chart rather than each asking the planner for the view.
+ * slots' empty layers with the chart and the cycle's FAA overlays
+ * (glOverlays) among them, so the chart, the airspace, the airports and
+ * the navaids load per tile from the first frame rather than each asking
+ * once the page's tree has drawn; `ringsByField` for a map whose airports
+ * keep the Class C and D rings to the fields drawn (placedRings).
  */
-export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.Map {
+export function makeMap(holder: HTMLDivElement, insets: MapInsets, ringsByField = false): maplibregl.Map {
   const last = useOwnShip.getState().lastFix;
   const [lat, lon] = last ? [last.lat, last.lon] : COUNTRY;
   const tiles = queryClient.getQueryData(overlayTilesQuery.queryKey) ?? null;
   const overlays = tiles ? overlayStyle(tiles) : null;
+  const chart = firstChart();
   const layers: LayerSpecification[] = SLOTS.flatMap((s: Slot) => [
+    ...(s === "chart" ? (chart?.layers ?? []) : []),
     ...(overlays?.layers[s] ?? []),
     { id: slotId(s), type: "background" as const, layout: { visibility: "none" as const } },
   ]);
   const style: StyleSpecification = {
     version: 8,
-    sources: overlays ? { [OVERLAY_SOURCE]: overlays.source } : {},
+    sources: { ...chart?.sources, ...overlays?.sources },
     layers,
+    // The rings kept to their fields from the first frame on the plan's map,
+    // whose airports always do so (placedRings), so its mount lays out no
+    // overlay tile again; every ring on the training map, which draws no
+    // airports and never sets it.
+    state: { [RINGS_BY_FIELD]: { default: ringsByField } },
     // The same variable font under a second name: MapLibre draws a name
     // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).
     "font-faces": {
@@ -135,9 +156,15 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     touchPitch: false,
     // Symbols placed at once, not faded in over 0.3 s.
     fadeDuration: 0,
+    // Two levels of tiles kept in memory a source, not MapLibre's five: the service worker and the overlay tiles'
+    // store keep the bytes, and five levels of decoded chart and overlay tiles held an iPad's memory for views
+    // the pilot has left.
+    maxTileCacheZoomLevels: 2,
     // And its world copies (its default): the Western Aleutian sectional runs across 180°.
   });
   if (tiles) overlaysOf.set(m, tiles);
+  // The chart's layers ChartGl's own, as though it had added them (glLayer's firstStyleLayers).
+  if (chart) firstStyleLayers(m, chart.sources, chart.layers);
   // A tile's picture from those drawn ahead (overlayPictures), which MapLibre waits on before it lays the tile out.
   m.setMissingStyleImageResolver(async (id) => {
     await picturesDrawn;
@@ -183,20 +210,32 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     const b = m.getBounds();
     prefetchRing(tiles, { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }, m.getZoom());
   });
+  // The frame the chart's first tile is drawn in, for the speed
+  // measurements (a canvas is no Largest Contentful Paint candidate, as an
+  // image is): `chart-drawn`, once a page, whenever the chart comes.
+  const chartDrawn = (e: MapSourceDataEvent) => {
+    if (chartRole(e.sourceId) !== "chart" || !e.tile) return;
+    m.off("sourcedata", chartDrawn);
+    if (!performance.getEntriesByName("chart-drawn").length) m.once("render", () => performance.mark("chart-drawn"));
+  };
+  if (!performance.getEntriesByName("chart-drawn").length) m.on("sourcedata", chartDrawn);
   // The map shown as one thing (the owner, 2026-11-07): the canvas clear
-  // over the page's background until the map is first at rest with the
-  // chart's tiles drawn (none to wait for with the chart None) and the
-  // overlay tiles' first ones in, then faded in once; never longer than
-  // REVEAL_LATEST_MS, so a slow tile never leaves the map blank.
+  // over the page's background until the chart's and the overlays' tiles
+  // in view are all in and drawn, then faded in once; never longer than
+  // REVEAL_LATEST_MS, so a slow tile never leaves the map blank. Not only
+  // at the map's first rest (`idle`, still the latest it waits), which
+  // waited on every source, the relief's terrain tiles among them, and on
+  // every layer the page had added since.
   const canvas = m.getCanvas();
   canvas.style.opacity = "0";
-  let chartIn = usePreferences.getState().base === "none";
-  let overlaysIn = !tiles;
-  const tileIn = (e: { sourceId?: string; tile?: unknown }) => {
-    if (!e.tile) return;
-    if (e.sourceId?.startsWith("chart")) chartIn = true;
-    if (e.sourceId === OVERLAY_SOURCE) overlaysIn = true;
-  };
+  const overlayIds = Object.keys(overlays?.sources ?? {});
+  const watched = (id: string) => !!chartRole(id) || overlayIds.includes(id);
+  const noChart = usePreferences.getState().base === "none";
+  // The chart's and the overlays' sources the map has, and whether a tile
+  // of the chart (the overlays', with the chart None) has come: by then
+  // every source's tiles in view have been asked for.
+  const seen = new Set<string>();
+  let asked = false;
   let revealed = false;
   const reveal = () => {
     if (revealed) return;
@@ -209,17 +248,31 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     // For the page's loading mark (MapLoading) to fade as the map comes in.
     el.dispatchEvent(new Event(REVEAL_EVENT));
   };
-  // Ready at its first rest with those tiles drawn, whether or not
-  // REVEAL_LATEST_MS showed it first: marked once a page for Setup's Log
-  // (lib/loadLog), whose probes stop there.
-  const rested = () => {
-    if (!chartIn || !overlaysIn) return;
+  // Ready once those are drawn, whether or not REVEAL_LATEST_MS showed it
+  // first: marked once a page for Setup's Log (lib/loadLog), whose probes
+  // stop there.
+  const ready = () => {
     m.off("sourcedata", tileIn);
     m.off("idle", rested);
     if (!performance.getEntriesByName("map-ready").length) performance.mark("map-ready");
     reveal();
   };
+  const tileIn = (e: MapSourceDataEvent) => {
+    if (!watched(e.sourceId)) return;
+    seen.add(e.sourceId);
+    if (e.tile && (noChart || chartRole(e.sourceId))) asked = true;
+    if (!asked || ![...seen].every((id) => !m.getSource(id) || m.isSourceLoaded(id))) return;
+    m.off("sourcedata", tileIn);
+    m.once("render", ready);
+  };
   const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
+  // At its first rest at the latest, once the chart has come; at once
+  // with nothing to wait for (the chart None and no overlay archive known
+  // yet), where the map stood blank till REVEAL_LATEST_MS, 2.5 s.
+  const nothingWatched = noChart && !overlayIds.length;
+  const rested = () => {
+    if (asked || nothingWatched) ready();
+  };
   m.on("sourcedata", tileIn);
   m.on("idle", rested);
   return m;

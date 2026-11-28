@@ -46,7 +46,7 @@ export default function PlanCards({
   briefContents: ComponentProps<typeof BriefCard>["contents"];
   briefNotice: ReactNode;
 }) {
-  const { flightRules, routeKey, routed, setFlightRules } = vm.route;
+  const { flightRules, routed, setFlightRules } = vm.route;
   const { course, s } = vm.plan;
   const { cardUp, selectPlace } = vm.cards;
   const { addStopField } = vm.stops;
@@ -85,7 +85,7 @@ export default function PlanCards({
           marks={marks}
           onClose={closeBrief}
           onLegs={showLegs}
-          route={routeKey}
+          routeKey={vm.route.routeKey}
         />
       )}
       {navLogDrawn && routed && (
@@ -142,7 +142,7 @@ export default function PlanCards({
                   owner, 2026-11-12: "Just do it the native way"). On the
                   ground, planning, none: the strip is FPL's, under the card,
                   and it said again what the line under the name and FPL say
-                  (the UI audit's L2, the owner's word 2026-11-17). */}
+                  (the owner's word 2026-11-17). */}
             {profileShown && (dryRunning || flying) && (
               <div className="shrink-0 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <FlightFoot vm={vm} />

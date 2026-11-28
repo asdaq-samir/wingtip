@@ -21,7 +21,7 @@ export function ChartMark({
   use: "military" | "private" | null;
   /** Its width in points: the pills' 22, a tile's 44; or "row", a list
    *  row's 30 in rem (size.chart-mark), Search's, Nearest's and Favorites'
-   *  alike and growing with the row's words (the scale audit's Q5: Nearest
+   *  alike and growing with the row's words (Nearest
    *  drew 26 and Search 30, neither growing). */
   size?: number | "row";
 }) {

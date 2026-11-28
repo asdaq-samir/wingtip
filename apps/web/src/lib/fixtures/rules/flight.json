@@ -1,5 +1,5 @@
 {
-  "_note": "The approach, glide, transponder, field, fuel, floor and altitude rules' figures and boundaries, written down from 14 CFR 97.3, 91.119, 91.151, 91.167, 91.175 and 91.177, AC 90-66C, the AIM and NASR's codes, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "_note": "The approach, glide, transponder, field, fuel, floor and altitude rules' figures and boundaries, written down from 14 CFR 97.3, 91.119, 91.131(b)(2) and part 91 appendix D, 91.151, 91.167, 91.175 and 91.177, 91.211, AC 90-66C, FAA-H-8083-25C (true to magnetic), the AIM and NASR's codes, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
   "cases": [
     {
       "name": "VREF 90.9: category A",
@@ -509,7 +509,9 @@
       "input": {
         "usable_gal": 40.0,
         "taxi_gal": 1.4,
-        "reserves_gal": [6.0],
+        "reserves_gal": [
+          6.0
+        ],
         "points": [
           {
             "departure": true
@@ -564,7 +566,10 @@
       "input": {
         "usable_gal": 40.0,
         "taxi_gal": 1.4,
-        "reserves_gal": [7.5, 5.0],
+        "reserves_gal": [
+          7.5,
+          5.0
+        ],
         "points": [
           {
             "departure": true
@@ -597,7 +602,10 @@
       "input": {
         "usable_gal": 40.0,
         "taxi_gal": 1.4,
-        "reserves_gal": [7.5, 5.0],
+        "reserves_gal": [
+          7.5,
+          5.0
+        ],
         "alternate_gal": 2.0,
         "points": [
           {
@@ -626,7 +634,9 @@
       "input": {
         "usable_gal": 40.0,
         "taxi_gal": 1.4,
-        "reserves_gal": [6.0],
+        "reserves_gal": [
+          6.0
+        ],
         "points": [
           {
             "departure": true
@@ -818,8 +828,16 @@
       "rule": "profile_clearance",
       "input": {
         "altitude_ft": 3500,
-        "along_nm": [0, 10, 20],
-        "ground_ft": [900, 3000, 1200],
+        "along_nm": [
+          0,
+          10,
+          20
+        ],
+        "ground_ft": [
+          900,
+          3000,
+          1200
+        ],
         "obstacles": [
           {
             "along_nm": 15,
@@ -869,8 +887,16 @@
       "rule": "profile_clearance",
       "input": {
         "altitude_ft": 3500,
-        "along_nm": [0, 10, 20],
-        "ground_ft": [900, 3000, 1200],
+        "along_nm": [
+          0,
+          10,
+          20
+        ],
+        "ground_ft": [
+          900,
+          3000,
+          1200
+        ],
         "obstacles": [],
         "points": [
           {
@@ -901,8 +927,16 @@
       "rule": "profile_clearance",
       "input": {
         "altitude_ft": 3500,
-        "along_nm": [0, 10, 20],
-        "ground_ft": [900, 2400, 1200],
+        "along_nm": [
+          0,
+          10,
+          20
+        ],
+        "ground_ft": [
+          900,
+          2400,
+          1200
+        ],
         "obstacles": [],
         "points": [
           {
@@ -1030,6 +1064,534 @@
         }
       ],
       "source": "The Altitude Advisor's wheel: every 500 ft from 1,000 ft up to 17,500 ft, the last under Class A, which begins at 18,000 ft MSL (14 CFR 71.33, 91.135). Highest first."
+    },
+    {
+      "name": "090 true with 10 E variation is 080 magnetic",
+      "rule": "magnetic_of",
+      "input": {
+        "true_deg": 90,
+        "variation_deg": 10
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 80,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-25C, chapter 16: variation east is subtracted from a true course and west added, \"east is least, west is best\"."
+    },
+    {
+      "name": "090 true with 4 W variation is 094 magnetic",
+      "rule": "magnetic_of",
+      "input": {
+        "true_deg": 90,
+        "variation_deg": -4
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 94,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-25C, chapter 16: variation east is subtracted from a true course and west added, \"east is least, west is best\"."
+    },
+    {
+      "name": "005 true with 10 E is 355: round north",
+      "rule": "magnetic_of",
+      "input": {
+        "true_deg": 5,
+        "variation_deg": 10
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 355,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-25C, chapter 16: variation east is subtracted from a true course and west added, \"east is least, west is best\"."
+    },
+    {
+      "name": "358 true with 4 W is 002: round north",
+      "rule": "magnetic_of",
+      "input": {
+        "true_deg": 358,
+        "variation_deg": -4
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 2,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-25C, chapter 16: variation east is subtracted from a true course and west added, \"east is least, west is best\"."
+    },
+    {
+      "name": "A.13 at O'Hare (KORD), an appendix D section 4 airport: warned",
+      "rule": "endorsement_warnings",
+      "input": {
+        "code": "class-b-airport",
+        "fields": {
+          "airport": "Chicago O'Hare (KORD)"
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 1
+        },
+        {
+          "path": "0",
+          "contains": "91.131(b)(2)"
+        }
+      ],
+      "source": "14 CFR 91.131(b)(2): \"no person may take off or land a civil aircraft at those airports listed in section 4 of appendix D to this part unless the pilot in command holds at least a private pilot certificate\"; part 91 appendix D, section 4 (eCFR, 2026-11-19) lists ATL, BOS, ADW, ORD, DFW, LAX, MIA, EWR, JFK, LGA, SFO and DCA."
+    },
+    {
+      "name": "A.13 at Midway (KMDW), under O'Hare's Class B but not in section 4: no warning",
+      "rule": "endorsement_warnings",
+      "input": {
+        "code": "class-b-airport",
+        "fields": {
+          "airport": "Chicago Midway (KMDW)"
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 0
+        }
+      ],
+      "source": "14 CFR 91.131(b)(2): \"no person may take off or land a civil aircraft at those airports listed in section 4 of appendix D to this part unless the pilot in command holds at least a private pilot certificate\"; part 91 appendix D, section 4 (eCFR, 2026-11-19) lists ATL, BOS, ADW, ORD, DFW, LAX, MIA, EWR, JFK, LGA, SFO and DCA."
+    },
+    {
+      "name": "A.13 at BWI, in section 3 (special VFR) but not section 4: no warning",
+      "rule": "endorsement_warnings",
+      "input": {
+        "code": "class-b-airport",
+        "fields": {
+          "airport": "KBWI"
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 0
+        }
+      ],
+      "source": "14 CFR 91.131(b)(2): \"no person may take off or land a civil aircraft at those airports listed in section 4 of appendix D to this part unless the pilot in command holds at least a private pilot certificate\"; part 91 appendix D, section 4 (eCFR, 2026-11-19) lists ATL, BOS, ADW, ORD, DFW, LAX, MIA, EWR, JFK, LGA, SFO and DCA."
+    },
+    {
+      "name": "Typed SID and STAR: a departure from the departure by the fix after it, an arrival into the destination by the fix before it",
+      "rule": "route_typed_picks",
+      "input": {
+        "procedures": [
+          {
+            "name": "BAEE1",
+            "before": "C81",
+            "after": "BAE"
+          },
+          {
+            "name": "OSHH2",
+            "before": "OSH",
+            "after": "KATW"
+          }
+        ],
+        "departure": {
+          "ident": "C81",
+          "procedures": [
+            {
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transitions": [
+                "BAE",
+                "GRB"
+              ]
+            }
+          ]
+        },
+        "arrival": {
+          "ident": "KATW",
+          "procedures": [
+            {
+              "id": "OSHH2",
+              "kind": "arrival",
+              "name": "OSHH TWO",
+              "transitions": [
+                "OSH"
+              ]
+            },
+            {
+              "id": "I03",
+              "kind": "approach",
+              "name": "ILS RWY 03",
+              "transitions": []
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "path": "picks",
+          "equals": [
+            {
+              "ident": "C81",
+              "id": "BAEE1",
+              "kind": "departure",
+              "transition": "BAE"
+            },
+            {
+              "ident": "KATW",
+              "id": "OSHH2",
+              "kind": "arrival",
+              "transition": "OSH"
+            }
+          ]
+        },
+        {
+          "path": "missed",
+          "length": 0
+        }
+      ],
+      "source": "AIM 5-2-9: a SID is flown out of the departure, its transition where it ends; AIM 5-4-1: a STAR into the destination, its transition where it starts. As item 15 of a flight plan writes them, a SID is typed after the departure and before its transition fix, a STAR after its transition fix (item 15, AIM Appendix 4, as route_typed reads it)."
+    },
+    {
+      "name": "Typed SID beside a point that is none of its transitions: the common route, no transition guessed",
+      "rule": "route_typed_picks",
+      "input": {
+        "procedures": [
+          {
+            "name": "BAEE1",
+            "before": "C81",
+            "after": "KATW"
+          }
+        ],
+        "departure": {
+          "ident": "C81",
+          "procedures": [
+            {
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transitions": [
+                "BAE",
+                "GRB"
+              ]
+            }
+          ]
+        },
+        "arrival": {
+          "ident": "KATW",
+          "procedures": [
+            {
+              "id": "OSHH2",
+              "kind": "arrival",
+              "name": "OSHH TWO",
+              "transitions": [
+                "OSH"
+              ]
+            },
+            {
+              "id": "I03",
+              "kind": "approach",
+              "name": "ILS RWY 03",
+              "transitions": []
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "path": "picks",
+          "equals": [
+            {
+              "ident": "C81",
+              "id": "BAEE1",
+              "kind": "departure",
+              "transition": null
+            }
+          ]
+        }
+      ],
+      "source": "AIM 5-2-9: a SID is flown out of the departure, its transition where it ends; AIM 5-4-1: a STAR into the destination, its transition where it starts. As item 15 of a flight plan writes them, a SID is typed after the departure and before its transition fix, a STAR after its transition fix (item 15, AIM Appendix 4, as route_typed reads it)."
+    },
+    {
+      "name": "Typed procedures neither end publishes as that kind are missed: an arrival is no departure, an approach is neither",
+      "rule": "route_typed_picks",
+      "input": {
+        "procedures": [
+          {
+            "name": "NOPE1",
+            "before": null,
+            "after": null
+          },
+          {
+            "name": "I03",
+            "before": null,
+            "after": null
+          }
+        ],
+        "departure": {
+          "ident": "KATW",
+          "procedures": [
+            {
+              "id": "OSHH2",
+              "kind": "arrival",
+              "name": "OSHH TWO",
+              "transitions": [
+                "OSH"
+              ]
+            },
+            {
+              "id": "I03",
+              "kind": "approach",
+              "name": "ILS RWY 03",
+              "transitions": []
+            }
+          ]
+        },
+        "arrival": {
+          "ident": "C81",
+          "procedures": [
+            {
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transitions": [
+                "BAE",
+                "GRB"
+              ]
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "path": "picks",
+          "length": 0
+        },
+        {
+          "path": "missed",
+          "equals": [
+            "NOPE1",
+            "I03"
+          ]
+        }
+      ],
+      "source": "AIM 5-2-9: a SID is flown out of the departure, its transition where it ends; AIM 5-4-1: a STAR into the destination, its transition where it starts. As item 15 of a flight plan writes them, a SID is typed after the departure and before its transition fix, a STAR after its transition fix (item 15, AIM Appendix 4, as route_typed reads it)."
+    },
+    {
+      "name": "Typed SIDs of one field: the later replaces the earlier; a name not found while a field's list could not be had is unchecked, never missed",
+      "rule": "route_typed_picks",
+      "input": {
+        "procedures": [
+          {
+            "name": "BAEE1",
+            "before": "C81",
+            "after": "GRB"
+          },
+          {
+            "name": "BAEE1",
+            "before": "C81",
+            "after": "BAE"
+          },
+          {
+            "name": "OSHH2",
+            "before": "OSH",
+            "after": "KATW"
+          }
+        ],
+        "departure": {
+          "ident": "C81",
+          "procedures": [
+            {
+              "id": "BAEE1",
+              "kind": "departure",
+              "name": "BAEE ONE",
+              "transitions": [
+                "BAE",
+                "GRB"
+              ]
+            }
+          ]
+        },
+        "arrival": null
+      },
+      "expect": [
+        {
+          "path": "picks",
+          "equals": [
+            {
+              "ident": "C81",
+              "id": "BAEE1",
+              "kind": "departure",
+              "transition": "BAE"
+            }
+          ]
+        },
+        {
+          "path": "missed",
+          "length": 0
+        },
+        {
+          "path": "unchecked",
+          "equals": [
+            "OSHH2"
+          ]
+        }
+      ],
+      "source": "AIM 5-2-9: a SID is flown out of the departure, its transition where it ends; AIM 5-4-1: a STAR into the destination, its transition where it starts. As item 15 of a flight plan writes them, a SID is typed after the departure and before its transition fix, a STAR after its transition fix (item 15, AIM Appendix 4, as route_typed reads it). A field's list not had: its procedures were not looked at, so a name not found may be its; said unchecked (14 CFR 91.103, all the available information), not \"not published\"."
+    },
+    {
+      "name": "12,500 ft unpressurised: none asked (above, not at)",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 12500
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\""
+    },
+    {
+      "name": "12,600 ft: the crew past 30 minutes",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 12600
+      },
+      "expect": [
+        {
+          "path": "",
+          "contains": "(14 CFR 91.211(a)(1))"
+        }
+      ],
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\""
+    },
+    {
+      "name": "14,000 ft: still (a)(1)",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 14000
+      },
+      "expect": [
+        {
+          "path": "",
+          "contains": "(a)(1)"
+        }
+      ],
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\""
+    },
+    {
+      "name": "14,100 ft: the crew the whole time",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 14100
+      },
+      "expect": [
+        {
+          "path": "",
+          "contains": "(14 CFR 91.211(a)(2))"
+        }
+      ],
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\""
+    },
+    {
+      "name": "15,100 ft: every occupant too",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 15100
+      },
+      "expect": [
+        {
+          "path": "",
+          "contains": "(a)(2), (3)"
+        }
+      ],
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\""
+    },
+    {
+      "name": "15,100 ft with oxygen carried: none",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 15100,
+        "supplemental_oxygen": true
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 91.211(a): \"(1) At cabin pressure altitudes above 12,500 feet (MSL) up to and including 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen for that part of the flight at those altitudes that is of more than 30 minutes duration; (2) At cabin pressure altitudes above 14,000 feet (MSL) unless the required minimum flight crew is provided with and uses supplemental oxygen during the entire flight time at those altitudes; and (3) At cabin pressure altitudes above 15,000 feet (MSL) unless each occupant of the aircraft is provided with supplemental oxygen.\""
+    },
+    {
+      "name": "FL250 pressurised: none (above, not at)",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 25000,
+        "pressurized": true
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 91.211(b)(1), pressurized cabin aircraft: \"(i) At flight altitudes above flight level 250 unless at least a 10-minute supply of supplemental oxygen ... is available for each occupant of the aircraft for use in the event that a descent is necessitated by loss of cabin pressurization; and (ii) At flight altitudes above flight level 350 unless one pilot at the controls of the airplane is wearing and using an oxygen mask ...\""
+    },
+    {
+      "name": "FL260 pressurised: the 10-minute supply",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 26000,
+        "pressurized": true
+      },
+      "expect": [
+        {
+          "path": "",
+          "contains": "(14 CFR 91.211(b)(1)(i))"
+        }
+      ],
+      "source": "14 CFR 91.211(b)(1), pressurized cabin aircraft: \"(i) At flight altitudes above flight level 250 unless at least a 10-minute supply of supplemental oxygen ... is available for each occupant of the aircraft for use in the event that a descent is necessitated by loss of cabin pressurization; and (ii) At flight altitudes above flight level 350 unless one pilot at the controls of the airplane is wearing and using an oxygen mask ...\""
+    },
+    {
+      "name": "FL350 pressurised with oxygen: none",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 35000,
+        "pressurized": true,
+        "supplemental_oxygen": true
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 91.211(b)(1), pressurized cabin aircraft: \"(i) At flight altitudes above flight level 250 unless at least a 10-minute supply of supplemental oxygen ... is available for each occupant of the aircraft for use in the event that a descent is necessitated by loss of cabin pressurization; and (ii) At flight altitudes above flight level 350 unless one pilot at the controls of the airplane is wearing and using an oxygen mask ...\""
+    },
+    {
+      "name": "FL370 pressurised with oxygen: the pilot's mask still",
+      "rule": "oxygen_words",
+      "input": {
+        "highest_ft": 37000,
+        "pressurized": true,
+        "supplemental_oxygen": true
+      },
+      "expect": [
+        {
+          "path": "",
+          "contains": "(14 CFR 91.211(b)(1)(ii))"
+        }
+      ],
+      "source": "14 CFR 91.211(b)(1), pressurized cabin aircraft: \"(i) At flight altitudes above flight level 250 unless at least a 10-minute supply of supplemental oxygen ... is available for each occupant of the aircraft for use in the event that a descent is necessitated by loss of cabin pressurization; and (ii) At flight altitudes above flight level 350 unless one pilot at the controls of the airplane is wearing and using an oxygen mask ...\""
     }
   ]
 }

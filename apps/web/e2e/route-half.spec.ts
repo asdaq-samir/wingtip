@@ -29,14 +29,14 @@ test("the route's field is under FPL's bar and the route's cards, the airplane's
 }) => {
   // The owner, 2026-11-14: the N-number strip with its buttons the sheet's
   // first row's bar; half a route is open to edit (the one layout, decision
-  // 0047), its field under its timeline once its Type or Paste a Route
-  // opens it (the owner, 2026-11-18).
+  // 0047), the box turned into its field by its toggle, in the same
+  // place (the owner, 2026-11-18).
   await page.setViewportSize({ width: 390, height: 844 });
   await ownersText(page);
   await page.goto(ROUTE);
   await settle(page);
   await openPanel(page);
-  await sideDrawer(page).getByTestId("timeline-type-route").click();
+  await sideDrawer(page).getByTestId("route-type-open").click();
   const box = sideDrawer(page).getByTestId("route-box");
   const m = await box.evaluate((el) => {
     const strip = document.querySelector('[data-testid="route-strip"]')!.getBoundingClientRect();
@@ -92,7 +92,7 @@ test("the timeline's Departure asks for it in the search, where the airplane is 
   await expect(here).toBeVisible({ timeout: slow(10_000) });
   await here.click();
   await expect(page).toHaveURL(/dep=%40|dep=@/);
-  await expect(sideDrawer(page).getByTestId("timeline-line").first().getByTestId("timeline-ident")).toHaveText("My Location", {
+  await expect(sideDrawer(page).getByTestId("timeline-line").first().getByTestId("timeline-ident")).toHaveText("POS0", {
     timeout: slow(30_000),
   });
 });

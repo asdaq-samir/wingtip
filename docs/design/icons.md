@@ -37,6 +37,10 @@ own maps follow this table.
 | call | lucide `Phone` | `phone` | `call` | A field's phone. |
 | address | lucide `MapPin` | `mappin` | `place` | A place in Maps. |
 | copy | lucide `ClipboardCopy` | `doc.on.doc` | `content_copy` | A frequency to the clipboard. |
+| favorite | lucide `Star` | `star` (`star.fill` while on) | `star_outline` (`star` while on) | Favorite, a switch in a card's row. |
+| track | lucide `Crosshair` | `dot.viewfinder` | `gps_fixed` | Track, an airplane in the air kept in sight. |
+| alerts | lucide `Bell` | `bell` (`bell.fill` while one is set) | `notifications_none` (`notifications` while one is set) | Alerts as an airplane takes off and lands. |
+| figures | lucide `Gauge` | `gauge.with.dots.needle.33percent` | `speed` | An airplane's book figures, from its card. |
 | send | lucide `Send` | `paperplane` | `send` | File or send a flight plan. |
 
 ## The panel's tabs (`TAB_ICON`)
@@ -51,28 +55,41 @@ each with a filled face for the tab that is up, on the phones; the web's went wi
 | Airplane | an airplane from above | `airplane` | `flight` |
 | Setup | a gear | `gearshape` | `settings` |
 
-## Card actions (`CARD_ACTIONS`, apps/web/src/lib/cardActions.ts)
+## Card actions (design/card-actions.json)
 
 One name and one glyph per action, and one set per kind of card, the first
-filled:
+filled. The table is generated, with each app's (the web's `CARD_ACTIONS`,
+iOS's and Android's `CardKind`), by scripts/build/card-actions.sh from
+design/card-actions.json: change an action there.
 
-| Card | Actions, in order |
-|---|---|
-| Airport | Fly Here, Depart From, Add as Stop, Call, Address (the web: Fly Here, Add Stop, Call, Favorite) |
-| Airport, opened while a stop is asked for (the web, 2026-11-18) | Add Stop, Call, Favorite, Address |
-| A point held on the map (the airspace card) | Direct To, Add to Route, Hold Here |
-| A VOR, a fix or a VFR waypoint | Direct To, Add to Route, Copy (the first two greyed with no route) |
+<!-- BEGIN generated from design/card-actions.json by scripts/build/card-actions.sh -->
 
-- **Fly Here**: a new route from the airplane to this field.
-- **Direct To**: from the airplane to the point, then on along the route.
-- **Depart From**: the field the route's departure, the rest of the route kept
-  (the one-search design, 2026-11-09).
-- **Add as Stop**: the field a landing on the way, as Maps' Add Stop.
-- **Add to Route**: the point a turn on the way, where it bends the route
-  least; not a landing.
-- **Hold Here**: a hold at the point (AIM 5-3-8).
-- **Address**: the field in Maps, by its street address where the FAA
-  lists one.
+| Card | Actions, in order | Apps | Which |
+|---|---|---|---|
+| `airport` | Fly Here, Add Stop, Call, Favorite | web, ios, android | An airport's (the owner, 2026-11-11: "fly here, add stop, call and address ... no need for other buttons", Favorite in Address's place since). |
+| `airportAsStop` | Add Stop, Call, Favorite, Address | web, ios, android | An airport's, opened while the pilot adds a stop (the one search asked for one): Add Stop first and filled, no Fly Here, Address last (the owner, 2026-11-18). |
+| `airportStopOff` | Fly Here, Call, Favorite, Address | web, ios, android | An airport's where Add Stop cannot be used (the field on the route already, closed): Address last in its place, not a greyed tile (the owner, 2026-11-20). |
+| `point` | Direct To, Add to Route, Hold Here | web, ios, android | A point held on the map: the airspace card's. |
+| `navaid` | Direct To, Add to Route, Copy | web, ios, android | A VOR, a fix or a VFR waypoint. |
+| `airplane` | Fly This, Alerts, Favorite, Figures | web, ios, android | An airplane's on the ground (the owner's design of 2026-11-26, on the phones since the owner's 2026-11-27 "Yes, match the web"), one greyed where it does nothing for this airplane, never hidden. |
+| `airplaneAirborne` | Track, Alerts, Favorite, Figures | web, ios, android | An airplane's in the air: Track in Fly This's place. |
+
+- **Fly Here** (`flyHere`, glyph `directTo`): A new route from the airplane to this field.
+- **Depart From** (`departFrom`, glyph `departFrom`): The field the route's departure, the rest of the route kept (the one-search design, 2026-11-09); the one search's and the airport mark's menus, on no card's row.
+- **Direct To** (`directTo`, glyph `directTo`): From the airplane to the point, then on along the route.
+- **Add Stop** (`addStop`, glyph `addToRoute`): The field a landing on the way (stops=), as Maps' Add Stop.
+- **Add to Route** (`addToRoute`, glyph `addToRoute`): The point a turn on the way, where it bends the route least; not a landing.
+- **Hold Here** (`holdHere`, glyph `holdHere`): A hold at the point (AIM 5-3-8).
+- **Call** (`call`, glyph `call`): The field's own phone, from the FAA's airport file.
+- **Favorite** (`favorite`, glyph `favorite`): The airport or the airplane in the Favorites or out, a switch, in the action row rather than the head, so every card's head holds its Share and its close alone (the owner, 2026-11-11).
+- **Address** (`address`, glyph `address`): The field in Maps, by its street address where the FAA lists one.
+- **Copy** (`copy`, glyph `copy`): A frequency or an ident to the clipboard.
+- **Fly This** (`flyThis`, glyph `directTo`): The airplane shown the one the plan flies.
+- **Track** (`track`, glyph `track`): An airplane in the air kept in sight on the map.
+- **Alerts** (`alerts`, glyph `alerts`): Alerts as the airplane takes off and lands, by its ICAO address.
+- **Figures** (`figures`, glyph `figures`): The airplane's book figures, opened over its card.
+
+<!-- END generated card actions -->
 
 ## Small buttons have words
 

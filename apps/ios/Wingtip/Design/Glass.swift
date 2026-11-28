@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// What floats over the chart, in the system's own Liquid Glass
-/// (glassEffect, the sheet's own presentation). The UI audit of 2026-11-09
-/// (item 13) found the sheet painted over with .regularMaterial and a
+/// (glassEffect, the sheet's own presentation). The sheet was once painted over with .regularMaterial and a
 /// fixed 24-point corner, and not one .glassEffect. design/tokens.json's
 /// material says the same: iOS uses its system materials.
 extension View {
@@ -56,6 +55,5 @@ struct GlassRow<Content: View>: View {
     }
 }
 
-/// The floating cards' one shape over the map (the UI audit's "one
-/// floating-card shape per app"): design/tokens.json's card corner.
+/// The floating cards' one shape over the map: design/tokens.json's card corner.
 let floatingCard = RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous)

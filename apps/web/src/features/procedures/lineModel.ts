@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { sameField } from "../../lib/procedures";
 import type { NavLogRow, ProcedureAirport, ProcedureKind } from "../plan";
 import { missedOnTheLine } from "./approachState";
 import { fieldParts, kindPicked, type FieldPart } from "./fieldParts";
@@ -18,15 +17,16 @@ export interface TimelinePoint {
   visit: number | undefined;
   /** Its time: the departure's leave time, the others' arrival. */
   time: ReactNode;
+  /** A procedure fix's time at this field, as a stop's is written; null
+   *  where the plan has none (no airplane, or a fix its path does not
+   *  pass; RouteTimeline's fixTime). */
+  fixTime: (fix: string, leaving: boolean) => ReactNode;
   /** Its flight category from its latest METAR; none with no report. */
   category: string | null;
   /** Why it cannot be flown to, in red under it: a point the planner does
    *  not know, a field NASR lists as closed (decision 0043), or a field
    *  whose card could not be had to say. */
   problem: string | null;
-  /** Where it, or the leg to it, lies outside the United States: the
-   *  engine's warning that its figures are by US rules (decision 0053). */
-  caution: string | null;
   /** A field whose card has not said yet whether it is open: its line
    *  does not open to its runways and procedures till it has (0043). */
   checking: boolean;
@@ -52,45 +52,28 @@ interface LinePart {
  * field's parts, and the procedures' fixes on the route's line before and
  * after it.
  */
-export function lineModel(
-  vm: ProceduresRouteModel,
-  point: TimelinePoint,
-  row: NavLogRow | undefined,
-  field: ProcedureAirport | undefined,
-  last: boolean,
-) {
+export function lineModel(vm: ProceduresRouteModel, point: TimelinePoint, row: NavLogRow | undefined, field: ProcedureAirport | undefined) {
   // Never opened to land at before the field is known open (decision 0043).
   const opens = !!field && !!vm.edit && !point.problem && !point.checking;
   // A move of this point refused, why under it (useRouteListEdit).
   const refused = vm.edit?.refusal?.index === point.index ? vm.edit.refusal.note : null;
   const tank = point.role === "Departure" ? vm.tanks.get("departure") : row ? vm.tanks.get(row.key) : undefined;
-  // The gauge is a control where the fuel leaving the field is set there
-  // (FuelSet): the departure's and a stop's, where the list edits the
-  // route; the field it is set at, null where it is read only.
-  const fuelSet =
-    tank && vm.onTanks && row && point.field && !point.problem && (row.kind === "departure" || row.kind === "stop")
-      ? { ident: row.airport.ident, stop: row.kind === "stop" }
-      : null;
   const split = field ? fieldParts(vm, field, row) : [];
   const parts: LinePart[] = split.map((part) => ({
     part,
     add: field ? part.kinds.filter((k) => !kindPicked(vm, field, k)) : [],
     hold: point.role === "Destination" && part.role === "Arrive" && !!vm.holdOn(point.ident),
   }));
-  // A kind picked is no chip: its fixes are points on the route's line
-  // (TimelineProcedureRows), at the owner's pick (option D, 2026-11-21):
-  // an arrival's and an approach's before the field's line, a departure's
-  // after it. An approach only loaded is no point on the line: its box
-  // sits after the field's line, off it (LoadedApproach).
-  const loadedHere = !!field && vm.inRoute.some((p) => p.kind === "approach" && !!p.loaded && sameField(p.ident, field.ident));
+  // A kind picked is no chip: its fixes are a section of the field's group
+  // under its line (TimelineProcedureRows; the owner, 2026-11-24: "that
+  // airport should be the heading"), an arrival's and an approach's for
+  // its arriving, a departure's for its leaving; an approach only loaded
+  // is one too, on a dashed line.
   const onLine = (role: FieldPart["role"]) =>
-    field && !point.problem
-      ? (split.find((p) => p.role === role)?.kinds ?? []).filter((k) => kindPicked(vm, field, k) && !(k === "approach" && loadedHere))
-      : [];
+    field && !point.problem ? (split.find((p) => p.role === role)?.kinds ?? []).filter((k) => kindPicked(vm, field, k)) : [];
   const before = onLine("Arrive");
   const after = onLine("Depart");
   // Its missed approach unsuspended, the line goes on into it.
   const missedOn = !!field && !point.problem && missedOnTheLine(vm, field);
-  const onPast = !last || after.length > 0;
-  return { opens, refused, tank, fuelSet, reported: vm.reportedOf(point.ident), parts, before, after, missedOn, onPast };
+  return { opens, refused, tank, reported: vm.reportedOf(point.ident), parts, before, after, missedOn };
 }

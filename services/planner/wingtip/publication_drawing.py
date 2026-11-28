@@ -6,7 +6,6 @@ strokes. The PDFs themselves are wingtip.publications'."""
 from __future__ import annotations
 
 import io
-import json
 import logging
 import re
 import threading
@@ -16,7 +15,6 @@ from pathlib import Path
 import numpy as np
 import pypdfium2
 import requests
-import wingtip_native
 from PIL import Image
 from scipy import ndimage
 
@@ -25,6 +23,7 @@ from .atomic import atomic_path
 from .config import FAA_HEADERS as HEADERS
 from .single_flight import one_at_a_time
 from . import publications
+from wingtip.engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -112,7 +111,7 @@ def _graticule(page) -> tuple | None:
         x = (min(b[0] for b in boxes) + max(b[2] for b in boxes)) / 2
         y = height - (min(b[1] for b in boxes) + max(b[3] for b in boxes)) / 2
         labels.append({"text": match.group(0), "x": x, "y": y})
-    grid = json.loads(wingtip_native.call("diagram_graticule", json.dumps({"labels": labels})))
+    grid = engine("diagram_graticule", labels=labels)
     # The crop places the runways on a north-up page only, latitude down
     # the page and longitude across it.
     if grid is None or grid["lat_on_x"] or grid["north_deg"] != 0:

@@ -2,6 +2,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow, frontSheet } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { drawnMarks } from "./marks";
+import { noCheckpoints } from "./startState";
 
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
 
@@ -126,6 +127,10 @@ test("with a course drawn, the Stops along it, each with a line for each kind it
   page,
   context,
 }) => {
+  // No checkpoints: the route's own marks are placed first and a stop's pin
+  // gives way to them (StopMarksGl), so a checkpoint's mark would hide the
+  // pins this taps.
+  await noCheckpoints(page);
   const asked: string[] = [];
   await stops(page, asked);
   await context.grantPermissions(["geolocation"], { origin });

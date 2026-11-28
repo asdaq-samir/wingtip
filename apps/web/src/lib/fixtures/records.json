@@ -7,7 +7,8 @@
         "held": [
           {
             "code": "solo-first",
-            "on": "2026-01-01"
+            "on": "2026-01-01",
+            "make_model": "C172"
           },
           {
             "code": "solo-xc-training",
@@ -19,7 +20,8 @@
             "on": "2025-12-20"
           }
         ],
-        "flight_on": "2026-04-01"
+        "flight_on": "2026-04-01",
+        "make_model": "C-172"
       },
       "answer": {
         "until": [
@@ -39,7 +41,7 @@
             "rule": "61.93(d)(5)",
             "label": "A solo endorsement current on the day of the flight",
             "met": true,
-            "detail": "Given 1 Jan 2026"
+            "detail": "Given 1 Jan 2026 for a C172"
           }
         ]
       }
@@ -50,10 +52,12 @@
         "held": [
           {
             "code": "solo-first",
-            "on": "2026-01-01"
+            "on": "2026-01-01",
+            "make_model": "C172"
           }
         ],
-        "flight_on": "2026-04-02"
+        "flight_on": "2026-04-02",
+        "make_model": "C172"
       },
       "answer": {
         "until": [
@@ -71,7 +75,85 @@
             "rule": "61.93(d)(5)",
             "label": "A solo endorsement current on the day of the flight",
             "met": false,
-            "detail": "Given 1 Jan 2026, not within the 90 days before 2 Apr 2026"
+            "detail": "Given 1 Jan 2026 for a C172, not within the 90 days before 2 Apr 2026"
+          }
+        ]
+      }
+    },
+    {
+      "name": "61.93(d)(5), 61.87(n): endorsements for a C172 do not serve a PA-28",
+      "input": {
+        "held": [
+          {
+            "code": "solo-first",
+            "on": "2026-03-01",
+            "make_model": "C172"
+          },
+          {
+            "code": "solo-xc-training",
+            "on": "2026-03-10",
+            "make_model": "C172"
+          }
+        ],
+        "flight_on": "2026-04-01",
+        "make_model": "PA-28"
+      },
+      "answer": {
+        "until": [
+          "2026-05-30",
+          null
+        ],
+        "solo_until": "2026-05-30",
+        "checks": [
+          {
+            "rule": "61.93(d)(4)",
+            "label": "A solo cross-country endorsement for the make and model",
+            "met": false,
+            "detail": "None on record for this make and model (Given 10 Mar 2026 for a C172)"
+          },
+          {
+            "rule": "61.93(d)(5)",
+            "label": "A solo endorsement current on the day of the flight",
+            "met": false,
+            "detail": "None on record for this make and model (Given 1 Mar 2026 for a C172)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "No make and model for the flight, or none written on the endorsement: can't tell, never met",
+      "input": {
+        "held": [
+          {
+            "code": "solo-first",
+            "on": "2026-03-01"
+          },
+          {
+            "code": "solo-xc-training",
+            "on": "2026-03-10",
+            "make_model": "C172"
+          }
+        ],
+        "flight_on": "2026-04-01"
+      },
+      "answer": {
+        "until": [
+          "2026-05-30",
+          null
+        ],
+        "solo_until": "2026-05-30",
+        "checks": [
+          {
+            "rule": "61.93(d)(4)",
+            "label": "A solo cross-country endorsement for the make and model",
+            "met": false,
+            "detail": "Can't tell: the flight's make and model is not given (Given 10 Mar 2026 for a C172)"
+          },
+          {
+            "rule": "61.93(d)(5)",
+            "label": "A solo endorsement current on the day of the flight",
+            "met": false,
+            "detail": "Can't tell: the flight's make and model is not given (Given 1 Mar 2026)"
           }
         ]
       }
@@ -124,6 +206,7 @@
         "static_check_on": "2024-02-29",
         "transponder_check_on": null,
         "hundred_hour_at_hours": 1234.5,
+        "for_hire": false,
         "vor_check": {
           "on": "2026-11-01",
           "kind": "AIRBORNE",

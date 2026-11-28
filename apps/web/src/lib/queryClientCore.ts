@@ -1,6 +1,6 @@
 import { MutationCache, QueryCache, QueryClient, onlineManager } from "@tanstack/react-query";
 import { describeError, isDropped } from "./api/client";
-import { retryable, retryDelay, retryOnServerFailure } from "./queryRetry";
+import { refetchWhileUnreachable, retryable, retryDelay, retryOnServerFailure } from "./queryRetry";
 import { clearProblem, raiseProblem, showError } from "./problems";
 
 declare module "@tanstack/react-query" {
@@ -31,13 +31,19 @@ declare module "@tanstack/react-query" {
  *
  * Asked with no connection too ("offlineFirst"), so the service worker's
  * kept answers reach the page in the air; TanStack's "online" paused them
- * unasked (the offline audit's gap 1). What it did not keep fails at once,
+ * unasked. What it did not keep fails at once,
  * "No connection" in place (QueryState); a mutation, into its alert.
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
     // None in the unit tests, as TanStack's testing guide has it.
-    queries: { retry: import.meta.env.MODE === "test" ? false : retryOnServerFailure, retryDelay, networkMode: "offlineFirst" },
+    queries: {
+      retry: import.meta.env.MODE === "test" ? false : retryOnServerFailure,
+      retryDelay,
+      networkMode: "offlineFirst",
+      // A query failed for want of the planner asked again till it is back.
+      refetchInterval: refetchWhileUnreachable,
+    },
     mutations: { networkMode: "offlineFirst" },
   },
   queryCache: new QueryCache({

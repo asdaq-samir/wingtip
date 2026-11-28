@@ -97,7 +97,9 @@ struct NavaidCard: View {
 
     @ViewBuilder private func head(_ vor: VorPin) -> some View {
         let at = CLLocationCoordinate2D(latitude: vor.lat, longitude: vor.lon)
-        let fix = dryRun.fix ?? ownShip.fix
+        // Whether there is a fix read here, the fix only in Direct To's
+        // action, so the card is not drawn again at every fix (OwnShip.hasFix).
+        let hasFix = dryRun.fix != nil || ownShip.hasFix
         Section {
             VStack(spacing: WingtipSpace.xs) {
                 Text("\(vor.ident) \(vor.kind)").font(WingtipType.card).accessibilityAddTraits(.isHeader)
@@ -107,9 +109,9 @@ struct NavaidCard: View {
             .frame(maxWidth: .infinity)
             .listRowBackground(Color.clear)
             GlassRow {
-                Button { plan.drop(vor.ident, at: at, then: .direct, from: fix) } label: { CardActionLabel(.directTo) }
+                Button { plan.drop(vor.ident, at: at, then: .direct, from: dryRun.fix ?? ownShip.fix) } label: { CardActionLabel(.directTo) }
                     .glassProminentButton()
-                    .disabled(plan.course == nil || fix == nil)
+                    .disabled(plan.course == nil || !hasFix)
                 Button { plan.drop(vor.ident, at: at, then: .add, from: nil) } label: { CardActionLabel(.addToRoute) }
                     .glassButton()
                     .disabled(plan.course == nil)
@@ -130,12 +132,7 @@ struct NavaidCard: View {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-            if let fix, let on = NavaidWords.radial(vor, from: fix.coordinate) {
-                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                    Text("On the \(Format.heading(on.radial)) radial · \(Format.distance(on.nm))").font(.headline.monospacedDigit())
-                    Text("\(Format.heading(on.toCourse))° to fly to it").font(.subheadline).foregroundStyle(.secondary)
-                }
-            }
+            RadialLine(vor: vor)
         }
     }
 
@@ -170,5 +167,37 @@ struct NavaidCard: View {
             }
         }
         Section { Text(AirportWords.degreesMinutes(lat: vor.lat, lon: vor.lon)).monospacedDigit() }
+    }
+}
+
+/// The radial own ship is on, its own view so that only this line reads
+/// the fix each second, and only near the station: from a place to a
+/// thousandth of a degree (OwnShip.coarseCoordinate, up to some 0.04 nm) the
+/// radial within a mile of the VOR could be several degrees out. Inside
+/// `exactWithinNm` the exact fix is read (0.04 nm at 5 nm is under half a
+/// degree, the figure's own rounding); farther out the coarse place, which
+/// changes only as the airplane moves on. A drawing choice, not a rule:
+/// the radial is the engine's radial_of.
+private struct RadialLine: View {
+    let vor: VorPin
+    @Environment(OwnShip.self) private var ownShip
+    @Environment(DryRun.self) private var dryRun
+
+    static let exactWithinNm = 5.0
+
+    var body: some View {
+        if let on = radial {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                Text("On the \(Format.heading(on.radial)) radial · \(Format.distance(on.nm))").font(.headline.monospacedDigit())
+                Text("\(Format.heading(on.toCourse))° to fly to it").font(.subheadline).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var radial: EngineContract.RadialOfAnswer? {
+        if let fix = dryRun.fix { return NavaidWords.radial(vor, from: fix.coordinate) }
+        guard let coarse = ownShip.coarseCoordinate, let far = NavaidWords.radial(vor, from: coarse) else { return nil }
+        guard far.nm < Self.exactWithinNm, let fix = ownShip.fix else { return far }
+        return NavaidWords.radial(vor, from: fix.coordinate) ?? far
     }
 }

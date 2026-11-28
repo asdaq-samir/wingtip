@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePanelDragging, type PanelState } from "../../../lib/mapChrome";
 import { usePanelView } from "../../plan";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanCards } from "./usePlanCards";
+import { useKept } from "./useKept";
 
 /**
  * The place up under the one search and the sheet's size (usePlanWorkspace):
@@ -36,14 +37,32 @@ export function usePlanView(
   // speed, the 23 Oct profile).
   const [opened, setOpened] = useState(() => [view]);
   if (!opened.includes(view)) setOpened([...opened, view]);
-  // The strips and lists drawn under the pill too while the sheet is on
-  // the move, so they are there as it comes up: read as one answer with
-  // the size, so a move between half and full -- where they are drawn
-  // either way -- does not draw the whole workspace again at its start
-  // and its end (the drag probe at CPU 4x, 2026-11-04: 100 to 170 ms each,
-  // with the map's follow of the sheet waiting behind them).
-  const stripsDrawn = usePanelDragging((d) => panel !== "peek" || d.dragging);
-  return {
+  // The strips and lists drawn under the pill too, so they are there as
+  // the sheet comes up: once drawn they stay, out of sight at the pill by
+  // the pill's own rule (sheet/insets' PILL_BODY), and they are drawn the
+  // first time once the page is idle, or as the sheet first moves. Drawn
+  // only while the sheet moved, they were built on the first frame of
+  // every pull up from the pill and taken down again there, with the
+  // finger and the map's follow of the sheet waiting behind them (the drag
+  // probe at CPU 4x, 2026-11-04: 100 to 170 ms each).
+  // Once drawn, the selector is true for good, so a drag's start and its
+  // settle no longer draw the whole view model again at the first frame of
+  // each pull from the pill.
+  const [stripsDrawn, setStripsDrawn] = useState(() => panel !== "peek" || usePanelDragging.getState().dragging);
+  const moving = usePanelDragging((d) => stripsDrawn || panel !== "peek" || d.dragging);
+  if (moving && !stripsDrawn) setStripsDrawn(true);
+  useEffect(() => {
+    if (stripsDrawn) return;
+    const draw = () => setStripsDrawn(true);
+    if (typeof requestIdleCallback !== "function") {
+      const later = setTimeout(draw, 1);
+      return () => clearTimeout(later);
+    }
+    const idle = requestIdleCallback(draw, { timeout: 2000 });
+    return () => cancelIdleCallback(idle);
+  }, [stripsDrawn]);
+  // One object while nothing in it changes (useKept), as each slice is.
+  return useKept({
     panel,
     setPanel,
     // The panel out at all: the nav log is in sight, and a checkpoint
@@ -60,7 +79,7 @@ export function usePlanView(
     pickPage,
     opened,
     stripsDrawn,
-  };
+  });
 }
 
 /** The place up and the sheet's size, as the workspace's hooks read them. */

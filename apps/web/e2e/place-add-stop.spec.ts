@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer, slow, withFoot } from "./helpers";
 
 /**
  * An airport already on the route has no Add Stop on its card: its row
@@ -52,7 +52,7 @@ test("the longest runway carries a badge in the Runways tab, not a row of Detail
   await page.goto("/app/plan?place=KOSH");
   await settle(page);
   const card = sideDrawer(page).getByTestId("place-card");
-  await card.getByTestId("place-tab-runways").click({ timeout: 20_000 });
+  await withFoot(card).getByTestId("place-tab-runways").click({ timeout: 20_000 });
   await expect(card.getByTestId("runway-longest")).toHaveCount(1);
   await expect(
     card
@@ -61,6 +61,6 @@ test("the longest runway carries a badge in the Runways tab, not a row of Detail
       .filter({ has: page.getByTestId("runway-longest") })
       .first(),
   ).toContainText("18/36");
-  await card.getByTestId("place-tab-radio").click();
+  await withFoot(card).getByTestId("place-tab-radio").click();
   await expect(card.getByTestId("place-longest-runway")).toHaveCount(0);
 });

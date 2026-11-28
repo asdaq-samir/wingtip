@@ -120,7 +120,12 @@ def test_the_alternate_speaks_for_the_weather_where_the_weather_says_nothing_wor
         return next(i for i in verdict_items(v, alternate) if i["key"] == "weather")
 
     needed = weather(ifr, {"destination": {"required": True}, "alternate": None})
-    assert (needed["finding"], needed["detail"]) == ("caution", "An alternate is required (14 CFR 91.169): file one in Weather")
+    # 14 CFR 91.169(a)(2) is a prohibition: a required alternate not filed is a stop.
+    none_filed = "An alternate is required (14 CFR 91.169(a)(2)) and none is filed: file one in Weather"
+    assert (needed["finding"], needed["detail"]) == ("stop", none_filed)
+    # A check that failed, or none made, shows nothing 91.169(b) asks: unknown.
+    assert weather(ifr, {"failed": True})["finding"] == "unknown"
+    assert weather(ifr, None)["finding"] == "unknown"
     assert weather(ifr, {"destination": {"required": False}})["finding"] == "ok"
     under = {"destination": {"required": True}, "alternate": {"ident": "KMSN", "good": False, "reasons": []}}
     said = weather(ifr, under)

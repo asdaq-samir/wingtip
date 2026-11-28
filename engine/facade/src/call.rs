@@ -21,7 +21,32 @@ use crate::json::{self, Value};
 
 /// The rule `name` worked on `input`, a JSON object; the answer as JSON.
 pub fn call(name: &str, input: &str) -> Result<String, String> {
-    let v = json::parse(input)?;
+    answer(name, json::parse(input)?)
+}
+
+/// [`call`] with one member's numbers handed over as they are, not as
+/// JSON text: the terrain grids a route's options and its way round high
+/// ground read (100,000 to 200,000 heights), which the planner would
+/// otherwise write out and the engine parse back, tens of milliseconds a
+/// call. `key` is set to `numbers` in the input object, so the rule reads
+/// the same `Value` it would have parsed: the rule and its contract are
+/// unchanged. The two rules the planner hands its heights to
+/// (route_options, terrain_way_round) take the buffer itself, so the
+/// numbers are never made JSON values (6.4 MB for 200,000) and copied back.
+pub fn call_with_numbers(name: &str, input: &str, key: &str, numbers: &[f64]) -> Result<String, String> {
+    let mut v = json::parse(input)?;
+    if let Value::Object(members) = &mut v {
+        members.retain(|(k, _)| k != key);
+        #[cfg(feature = "route-options")]
+        if key == "terrain_ft" && matches!(name, "route_options" | "terrain_way_round") {
+            return wingtip_route::route::options::call_with_terrain(name, &v, numbers);
+        }
+        members.push((key.to_owned(), Value::Array(numbers.iter().map(|&n| Value::Number(n)).collect())));
+    }
+    answer(name, v)
+}
+
+fn answer(name: &str, v: Value) -> Result<String, String> {
     if !matches!(v, Value::Object(_)) {
         return Err(format!("{name}: the input is not a JSON object"));
     }
@@ -54,6 +79,26 @@ mod tests {
         assert_eq!(call("holding_leg_minutes", "{}").unwrap(), "1.0");
         assert_eq!(call("wind_triangle", r#"{"tc": 360, "tas": 50, "wind_from_deg": 270, "wind_kt": 60}"#).unwrap(), "null");
         assert_eq!(call("diversion_reasonable", r#"{"key": "mh", "typed": 2, "exact": 355}"#).unwrap(), "true");
+    }
+
+    #[cfg(feature = "route-options")]
+    #[test]
+    fn numbers_handed_over_answer_as_their_json_text() {
+        // A wall of 12,000 ft heights across the middle of the frame, sent
+        // once as JSON text and once as numbers: the same way round.
+        let ask =
+            r#"{"start": [0, 0], "end": [0, 3], "ceiling_ft": 10950, "fields": [{"ident": "S", "name": "S", "lat": -1.6, "lon": 1.5}]}"#;
+        let frame = json::parse(&call("terrain_way_frame", ask).unwrap()).unwrap();
+        let n = |k: &str| frame.get(k).and_then(Value::as_f64).unwrap() as usize;
+        let (rows, cols) = (n("rows") * n("per_cell"), n("cols") * n("per_cell"));
+        let heights: Vec<f64> =
+            (0..rows * cols).map(|i| if (i % cols) * 2 / cols == 1 && i / cols > rows / 3 { 12_000.0 } else { 500.0 }).collect();
+        let text =
+            format!("{},\"terrain_ft\":[{}]}}", &ask[..ask.len() - 1], heights.iter().map(|h| h.to_string()).collect::<Vec<_>>().join(","));
+        let by_text = call("terrain_way_round", &text).unwrap();
+        assert_eq!(call_with_numbers("terrain_way_round", ask, "terrain_ft", &heights).unwrap(), by_text);
+        assert_eq!(call_with_numbers("terrain_way_round", &text, "terrain_ft", &heights).unwrap(), by_text);
+        assert_ne!(by_text, "[]");
     }
 
     #[test]

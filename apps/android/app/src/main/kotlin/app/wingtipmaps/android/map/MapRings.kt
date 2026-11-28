@@ -4,11 +4,13 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.design.generated.WingtipColors
 import org.maplibre.android.maps.Style
-import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.sources.GeoJsonSource
+import org.maplibre.geojson.Feature
+import org.maplibre.geojson.FeatureCollection
+import org.maplibre.geojson.Point
 
 /** The glide ring, dashed in the map's blue as the web app's and the
  *  iPhone's: what the airplane reaches in still air, not a boundary to
@@ -24,7 +26,7 @@ internal object GlideLayer {
         }
         style.addSource(GeoJsonSource(id, geoJson))
         val layer = LineLayer(id, id).withProperties(
-            PropertyFactory.lineColor(WingtipColors.Chart.MAP_BLUE_HEX.toColorInt()),
+            PropertyFactory.lineColor(MapDim.colour(WingtipColors.Chart.MAP_BLUE_HEX.toColorInt())),
             PropertyFactory.lineWidth(2f),
             PropertyFactory.lineOpacity(0.85f),
             PropertyFactory.lineDasharray(arrayOf(4f, 3f)),
@@ -45,10 +47,14 @@ internal object GlideLayer {
  * at about half strength (chart.shade), as a picked point's ring is.
  * Yellow alone is about 1.6:1 on the sectional's yellow towns and 1.4:1
  * on its pale greens; the dark edge holds on every part of the chart, by
- * day and dimmed at night. Drawn from the overlay tiles' own airports, the
- * one whose ident it is, under the marks; nothing without the overlays.
+ * day and dimmed at night. Drawn from a one-point source of the field
+ * itself, as the web's AirportsGl draws its SELECTED source, under the
+ * marks: a tap sets that point alone, where a new filter on the airports'
+ * tiles' circles laid out every tile of the source again, its marks and
+ * words placed anew, at each tap.
  */
 internal object SelectedAirportLayer {
+    private const val SOURCE = "airport-selected-point"
     private val RINGS = listOf(
         Triple("airport-selected-edge", ColorUtils.setAlphaComponent(WingtipColors.Chart.SHADE_HEX.toColorInt(), 140), 9f),
         Triple("airport-selected-casing", WingtipColors.Chart.CASING_HEX.toColorInt(), 6f),
@@ -56,25 +62,25 @@ internal object SelectedAirportLayer {
     )
     const val RADIUS = 20f
 
-    /** Only the field `ident`'s point; none for no field. */
-    fun filter(ident: String?): Expression = Expression.eq(Expression.get("ident"), Expression.literal(ident ?: ""))
+    /** The field as the source's one point; none for no field. */
+    private fun points(field: MapField?): FeatureCollection =
+        FeatureCollection.fromFeatures(listOfNotNull(field?.let { Feature.fromGeometry(Point.fromLngLat(it.lon, it.lat)) }))
 
-    fun draw(style: Style, ident: String?) {
-        if (style.getSource(MapStyle.OVERLAY_SOURCE) == null) return
+    fun draw(style: Style, field: MapField?) {
+        val source = style.getSourceAs<GeoJsonSource>(SOURCE)
+        if (source != null) {
+            source.setGeoJson(points(field))
+            return
+        }
+        style.addSource(GeoJsonSource(SOURCE, points(field)))
         for ((id, colour, width) in RINGS) {
-            val kept = style.getLayerAs<CircleLayer>(id)
-            if (kept != null) {
-                kept.setFilter(filter(ident))
-                continue
-            }
-            val layer = CircleLayer(id, MapStyle.OVERLAY_SOURCE).withProperties(
+            val layer = CircleLayer(id, SOURCE).withProperties(
                 PropertyFactory.circleRadius(RADIUS),
                 PropertyFactory.circleOpacity(0f),
-                PropertyFactory.circleStrokeColor(colour),
+                // Dimmed with the chart by its colour at night (MapDim.colour): the ring keeps its edge on the chart.
+                PropertyFactory.circleStrokeColor(MapDim.colour(colour)),
                 PropertyFactory.circleStrokeWidth(width),
             )
-            layer.sourceLayer = "airports" // the tiles' layer of fields, as MapStyle's airports layer reads
-            layer.setFilter(filter(ident))
             if (style.getLayer(MapStyle.AIRPORTS) != null) style.addLayerBelow(layer, MapStyle.AIRPORTS) else style.addLayer(layer)
         }
     }

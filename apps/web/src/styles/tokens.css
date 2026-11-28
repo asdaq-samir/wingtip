@@ -11,6 +11,7 @@
   --space-sm: 0.5rem;
   --space-md: 0.75rem;
   --space-lg: 1rem;
+  --space-group: 1rem;
   --space-xl: 1.5rem;
   --space-xxl: 2rem;
   --radius-badge: 7px;
@@ -24,6 +25,7 @@
   --type-heading: 1.25rem;
   --type-title: 1.0625rem;
   --type-row: 1.0625rem;
+  --type-pill: 1rem;
   --type-prose: 0.9375rem;
   --type-detail: 0.9375rem;
   --type-note: 0.8125rem;
@@ -36,6 +38,7 @@
   --lead-hero: 2.125rem;
   --lead-card: 1.75rem;
   --lead-heading: 1.5625rem;
+  --lead-pill: 1.375rem;
   --lead-note: 1.125rem;
   --lead-tab-bar: 1.125rem;
   --lead-badge: 1rem;
@@ -101,7 +104,7 @@
   --category-ifr: #b3261e;
   --category-lifr: #a371f7;
   --category-lifr-chip: #7e3fb8;
-  --category-unknown: #8fa3b0;
+  --category-unknown: #6b7f8c;
   --brand-mark-ring: #a3266f;
   --brand-mark-ring-night: #e37bb5;
   --brand-mark-plane: #14284b;
@@ -287,8 +290,13 @@
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.53 0.235 27.325);
   --destructive-ink: oklch(0.505 0.213 27.518);
+  --category-vfr-ink: #15702f;
+  --category-mvfr-ink: #1a62d6;
+  --category-ifr-ink: #b3261e;
+  --category-lifr-ink: #7e3fb8;
+  --category-unknown-ink: #51636f;
   --border: oklch(0.922 0 0);
-  --input: oklch(0.65 0 0);
+  --input: oklch(0.6 0 0);
   --ring: var(--tint);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -328,8 +336,13 @@
   --accent-foreground: #eef3f9;
   --destructive: oklch(0.74 0.17 22);
   --destructive-ink: var(--destructive);
+  --category-vfr-ink: #4ac26b;
+  --category-mvfr-ink: #6cb0ff;
+  --category-ifr-ink: #ff8a80;
+  --category-lifr-ink: #c297ff;
+  --category-unknown-ink: #a9b8c4;
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --input: oklch(0.6 0 0);
   --ring: var(--tint);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -368,7 +381,7 @@
   --tint-shade: #46d3e6;
 }
 
-/* Chart ink, not in sunlight, whose own tokens win. */
+/* Chart ink; sunlight's blocks, after every look's, win. */
 :root[data-brand="ink"] {
   --brand-font: 'Barlow';
   --display: 'Barlow Condensed', 'Barlow', sans-serif;
@@ -379,7 +392,7 @@
   --course: var(--ink-magenta);
 }
 
-:root[data-brand="ink"]:not(.dark):not([data-chart-light="bright"]) {
+:root[data-brand="ink"]:not(.dark) {
   --background: #f7f2e7;
   --sheet: #f7f2e7;
   --foreground: #1f1a14;
@@ -396,7 +409,7 @@
   --border: #e2d8c4;
 }
 
-:root.dark[data-brand="ink"]:not([data-chart-light="bright"]) {
+:root.dark[data-brand="ink"] {
   --background: #14161c;
   --sheet: #14161c;
   --foreground: #eef1f5;
@@ -459,7 +472,7 @@
   --lead-figure: 2rem;
 }
 
-:root[data-brand="native"]:not(.dark):not([data-chart-light="bright"]) {
+:root[data-brand="native"]:not(.dark) {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -483,7 +496,7 @@
   --muted-foreground-shade: var(--muted-foreground);
 }
 
-:root.dark[data-brand="native"]:not([data-chart-light="bright"]) {
+:root.dark[data-brand="native"] {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -507,9 +520,8 @@
   --muted-foreground-shade: var(--muted-foreground);
 }
 
-/* Sunlight, over day, night and every look. */
-:root[data-chart-light="bright"],
-:root.dark[data-chart-light="bright"] {
+/* Sunlight by day, over every look: the white ground. */
+:root[data-chart-light="bright"]:not(.dark) {
   --background: #ffffff;
   --foreground: #000000;
   --card: #ffffff;
@@ -539,4 +551,30 @@
   --procedure: #3d3db8;
   --airspace-blue-text: #1d559c;
   --airspace-magenta-text: #962568;
+}
+
+/* Sunlight at night: the look's own dark ground kept (AIM 8-1-6), its grey words
+   and edges lifted. */
+:root.dark[data-chart-light="bright"] {
+  --muted-foreground: #cfd9e5;
+  --muted-foreground-shade: var(--muted-foreground);
+  --border: oklch(1 0 0 / 40%);
+  --input: oklch(0.7 0 0);
+}
+
+/* Increase Contrast (prefers-contrast: more), over every look: sunlight's grey
+   words and edges by day, sunlight's night lift at night, never its white ground. */
+@media (prefers-contrast: more) {
+  :root[data-brand]:not(.dark) {
+    --muted-foreground: #333333;
+    --border: #000000;
+    --input: #333333;
+  }
+
+  :root.dark[data-brand] {
+    --muted-foreground: #cfd9e5;
+    --muted-foreground-shade: var(--muted-foreground);
+    --border: oklch(1 0 0 / 40%);
+    --input: oklch(0.7 0 0);
+  }
 }

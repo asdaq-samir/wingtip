@@ -87,7 +87,7 @@ export function NearestStrip({
     </PillStrip>
   );
   if (!nearMap) return strip;
-  // Near the map's middle, not the pilot (the UI audit's C9): said, and the
+  // Near the map's middle, not the pilot: said, and the
   // way to the pilot's own nearest under it.
   return (
     <div className="flex flex-col gap-2" data-near="map">

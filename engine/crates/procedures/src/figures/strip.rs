@@ -26,8 +26,7 @@ pub struct Hop {
 /// (None for a route with no stops), its idents as sent ("C81 → KMSN", ""
 /// with no stops), and by how much. An app names the hop's two ends from
 /// `hop` with its own point names, as a pilot's own point is "@lat,lon"
-/// in the idents and named only on the device (the 2026-11-14 audit's
-/// CODE-13).
+/// in the idents and named only on the device.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Short {
     pub hop: Option<usize>,
@@ -136,7 +135,9 @@ pub struct TankAt {
 /// and rules. A point is low against the reserve of the flight that lands
 /// or passes there, so a day flight after a night one is not held to the
 /// night's 45 minutes. A flight with no reserve given (None, or past the
-/// list's end) is held to the strictest of those given, the safer answer.
+/// list's end) is held to the strictest of those given, the safer answer;
+/// with none given at all no point can be judged low, so every point is
+/// None, not known, rather than held to no reserve (0 was the least safe answer).
 /// The departure is low where what is on board, less the start and taxi,
 /// is under its flight's reserve: no flight from there lands with it. The
 /// route's last point, its destination, is held to `alternate_gal` more,
@@ -145,7 +146,9 @@ pub struct TankAt {
 pub fn tanks(
     points: &[TankPoint], usable_gal: f64, taxi_gal: f64, reserves_gal: &[Option<f64>], alternate_gal: f64,
 ) -> Vec<Option<TankAt>> {
-    let strictest = reserves_gal.iter().flatten().fold(0.0_f64, |a, b| a.max(*b));
+    let Some(strictest) = reserves_gal.iter().flatten().copied().reduce(f64::max) else {
+        return vec![None; points.len()];
+    };
     let reserve_of = |flight: usize| reserves_gal.get(flight).copied().flatten().unwrap_or(strictest);
     let last = points.len().saturating_sub(1);
     // What the flight under way left with, less its start and taxi; NaN
@@ -221,6 +224,13 @@ mod tests {
         let kept = tanks(&route(5.0), 40.0, 1.5, &[Some(7.5)], 0.0);
         assert_eq!(kept[1].as_ref().and_then(|t| t.leaves_gal), Some(18.5));
         assert_eq!(walk(&[departure(Some(50.0))], &[Some(7.5)], 0.0)[0], Some((50.0, false)));
+    }
+
+    #[test]
+    fn with_no_reserve_given_no_point_is_judged() {
+        // Not held to no reserve: not known (strip::tanks).
+        assert_eq!(walk(&[departure(None), leg(10.0, false, None)], &[None], 0.0), vec![None, None]);
+        assert_eq!(walk(&[departure(None), leg(10.0, false, None)], &[], 0.0), vec![None, None]);
     }
 
     #[test]

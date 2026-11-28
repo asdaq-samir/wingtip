@@ -14,10 +14,10 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
+import app.wingtipmaps.android.map.OverlayState
 import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.tiles.TileTemplate
 import app.wingtipmaps.android.ui.airspaceHours
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -40,8 +40,8 @@ class MapParityTest {
         maxZoom = 12, minZoom = 4, name = "2025-10-30-v3-0", toleranceM = 15.0, version = 3,
     )
 
-    private fun style(layers: MapLayers = MapLayers(), weather: Map<String, String> = emptyMap()): JsonObject =
-        Json.parseToJsonElement(MapStyle.styleJson(template, 5, 12, tiles, false, layers, weather)).jsonObject
+    private fun style(layers: MapLayers = MapLayers()): JsonObject =
+        MapStyle.styleJson(template, 5, 12, tiles, false, layers)
 
     private fun layer(style: JsonObject, id: String) =
         style["layers"]!!.jsonArray.first { it.jsonObject["id"]!!.jsonPrimitive.content == id }.jsonObject
@@ -51,13 +51,11 @@ class MapParityTest {
 
     @Test
     fun aFieldWearsItsCategorysPipJoinedByIdent() {
-        val icon = layer(style(weather = mapOf("KORD" to "#1a7f37", "KMDW" to "#1a7f37", "KDPA" to "#b3261e")), "airports")
-            .getValue("layout").jsonObject.getValue("icon-image").toString()
-        // The fields of each colour in one branch of a match on the ident.
-        assertTrue(icon, icon.contains("""["match",["get","ident"],["KMDW","KORD"],"#1a7f37",["KDPA"],"#b3261e",""]"""))
-        // Before any METAR, no pip.
-        val bare = layer(style(), "airports").getValue("layout").jsonObject.getValue("icon-image").toString()
-        assertTrue(bare, bare.contains(""""|","","|""""))
+        // Each field's pip in one object of the map's state, which the airports' mark reads by the field's ident.
+        val state = OverlayState.weatherState(mapOf("KORD" to "h#1a7f37", "KDPA" to "h#b3261e"))
+        assertEquals("""{"KORD":"h#1a7f37","KDPA":"h#b3261e"}""", state.toString())
+        val icon = layer(style(), "airports").getValue("layout").jsonObject.getValue("icon-image").toString()
+        assertTrue(icon, icon.contains("""["get",["to-string",["get","ident"]],["object",["global-state","airportWeather"],["literal",{}]]]"""))
     }
 
     @Test
@@ -86,14 +84,10 @@ class MapParityTest {
         val off = style(MapLayers(airspace = false, navaids = false, privateFields = true, military = true))
         for (id in MapStyle.AIRSPACE_LAYERS + MapStyle.NAVAID_LAYERS) assertEquals(id, "none", visibility(off, id))
         assertNull(visibility(off, "vfr-waypoints"))
-        assertEquals("""["all"]""", layer(off, "airports")["filter"].toString())
         val on = style()
         for (id in MapStyle.AIRSPACE_LAYERS + MapStyle.NAVAID_LAYERS) assertNull(id, visibility(on, id))
-        assertEquals(
-            """["all",["!=",["get","military"],"military"],["!=",["get","use"],"private"]]""",
-            MapStyle.airportsFilter(MapLayers()).toString(),
-        )
-        assertEquals("""["all",["!=",["get","use"],"private"]]""", MapStyle.airportsFilter(MapLayers(military = true)).toString())
+        // The fields by the map's state the switches set (OverlayState), the same filter whatever they say.
+        assertEquals(layer(off, "airports")["filter"], layer(on, "airports")["filter"])
     }
 
     @Test

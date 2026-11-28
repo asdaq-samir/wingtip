@@ -131,7 +131,7 @@ export function PlaceInfoTab({
       </CardSection>
       {/* The field's own NOTAMs and the TFRs near it, the engine's order
           (PlaceNotams), after its radio, before its details. */}
-      <PlaceNotamsSection ident={place.ident} none={noNotams} />
+      <PlaceNotamsSection ident={place.ident} name={place.name} none={noNotams} />
 
       {/* The field's lights, after the radio, as it is the mic that
           turns most of them on (PlaceLights). */}
@@ -143,7 +143,7 @@ export function PlaceInfoTab({
         ident={place.ident}
         fuelNotam={fuel && { badge: <NotamBadge mark={fuel} kind="fuel" />, onClick: () => sheet.show(fuel) }}
       />
-      {sheet.shown && <NotamSheet notams={sheet.shown} ident={place.ident} onClose={sheet.close} />}
+      {sheet.shown && <NotamSheet notams={sheet.shown} ident={place.ident} name={place.name} onClose={sheet.close} />}
     </>
   );
 }

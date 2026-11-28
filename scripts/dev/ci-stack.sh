@@ -192,8 +192,12 @@ run() {
   # The suite's packages, as installed in the Playwright image, kept in a
   # volume per lock (docker-tidy.sh keeps wingtip-npm*).
   vol=wingtip-npm-e2e-$({ cat "$here/apps/web/package-lock.json"; echo "$image"; } | shasum -a 256 | cut -c1-12)
-  "$turn" "ci-stack e2e ($(basename "$here"))" docker run --rm --network host "${cpus[@]+"${cpus[@]}"}" -e CI=1 \
-    -e BASE_URL="http://localhost:$gateway_port" -e MAILPIT_URL="http://localhost:$mailpit_port" \
+  # On the stack's own network, reaching the gateway and the inbox by their
+  # service names: Docker Desktop's host network is its VM's, not the
+  # Mac's, so a browsers' container there could not reach the ports the
+  # stack published on the Mac's loopback (r4-specs, 2026-11-23).
+  "$turn" "ci-stack e2e ($(basename "$here"))" docker run --rm --network "${project}_default" "${cpus[@]+"${cpus[@]}"}" -e CI=1 \
+    -e BASE_URL="http://gateway:8080" -e MAILPIT_URL="http://mailpit:8025" \
     -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" sh -c '
       [ -f node_modules/.package-lock.json ] || npm ci --no-audit --no-fund --loglevel=error
       npx playwright test --retries=0 --reporter=list "$@"' sh "${project_arg[@]+"${project_arg[@]}"}" "$@"

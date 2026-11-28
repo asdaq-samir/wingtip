@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.library
 
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -13,6 +15,7 @@ import androidx.ink.authoring.compose.InProgressStrokes
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.pageMatrix
 
 /** How a page is marked now: not at all (reading, the page zooms), or
  *  with the pen or the highlighter (the page holds still for the ink). */
@@ -41,18 +44,28 @@ class PageInk(val marks: List<Mark>, val marking: Marking, val onMarked: (List<M
  * renderer at the page's width now over its width when drawn, so it keeps
  * to its place at any size; and, while marking, Ink's InProgressStrokes
  * taking a stylus's or a finger's strokes with low latency, each finished
- * stroke handed on as a Mark on `page` (from 1).
+ * stroke handed on as a Mark on `page` (from 1). At night the marks are
+ * dimmed by colour with the page (`brightness`, the chart's light less the
+ * Dimmer, pageMatrix's scale without the inversion), as the map's lines
+ * are (MapDim.colour; the coordinator's call, in line with the owner's "Dim
+ * by colour", 2026-11-27): the pilot's red or blue is never the brightest
+ * thing on the page, keeping dark adaptation (AIM 8-1-6). A stroke being
+ * drawn is Ink's own, at its pen's colour until it is finished.
  */
 @Composable
-internal fun MarkLayer(marks: List<Mark>, page: Int, wPx: Float, hPx: Float, marking: Marking, onMarked: (List<Mark>) -> Unit) {
+internal fun MarkLayer(marks: List<Mark>, page: Int, wPx: Float, hPx: Float, marking: Marking, onMarked: (List<Mark>) -> Unit, brightness: Float = 1f) {
     val renderer = remember { CanvasStrokeRenderer.create() }
     val strokes = remember(marks) { marks.filter { it.page == page }.mapNotNull { m -> m.stroke()?.let { it to m.width } } }
+    val dim = remember(brightness) { pageMatrix(false, brightness)?.let { Paint().apply { colorFilter = ColorMatrixColorFilter(it) } } }
     Canvas(Modifier.fillMaxSize()) {
         drawIntoCanvas { canvas ->
+            val native = canvas.nativeCanvas
+            val layer = dim?.let { native.saveLayer(null, it) }
             for ((stroke, width) in strokes) {
                 val scale = wPx / width.coerceAtLeast(1f)
-                renderer.draw(canvas.nativeCanvas, stroke, android.graphics.Matrix().apply { setScale(scale, scale) })
+                renderer.draw(native, stroke, android.graphics.Matrix().apply { setScale(scale, scale) })
             }
+            layer?.let(native::restoreToCount)
         }
     }
     val pen = marking.pen ?: return

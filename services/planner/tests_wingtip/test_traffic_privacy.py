@@ -7,6 +7,7 @@ all pruned on a schedule, whether or not ingest runs."""
 
 from __future__ import annotations
 
+import hashlib
 import sqlite3
 
 import pytest
@@ -63,12 +64,70 @@ def test_a_followed_airplane_expires_30_days_after_its_card_was_last_opened(wall
     wall["t"] += traffic.FOLLOW_KEEP_S - 86400
     # Opened again the day before it would have gone: another 30 days.
     traffic.follow("a3c858")
+    store.record("a3c858", {"t": wall["t"], "lat": 42.0, "lon": -88.0}, wall["t"] - traffic.RECORD_KEEP_S)
     wall["t"] += 2 * 86400
     assert traffic.prune()["followed"] == 0
-    assert traffic.followed() == {"a3c858"}
+    assert traffic.followed() == ["a3c858"]
     wall["t"] += traffic.FOLLOW_KEEP_S
     assert traffic.prune()["followed"] == 1
-    assert traffic.followed() == set()
+    assert traffic.followed() == []
+
+
+def test_an_airplane_no_source_has_heard_is_followed_no_more_after_a_day(wall):
+    """The security review of 2026-11-23 (M5): a made-up address is not
+    asked of adsb.lol for 30 days."""
+    traffic.follow("000001")
+    traffic.follow("a3c858")
+    store.record("a3c858", {"t": wall["t"], "lat": 42.0, "lon": -88.0}, wall["t"] - traffic.RECORD_KEEP_S)
+    wall["t"] += recorded.FOLLOW_UNHEARD_S - 1
+    assert traffic.prune()["followed"] == 0
+    wall["t"] += 2
+    assert traffic.prune()["followed"] == 1
+    assert traffic.followed() == ["a3c858"]
+
+
+def test_the_followed_are_capped_and_the_card_opened_latest_is_asked_first(wall, monkeypatch):
+    monkeypatch.setattr(recorded, "FOLLOW_MOST", 3)
+    for hex_id in ("a00001", "a00002", "a00003", "a00004"):
+        wall["t"] += 1
+        traffic.follow(hex_id)
+    assert traffic.followed() == ["a00004", "a00003", "a00002"]
+
+
+def test_one_pilot_s_follows_never_push_out_another_s(wall, monkeypatch):
+    """The safety audit of 2026-11-23, M5: each pilot follows FOLLOW_EACH at
+    most, their own oldest going, so one account's card opens cannot evict
+    every other pilot's airplanes."""
+    monkeypatch.setattr(recorded, "FOLLOW_EACH", 3)
+    wall["t"] += 1
+    traffic.follow("b00001", "pilot-a")
+    for n in range(10):
+        wall["t"] += 1
+        traffic.follow(f"a0000{n}", "pilot-b")
+    assert "b00001" in traffic.followed()
+    assert traffic.followed()[:3] == ["a00009", "a00008", "a00007"] and len(traffic.followed()) == 4
+    # The store keeps no pilot's id, only a short keyed hash of it: not the
+    # unkeyed hash anyone could work out from a guessed id.
+    assert "pilot-a" not in recorded.share_of("pilot-a") and len(recorded.share_of("pilot-a")) == 12
+    assert recorded.share_of("pilot-a") != hashlib.sha256(b"wingtip-follow:pilot-a").hexdigest()[:12]
+    assert recorded.share_of("pilot-a") == recorded.share_of("pilot-a") != recorded.share_of("pilot-b")
+
+
+def test_accounts_filling_the_store_lose_their_own_follows_first(wall, monkeypatch):
+    """The round 6 audit, P1: enough accounts, each at FOLLOW_EACH, fill
+    FOLLOW_MOST between them; a pilot who follows fewer then keeps theirs,
+    the largest share's oldest going instead."""
+    monkeypatch.setattr(recorded, "FOLLOW_EACH", 3)
+    monkeypatch.setattr(recorded, "FOLLOW_MOST", 6)
+    wall["t"] += 1
+    traffic.follow("b00001", "pilot-a")
+    for n, who in enumerate(["x1", "x1", "x1", "x2", "x2", "x2"]):
+        wall["t"] += 1
+        traffic.follow(f"c0000{n}", who)
+    assert "b00001" in traffic.followed() and len(traffic.followed()) == 6
+    wall["t"] += 1
+    traffic.follow("b00002", "pilot-c")
+    assert {"b00001", "b00002"} <= set(traffic.followed()) and len(traffic.followed()) == 6
 
 
 def test_track_points_go_after_30_days_though_the_airplane_is_never_heard_again(wall):
@@ -87,3 +146,44 @@ def test_the_live_store_is_pruned_every_minute_by_a_job_on_the_scheduler():
     job = on.get_job("live-store-prune")
     assert job.func is radar.prune
     assert job.trigger.interval.total_seconds() == 60.0
+
+
+@pytest.fixture
+def share_key_cleared():
+    recorded._share_key.cache_clear()
+    yield
+    recorded._share_key.cache_clear()
+
+
+def test_no_share_key_stops_the_planner_and_none_is_kept_in_the_store(monkeypatch, share_key_cleared):
+    """The round 7 audit, P-M1: the key is never the store's own, where
+    whoever reads the store would hold it beside the hashes."""
+    monkeypatch.delenv("FOLLOW_SHARE_KEY", raising=False)
+    monkeypatch.delenv("FOLLOW_SHARE_KEY_FILE", raising=False)
+    with pytest.raises(recorded.ShareKeyMissing, match="FOLLOW_SHARE_KEY is not set"):
+        recorded.require_share_key()
+    assert recorded.share_of("") == ""
+    store.followed()
+    assert not _rows_of_master("keys")
+
+
+def test_the_development_key_is_made_once_into_its_own_file(tmp_path, monkeypatch, share_key_cleared):
+    path = tmp_path / "secrets" / "follow_share.key"
+    monkeypatch.delenv("FOLLOW_SHARE_KEY", raising=False)
+    monkeypatch.setenv("FOLLOW_SHARE_KEY_FILE", str(path))
+    first = recorded.share_of("pilot-a")
+    assert path.stat().st_mode & 0o777 == 0o600 and len(path.read_text()) == 64
+    recorded._share_key.cache_clear()
+    assert recorded.share_of("pilot-a") == first
+    path.write_text("short")
+    recorded._share_key.cache_clear()
+    with pytest.raises(recorded.ShareKeyMissing, match="fewer than 32"):
+        recorded.share_of("pilot-a")
+
+
+def _rows_of_master(name: str) -> list[tuple]:
+    db = sqlite3.connect(store.STORE)
+    try:
+        return db.execute("SELECT 1 FROM sqlite_master WHERE name = ?", (name,)).fetchall()
+    finally:
+        db.close()

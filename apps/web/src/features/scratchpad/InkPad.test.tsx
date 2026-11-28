@@ -14,6 +14,11 @@ beforeAll(() => {
   // jsdom has no pointer capture: the pad holds the pointer it draws with.
   Element.prototype.setPointerCapture = () => {};
   Element.prototype.hasPointerCapture = () => true;
+  // The live stroke is drawn once a frame: run each frame at once.
+  vi.stubGlobal("requestAnimationFrame", (f: FrameRequestCallback) => {
+    f(0);
+    return 0;
+  });
 });
 
 const stroke = (x: number): Stroke => ({
@@ -37,5 +42,28 @@ describe("InkPad", () => {
     // The live stroke drawn at each move, and none of the twenty again.
     expect(outlines.mock.calls.length).toBeGreaterThan(0);
     expect(outlines.mock.calls.filter(([s]) => kept.includes(s))).toHaveLength(0);
+  });
+
+  it("keeps every coalesced point of a move and hands the stroke on as it ends", () => {
+    const kept: Stroke[] = [];
+    const { getByTestId } = render(<InkPad strokes={[]} onStroke={(s) => kept.push(s)} label="Page" />);
+    const pad = getByTestId("scratchpad-ink");
+    expect(pad.getAttribute("data-base-ui-swipe-ignore")).toBe("");
+    fireEvent.pointerDown(pad, { pointerId: 1, pointerType: "mouse", isPrimary: true, clientX: 10, clientY: 10 });
+    const move = new MouseEvent("pointermove", { bubbles: true, clientX: 14, clientY: 14 }) as MouseEvent & {
+      pointerId: number;
+      getCoalescedEvents: () => object[];
+    };
+    Object.assign(move, {
+      pointerId: 1,
+      pointerType: "mouse",
+      getCoalescedEvents: () => [11, 12, 13].map((v) => ({ clientX: v, clientY: v, pointerType: "mouse", pressure: 0.5 })),
+    });
+    fireEvent(pad, move);
+    expect(getByTestId("scratchpad-live").getAttribute("d")).not.toBe("");
+    fireEvent.pointerUp(pad, { pointerId: 1 });
+    expect(kept).toHaveLength(1);
+    expect(kept[0]?.points).toHaveLength(4);
+    expect(getByTestId("scratchpad-live").getAttribute("d")).toBe("");
   });
 });

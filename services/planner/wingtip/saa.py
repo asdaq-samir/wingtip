@@ -38,6 +38,7 @@ import time
 import xml.etree.ElementTree as ET
 
 from . import live_reports, utc
+from . import xml_names
 
 KIND = "saa"
 #: Statuses that mean an area is in use (AIXM 5.1 CodeStatusAirspaceType).
@@ -56,24 +57,11 @@ def key(designator: str) -> str:
     return re.sub(r"[^A-Z0-9]", "", (designator or "").upper())
 
 
-def _local(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
-
-
-def _first(element, name: str):
-    return next((e for e in element.iter() if _local(e.tag) == name), None)
-
-
-def _text(element, name: str) -> str:
-    found = _first(element, name)
-    return (found.text or "").strip() if found is not None and found.text else ""
-
-
 def _period(element) -> tuple[float | None, float | None]:
-    period = _first(element, "TimePeriod")
+    period = xml_names.first(element, "TimePeriod")
     if period is None:
         return None, None
-    return utc.epoch_or_none(_text(period, "beginPosition")), utc.epoch_or_none(_text(period, "endPosition"))
+    return utc.epoch_or_none(xml_names.text(period, "beginPosition")), utc.epoch_or_none(xml_names.text(period, "endPosition"))
 
 
 def areas(xml: str) -> list[dict]:
@@ -86,14 +74,14 @@ def areas(xml: str) -> list[dict]:
     except ET.ParseError:
         return []
     found = []
-    for airspace in (e for e in root.iter() if _local(e.tag) == "AirspaceTimeSlice"):
-        designator = _text(airspace, "designator")
+    for airspace in (e for e in root.iter() if xml_names.local(e.tag) == "AirspaceTimeSlice"):
+        designator = xml_names.text(airspace, "designator")
         if not designator:
             continue
         starts, ends = _period(airspace)
         activations = []
-        for activation in (e for e in airspace.iter() if _local(e.tag) == "AirspaceActivation"):
-            status = _text(activation, "status").upper()
+        for activation in (e for e in airspace.iter() if xml_names.local(e.tag) == "AirspaceActivation"):
+            status = xml_names.text(activation, "status").upper()
             if not status:
                 continue
             a_starts, a_ends = _period(activation)
@@ -109,12 +97,12 @@ def areas(xml: str) -> list[dict]:
             found.append(
                 {
                     "designator": designator,
-                    "name": _text(airspace, "name") or None,
-                    "type": _text(airspace, "type") or None,
+                    "name": xml_names.text(airspace, "name") or None,
+                    "type": xml_names.text(airspace, "type") or None,
                     "activations": activations,
                     # SFDPS's extension, as sent: its units are unstated.
-                    "upper_as_sent": _text(airspace, "saaManualHighAltitude") or None,
-                    "lower_as_sent": _text(airspace, "saaManualLowAltitude") or None,
+                    "upper_as_sent": xml_names.text(airspace, "saaManualHighAltitude") or None,
+                    "lower_as_sent": xml_names.text(airspace, "saaManualLowAltitude") or None,
                 }
             )
     return found

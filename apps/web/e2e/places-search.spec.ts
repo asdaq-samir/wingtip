@@ -1,7 +1,27 @@
 import { test, expect } from "@playwright/test";
-import { clearTheRoute, closeCard, grabberTo, inSheet, searchAirports, settle, showTabs, sideDrawer, slow, frontSheet } from "./helpers";
+import {
+  clearTheRoute,
+  closeCard,
+  grabberTo,
+  inSheet,
+  searchAirports,
+  settle,
+  showTabs,
+  sideDrawer,
+  sheetFoot,
+  slow,
+  frontSheet,
+  withFoot,
+} from "./helpers";
 import { card, cardWeather, holdPlannerSearch } from "./placeCard";
 import { ownHomeBase, showPage } from "./oneSearch";
+
+// cardWeather's handler asks the planner for the card's real answer before it changes the weather; a card still asking as the test
+// ends found the page closed and failed the job with no red test (route.fetch: Test ended, KDLH, PR #591's shard 9): the handlers
+// taken off, their errors let go, as each test ends, as ifr.spec does.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
 
 test("the airport search answers from the phone's own copy, asking the planner nothing as it is typed", async ({ page }) => {
   // The planner's index (wingtip.airports.search_index), two fields of it.
@@ -23,19 +43,21 @@ test("the airport search answers from the phone's own copy, asking the planner n
   page.on("request", (request) => {
     if (request.url().includes("/airports/search")) asked.push(request.url());
   });
-  const index = () => page.waitForResponse((response) => response.url().includes("/api/planner/airports/index"));
-  // Downloaded once the page is idle; read once the pilot goes to type.
-  const downloaded = index();
+  let fetched = 0;
+  page.on("response", (response) => {
+    if (response.url().includes("/api/planner/airports/index")) fetched += 1;
+  });
   await page.goto("/app/plan");
   await settle(page);
-  await downloaded;
+  // Downloaded once the page is idle, then read ahead at the next idle
+  // (lib/airportIndex's warm and ahead), so the first focus finds it read
+  // rather than asking for it as the keyboard comes up.
+  await expect.poll(() => fetched, { timeout: slow(30_000) }).toBe(2);
   // Out, on the one search.
   await grabberTo(page, "full");
   await showTabs(page);
   const search = page.getByTestId("search-airports");
-  const read = index();
   await search.click();
-  await read;
   await search.pressSequentially("oshk");
   // Wittman by its town, the bigger field first, from the browser's own
   // copy (the waypoints and navaids beside them are the planner's).
@@ -114,17 +136,18 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await grabberTo(page, "peek");
   await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
   await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("flight-line")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/dep=/);
-  await expect(sideDrawer(page).getByTestId("timeline-type-route")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-type-open")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("aircraft-select")).toBeEnabled();
   // With no route there is no route's menu at all (the owner,
-  // 2026-11-18): the first row is the airplane's strip alone, and the
-  // empty route's Type or Paste a Route offers the route just cleared back.
-  await expect(sideDrawer(page).getByTestId("share-route")).toHaveCount(0);
-  await expect(sideDrawer(page).getByTestId("route-undo")).toBeVisible();
+  // 2026-11-18): the first row is the airplane's strip alone; the route
+  // just cleared comes back by the toast's Undo, no Undo of the box's own
+  // (the owner, 2026-11-23: "No undo needed next to toggle").
+  await expect(sheetFoot(page).getByTestId("share-route")).toHaveCount(0);
+  await expect(sideDrawer(page).getByTestId("route-undo")).toHaveCount(0);
   await expect(sideDrawer(page).getByTestId("panel-tab-enroute")).toBeHidden();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   // The search's own page (the sheet's first) all the way up, as it was:
@@ -204,7 +227,7 @@ test("the Weather tab listens to an ATIS and shows the runway in use and the alt
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
-  await card(page).getByTestId("place-tab-weather").click();
+  await withFoot(card(page)).getByTestId("place-tab-weather").click();
   const listen = card(page).getByTestId("place-atis-listen");
   await expect(listen).toContainText("Listen to ATIS");
   // A tab only switches what is shown (the owner, 2026-11-11): the card

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Response
 from wingtip import aircraft, airports, model_registry, places
 from wingtip import fixes as fixes_module
 
-from ..router_basics import SHARED_CACHE, near_points
+from ..router_basics import SHARED_CACHE, points
 from ..schemas.devml import AircraftProfiles, AirportSearch, ModelComparison
 from ..gateway import DEVELOPER, SHARED, gateway
 
@@ -80,7 +80,7 @@ def airport_search(response: Response, q: str = "", fixes: bool = False, near: s
     response.headers["Cache-Control"] = SHARED_CACHE
     # Of fields alike, the nearest to `near` first: the pilot's position,
     # or the route's ends (wingtip.airports.search_airports).
-    by_route = near_points(near)
+    by_route = tuple(points(near))
     found = airports.search_airports(q, near=[(p[0], p[1]) for p in by_route] if by_route else None)
     if fixes:
         known = {a["ident"] for a in found}

@@ -13,6 +13,8 @@ Standard library only (and wingtip.units).
 from __future__ import annotations
 
 import json
+import math
+import string
 from pathlib import Path
 
 from wingtip.units import M_PER_FT, M_PER_NM, MS_TO_KT
@@ -46,6 +48,7 @@ def check(scn: dict) -> None:
     places = scn.get("places", {})
     points = scn.get("points", [])
     _need(len(points) >= 2, "a flight flies at least two points")
+    _need(bool(scn.get("start")) and scn.get("minutes", 0) > 0, "start, where X-Plane's flight begins, and minutes, about how long")
     names = [p.get("name") for p in points]
     _need(all(names) and len(set(names)) == len(names), f"each point has a name of its own: {names}")
     for p in points:
@@ -63,11 +66,54 @@ def check(scn: dict) -> None:
     if ap:
         _need(ap.get("from") in names and ap.get("to") in names, "the autopilot's from and to are points")
         _need(names.index(ap["from"]) < names.index(ap["to"]), "the autopilot hands back after it takes over")
-    for t in scn.get("traffic", []):
-        _need(t.get("after") in names, f"traffic {t.get('callsign')}: after names a point")
-        _need(len(str(t.get("hex", ""))) == 6, f"traffic {t.get('callsign')}: hex, six hex digits")
+    _idents(scn, names)
+    _in_scenery(scn)
     rates = scn.get("rates", {})
     _need(rates.get("climb_fpm", 0) > 0 and rates.get("descent_fpm", 0) > 0, "rates: climb_fpm and descent_fpm")
+
+
+def _hex(text: object) -> bool:
+    return len(str(text)) == 6 and all(c in string.hexdigits for c in str(text))
+
+
+def _idents(scn: dict, names: list) -> None:
+    """Each airplane named once, in the script alone: own ship's address
+    and call sign (what the phones hear as their own, GDL 90 3.4), and each
+    scripted airplane's, none of them another's, so the report, the map
+    and the stream all say the same one."""
+    own = scn.get("own", {})
+    _need(_hex(own.get("hex")) and bool(own.get("callsign")), "own: hex (six hex digits) and callsign")
+    seen = {str(own["hex"]).lower(): own["callsign"]}
+    signs = {own["callsign"]}
+    for t in scn.get("traffic", []):
+        sign = t.get("callsign")
+        _need(bool(sign), "traffic: each has a callsign")
+        _need(t.get("after") in names, f"traffic {sign}: after names a point")
+        _need(_hex(t.get("hex")), f"traffic {sign}: hex, six hex digits")
+        _need(str(t["hex"]).lower() not in seen and sign not in signs, f"traffic {sign}: a hex and callsign of its own")
+        seen[str(t["hex"]).lower()] = sign
+        signs.add(sign)
+
+
+def _where(p: dict, places: dict) -> list:
+    if "at" not in p:
+        return [(p["lat"], p["lon"])]
+    return [(places[k]["lat"], places[k]["lon"]) for k in (p["at"], p.get("toward", p["at"]))]
+
+
+def _in_scenery(scn: dict) -> None:
+    """Every point inside the simulator's scenery, where the script names
+    it: X-Plane's one-degree tiles, named by their south-west corner
+    ("+47-123" is 47 to 48 north, 123 to 122 west), as the demo has only
+    the Seattle area's."""
+    tiles = scn.get("scenery", {}).get("tiles")
+    if not tiles:
+        return
+    places = scn.get("places", {})
+    for p in scn["points"]:
+        for lat, lon in _where(p, places):
+            tile = f"{math.floor(lat):+03d}{math.floor(lon):+04d}"
+            _need(tile in tiles, f"{p['name']}: in tile {tile}, not the scenery's {tiles}")
 
 
 def _mps(kt: float) -> float:

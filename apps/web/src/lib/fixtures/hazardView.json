@@ -21,6 +21,20 @@
       "expected": { "shown": true, "in_flight": true, "altitude_ft": 8500, "source": "gps", "clearance_ft": 2000, "warning_from_ft": 6500, "caution_from_ft": 5500, "levels": [] }
     },
     {
+      "why": "in flight, the GPS height stepped down to the 50 ft below, never to the nearest: 4,349 is 4,300, the red from 3,300 not 3,350",
+      "input": { "setting": "on", "speed_kt": 110, "gps_altitude_ft": 4349, "planned_altitude_ft": 5500, "tops_ft": [3301, 3300] },
+      "expected": {
+        "shown": true,
+        "in_flight": true,
+        "altitude_ft": 4300,
+        "source": "gps",
+        "clearance_ft": 1000,
+        "warning_from_ft": 3300,
+        "caution_from_ft": 2300,
+        "levels": ["warning", "caution"]
+      }
+    },
+    {
       "why": "by itself in flight, not on the ground",
       "input": { "setting": "flight", "speed_kt": 12, "gps_altitude_ft": 700, "planned_altitude_ft": 5500 },
       "expected": { "shown": false, "in_flight": false, "source": "plan" }

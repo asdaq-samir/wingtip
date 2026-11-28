@@ -114,7 +114,7 @@ fn every_rule_answers_by_name_from_the_planners_and_the_webs_own_objects() {
     let alternate_of = |b: &Value| b["items"].as_array().unwrap().iter().find(|i| i["section"] == "Alternate").cloned();
     let none_filed = ifr_brief(r#"{"destination": {"required": true}, "alternate": null}"#);
     assert!(alternate_of(&none_filed).is_some());
-    assert_eq!(none_filed["line"]["finding"], "caution");
+    assert_eq!(none_filed["line"]["finding"], "stop");
     // An alternate with no `good` at all says nothing; one with good null
     // is the pilot's to check (useAlternate's `=== null`).
     assert!(alternate_of(&ifr_brief(r#"{"destination": {"required": true}, "alternate": {"ident": "KMSN", "reasons": []}}"#)).is_none());

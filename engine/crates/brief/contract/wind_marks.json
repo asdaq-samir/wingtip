@@ -1,0 +1,108 @@
+{
+  "x-call": "wingtip_brief::runway::marks::call",
+  "description": "wind_arrow and wind_barb for many fields in one call, in the order asked: the map's airport weather marks for every METAR in view at each rebuild. Each field's arrow as wind_arrow gives it (10 kt or more, or gusting, the owner's pick, 2026-11-10; red past the airplane's maximum demonstrated crosswind, the POH's, 14 CFR 23.233(a) before amendment 23-64) and its barb as wind_barb (FAA-H-8083-28B, 25.2.3.4.5), null where no wind is reported.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WindMarksInput",
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "title": "WindMarksField",
+            "type": "object",
+            "properties": {
+              "speed_kt": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "gust_kt": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "crosswind_kt": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "The field's least crosswind (least_crosswind)."
+              },
+              "demonstrated_kt": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "The picked airplane's maximum demonstrated crosswind; null with none picked or no figure."
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "fields"
+      ]
+    },
+    "answer": {
+      "title": "WindMarksAnswer",
+      "type": "array",
+      "items": {
+        "title": "WindMark",
+        "type": "object",
+        "properties": {
+          "shown": {
+            "type": "boolean"
+          },
+          "over": {
+            "type": "boolean"
+          },
+          "barb": {
+            "anyOf": [
+              {
+                "title": "WindMarkBarb",
+                "type": "object",
+                "properties": {
+                  "calm": {
+                    "type": "boolean"
+                  },
+                  "flags": {
+                    "type": "integer"
+                  },
+                  "barbs": {
+                    "type": "integer"
+                  },
+                  "half_barbs": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "calm",
+                  "flags",
+                  "barbs",
+                  "half_barbs"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "shown",
+          "over",
+          "barb"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

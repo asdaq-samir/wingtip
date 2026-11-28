@@ -16,7 +16,7 @@ export type RouteListSlices = PlanSlices<"route" | "plan" | "cards" | "picks" | 
 export function useRouteListProps(vm: RouteListSlices): ProceduresRouteProps {
   const { crossings, depart, directParam, ground, holds, insertStopAfter, planned, removeStop, routePoints, setPointAltitude, tanks } =
     vm.route;
-  const { changeDepart, directToPoint, setGround, setHold, setTanks } = vm.plan;
+  const { changeDepart, directToPoint, setGround, setHold } = vm.plan;
   const { selectPlace, setApproachesOf } = vm.cards;
   const {
     autoPicked,
@@ -99,7 +99,6 @@ export function useRouteListProps(vm: RouteListSlices): ProceduresRouteProps {
         fuel: tankFigures,
         // The gauges set where the list edits the route, on the ground.
         tanks,
-        onTanks: read ? undefined : setTanks,
       },
       // The Routes' chips over the list in flight alone: on the ground
       // they are under the timeline's figures (FplRoute).
@@ -149,7 +148,6 @@ export function useRouteListProps(vm: RouteListSlices): ProceduresRouteProps {
       planned.stops.length,
       tankFigures,
       tanks,
-      setTanks,
       listEdit,
       flying,
       read,

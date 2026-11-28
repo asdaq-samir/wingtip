@@ -115,7 +115,7 @@ class InstructorPageTest {
         verify(planner, times(1)).records(experience.capture(), endorsements.capture());
         assertThat(experience.getValue()).hasSize(2);
         assertThat(endorsements.getValue()).hasSize(2 + 2);
-        verify(planner, never()).endorsements(any(), any());
+        verify(planner, never()).endorsements(any(), any(), any());
         verify(planner, never()).experience(any(), any());
         // Each student's records read once, not again for each review.
         verify(recorded, times(1)).findByKeyPilotIdOrderByKeyCode(2L);

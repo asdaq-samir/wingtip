@@ -58,6 +58,10 @@
         "null"
       ]
     },
+    "closed": {
+      "type": "boolean",
+      "description": "NASR lists it closed: `good` false, never offered (decision 0043)."
+    },
     "meets_standard": {
       "type": "boolean"
     },
@@ -78,6 +82,7 @@
     "visibility_sm",
     "taf",
     "good",
+    "closed",
     "meets_standard",
     "reasons"
   ]

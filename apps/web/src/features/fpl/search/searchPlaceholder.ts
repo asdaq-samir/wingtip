@@ -9,8 +9,7 @@ export function placeholderOf(direct: boolean, pick: SearchPick | null, picking:
   if (pick) {
     if (pick.fixes) return "Search airports and waypoints";
     // A stop changed asks "In place of My Location": a phrase, not a noun,
-    // which read "Search for an in place of my location" (the flakes
-    // audit, route-fields). The airport it asks for named, the point's
+    // which read "Search for an in place of my location". The airport it asks for named, the point's
     // own name kept as written (an ident stays in capitals).
     if (/^in place of /i.test(pick.label)) return `Search for an airport in${pick.label.slice(2)}`;
     return `Search for ${/^[aeiou]/i.test(pick.label) ? "an" : "a"} ${pick.label.toLowerCase()}`;

@@ -1,16 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "cn";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
 import StatusBadge from "../../components/StatusBadge";
 import { Button } from "../../components/ui/button";
-import { approachQuiz, type LessonInput } from "../../lib/approachLesson";
+import type { QuizQuestion } from "../../lib/approachLesson";
 import type { QuizAnswer } from "../../lib/api/types";
 import { NO_FOCUS, useLessonMap } from "../../lib/map/route/lessonMap";
 import { TEXT } from "../../lib/text";
 import { Progress, type FromInstructor } from "./LessonParts";
 
-export function QuizPage({ input, from, gs }: { input: LessonInput; from?: FromInstructor; gs: number }) {
-  const questions = useMemo(() => approachQuiz(input, gs), [input, gs]);
+export function QuizPage({ questions, from }: { questions: QuizQuestion[]; from?: FromInstructor }) {
   const [at, setAt] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [right, setRight] = useState(0);

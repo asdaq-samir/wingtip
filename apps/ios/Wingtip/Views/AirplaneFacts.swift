@@ -8,7 +8,10 @@ import SwiftUI
 /// aircraft registry's record (wingtip.registry), its reference model's
 /// figures over the record's own where the card has them, each only where
 /// there is one:
-/// - Type: the registry's make and model, else the traffic's type.
+/// - Its maker as the first fact's small name and its model as the value
+///   ("Airbus" over "A321", the planner's make_short and model_short; the
+///   owner's pick on the web, 2026-11-27), else the traffic's type split
+///   at its first space; a bare type code is its value under "Model".
 /// - Year: the year it was built.
 /// - Seats and Engines: the FAA's reference record (ACFTREF), else the
 ///   registration's.
@@ -27,14 +30,14 @@ struct AirplaneFacts: View {
     var year: String?
 
     var body: some View {
-        let made = [record?.manufacturer, record?.model].compactMap { $0 }.joined(separator: " ").nonEmpty ?? type
+        let made = Self.made(record: record, type: type)
         let built = record?.year.map(String.init) ?? year?.nonEmpty
         let seats = model?.seats ?? record?.seats
         let engines = model?.engines ?? record?.engines
         // No strip where there is nothing to say: its room is the pictures'.
         if record != nil || made != nil || built != nil {
             FactStrip {
-                if let made { FactCell("Type", made) }
+                if let made { FactCell(made.label, made.value) }
                 if let built { FactCell("Year", built) }
                 if let seats { FactCell("Seats", "\(seats)") }
                 if let engines { FactCell("Engines", "\(engines)") }
@@ -47,6 +50,17 @@ struct AirplaneFacts: View {
             }
             .accessibilityIdentifier("airplane-facts")
         }
+    }
+
+    /// The first fact, as the web's AirplaneFacts writes it: the maker as
+    /// its name and the model as its value; with no model the maker under
+    /// "Make", with no maker the model under "Model".
+    static func made(record: FAARecord?, type: String?) -> (label: String, value: String)? {
+        let words = type?.split(whereSeparator: \.isWhitespace).map(String.init) ?? []
+        let maker = record.map { $0.shortMake } ?? (words.count > 1 ? words[0] : nil)
+        let model = record.map { $0.shortModel } ?? (words.count > 1 ? words.dropFirst().joined(separator: " ") : words.first)
+        if let model { return (maker ?? "Model", model) }
+        return maker.map { ("Make", $0) }
     }
 }
 

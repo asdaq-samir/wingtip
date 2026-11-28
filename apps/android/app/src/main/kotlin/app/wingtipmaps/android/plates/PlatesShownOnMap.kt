@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.map.PlatesShown
+import app.wingtipmaps.android.ui.LocalShade
 
 /**
  * The approach plates on the chart (MapPane's ChartMap), drawn as their
@@ -16,11 +17,28 @@ import app.wingtipmaps.android.map.PlatesShown
  */
 @Composable
 fun rememberPlatesShown(): PlatesShown {
-    val context = LocalContext.current
     val plateState by PlatesOnMap.shared.state.collectAsStateWithLifecycle()
-    val plateLook by remember { PlateLookStore.of(context) }.look.collectAsStateWithLifecycle()
+    // Which are drawn is the card's Shown alone; the Dimmer is read only once
+    // one is, so a slider's step with none on the map leaves the pane be.
+    val unlit = rememberPlateLook(lit = false)
+    val drawnPlates = remember(plateState, unlit) { plateState.drawn(unlit) }
+    val plateLook = rememberPlateLook(lit = drawnPlates.isNotEmpty())
     val plateTags by PlateTagsModel.shared.tags.collectAsStateWithLifecycle()
-    val drawnPlates = remember(plateState, plateLook) { plateState.drawn(plateLook) }
     LaunchedEffect(drawnPlates) { PlateTagsModel.shared.want(drawnPlates.map { it.pick }) }
     return remember(drawnPlates, plateLook, plateTags) { PlatesShown(drawnPlates, plateLook, PlateTagsModel.shared.drawing(drawnPlates, plateLook)) }
+}
+
+/** The plate's look as drawn here: the card's settings, inverted with
+ *  the dark screen unless picked, and no brighter than the chart (the
+ *  Dimmer; PlateLook). The one read for the map's plates, the plate
+ *  full screen or beside the map and the airport diagram, so none of
+ *  them is a white page in a dark cockpit (AIM 8-1-6). */
+@Composable
+fun rememberPlateLook(lit: Boolean = true): PlateLook {
+    val context = LocalContext.current
+    val kept by remember { PlateLookStore.of(context) }.look.collectAsStateWithLifecycle()
+    val shade = LocalShade.current
+    // The Dimmer's State read here, outside remember, so each step is seen.
+    val brightness = if (lit) 1f - shade.look.dim(shade.dark) else 1f
+    return remember(kept, shade.dark, brightness) { kept.copy(dark = shade.dark, brightness = brightness) }
 }

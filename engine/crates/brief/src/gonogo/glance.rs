@@ -90,7 +90,7 @@ const WHY: [(&str, &str, &str); 9] = [
 
 /// What to do about a finding: (key, if it stops the flight, if it wants
 /// a look). Flight Service's number with non-breaking hyphens (U+2011):
-/// it broke after "(1-" on a phone (the web audit's WEB-43).
+/// it broke after "(1-" on a phone.
 const ACTION: [(&str, &str, &str); 9] = [
     ("weather", "wait for it to lift, or plan another day", "read it on En Route and plan around it"),
     ("airspace", "route around it, or go later", "ask Flight Service (1\u{2011}800\u{2011}WX\u{2011}BRIEF) before you go"),
@@ -151,8 +151,8 @@ fn capital(s: &str) -> String {
 }
 
 /// A section's name inside a sentence, in lower case but for a code's
-/// words -- "TFRs & special use", where it read "tfrs" (the FPL audit's
-/// A10; the FAA's codes are kept). The verdict's line names its labels
+/// words -- "TFRs & special use", where it read "tfrs" (the FAA's codes are kept).
+/// The verdict's line names its labels
 /// the same way (verdict/items.rs).
 pub(super) fn in_sentence(label: &str) -> String {
     let code = |w: &str| w.chars().take(2).filter(char::is_ascii_uppercase).count() == 2;
@@ -201,8 +201,7 @@ fn lead(item: &Item, fields: &[Field]) -> String {
 
 /// The risk's finding in plain words. Its detail is the assessment's
 /// level and score alone (frat::risk_line, "High · 21 points"), which read
-/// "Risk: High · 21 points" with nothing to say what the points were (the
-/// UI audit's C6, 2026-11-17): the level as a risk, and the points as the
+/// "Risk: High · 21 points" with nothing to say what the points were: the level as a risk, and the points as the
 /// PAVE and IMSAFE checklist's (FAA-H-8083-2, the assessment's source).
 /// Any other detail (one still waiting) is named as the risk's.
 fn risk_lead(detail: &str) -> String {

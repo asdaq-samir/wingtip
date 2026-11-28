@@ -1,6 +1,7 @@
 import { useRef, useState, type ComponentProps } from "react";
 import type { AirportPlace } from "../../lib/api/types";
 import { prefersReducedMotion } from "../../lib/motion";
+import { useMinuteClock } from "../../lib/useMinuteClock";
 import { AirspaceHours } from "./AirspaceHours";
 import { surfaceHoursAt } from "./surfaceHoursWords";
 import { PlaceFacts } from "./PlaceFacts";
@@ -16,23 +17,23 @@ import { PlacePictures } from "./PlacePictures";
  * its frequencies. The
  * Airspace fact tapped scrolls to the hours and opens the week, as Apple
  * Maps' Hours fact does. The hours are read at the field's own clock each
- * minute (`now`, PlaceCard's).
+ * minute, by this page's own clock, so the minute draws the page and not
+ * the whole card, and stops while it is out of
+ * sight (lib/shown).
  */
 export function PlaceInfoPage({
   place,
-  now,
   where,
   facts,
   pictures,
 }: {
   place: AirportPlace;
-  now: number;
   /** Its town and state, for the address where the FAA lists none. */
   where: string | null;
   facts: Omit<ComponentProps<typeof PlaceFacts>, "place" | "hours" | "onAirspace">;
   pictures: Omit<ComponentProps<typeof PlacePictures>, "place">;
 }) {
-  const hours = surfaceHoursAt(place, now);
+  const hours = surfaceHoursAt(place, useMinuteClock());
   const [open, setOpen] = useState(false);
   const section = useRef<HTMLDivElement>(null);
   const showHours = () => {

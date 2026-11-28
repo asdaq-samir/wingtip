@@ -84,7 +84,13 @@ export function poseOf(
 ): Pose {
   const track = at.trackDeg ?? 0;
   const ground = groundM(at.lat, at.lon);
-  const plane = { lat: at.lat, lon: at.lon, altM: Math.max((at.altFt ?? 0) * M_PER_FT, ground + OVER_GROUND_M) };
+  // No height is on the ground (lib/replay/replayed carries an airborne
+  // report's last good one): stood OVER_GROUND_M over it, never at 0 ft.
+  const plane = {
+    lat: at.lat,
+    lon: at.lon,
+    altM: at.altFt == null ? ground + OVER_GROUND_M : Math.max(at.altFt * M_PER_FT, ground + OVER_GROUND_M),
+  };
   const eyeAt = (p: { lat: number; lon: number }, altM: number): Pose => {
     const altKept = Math.max(altM, groundM(p.lat, p.lon) + OVER_GROUND_M);
     const look = lookAt({ ...p, altM: altKept }, plane);

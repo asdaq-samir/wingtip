@@ -47,13 +47,13 @@ describe("a runway end's fit", () => {
   it("says the crosswind, its gusts' where more, against the POH's demonstrated 15 kt", () => {
     // 360 at 12 gusting 20 across 27: 12 and 20 kt from the right.
     const fit = endFit({ ...at, runway: runway(5000), wind: { dirTrueDeg: 360, speedKt: 12, gustKt: 20 } });
-    expect(fit.crosswindKt).toBe(20);
-    expect(fit.crosswindOver).toBe(true);
+    expect(fit.crosswind_kt).toBe(20);
+    expect(fit.crosswind_over).toBe(true);
   });
 
   it("marks a runway within the 15 per cent margin as close, not short", () => {
     const still = { dirTrueDeg: null, speedKt: 0, gustKt: null };
-    const needed = endFit({ ...at, runway: runway(10000), wind: still }).neededFt!;
+    const needed = endFit({ ...at, runway: runway(10000), wind: still }).needed_ft!;
     const close = endFit({ ...at, runway: runway(Math.round(needed * 1.1)), wind: still });
     expect([close.short, close.close]).toEqual([false, true]);
   });
@@ -63,6 +63,17 @@ describe("a runway end's fit", () => {
     const grass = { ...runway(3000), surface: "TURF" } as Runway;
     const fit = endFit({ ...at, runway: grass, tempC: 30, altimeterInHg: 29.72, wind: { dirTrueDeg: 270, speedKt: 10, gustKt: null } });
     const checked = endDistance(c172.takeoff!, grass, fieldAir(900, 29.72, 30), 2550, 10);
-    expect(fit.neededFt).toBe(Math.round(checked.totalFt));
+    expect(fit.needed_ft).toBe(Math.round(checked.totalFt));
+  });
+
+  it("sends the report's variable arc: 27015G25KT 230V310 is 16 kt across 27, not 0", () => {
+    // FMH-1 chapter 12, AIM 7-1-28: the gust at 40 degrees off, 25 sin 40.
+    const wind = { dirTrueDeg: 270, speedKt: 15, gustKt: 25, variableDeg: [230, 310] as [number, number] };
+    expect(endFit({ ...at, runway: runway(5000), wind }).crosswind_kt).toBe(16);
+  });
+
+  it("says when no temperature was reported, the distances a standard day's", () => {
+    const fit = endFit({ ...at, tempC: null, runway: runway(10000), wind: null });
+    expect([fit.temp_assumed, fit.fit]).toEqual([true, "standard_day"]);
   });
 });

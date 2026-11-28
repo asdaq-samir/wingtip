@@ -14,10 +14,9 @@ the wind (its inbound leg is the timed one, its outbound adjusted to it).
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 
-import wingtip_native
+from wingtip.engine import ask as engine
 
 
 @dataclass(frozen=True)
@@ -38,14 +37,14 @@ def parse(text: str) -> Hold | None:
     """One hold as the address writes it, or None where it is not one: the
     engine's reading (wingtip_engine::route::holds), the one the web app's
     lib/routeHolds and the phones ask too."""
-    read = json.loads(wingtip_native.call("hold_read", json.dumps({"text": text})))
+    read = engine("hold_read", text=text)
     return None if read is None else _hold(read)
 
 
 def parse_all(text: str) -> list[tuple[str, Hold | None]]:
     """The address's `holds`, "A,B": each piece trimmed, the empty ones
     left out, with the hold it is, or None where it is not one."""
-    read = json.loads(wingtip_native.call("holds_read", json.dumps({"text": text})))
+    read = engine("holds_read", text=text)
     return [(r["part"], None if r["hold"] is None else _hold(r["hold"])) for r in read]
 
 
@@ -69,7 +68,7 @@ def _figures(hold: Hold, tas_kt: float) -> dict:
         "turns": hold.turns,
         "minutes": hold.minutes,
     }
-    return json.loads(wingtip_native.call("hold_figures", json.dumps({"hold": legs, "tas_kt": tas_kt})))
+    return engine("hold_figures", hold=legs, tas_kt=tas_kt)
 
 
 def entry(arrival_deg: float, inbound_deg: float, right: bool) -> str:
@@ -84,11 +83,7 @@ def entry(arrival_deg: float, inbound_deg: float, right: bool) -> str:
     (110 to 180) teardrop, the 110 beyond parallel; left turns the
     mirror. The engine's (wingtip_engine::figures::holding), the one copy
     the hold's page and the phones use too."""
-    return json.loads(
-        wingtip_native.call(
-            "hold_entry", json.dumps({"arrival_deg": arrival_deg, "inbound_deg": inbound_deg, "turns": "right" if right else "left"})
-        )
-    )
+    return engine("hold_entry", arrival_deg=arrival_deg, inbound_deg=inbound_deg, turns="right" if right else "left")
 
 
 def held_minutes(hold: Hold, tas_kt: float) -> float:

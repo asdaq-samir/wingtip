@@ -10,7 +10,9 @@ import type { Currency, LogbookEntry, Training } from "../../../lib/api/types";
 import { localDay } from "../../../lib/format";
 import { keptStore } from "../../../lib/storage";
 import { pilotQuery } from "../../../lib/queryClient";
-import { currencyQuery, logbookQuery, trainingQuery } from "../../../lib/queryClientRecords";
+import { logbookQuery, trainingQuery } from "../../../lib/queryClientRecords";
+import { useAirplaneFlown, useCurrency } from "../../../lib/useCurrency";
+import type { Flying } from "../../../lib/airplaneKind";
 import { coachApi, type CoachAsk, type ProficiencyPlan } from "./coachApi";
 import { recentDebriefs } from "./coachDebriefs";
 
@@ -52,6 +54,7 @@ export function askOf(
   home: string | null,
   debriefs: CoachAsk["debriefs"],
   today: string,
+  flying: Flying | null = null,
 ): CoachAsk {
   const ratings: CoachAsk["ratings"] =
     certificate === "student" ? ["student"] : certificate === "instrument" ? ["private", "instrument"] : ["private"];
@@ -65,12 +68,16 @@ export function askOf(
     medicalExpiresOn: currency?.medicalExpiresOn ?? null,
     ipcOn: currency?.ipcOn ?? null,
     held: certificate === "student" ? (training?.endorsements ?? []).map((e) => ({ code: e.code, on: e.endorsedOn })) : [],
+    // The airplane picked in FPL, which the passenger rows are judged
+    // for (14 CFR 61.57(a)(1)(ii)); none, the newest flight's.
+    flying: flying && { category: flying.category, class: flying.aircraftClass, tailwheel: flying.tailwheel },
   };
 }
 
 export function useCoach() {
   const entries = useQuery(logbookQuery);
-  const { data: currency } = useQuery(currencyQuery);
+  const { data: currency } = useCurrency();
+  const { flying } = useAirplaneFlown();
   const { data: training } = useQuery(trainingQuery);
   const { data: pilot } = useQuery(pilotQuery);
   const chosen = useKeptCertificate((s) => s.value);
@@ -80,7 +87,9 @@ export function useCoach() {
   const plan = useMutation({
     mutationFn: async (): Promise<ProficiencyPlan> => {
       const debriefs = await recentDebriefs().catch(() => []);
-      return coachApi.plan(askOf(entries.data ?? [], currency, training, certificate, pilot?.homeBase ?? null, debriefs, localDay()));
+      return coachApi.plan(
+        askOf(entries.data ?? [], currency, training, certificate, pilot?.homeBase ?? null, debriefs, localDay(), flying),
+      );
     },
   });
 

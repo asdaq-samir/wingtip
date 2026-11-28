@@ -6,7 +6,7 @@ import java.util.logging.Logger
 
 /**
  * Why a call to Wingtip's server failed, as one plain sentence for the
- * screen where it happened (the sheet audit's L-4, 2026-11-10: "failed to
+ * screen where it happened (2026-11-10: "failed to
  * connect to /10.0.2.2 (port 28443)…" reached the map, the airport card,
  * Settings and the welcome). The exception itself -- addresses, ports,
  * timeouts -- goes to the log only, for a developer, as the web app's

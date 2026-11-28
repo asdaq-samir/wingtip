@@ -1,5 +1,5 @@
 {
-  "_note": "Each weather rule's figures and boundaries, written down from 14 CFR 1.1 and 91.175(h), the AIM and the Aviation Weather Handbook, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "_note": "Each weather rule's figures and boundaries, written down from 14 CFR 1.1 and 91.175(h), the AIM, the Aviation Weather Handbook and the Federal Meteorological Handbook No. 1, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
   "cases": [
     {
       "name": "FEW008 SCT012 BKN025 OVC018: the ceiling is 1,800, the lowest broken or overcast",
@@ -74,7 +74,7 @@
       "source": "14 CFR 1.1: \"Ceiling means the height above the earth's surface of the lowest layer of clouds or obscuring phenomena that is reported as 'broken', 'overcast', or 'obscuration', and not classified as 'thin' or 'partial'.\""
     },
     {
-      "name": "1,600 m is 0.99 statute miles, said as 15/16, the step at or below",
+      "name": "1,600 m is 1 statute mile, the reportable value it stands for, not 15/16",
       "rule": "ceiling_visibility",
       "input": {
         "visibility": {
@@ -85,11 +85,83 @@
       "expect": [
         {
           "path": "visibility_sm",
-          "value": 0.9375,
+          "value": 1.0,
           "tolerance": 0
         }
       ],
-      "source": "A statute mile is 1,609.344 m (the international mile, NIST Handbook 44 Appendix C); a METAR's visibility in the US is in statute miles (AIM 7-1-28). A US report gives sixteenths below 3 sm and never rounds a visibility up (FAA JO 7900.5E's reportable values), so the engine says the step at or below (metres_to_sm)."
+      "source": "A statute mile is 1,609.344 m (NIST Handbook 44 Appendix C), so a metric report writes each US value a little under it (1 sm as 1,600 m, 0.58% under); Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "800 m is 1/2 sm, not 7/16, which no report writes",
+      "rule": "ceiling_visibility",
+      "input": {
+        "visibility": {
+          "value": 800,
+          "unit": "m"
+        }
+      },
+      "expect": [
+        {
+          "path": "visibility_sm",
+          "value": 0.5,
+          "tolerance": 0
+        }
+      ],
+      "source": "A statute mile is 1,609.344 m (NIST Handbook 44 Appendix C), so a metric report writes each US value a little under it (1 sm as 1,600 m, 0.58% under); Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "1,200 m is 3/4 sm, not 11/16, which no report writes",
+      "rule": "ceiling_visibility",
+      "input": {
+        "visibility": {
+          "value": 1200,
+          "unit": "m"
+        }
+      },
+      "expect": [
+        {
+          "path": "visibility_sm",
+          "value": 0.75,
+          "tolerance": 0
+        }
+      ],
+      "source": "A statute mile is 1,609.344 m (NIST Handbook 44 Appendix C), so a metric report writes each US value a little under it (1 sm as 1,600 m, 0.58% under); Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "1,500 m (0.93 sm) is 7/8, the reportable value below",
+      "rule": "ceiling_visibility",
+      "input": {
+        "visibility": {
+          "value": 1500,
+          "unit": "m"
+        }
+      },
+      "expect": [
+        {
+          "path": "visibility_sm",
+          "value": 0.875,
+          "tolerance": 0
+        }
+      ],
+      "source": "A statute mile is 1,609.344 m (NIST Handbook 44 Appendix C), so a metric report writes each US value a little under it (1 sm as 1,600 m, 0.58% under); Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "8,000 m is 5 sm, not 4",
+      "rule": "ceiling_visibility",
+      "input": {
+        "visibility": {
+          "value": 8000,
+          "unit": "m"
+        }
+      },
+      "expect": [
+        {
+          "path": "visibility_sm",
+          "value": 5.0,
+          "tolerance": 0
+        }
+      ],
+      "source": "A statute mile is 1,609.344 m (NIST Handbook 44 Appendix C), so a metric report writes each US value a little under it (1 sm as 1,600 m, 0.58% under); Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
     },
     {
       "name": "5,000 m is 3.11 statute miles, said as 3, the step at or below",
@@ -107,7 +179,7 @@
           "tolerance": 0
         }
       ],
-      "source": "A statute mile is 1,609.344 m (the international mile, NIST Handbook 44 Appendix C); a METAR's visibility in the US is in statute miles (AIM 7-1-28). From 3 sm a US report gives whole miles and never rounds a visibility up (FAA JO 7900.5E's reportable values), so the engine says 3 (metres_to_sm)."
+      "source": "A statute mile is 1,609.344 m (NIST Handbook 44 Appendix C), so a metric report writes each US value a little under it (1 sm as 1,600 m, 0.58% under); 5,000 m is 3.107 sm, between 3 and 4: Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
     },
     {
       "name": "2 1/2 SM is 2.5",
@@ -653,6 +725,126 @@
         }
       ],
       "source": "The rule's own window, the last 90 minutes, and its ceiling, Class A's floor: 14 CFR 71.33, Class A from 18,000 ft MSL, so a report at 18,000 ft is told and one at 18,001 is not. The corridor is the rule's own 30 nm; half a degree of latitude is 30 nm (a minute of latitude a nautical mile), and 0.6 and 0.7 degree of longitude at 42.7 N are 26.5 and 30.9 nm."
+    },
+    {
+      "name": "7/16 sm is reported 3/8: sixteenths stop at 3/8",
+      "rule": "visibility_reportable",
+      "input": {
+        "sm": 0.4375
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 0.375,
+          "tolerance": 0
+        }
+      ],
+      "source": "Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "0.7456 sm is reported 5/8, the value at or below",
+      "rule": "visibility_reportable",
+      "input": {
+        "sm": 0.7456
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 0.625,
+          "tolerance": 0
+        }
+      ],
+      "source": "Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "7/8 sm is a reportable value, kept",
+      "rule": "visibility_reportable",
+      "input": {
+        "sm": 0.875
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 0.875,
+          "tolerance": 0
+        }
+      ],
+      "source": "Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "2.3 sm is reported 2 1/4: quarters from 2 to 3",
+      "rule": "visibility_reportable",
+      "input": {
+        "sm": 2.3
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 2.25,
+          "tolerance": 0
+        }
+      ],
+      "source": "Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "3 sm is kept",
+      "rule": "visibility_reportable",
+      "input": {
+        "sm": 3.0
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 3.0,
+          "tolerance": 0
+        }
+      ],
+      "source": "Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "4.99 sm is reported 4: whole miles from 3",
+      "rule": "visibility_reportable",
+      "input": {
+        "sm": 4.99
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 4.0,
+          "tolerance": 0
+        }
+      ],
+      "source": "Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "19.9 sm is reported 15: past 15, every 5",
+      "rule": "visibility_reportable",
+      "input": {
+        "sm": 19.9
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 15.0,
+          "tolerance": 0
+        }
+      ],
+      "source": "Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
+    },
+    {
+      "name": "23 sm is reported 20",
+      "rule": "visibility_reportable",
+      "input": {
+        "sm": 23.0
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 20.0,
+          "tolerance": 0
+        }
+      ],
+      "source": "Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\", manual column: 0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 1 1/8 ... 2, 2 1/4, 2 1/2, 2 3/4, 3, 4 ... 15, 20, 25, 30, 35, then every 5; \"If the actual visibility falls halfway between two reportable values, the lower value shall be reported\" (6.5.2). FAA JO 7900.5E carries the same table."
     }
   ]
 }

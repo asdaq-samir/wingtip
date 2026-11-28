@@ -10,9 +10,9 @@ import { CardDialogs } from "./CardDialogs";
  * (SheetCard), the Brief, Settings (ConsoleLayer) -- a nested Drawer
  * (CardStack) with the sheet's sizes, its grabber and its swipe; drawn
  * here, for the caller's providers, and put in the drawer's scroller.
- * Escape is its drawer's: the top card closed (lib/openCards), or the
- * caller's own `dismiss`; a tap on the map leaves it open, the map's own
- * tap deciding. It sizes its own drawer: half as it opens, then
+ * Escape and a swipe down from half are its drawer's: the top card closed
+ * (lib/openCards), or for Escape the caller's own `dismiss`; a tap on the
+ * map leaves it open, the map's own tap deciding. It sizes its own drawer: half as it opens, then
  * useCardSize from its content (or its owner's, by `cardId`).
  *
  * `open`, for a card kept between its openings (the Nav Log, the Profile,
@@ -25,7 +25,6 @@ import { CardDialogs } from "./CardDialogs";
 export function CardLayer({
   label,
   dismiss,
-  onSwipeClose,
   finalFocus,
   cardId,
   open,
@@ -33,9 +32,6 @@ export function CardLayer({
 }: {
   label?: string;
   dismiss?: CardFrame["dismiss"];
-  /** A settings card's close on a swipe down (CardStack); none, and a
-   *  swipe parks it at the pill. */
-  onSwipeClose?: CardFrame["onSwipeClose"];
   /** Where the focus goes as it closes (Base UI's); left where it is by default. */
   finalFocus?: CardFrame["finalFocus"];
   cardId?: string;
@@ -45,7 +41,7 @@ export function CardLayer({
   const fallback = useId();
   const id = cardId ?? fallback;
   const shown = useShown() && open !== false;
-  const slot = useCardFrame({ label, dismiss, onSwipeClose, finalFocus, open }, id);
+  const slot = useCardFrame({ label, dismiss, finalFocus, open }, id);
   return slot
     ? createPortal(
         <Shown.Provider value={shown}>

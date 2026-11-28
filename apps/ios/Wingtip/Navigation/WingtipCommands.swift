@@ -113,7 +113,7 @@ extension Notification.Name {
 
 /// The system's Find, the end of the responder chain's: iPadOS's menu bar
 /// keeps ⌘F for Edit > Find, so the app takes Find rather than a ⌘F of its
-/// own. Each window hears it and the one in front acts (WindowHost).
+/// own. Each window hears it and the key one acts (WindowHost, KeyWindow).
 extension OfflineAppDelegate {
     override func find(_ sender: Any?) {
         NotificationCenter.default.post(name: .systemFind, object: nil)

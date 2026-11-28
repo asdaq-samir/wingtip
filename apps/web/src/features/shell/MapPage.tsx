@@ -12,7 +12,7 @@ import { useWarmAirportIndex } from "../../lib/airportIndex";
 import { useHomeAirportSync } from "../../lib/homeAirport";
 import { LinkSignIn } from "../pilot";
 import { EmergencyHost } from "../emergency";
-import { AirplaneProfileHost } from "../airplane";
+import { AirplaneCardHost } from "../airplane";
 import { AutoLogbookHost } from "../logbook-auto";
 import { SharedFlightHost } from "../shared-flight";
 import { DocumentReaderHost } from "../documents";
@@ -239,9 +239,9 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 <title>{title}</title>
                 {/* An emailed sign-in link lands here (#signin=…), finished in the app's own dialog. */}
                 <LinkSignIn />
-                {/* The emergency assistant (features/emergency); an airplane's profile, from any N-number (features/airplane). */}
+                {/* The emergency assistant (features/emergency); the one airplane card, from any N-number or traffic (features/airplane). */}
                 <EmergencyHost />
-                <AirplaneProfileHost />
+                <AirplaneCardHost />
                 {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto). */}
                 <AutoLogbookHost />
                 {/* A flight another pilot sent, previewed before it is used (features/shared-flight). */}

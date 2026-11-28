@@ -1,0 +1,19 @@
+{
+  "x-call": "wingtip_brief::gonogo::input::call",
+  "description": "The Go / No-Go's input (gonogo_brief's `verdict`, all but the risk) put together from the briefing, the nav log and the loading, one copy for the web and the planner: the weather (VFR flight not recommended dropped under IFR, as its check is 14 CFR 91.169's; the sources not answered by name, under IFR the forecast icing not had and a ceiling with no height at a field landed at or a TAF station said unchecked, built here from the METARs and the forecast, 14 CFR 91.103; the worst forecast in words, the visibility to the hundredth down), the airspace (gonogo_route_figures' TFRs, unchecked where the briefing failed or tfr.faa.gov did not answer), the altitude (the nav log's cautions, the altitude flown as the FL chip says it, the highest leg -- with no legs, the plan picked's highest step -- and the airplane's oxygen and cabin for 14 CFR 91.211(a) and (b)), the fuel (gonogo_route_figures'), the runways (gonogo_runway_findings) and the balance (worked only with the pilot's own load, 14 CFR 91.9(a); \"2,407 lb at 41.2 in\"). Each section pending while what it waits on is awaited.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoInputInput",
+      "$ref": "#/definitions/GonogoFacts"
+    },
+    "answer": {
+      "$ref": "#/definitions/VerdictInput"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

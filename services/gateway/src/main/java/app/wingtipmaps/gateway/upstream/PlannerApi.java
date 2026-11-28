@@ -19,6 +19,7 @@ import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatch;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatchAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerSameField;
 import app.wingtipmaps.gateway.planner.model.PlannerSameFieldAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerUsageDays;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import java.time.LocalDate;
 import java.util.List;
@@ -102,4 +103,9 @@ public interface PlannerApi {
 
     @DeleteExchange("/api/checkpoint-notes/mine")
     PlannerPilotNotesForgotten forgetNotes(@RequestHeader(PILOT_HEADER) String pilotId);
+
+    /** Each route's calls a finished UTC day from `since` on, counts alone
+     *  (the planner's app.usage_days, internal, never forwarded): UsageRollup. */
+    @GetExchange("/api/usage/daily")
+    PlannerUsageDays usageDaily(@RequestParam("since") LocalDate since);
 }

@@ -4,9 +4,17 @@ import { anchorHiddenRender } from "./anchorHidden";
 import { MENU_CHECK, MENU_CHECK_ITEM, MENU_CONTENT, MENU_ITEM, MENU_LABEL, MENU_SEPARATOR } from "./menuLook";
 import { Menu as DropdownMenuPrimitive } from "@base-ui/react/menu";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
+import { useEdgeRoom } from "../../hooks/use-viewport";
+import { MenuActions, useDragClose, useMenuActions } from "./dragClose";
 
-function DropdownMenu({ ...props }: DropdownMenuPrimitive.Root.Props) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+function DropdownMenu({ actionsRef, ...props }: DropdownMenuPrimitive.Root.Props) {
+  // Its close for its popup's drag down (useDragClose).
+  const actions = useMenuActions(actionsRef);
+  return (
+    <MenuActions.Provider value={actions}>
+      <DropdownMenuPrimitive.Root data-slot="dropdown-menu" actionsRef={actions} {...props} />
+    </MenuActions.Provider>
+  );
 }
 
 function DropdownMenuPortal({ ...props }: DropdownMenuPrimitive.Portal.Props) {
@@ -32,6 +40,10 @@ function DropdownMenuContent({
     /** Its trigger out of sight while it is open. */
     onAnchorHidden?: () => void;
   }) {
+  // Clear of the status bar, the notch and the home indicator, 8 past
+  // them (useEdgeRoom), not Base UI's 5 from the very edge.
+  const edgeRoom = useEdgeRoom();
+  const dragClose = useDragClose();
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Positioner
@@ -40,16 +52,17 @@ function DropdownMenuContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        collisionPadding={collisionPadding}
+        collisionPadding={collisionPadding ?? edgeRoom}
         anchor={anchor}
         render={anchorHiddenRender(onAnchorHidden)}
       >
         <DropdownMenuPrimitive.Popup
+          ref={dragClose}
           data-slot="dropdown-menu-content"
           // No wider than the room beside it (Base UI's --available-width,
           // as the stock Combobox's popup is): a menu of its own width (the
           // airplane's Alert, w-72) ran past a phone at Safari's 150% page
-          // zoom, the page then scrolling sideways (the iOS audit's P11).
+          // zoom, the page then scrolling sideways.
           className={cn(
             MENU_CONTENT,
             "z-50 max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) origin-(--transform-origin) overflow-x-hidden overflow-y-auto text-popover-foreground duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-closed:overflow-hidden data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
@@ -75,7 +88,7 @@ function DropdownMenuItem({
   return (
     // Each item 44 tall to a finger, as iOS's menus and the grouped lists'
     // rows are (GroupedList): the row is the control, its own height its
-    // hit area. They were 31 to 34 (the commonality audit's C-2).
+    // hit area. They were 31 to 34.
     <DropdownMenuPrimitive.Item
       data-slot="dropdown-menu-item"
       data-inset={inset}

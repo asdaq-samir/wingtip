@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import type { LoopFrame } from "../../lib/api/types";
 import { useGlLayer, useGlMap, useGlPaint } from "../../lib/map/gl/glLayer";
 import { glZoom } from "../../lib/map/gl/glStyle";
+import { useChartBrightness } from "../../lib/map/gl/useChartLook";
 import { PRELOAD_CAP_MS } from "./loopFrames";
 import { useWeatherLoop } from "./useWeatherLoop";
 
@@ -100,6 +101,8 @@ function Tiles({ id, url, max, credit, opacity }: { id: string; url: string; max
     paint: { "raster-opacity": opacity, "raster-opacity-transition": { duration: 0, delay: 0 }, "raster-fade-duration": 0 },
   };
   useGlLayer("areas", source, [layer]);
-  useGlPaint([id], { "raster-opacity": opacity });
+  // At the chart's brightness, the Dimmer's, so the radar and the
+  // satellite are no brighter than the chart under them at night (AIM 8-1-6).
+  useGlPaint([id], { "raster-opacity": opacity, "raster-brightness-max": useChartBrightness() });
   return null;
 }

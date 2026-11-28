@@ -4,7 +4,7 @@
 import { describe, expect, test } from "vitest";
 import type { RouteWay } from "../../../lib/map/route/routeWays";
 import type { PlanSlices } from "../vm/planSlices";
-import { routeBoxOpen, routesOut, waysOnMap } from "./routeEditing";
+import { routeBoxOpen, routesOffered, routesOut, waysOnMap } from "./routeEditing";
 
 const typed: RouteWay = {
   key: "own",
@@ -34,17 +34,29 @@ function vm({
   dryRunning = false,
   offered = true,
   boxOpen = false,
-}: { shown?: boolean; folded?: boolean; flying?: boolean; dryRunning?: boolean; offered?: boolean; boxOpen?: boolean } = {}) {
+  typed: typedInPlace = false,
+}: {
+  shown?: boolean;
+  folded?: boolean;
+  flying?: boolean;
+  dryRunning?: boolean;
+  offered?: boolean;
+  boxOpen?: boolean;
+  typed?: boolean;
+} = {}) {
   return {
     flight: { flying, dryRunning },
+    route: { wholeRoute: true },
     routeList: {
+      routeOpen: !folded,
       routesShown: shown,
       routeFolded: folded,
       boxOpen,
+      typedInPlace,
       routeLine: offered ? { chips: [], picked: "none", onPick: () => {}, stale: false } : null,
       wayLines: [typed, weather],
     },
-  } as unknown as PlanSlices<"flight" | "routeList">;
+  } as unknown as PlanSlices<"flight" | "route" | "routeList">;
 }
 
 describe("waysOnMap", () => {
@@ -67,6 +79,11 @@ describe("waysOnMap", () => {
     }
   });
 
+  test("offered under the route box its toggle turned, the figures under it as under the folded route", () => {
+    expect(routesOffered(vm({ folded: false, typed: true }))).toBe(true);
+    expect(waysOnMap(vm({ shown: true, folded: false, typed: true }))).toEqual([typed, weather]);
+  });
+
   test("none where there are no ways to suggest", () => {
     expect(waysOnMap(vm({ shown: true, offered: false }))).toEqual([]);
   });
@@ -77,7 +94,7 @@ describe("routeBoxOpen", () => {
     expect(routeBoxOpen(vm({ folded: false, boxOpen: true }))).toBe(true);
   });
 
-  test("folded into its Type or Paste a Route row till then, a new plan's or half a route's", () => {
+  test("folded behind the box's toggle till then, a new plan's or half a route's", () => {
     expect(routeBoxOpen(vm({ folded: false }))).toBe(false);
   });
 

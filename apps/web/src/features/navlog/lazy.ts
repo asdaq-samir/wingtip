@@ -15,3 +15,4 @@ export { default as NavLogView } from "./NavLogView";
 export { default as PanelTabs } from "./PanelTabs";
 export { AirportMark, PointMark } from "./PointMark";
 export { AltitudeProfile } from "./altitude/AltitudeProfile";
+export { prefetchNavLogTable } from "./navLogTableChunk";

@@ -1,7 +1,7 @@
 import { Ellipsis, Fuel, Navigation, Triangle, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import { colourOf } from "../../lib/map/marks/flightCategory";
+import { DOT_RING, colourOf } from "../../lib/map/marks/flightCategory";
 import { pointName } from "../../lib/identSchema";
 import { TEXT } from "../../lib/text";
 import type { TimelinePoint } from "./lineModel";
@@ -25,8 +25,8 @@ import type { TimelinePoint } from "./lineModel";
  * runway's chip is, GLASS_PICKED) or carry their glyph in the ground's
  * colour, as a badge's figure is (TabCount): at night the tint, the red
  * and the grey are light, and a white glyph on them read 2.5:1 and less,
- * under WCAG 1.4.11's 3:1 for a graphic (the HIG review, 2026-11-21:
- * Add a Stop's + on the night's tint, 2.49:1). A flight category's
+ * under WCAG 1.4.11's 3:1 for a graphic (Add a Stop's + on the night's tint, 2.49:1).
+ * A flight category's
  * colour is the same at night, its glyph white.
  */
 export function TimelineMark({ point, position }: { point: TimelinePoint; position: boolean }) {
@@ -41,11 +41,14 @@ export function TimelineMark({ point, position }: { point: TimelinePoint; positi
             ? "bg-primary text-primary-foreground"
             : !point.field || !point.category
               ? "bg-muted-foreground text-background"
-              : "text-white",
+              : cn("text-white", DOT_RING),
       )}
-      // The category's colour from the map's own scale (flightCategory). With
-      // no report, the text's grey, as a waypoint's: on the map's own grey
-      // (CATEGORY_UNKNOWN) the white "•••" read 2.6:1 by day and night.
+      // The category's colour from the map's own scale (flightCategory),
+      // ringed in the chart's casing as the map's dots are (DOT_RING): LIFR's
+      // #a371f7 was 2.75:1 on Chart ink's muted, 3.35:1 against the ring (the chip's deeper #7e3fb8 would be 1.96:1 on the
+      // night's muted).
+      // With no report, the text's grey, as a waypoint's: on
+      // the map's own grey (CATEGORY_UNKNOWN) the white "•••" read 2.6:1.
       style={point.field && point.category && !point.problem && !position ? { backgroundColor: colourOf(point.category) } : undefined}
       data-testid={point.fuelStop ? "timeline-fuel" : undefined}
     >
@@ -60,18 +63,7 @@ export function TimelineMark({ point, position }: { point: TimelinePoint; positi
  * point where the list edits the route (pointEnd's, the one search with
  * its suggestions), else open the airport's card -- and words where not.
  */
-export function LineIdent({
-  point,
-  change,
-  onInfo,
-  fuelSet,
-}: {
-  point: TimelinePoint;
-  change: (() => void) | undefined;
-  onInfo: () => void;
-  /** The fuel's gauge after it is a control (FuelSet): their areas meet. */
-  fuelSet: boolean;
-}) {
+export function LineIdent({ point, change, onInfo }: { point: TimelinePoint; change: (() => void) | undefined; onInfo: () => void }) {
   if (!change && !(point.field && !point.problem))
     return (
       <span className={cn("min-w-0 truncate font-normal", point.problem && "text-destructive", TEXT.row)} data-testid="timeline-ident">
@@ -95,20 +87,22 @@ export function LineIdent({
         data-testid="timeline-ident"
         // The name cut short in a span of its own, not the
         // button: a button that clips (truncate's overflow) cut
-        // its own 44-point area to its 22-point line (the iOS
-        // audit's P1, "C81: change it" 25×22). Its area starts
+        // its own 44-point area to its 22-point line. Its area starts
         // 10 before the name, where the mark's ends (6 past the
         // marks' column, PointMenu's `bare`, in the line's 16),
         // and runs right to 44 wide at the least, over the fuel's
-        // gauge after a short name where it is no control. Where
-        // the gauge is one (FuelSet) the two meet in the middle of
-        // the 18 between them, 9 past the name, so neither takes
-        // the other's taps (the HIG review, 2026-11-21: the gauge
-        // took 2-3 of "C81: change it"'s probes).
+        // gauge after a short name, the gauge no control (the owner,
+        // 2026-11-25: "Tapping fuel tanks should not do anything").
+        // Its line is 24, so 10
+        // above and below make the 44: 12 made 48, and with the fields'
+        // lines 45 apart each ident took 3 of the next's probes and the
+        // last field's took Add a Stop's.
         className={cn(
-          "relative min-w-0 font-normal hit-y-3 after:-left-2.5",
-          fuelSet ? "after:w-[max(44px,calc(100%+19px))]" : "after:w-[max(54px,calc(100%+14px))]",
-          point.problem && "text-destructive",
+          "relative min-w-0 font-normal hit-y-2.5 after:-left-2.5",
+          "after:w-[max(54px,calc(100%+14px))]",
+          // In the tint, as Add a Stop is: it is a tap (the owner,
+          // 2026-11-24: "each stop should have same link style as add stop").
+          point.problem ? "text-destructive" : "text-tint",
           TEXT.row,
         )}
       >
@@ -127,12 +121,6 @@ export function LineNotes({ point, refused }: { point: TimelinePoint; refused: s
       {point.problem && (
         <p className={cn("pb-2 text-destructive", TEXT.note)} data-testid="timeline-problem">
           {point.problem}
-        </p>
-      )}
-      {/* Outside the United States: said under it, never refused. */}
-      {point.caution && !point.problem && (
-        <p className={cn("pb-2 text-caution-ink", TEXT.note)} data-testid="timeline-caution">
-          {point.caution}
         </p>
       )}
       {/* A move of it the route cannot take, said where it was tried

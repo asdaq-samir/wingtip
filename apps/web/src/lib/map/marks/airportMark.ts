@@ -29,8 +29,8 @@ export const MARK_FONT = "-apple-system, system-ui, sans-serif";
  *  ident beside it): the same symbol off the map, as Nearest's rows lead
  *  with it. Off the map, drawn in the page, its letter is set as the page's
  *  words are, in the app's face at the caption's size and leading (its
- *  class, which outranks the attributes; the iOS audit's P3 and P16 on
- *  "R" 11 on 16.5 in -apple-system, Nearest's strip): on the map, an
+ *  class, which outranks the attributes; "R" 11 on 16.5 in -apple-system, Nearest's strip):
+ *  on the map, an
  *  <img>, no class reaches it and the attributes draw it. */
 export function airportMarkSvg(
   space: AirspaceClass | null,
@@ -87,9 +87,3 @@ export function airportMarkSvg(
     ` width="${AIRPORT_MARK}" height="${AIRPORT_MARK}" viewBox="${-half} ${-half} ${AIRPORT_MARK} ${AIRPORT_MARK}">${symbol}</svg>`
   );
 }
-
-/** The sectional's airport inks (FAA Aeronautical Chart User's Guide,
- *  VFR Terms and Symbols, Airports: "Airports having control towers are
- *  shown in blue, all others in magenta"). */
-export const TOWERED_BLUE = BLUE;
-export const UNTOWERED_MAGENTA = MAGENTA;

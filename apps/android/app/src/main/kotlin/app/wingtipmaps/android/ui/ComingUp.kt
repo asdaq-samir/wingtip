@@ -62,8 +62,9 @@ fun ComingUpSection(signedInAs: String, model: ComingUpModel = hiltViewModel()) 
 }
 
 /**
- * Coming Up's view model (the Android audit's AND-13: the composable
- * fetched from the gateway itself and lost the list on rotation): the
+ * Coming Up's view model (the composable
+ * fetched from the gateway itself and lost the list on rotation):
+ * the
  * gateway's list of what falls due, fetched once a pilot, kept across a
  * rotation; a failure kept, its words the screen's.
  */

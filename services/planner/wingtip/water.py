@@ -22,12 +22,12 @@ from pathlib import Path
 import numpy as np
 import requests
 import shapely
-import wingtip_native
 from scipy import ndimage
 from shapely.geometry import shape
 
 from . import outside
 from .atomic import atomic_path
+from wingtip.engine import ask as engine
 
 logger = logging.getLogger(__name__)
 
@@ -95,12 +95,7 @@ def glide_nm(height_ft: float, speed_kt: float, glide_ratio: float | None) -> fl
     gliding distance from the shore. 0 where the engine gives no glide (too
     low or too slow to be flying, or no glide ratio in the airplane's
     profile -- none is assumed), so all the water is out of reach."""
-    answer = json.loads(
-        wingtip_native.call(
-            "glide_range",
-            json.dumps({"altitude_ft": float(height_ft), "speed_kt": float(speed_kt), "ground_ft": 0.0, "glide_ratio": glide_ratio}),
-        )
-    )
+    answer = engine("glide_range", altitude_ft=float(height_ft), speed_kt=float(speed_kt), ground_ft=0.0, glide_ratio=glide_ratio)
     return float(answer) if answer is not None else 0.0
 
 

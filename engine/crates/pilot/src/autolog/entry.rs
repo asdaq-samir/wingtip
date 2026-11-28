@@ -143,6 +143,16 @@ fn night_hours(points: &[Point], spans: &[(usize, usize)]) -> f64 {
     ms / 3_600_000.0
 }
 
+/// 61.57(b)(1): "three takeoffs and three landings to a full stop during
+/// the period beginning 1 hour after sunset and ending 1 hour before
+/// sunrise" -- takeoffs and landings both in the period, so the full stops
+/// in it counted only as far as there are takeoffs in it too. A takeoff at
+/// sunset +40 min to a full stop at +65 counts for neither.
+pub fn night_currency_landings(takeoffs: &[Event], landings: &[Event]) -> i64 {
+    let takeoffs = takeoffs.iter().filter(|t| t.passenger_night).count();
+    landings.iter().filter(|l| l.counts_night).count().min(takeoffs) as i64
+}
+
 /// The track drawn into a draft entry. `points` in time order.
 pub fn draft(points: &[Point], ask: &Ask) -> Draft {
     let fields = &ask.fields;
@@ -205,8 +215,19 @@ pub fn draft(points: &[Point], ask: &Ask) -> Draft {
         });
     }
 
-    // Landings: 61.57(a) counts every one, (b) full stops in its period.
-    let night_landings = landings.iter().filter(|l| l.counts_night).count() as i64;
+    // Landings: 61.57(a) counts every one, (b) full stops in its period,
+    // each with a takeoff in it too (night_currency_landings).
+    let night_landings = night_currency_landings(&takeoffs, &landings);
+    let full_stops_in_period = landings.iter().filter(|l| l.counts_night).count() as i64;
+    if night_landings < full_stops_in_period {
+        reasons.push(Reason {
+            item: "nightLandings",
+            says: format!(
+                "{night_landings} of the {full_stops_in_period} full stops from 1 hour after sunset count for night passengers: (b) wants as many takeoffs in that period, and the track has {night_landings}."
+            ),
+            source: "14 CFR 61.57(b)(1)",
+        });
+    }
     let day_landings = landings.len() as i64 - night_landings;
     let touch_and_goes = landings.iter().filter(|l| l.kind == "touch_and_go").count() as i64;
     for l in &landings {
@@ -358,3 +379,7 @@ pub fn draft(points: &[Point], ask: &Ask) -> Draft {
         reasons,
     }
 }
+
+#[cfg(test)]
+#[path = "entry_night_tests.rs"]
+mod night_tests;

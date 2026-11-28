@@ -84,7 +84,8 @@ private fun Card(
     val ownShip = control.ownShip
     when (page) {
         SheetPage.Home, SheetPage.Plan -> {}
-        is SheetPage.Airport -> AirportCard(page.ident, plan, exit, onDone = showPlan, model = airports)
+        // Opened while the one search asks for a stop: the card's Add Stop first (CardKind.AIRPORT_AS_STOP).
+        is SheetPage.Airport -> AirportCard(page.ident, plan, exit, onDone = { search.done().also { showPlan() } }, asStop = search.addingStop, model = airports)
         is SheetPage.Airplane -> AirplaneCard(page.at, plan, exit, onFlown = showPlan, onOpen = sheet::push)
         is SheetPage.Thing -> ThingCard(page.pick, plan, exit, onRouted = showPlan)
         is SheetPage.Leg -> RouteLegCard(page.index, plan, control.on, exit)
@@ -114,8 +115,13 @@ private fun Card(
         SheetPage.Passengers -> Page(stringResource(R.string.passenger_briefing), exit) { PassengerScreen(plan) }
         SheetPage.About -> Page(stringResource(R.string.about), exit) { AboutScreen(onDemo = showPlan) }
         SheetPage.Clearance -> {
-            val fix by ownShip.fix.collectAsStateWithLifecycle()
-            ClearancePage(plan, fix, exit, onEntered = showPlan)
+            // Where the airplane is to a mile or so (the clearance's
+            // points round it), not each fix: the page is not drawn again,
+            // nor its points sent again, each second.
+            // The first fix read once, as the flow is made, not at each drawing.
+            val nearFirst = remember(ownShip) { ownShip.fix.value }
+            val near by remember(ownShip) { ownShip.byTheMile }.collectAsStateWithLifecycle(nearFirst)
+            ClearancePage(plan, near, exit, onEntered = showPlan)
         }
         SheetPage.YourAirplanes -> YourAirplanesPage(exit)
         SheetPage.Documents -> DocumentsPage(exit, open = sheet::push)

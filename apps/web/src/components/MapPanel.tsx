@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -6,13 +6,16 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { useInspector } from "../hooks/use-inspector";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
-import { useSafeArea } from "../hooks/use-viewport";
+import { useKeyboardUp, useSafeArea } from "../hooks/use-viewport";
 import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelState } from "../lib/mapChrome";
-import { feel } from "../lib/haptics";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
-import { CARD, FLOAT_PX, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
+import { CARD, FLOAT_PX, PILL_HEIGHT, footPillPx, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
+import { FootBar } from "./sheet/FootBar";
+import { SheetFoot } from "./sheet/SheetFoot";
+import { useFootBarHeight } from "./sheet/sheetMotion";
+import { useSideGlide } from "./sheet/useSideGlide";
 import { useDrawn } from "./sheet/useDrawn";
 import { SheetParts, type PartsProps } from "./sheet/SheetParts";
 import { SHEET_BELOW } from "./sheet/sheetLayout";
@@ -76,20 +79,17 @@ interface Props {
  * stock sheet with its own motion, gestures and behaviour): open and
  * non-modal, so the map stays the map's; the pill, half and all the way
  * up its snap points, fixed in the Drawer's own units (sheet/insets'
- * snapsOf: the pill's rem, 23 rem, 1), which it measures itself; a
- * bottom or a top sheet by the pilot's Layout (swipeDirection down or up). The Drawer follows the finger, reads the
- * throw, picks the snap point and eases there on its own curve; a swipe
- * past the pill is refused and lands on the pill. What the stock sheet
- * leaves to its user is a thin layer here: the parts held in sight at its
- * free edge (by the Drawer's own CSS variables, SheetParts), the room over
- * its top where the radio's and the map's buttons ride it (OnSheetTop), the room it
- * leaves the map (insetsOf, from its size by useSheetCover). The
- * cards over it are its own nested drawers, each with its own snap point
- * (CardStack); the keyboard's inset is the Drawer's
- * (VirtualKeyboardProvider), and a swipe moves one size however fast, by
- * the Drawer's own snapToSequentialPoints (the owner, 2026-11-11). What it shows -- the grabber, what rides its
- * top, its body's layout, the map's room -- follows its snap point the
- * moment that is set, never held for the slide to end.
+ * snapsOf: the pill's rem or FPL's foot bar's px, 23 rem, 1); a bottom or
+ * a top sheet by the pilot's Layout (swipeDirection down or up). The
+ * Drawer follows the finger, reads the throw, picks the snap point and
+ * eases there on its own curve, one size a swipe (snapToSequentialPoints,
+ * the owner, 2026-11-11); a swipe past the pill lands on the pill. Around
+ * it a thin layer: the foot, a fixed bar beside its popup that it slides
+ * behind (sheet/FootBar, SheetFoot), the room over its top where the
+ * map's buttons ride it (OnSheetTop), the room it leaves the map
+ * (insetsOf, useSheetCover). The cards over it are its own nested drawers
+ * (CardStack); the keyboard's inset is the Drawer's. What it shows
+ * follows its snap point the moment that is set, never held for the slide.
  *
  * From `md` up it is a side panel instead, a plain region at the left the
  * window's height while it is out and its head alone at rest, the map
@@ -119,13 +119,20 @@ export default function MapPanel(props: Props) {
   const [cardHost, setCardHost] = useState<HTMLElement | null>(null);
   // The route's figures at half and all the way up; at the pill where they
   // are the pill -- flying, and FPL's page (the owner, 2026-11-11, the
-  // canvas's b: To, Dist, ETE and Fuel at a glance, the route's row from
-  // half up) -- the search's row being it on Search: paged, they are FPL's
-  // page's own (SheetParts), beside Search's row. The pill is one fixed
-  // height for every page and card (sheet/insets), which the figures fit.
+  // canvas's b) -- the search's row being it on Search.
   const footShown = !!foot && !covering && (!onPhone || props.state !== "peek" || flying || !!props.pages);
-  // A card or a page open is the whole sheet, its own head and ✕ at the top
-  // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
+  // A phone's bottom sheet's foot is a fixed bar beside the Drawer's popup,
+  // not in it, the sheet sliding behind it: FPL's on the ground the figures
+  // and the tab bar (sheet/FootBar), in flight and a dry run the sheet's
+  // own (SheetFoot's BesideSheet). A top sheet's and the side panel's are in it.
+  const footBar = bottomSheet && !!foot;
+  const fplBar = footBar && !flying && !!props.pages?.floats;
+  // In sight on FPL's page alone, as its foot was (SheetPages), and not
+  // under a card; FPL's put away while the keyboard is up, as iOS puts a tab
+  // bar away, so the field typed in keeps the screen.
+  const keyboard = useKeyboardUp();
+  const footBarUp = fplBar && footShown && props.pages?.at === 1 && !keyboard;
+  // A card or a page open is the whole sheet (one card rule, 2026-11-10); closed, the search is back.
   const barShown = !!bar && !flying && !covering && layer === "tab";
   const toEdge = !!props.toEdge && !covering;
 
@@ -141,23 +148,25 @@ export default function MapPanel(props: Props) {
   const ready = useDrawn();
   const hasPill = !!bar || !!compact;
   const atPill = size === "peek" && hasPill;
-  // A light tick as the sheet settles at another size, as iOS's sheet
-  // gives one (lib/haptics: Chrome on Android; Safari has none).
-  const settled = useRef(props.state);
-  useEffect(() => {
-    if (onPhone && settled.current !== props.state) feel("detent");
-    settled.current = props.state;
-  }, [props.state, onPhone]);
-
-  // The sheet's element (the Drawer's popup, or the side panel), for what
-  // it covers of the map.
+  // The sheet's element (the Drawer's popup, or the side panel), for what it covers of the map.
   const [sheetNode, setSheetNode] = useState<HTMLElement | null>(null);
-  const snaps = snapsOf(fromBottom);
+  // FPL's pill, where its foot bar is in sight, is the bar folded and the
+  // grabber's room (footPillPx), so the sheet rests wholly behind the bar.
+  const barHeight = useFootBarHeight((s) => s.height);
+  const barPill = useFootBarHeight((s) => s.pill);
+  const pillPx = footBarUp ? footPillPx(barPill) : 0;
+  const snaps = snapsOf(fromBottom, pillPx);
 
   // The room the sheet in sight (the top card, else the sheet) leaves the
   // map, from the size it is set to: the map eases with the sheet
   // (GlMapShell, in the Drawer's time).
-  const { cover, least, most, width } = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  const sheetCover = useSheetCover(sheetNode, front, onPhone, fromBottom, pillPx);
+  const { most, width } = sheetCover;
+  // Never less than FPL's foot bar over the sheet's foot, which at a large
+  // text size grows taller than the pill (FlightFoot's min-height).
+  const barRoom = footBarUp ? barHeight : 0;
+  const cover = Math.max(sheetCover.cover, barRoom);
+  const least = Math.max(sheetCover.least, barRoom);
   // The inspector's column while a card is in it: the panel's width.
   const right = inspector && cardsUp ? CARD : 0;
   // The sheet the map slides with, frame by frame (useSlidingSheet): a
@@ -220,7 +229,20 @@ export default function MapPanel(props: Props) {
   const shared: PartsProps = {
     // The pages as drawn (none in flight).
     slots: { top, kept, controls, compact, bar, foot, children, pages },
-    layout: { layer, flying, size, atPill, fromBottom: bottomSheet, onPhone, desktop, footShown, cardsUp: covering, barShown, toEdge },
+    layout: {
+      layer,
+      flying,
+      size,
+      atPill,
+      fromBottom: bottomSheet,
+      onPhone,
+      desktop,
+      footShown,
+      footBar,
+      cardsUp: covering,
+      barShown,
+      toEdge,
+    },
     panelSize,
     onFootTap: () => ask("half"),
   };
@@ -231,8 +253,7 @@ export default function MapPanel(props: Props) {
   const sheetGrabber = <SheetGrabber label={label} size={size} ask={ask} at={grabberAt} sizes={grabberSizes} />;
   // Solid at every size, the look's --sheet (Canvas in Native), the light
   // grey of Apple Maps' web sheet (2026-11-10): glass is only for what
-  // floats over the map (CLAUDE.md, owner decision 2026-11-10). The side
-  // panel was MATERIAL, the chart showing through it (the web audit's WEB-6).
+  // floats over the map (CLAUDE.md, owner decision 2026-11-10).
   const look = onPhone
     ? GLASS_SHEET
     : // Narrowed in a narrow window to leave the map 22 rem beside it (an
@@ -253,7 +274,7 @@ export default function MapPanel(props: Props) {
   // A drag let go (letGo); a swipe past the pill lands on it. A card's drag
   // is its own drawer's (CardStack).
   const snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => {
-    if (!cardsUp) letGo(point, details, { fromBottom, at: size, ask, park: "peek" });
+    if (!cardsUp) letGo(point, details, { fromBottom, pillPx, at: size, ask, park: "peek" });
   };
 
   // The cards over it, its nested drawers (CardStack), with its sizes.
@@ -267,17 +288,24 @@ export default function MapPanel(props: Props) {
       inspector ? null : <SheetGrabber label={label} size={cardSize} ask={cardAsk} at={grabberAt} sizes={grabberSizes} />,
     look: onPhone ? GLASS_SHEET : "bg-background dark:bg-popover",
     below: SHEET_BELOW,
+    inspector,
   };
+  // The side panel's edge glides as it is put in and out (useSideGlide).
+  useSideGlide(onPhone ? null : sheetNode, size, PILL_RADIUS);
 
   // The inspector's column, the window's height inside its float as the
   // side panel is, at the right inside the safe area: the cards' host,
-  // drawn as a panel only while one is in it.
+  // drawn as a panel only while one is in it, its ground fading in and out
+  // with its card on a control's
+  // fade, where the Drawer's 450 ms lagged the card's going.
   const inspectorColumn = inspector && (
     <div
       data-slot="map-inspector"
       className={cn(
         "pointer-events-none fixed right-[max(1rem,env(safe-area-inset-right))] z-40 w-(--size-panel) overflow-clip print:hidden",
-        cardsUp && cn(GLASS_SHEET, "ring-1 ring-inset ring-black/5 dark:ring-white/10"),
+        GLASS_SHEET,
+        "ring-1 ring-inset ring-black/5 transition-opacity duration-(--motion-fade) ease-(--motion-drawer-ease) dark:ring-white/10",
+        !cardsUp && "opacity-0",
       )}
       style={{
         top: `max(${FLOAT_PX}px, env(safe-area-inset-top))`,
@@ -313,6 +341,9 @@ export default function MapPanel(props: Props) {
           style={{
             top: `max(${FLOAT_PX}px, env(safe-area-inset-top))`,
             bottom: size === "peek" ? undefined : `max(${FLOAT_PX}px, env(safe-area-inset-bottom))`,
+            // Put in under a card, the card's pill (its title row and ✕), where
+            // with no route's figures the panel shrank to its grabber's 16.
+            minHeight: covering && size === "peek" ? PILL_HEIGHT : undefined,
             borderRadius: PILL_RADIUS,
           }}
         >
@@ -339,6 +370,22 @@ export default function MapPanel(props: Props) {
       look={look}
       grabber={!cardsUp && sheetGrabber}
       topSlot={ridingCard === null}
+      foot={
+        footBar &&
+        (fplBar ? (
+          <FootBar size={size} shown={footBarUp}>
+            {foot}
+          </FootBar>
+        ) : (
+          <SheetFoot
+            foot={foot}
+            pillFoot={atPill}
+            floats={false}
+            layout={{ ...shared.layout, footShown: footShown && pageAt !== 0 }}
+            onFootTap={shared.onFootTap}
+          />
+        ))
+      }
       cards={
         // The cards over it, inside its popup: its place.
         <>

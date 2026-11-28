@@ -9,6 +9,8 @@ import csv
 from pathlib import Path
 
 from . import geo
+from .engine import ask as engine
+from .figure import number
 
 #: What a fix is to a pilot, by NASR's FIX_USE_CODE.
 KINDS = {
@@ -29,16 +31,14 @@ VFR_CHARTS = {"SECTIONAL", "VFR TERMINAL AREA"}
 #: NASR's CHARTS name for the IFR Enroute Low Altitude chart.
 ENROUTE_LOW_CHART = "ENROUTE LOW"
 
-#: The navaids the sectional draws as a VOR, by NAV_BASE's NAV_TYPE:
-#: the VOR's hexagon, the VOR/DME's in its box and the VORTAC's (FAA
-#: Aeronautical Chart User's Guide, VFR Terms and Symbols, Radio Aids to
-#: Navigation).
-VOR_KINDS = ("VORTAC", "VOR/DME", "VOR")
-
-#: The navaids a route may fly over, by NAV_BASE's NAV_TYPE, in the order
-#: one is kept over another of the same ident: not the VOR test facilities
-#: (VOT), the fan markers or a marine beacon, which no route flies to.
-NAVAID_KINDS = ("VORTAC", "VOR/DME", "VOR", "DME", "TACAN", "NDB/DME", "NDB")
+#: The navaids by NAV_BASE's NAV_TYPE, the engine's navaid_kinds (one copy
+#: for every reader; the maps' filter is design/map-style.json's vorKinds):
+#: VOR_KINDS, the navaids the sectional draws as a VOR (FAA Aeronautical
+#: Chart User's Guide, Radio Aids to Navigation); NAVAID_KINDS, those a
+#: route may fly over, in the order one is kept over another of an ident.
+_KINDS = engine("navaid_kinds")
+VOR_KINDS = tuple(_KINDS["vor"])
+NAVAID_KINDS = tuple(_KINDS["navaid"])
 
 
 def _read(path: Path) -> dict[str, dict]:
@@ -96,13 +96,6 @@ def _station_variation(row: dict) -> float | None:
     return -degrees if (row.get("MAG_VARN_HEMIS") or "").strip().upper() == "W" else degrees
 
 
-def _number(text: str | None) -> float | None:
-    try:
-        return float((text or "").strip())
-    except ValueError:
-        return None
-
-
 def _read_navaids(path: Path) -> dict[str, list[dict]]:
     """NAV_BASE's navaids in service, as fixes: "RFD", the Rockford DME,
     named and with its frequency. Every one by each ident, the likelier
@@ -128,7 +121,9 @@ def _read_navaids(path: Path) -> dict[str, list[dict]]:
                 "kind": kind,
                 "vfr": False,
                 "navaid": True,
-                "name": (row.get("NAME") or "").strip().title() or None,
+                # A navaid is named for its place: "LA CROSSE", "McCOOK" as
+                # a town is spelt (the engine's place_name).
+                "name": engine("place_name", text=(row.get("NAME") or "").strip()) or None,
                 "freq": (row.get("FREQ") or "").strip() or None,
                 "state": (row.get("STATE_CODE") or "").strip() or None,
                 "mag_var": _station_variation(row),
@@ -137,7 +132,7 @@ def _read_navaids(path: Path) -> dict[str, list[dict]]:
                 # volume's class (ALT_CODE: T, L, H, VL or VH, AIM 1-1-8),
                 # its hours (OPER_HOURS, "24") and whether it is in
                 # service with restrictions (NAV_STATUS's "RESTRICTED").
-                "elevation_ft": _number(row.get("ELEV")),
+                "elevation_ft": number(row.get("ELEV")),
                 "channel": (row.get("CHAN") or "").strip() or None,
                 "service_volume": (row.get("ALT_CODE") or "").strip() or None,
                 "hours": (row.get("OPER_HOURS") or "").strip() or None,

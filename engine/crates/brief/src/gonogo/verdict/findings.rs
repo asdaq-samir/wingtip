@@ -149,7 +149,7 @@ pub(super) fn runways(r: &Runways) -> (&'static str, String) {
         not_sent()
     } else if !r.short.is_empty() {
         ("stop", format!("Too short at {}", r.short.join(", ")))
-    } else if !r.crosswind.is_empty() || !r.beyond.is_empty() {
+    } else if [&r.crosswind, &r.tailwind, &r.close, &r.beyond, &r.standard_day].iter().any(|l| !l.is_empty()) {
         // Past the POH's table the distance is its edge's, not the
         // airplane's (FAA-H-8083-25C, chapter 11: performance charts hold
         // only within their stated conditions), so "within" is not known:
@@ -158,8 +158,24 @@ pub(super) fn runways(r: &Runways) -> (&'static str, String) {
         if !r.crosswind.is_empty() {
             parts.push(format!("Crosswind past the POH's demonstrated at {}", r.crosswind.join(", ")));
         }
+        // The wind behind the end (AIM 4-3-6c: tailwind considerations
+        // come first) and SAFO 19001's 15 per cent margin not met: the
+        // cautions FPL's runway chips ring (runway::fit).
+        if !r.tailwind.is_empty() {
+            parts.push(format!("Tailwind at {}", r.tailwind.join(", ")));
+        }
+        if !r.close.is_empty() {
+            parts.push(format!("Less than 15% to spare at {}", r.close.join(", ")));
+        }
         if !r.beyond.is_empty() {
             parts.push(format!("Past the POH's tables at {}: its distances will be longer", r.beyond.join(", ")));
+        }
+        // No temperature reported: the distances are a standard day's
+        // (field_air), which on a hot day are short of what the airplane
+        // needs (FAA-H-8083-25C ch. 11, density altitude), so "within" is
+        // not known for the day (14 CFR 91.103(b)).
+        if !r.standard_day.is_empty() {
+            parts.push(format!("No temperature reported at {}: distances assume a standard day", r.standard_day.join(", ")));
         }
         ("caution", parts.join("; "))
     } else if !r.unchecked.is_empty() {
@@ -175,6 +191,13 @@ pub(super) fn runways(r: &Runways) -> (&'static str, String) {
 pub(super) fn balance(b: &Balance) -> (&'static str, String) {
     if b.pending {
         ("pending", "Waiting on the airplane's profile…".into())
+    } else if b.no_load {
+        // The weight and balance is this flight's load against the POH's
+        // limits (its section 6; 14 CFR 91.9(a) holds the pilot to them,
+        // 91.103 to all the flight's information): with no load given it
+        // is not known, and the POH's sample airplane is never said as
+        // the flight's (the owner's "no assumed airplane").
+        ("unknown", "Not worked out: give your load".into())
     } else if !b.worked {
         ("unknown", "Not worked out for this airplane".into())
     } else if let Some(first) = b.problems.first() {

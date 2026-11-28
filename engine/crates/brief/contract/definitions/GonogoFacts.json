@@ -1,0 +1,335 @@
+{
+  "title": "GonogoFacts",
+  "type": "object",
+  "description": "The flight's facts the Go / No-Go is put together from (gonogo_input; gonogo_brief's `facts`): the briefing's, the nav log's, the loading's and the route's own figures (gonogo_route_figures).",
+  "properties": {
+    "briefed": {
+      "type": "boolean",
+      "description": "The briefing is in."
+    },
+    "failed": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Why the briefing could not be had, in a line; null where it did not fail."
+    },
+    "ifr": {
+      "type": "boolean",
+      "description": "The flight is planned IFR."
+    },
+    "weather_unavailable": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The briefing's sources that did not answer (its `weather_unavailable`); empty with no briefing."
+    },
+    "forecast": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The briefing's worst forecast along the route, and the stations whose forecast ceiling has no height; null with no briefing.",
+      "properties": {
+        "min_ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "min_visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_unknown_at": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "The TAF stations along the route whose forecast has a broken or overcast layer with no height as its lowest."
+        }
+      }
+    },
+    "vfr_not_recommended": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The briefing's reasons for AIM 7-1-5's \"VFR flight not recommended\"; dropped under IFR."
+    },
+    "under_minimums": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Where the weather is under the pilot's own minimums (minimums)."
+    },
+    "icing": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The icing finding's lines, in order: one line of them, joined."
+    },
+    "icing_unchecked": {
+      "type": "boolean",
+      "description": "Under IFR, the forecast icing could not be had."
+    },
+    "landings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Every field the flight lands at, each once: whose current report's ceiling with no height is said unchecked (14 CFR 91.103)."
+    },
+    "metars": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The briefing's METARs by ident (each null where none came); a report's `ceiling_unknown` (a broken or overcast layer with no height as its lowest, \"OVC///\") is read.",
+      "additionalProperties": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "ceiling_unknown": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "hazards": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The SIGMETs and G-AIRMETs along the route, by name."
+    },
+    "terminal_alerts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The ITWS alerts in force now at the route's airports, in words."
+    },
+    "flow_programs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The Command Center's programs at the route's airports, in words."
+    },
+    "route_figures": {
+      "type": "object",
+      "description": "gonogo_route_figures' answer: the fuel's and the TFRs'.",
+      "properties": {
+        "least_margin_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "required_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reserve_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tfrs_in_force": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tfrs_near": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "tfrs_in_force",
+        "tfrs_near"
+      ]
+    },
+    "special_use": {
+      "type": "array",
+      "description": "The special-use areas the legs cross, each with when it is in use at the pass.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "when": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "when"
+        ]
+      }
+    },
+    "nav": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The nav log's altitude answer: its `flown`, `altitude_ft`, `options` (each `kind` and `steps`' `altitude_ft`) and `cautions` (each `reasons`); null while it is awaited.",
+      "properties": {
+        "flown": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "altitude_ft": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "altitude_ft"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "steps"
+            ]
+          }
+        },
+        "cautions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "reasons": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "reasons"
+            ]
+          }
+        }
+      }
+    },
+    "problem": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "No VFR altitude fits, in a line."
+    },
+    "legs_ft": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Each leg's altitude, feet MSL: the highest is the oxygen finding's (14 CFR 91.211); with none, the plan picked's highest step (`nav`)."
+    },
+    "totals": {
+      "type": "boolean",
+      "description": "The nav log's totals are in."
+    },
+    "aircraft": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The airplane's profile: its takeoff and landing tables for the runways, its supplemental_oxygen and pressurized for the oxygen finding (14 CFR 91.211(a), (b))."
+    },
+    "runway_checks": {
+      "type": "array",
+      "description": "The runway checks, each with its field's `ident` (gonogo_runway_findings' `checks`).",
+      "items": {
+        "type": "object"
+      }
+    },
+    "loading": {
+      "type": "boolean",
+      "description": "The airplane has a POH loading."
+    },
+    "loaded": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "gonogo_balance's answer with the pilot's own load; null with no load.",
+      "properties": {
+        "takeoff": {
+          "type": "object",
+          "properties": {
+            "weight_lb": {
+              "type": "number"
+            },
+            "arm_in": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "weight_lb"
+          ]
+        },
+        "problems": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "takeoff",
+        "problems"
+      ]
+    }
+  },
+  "required": [
+    "briefed",
+    "failed",
+    "ifr",
+    "route_figures"
+  ]
+}

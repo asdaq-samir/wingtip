@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
 import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import IconButton from "../../components/IconButton";
+import { cn } from "cn";
+import { TEXT } from "../../lib/text";
+import { SLIM_PILL } from "./routeListStyle";
 import { Button } from "../../components/ui/button";
 import type { ProcedureSummary } from "../../lib/api/types";
 import { chipLook } from "./chipLook";
+import { KIND_TAG } from "./procedureWords";
 
 type Kind = ProcedureSummary["kind"];
 
@@ -16,7 +20,6 @@ const SHORT: Record<Kind, string> = { approach: "Approach", arrival: "Arrive", d
  *  Contractions: ARR, APCH, DEP), at the owner's ask (2026-11-17: "shorten
  *  arrival to ARR and approach to APCH") so the row stays on one line. A
  *  reader still hears the whole word (its aria-label). */
-const CHIP: Record<Kind, string> = { approach: "APCH", arrival: "ARR", departure: "DEP" };
 
 /** How a kind's pull-down (ProcedureMenu) is opened: a chip; a round
  *  button at the right of the procedure's branch, to pick another
@@ -25,7 +28,7 @@ const CHIP: Record<Kind, string> = { approach: "APCH", arrival: "ARR", departure
  *  runways (the owner's pick, option C); or a whole row of FPL's timeline,
  *  its words `face` (TimelineProcedureRows, the owner's option D,
  *  2026-11-21: "just tapping it should show the approaches menu"). */
-export type TriggerLook = "chip" | "button" | "add" | "row";
+export type TriggerLook = "chip" | "button" | "add" | "row" | "slim" | "wide";
 
 /**
  * ProcedureMenu's trigger, one element for ResponsivePopoverTrigger's
@@ -64,6 +67,31 @@ export function procedureTrigger({
         <span className="sr-only">, pick another</span>
       </Button>
     );
+  if (look === "slim")
+    // "+ ARR" on a Landing's or Takeoff's line on FPL's list, the route
+    // box's slim pill (the owner, 2026-11-25); once one is picked it is a
+    // pill of its own under the line (`wide`).
+    return (
+      <Button variant="plain" size="inline" {...data} className={SLIM_PILL} aria-label={`+ ${KIND_TAG[kind]}, ${what}: none picked`}>
+        + {KIND_TAG[kind]}
+      </Button>
+    );
+  if (look === "wide")
+    // The one picked's chip at its pill's right end, its kind's tag
+    // ("APCH"), the look of a button: it opens its menu, a tap on the rest
+    // of the pill folds its fixes (FoldSection). 24 tall, its 44 by
+    // hit-y-2.5 and hit-x-1.
+    return (
+      <Button
+        variant="plain"
+        size="inline"
+        {...data}
+        className={cn("relative h-6 shrink-0 rounded-full bg-foreground/8 px-2 font-medium hit-x-1 hit-y-2.5", TEXT.note)}
+        aria-label={`${KIND_TAG[kind]}, ${what}: ${label ?? "none picked"}, pick another`}
+      >
+        {KIND_TAG[kind]}
+      </Button>
+    );
   if (look === "button")
     // The one picked's name kept in it for a reader, unseen: the branch's
     // head shows it.
@@ -80,11 +108,12 @@ export function procedureTrigger({
   return (
     <Button
       variant="glass"
+      size="chip"
       {...data}
       className={chipLook(look === "add")}
-      aria-label={look === "add" ? `+ ${CHIP[kind]}, ${what}: none picked` : `${label ?? SHORT[kind]}, ${what}`}
+      aria-label={look === "add" ? `+ ${KIND_TAG[kind]}, ${what}: none picked` : `${label ?? SHORT[kind]}, ${what}`}
     >
-      {look === "add" ? <span>+ {CHIP[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
+      {look === "add" ? <span>+ {KIND_TAG[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
       {look !== "add" && <ChevronDown className="size-4 shrink-0" aria-hidden />}
     </Button>
   );

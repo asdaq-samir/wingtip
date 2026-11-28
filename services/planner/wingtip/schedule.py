@@ -1,7 +1,7 @@
 """The one scheduler every service's periodic work runs on: APScheduler's
 (3.x, its maintained line; 4.0 is an alpha untouched since April 2025,
 docs/versions.md), rather than a `while True` and a clock of its own in
-each service, which the planner, weather and ingest each had (the code audit's CODE-45, 2026-11-14).
+each service, which the planner, weather and ingest each had.
 
 Every job is held to one run at a time (`max_instances=1`): a turn that
 comes while the last still runs is skipped, not stacked, and runs that
@@ -12,7 +12,7 @@ traceback) and runs again at its next turn, so no job catches its own
 failures only to keep the loop going."""
 
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -31,10 +31,13 @@ def scheduler(*, workers: int = 10, blocking: bool = False) -> BaseScheduler:
     return kind(executors={"default": ThreadPoolExecutor(workers)}, job_defaults=_JOB_DEFAULTS, timezone=UTC)
 
 
-def every(on: BaseScheduler, seconds: float, job: Callable[..., object], *, name: str, now: bool = True, args: tuple = ()) -> None:
-    """`job(*args)` every `seconds`: the first turn at once where `now`,
-    else one interval from here."""
-    first = {"next_run_time": datetime.now(UTC)} if now else {}
+def every(
+    on: BaseScheduler, seconds: float, job: Callable[..., object], *, name: str, now: bool = True, after: float = 0.0, args: tuple = ()
+) -> None:
+    """`job(*args)` every `seconds`: the first turn at once where `now` (or
+    `after` seconds on, so heavy first turns are not run together), else
+    one interval from here."""
+    first = {"next_run_time": datetime.now(UTC) + timedelta(seconds=after)} if now else {}
     on.add_job(job, "interval", seconds=seconds, args=args, id=name, name=name, **first)
 
 

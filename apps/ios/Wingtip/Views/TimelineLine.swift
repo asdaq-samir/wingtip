@@ -19,6 +19,10 @@ struct TimelineMark: View {
             .foregroundStyle(.white)
             .frame(width: size, height: size)
             .background(fill, in: Circle())
+            // A category's fill cased as the map's dots are (CategoryCasing,
+            // the web's DOT_RING): IFR's blue and LIFR's purple under 3:1 on
+            // the night's navy and LIFR's on the day's muted fills alone.
+            .modifier(Cased(on: category != nil && point.field && !problem && !point.position))
     }
 
     private var glyph: String {
@@ -33,6 +37,14 @@ struct TimelineMark: View {
         if point.position { return .accentColor }
         if !point.field { return Color(uiColor: .systemGray) }
         return Color(uiColor: FlightCategory.mark(category))
+    }
+}
+
+/// The category's casing on a field's mark, none on the others'.
+private struct Cased: ViewModifier {
+    let on: Bool
+    func body(content: Content) -> some View {
+        if on { content.categoryCased() } else { content }
     }
 }
 

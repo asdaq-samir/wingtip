@@ -98,8 +98,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val overlaysSettled by charts.overlaysSettled.collectAsStateWithLifecycle()
     val chartProblem by charts.problem.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
-    // The route's points, where its line is cut into legs, and the leg
-    // whose sheet is open (RouteLegModel), cased in green.
+    // The route's points, where its line is cut into legs, and the leg whose sheet is open (RouteLegModel), cased in green.
     val routePoints = remember(state.course) { RoutePoints.of(state.course) }
     val selectedLeg by hiltViewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
     // The field whose card is open, ringed on the map.
@@ -111,8 +110,6 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // The map shown as one thing (the web's #541, #542): the loading mark
     // over it until the chart and the overlays are drawn, then faded once.
     var revealed by remember { mutableStateOf(false) }
-    // The chart dimmed with a dark screen, but Dark + Bright (Appearance).
-    val night = LocalShade.current.chartDimmed
     val context = LocalContext.current
     val layers by remember { MapLayersStore.of(context) }.layers.collectAsStateWithLifecycle()
     val mapWeather: MapWeather = hiltViewModel()
@@ -130,7 +127,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val flight: FlightModel = hiltViewModel()
     val traffic = flight.traffic
     val trafficOn by traffic.on.collectAsStateWithLifecycle()
-    val tracked by flight.tracked.collectAsStateWithLifecycle()
+    val tracked by flight.tracking.onMap.collectAsStateWithLifecycle()
     // The airplanes to draw, read only in ChartMap's lambda, as the fix is:
     // read here, each answer (every 5 s, each second with a receiver) drew
     // the whole pane again, its field actions, bars and emergency line.
@@ -202,7 +199,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         ship.fix.collect { taken -> flight.took(if (ownShip.on) taken else null, planNow) }
     }
     LaunchedEffect(ahead) { flight.hear(ahead) }
-    LaunchedEffect(state.legs) { app.wingtipmaps.android.map.AirspaceVolumes3d.planAltitudes(state.legs.map { it.altitudeFt }) }
+    LaunchedEffect(state.legs, routePoints) { app.wingtipmaps.android.map.AirspaceVolumes3d.planAltitudes(state.legs.map { it.altitudeFt }).also { app.wingtipmaps.android.map.RouteMarksLayer.show(routePoints, state.legs) } }
     // While the emergency assistant is open, the line from the airplane to the field it picked (EmergencyCard's model).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
     // The glide ring off unless kept on, on by itself while the emergency assistant is open (GlideRing).
@@ -237,8 +234,11 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             terminal = terminal,
             weather = weather,
             traffic = { if (trafficOn) targets.value else emptyList() },
-            tracked = tracked,
-            night = night,
+            tracked = tracked.hex,
+            sight = tracked.sight,
+            // The dark screen, and the Map card's Dimmer and Contrast on the chart (ChartLook).
+            night = LocalShade.current.dark,
+            look = LocalShade.current.let { shade -> { shade.look } },
             bottomInset = with(density) { covered.roundToPx() },
             opensAt = opensAt,
             ownShip = { app.wingtipmaps.android.map.OwnShipMark.of(fix.value, ownShip.on, dryRun.fix ?: app.wingtipmaps.android.airplane.PastFlightReplay.state.fix) },

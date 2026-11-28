@@ -1,15 +1,30 @@
 import { expect, type Page } from "@playwright/test";
 import { showPage } from "./oneSearch";
-import { slow, sideDrawer, showTabs, openPanel, grabberTo, sheetUpToType, expectDrawerOpen, frontSheet, settled } from "./sheetHelpers";
+import {
+  cardHost,
+  slow,
+  sideDrawer,
+  sheetFoot,
+  showTabs,
+  openPanel,
+  grabberTo,
+  sheetUpToType,
+  expectDrawerOpen,
+  frontSheet,
+  settled,
+} from "./sheetHelpers";
 import { closeBrief } from "./routeHelpers";
+import { watchFor } from "./pacing";
 
 /** FPL's Brief, a card over the route (BriefCard), from the chips' Brief:
- *  its pages -- Preflight, Depart, En route and Arrive -- are its. */
+ *  its pages -- Preflight, Depart, En route and Arrive -- are its. A card,
+ *  it opens in the card's host: the inspector's column on an iPad on its
+ *  side, the panel everywhere else (cardHost). */
 export async function openBrief(page: Page) {
-  const card = sideDrawer(page).getByTestId("brief-card");
+  const card = cardHost(page).getByTestId("brief-card");
   if (await card.isVisible().catch(() => false)) return;
   await openPanel(page);
-  await sideDrawer(page)
+  await sheetFoot(page)
     .getByTestId("route-brief")
     .click({ timeout: slow(30000) });
   await expect(card).toBeVisible();
@@ -19,7 +34,7 @@ export async function openBrief(page: Page) {
  *  2026-11-21: More keeps Route Options, Share link and Open in ForeFlight). */
 export async function openBriefMenu(page: Page) {
   await openBrief(page);
-  await sideDrawer(page).getByTestId("card-share").click();
+  await cardHost(page).getByTestId("card-share").click();
 }
 
 /** The panel all the way out, as a finger takes it: a drag on its
@@ -80,7 +95,7 @@ export async function openNavLog(page: Page) {
   const sheet = navLogSheet(page);
   // A tile under the route (FplActions; the owner's pick A, 2026-11-15).
   if (!(await sheet.isVisible())) {
-    await sideDrawer(page)
+    await sheetFoot(page)
       .getByTestId("route-navlog")
       .click({ timeout: slow(60_000) });
   }
@@ -111,15 +126,15 @@ export async function closeNavLog(page: Page) {
   await expect(navLogSheet(page)).toBeHidden();
 }
 
-/** The planning panel's own tabs. */
-export const panelTabs = (page: Page) => sideDrawer(page).getByTestId("panel-tabs");
+/** The Brief's own tabs, in the card's host (cardHost). */
+export const panelTabs = (page: Page) => cardHost(page).getByTestId("panel-tabs");
 
 const PAGE_OF: Record<PhaseTab, string> = { Preflight: "preflight", Depart: "depart", "En Route": "enroute", Arrive: "arrive" };
 
 /** The Brief open on its cards (BriefGlance, the owner's D′), one of its
  *  pages opened by its card; the tabs are over a page once one is open. */
 export async function briefPage(page: Page, phase: PhaseTab) {
-  const glance = sideDrawer(page).getByTestId("brief-glance");
+  const glance = cardHost(page).getByTestId("brief-glance");
   await expect(glance.or(panelTabs(page))).toBeVisible();
   if (await glance.isVisible()) await glance.getByTestId(`brief-glance-${PAGE_OF[phase]}`).click();
   await expect(panelTabs(page)).toBeVisible();
@@ -142,7 +157,7 @@ export async function openSection(page: Page, title: string) {
   }
   await openBrief(page);
   await panelFull(page); // its page cards are past the half card's foot, as in openTab
-  const here = panel.locator(`[role="tabpanel"]:not([inert]) [data-title="${title}"]`).first();
+  const here = cardHost(page).locator(`[role="tabpanel"]:not([inert]) [data-title="${title}"]`).first();
   if (!(await here.isVisible().catch(() => false))) {
     await briefPage(page, "Preflight");
     // Round the phases again until it is on one: a section drawn once the
@@ -199,4 +214,4 @@ export async function airportSearch(page: Page) {
  *  within it are one step to undo, as the page's own settling after a load
  *  is, so a test's edit that must be a step of its own comes after it, as
  *  a pilot's does. A window of time is the rule here, so a wait is right. */
-export const pastSettling = (page: Page) => page.waitForTimeout(1600);
+export const pastSettling = (page: Page) => watchFor(page, 1600);

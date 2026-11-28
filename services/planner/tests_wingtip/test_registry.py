@@ -224,3 +224,39 @@ def test_a_tis_b_pseudo_address_is_not_matched_to_an_owners_address(archive, tmp
     assert registry.lookup(hex_id="~a89c1e", directory=tmp_path) is None
     # Its self-reported registration can still be looked up.
     assert registry.lookup(hex_id="~a89c1e", n_number="N654FL", directory=tmp_path)["n_number"] == "N654FL"
+
+
+def test_a_lists_n_numbers_give_their_addresses_and_a_rebuilt_file_is_read_afresh(archive, tmp_path):
+    db_path = tmp_path / registry.DB_NAME
+    registry.build(archive, db_path)
+    assert registry.addresses(frozenset({"N654FL", "EJA123", "N99999"}), tmp_path) == frozenset({"a89c1e"})
+    before = registry.version(tmp_path)
+    assert registry.lookup(hex_id="a89c1e", directory=tmp_path)["n_number"] == "N654FL"
+    # Rebuilt in place (a new file, a new inode): the kept connections go with the old one.
+    db_path.unlink()
+    assert registry.lookup(hex_id="a89c1e", directory=tmp_path) is None
+    assert registry.addresses(frozenset({"N654FL"}), tmp_path) == frozenset()
+    registry.build(archive, db_path)
+    assert registry.version(tmp_path) != before
+    assert registry.lookup(hex_id="a89c1e", directory=tmp_path)["n_number"] == "N654FL"
+
+
+def test_a_file_of_an_older_shape_reads_as_none_till_it_is_built_again(archive, tmp_path):
+    """Round 5's audit: a file of an older shape was asked for columns it
+    lacks, a 500 on every card and an error on each radar track's LADD
+    check, until ingest built it again; now it reads as none meanwhile."""
+    import sqlite3
+    from contextlib import closing
+
+    from wingtip import registry_history
+
+    db_path = tmp_path / registry.DB_NAME
+    registry.build(archive, db_path)
+    with closing(sqlite3.connect(db_path)) as db:
+        db.execute(f"PRAGMA user_version = {registry.SCHEMA - 1}")
+    assert registry.lookup(n_number="N654FL", directory=tmp_path) is None
+    assert registry.addresses(frozenset({"N654FL"}), tmp_path) == frozenset()
+    assert registry.model("7102802", tmp_path) is None
+    assert registry_history.documents(db_path, "N654FL") == []
+    registry.build(archive, db_path)
+    assert registry.lookup(n_number="N654FL", directory=tmp_path)["mode_s_hex"] == "a89c1e"

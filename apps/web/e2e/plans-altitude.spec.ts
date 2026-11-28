@@ -46,19 +46,21 @@ test("plan page: Class B is always planned through, said with its clearance, wit
 test("plan page: no legal altitude's own altitude field takes a tap", async ({ page }) => {
   // Beside the airplane: a tap on the field is the field's, its keyboard
   // coming up.
-  await page.route("**/api/planner/navlog**", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/x-ndjson",
-      body:
-        JSON.stringify({
-          type: "error",
-          retry: false,
-          detail: "No legal VFR cruising altitude 830-858 nm along the route",
-          reasons: ["The terrain and obstacles there need 10,600 ft."],
-          advice: "Route around the high ground.",
-        }) + "\n",
-    }),
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/navlog"),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/x-ndjson",
+        body:
+          JSON.stringify({
+            type: "error",
+            retry: false,
+            detail: "No legal VFR cruising altitude 830-858 nm along the route",
+            reasons: ["The terrain and obstacles there need 10,600 ft."],
+            advice: "Route around the high ground.",
+          }) + "\n",
+      }),
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await controlsInSight(page);

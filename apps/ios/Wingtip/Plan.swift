@@ -87,9 +87,20 @@ final class Plan {
     /// The route as last taken in (remember, Plan+History): what an Undo
     /// puts back.
     @ObservationIgnored var lastState = RouteState()
-    /// The window's, from SwiftUI's environment (RootView): shake to undo,
-    /// the Edit menu's Undo and Redo and the bar's Undo (UndoToolbarItem).
-    @ObservationIgnored weak var undoManager: UndoManager?
+    /// Whether that route had been planned: an Undo plans again only a
+    /// route that was, so a Clear Route undone on From and To typed but
+    /// never planned puts them back as typed (PlanHistory).
+    @ObservationIgnored var lastPlanned = true
+    /// The route's one history, the plan's own: one Plan serves every
+    /// window, so its steps are in one stack, and an Undo in one window
+    /// can never put back a route from before another window's edit.
+    /// Each window's own manager (`windowUndo`) holds a step that forwards
+    /// to this one, so shake to undo, the Edit menu and ⌘Z still reach it.
+    @ObservationIgnored let undoManager = UndoManager()
+    /// The key window's UndoManager, from SwiftUI's environment (RootMap),
+    /// handed over as each window becomes the key one: where a step's
+    /// forwarder goes (UndoManager.forward).
+    @ObservationIgnored weak var windowUndo: UndoManager?
     /// The step just made that the undo bar offers to take back (UndoBar),
     /// nil once it has gone; a step that only added or changed a figure has
     /// none, though shake and the Edit menu still undo it.
@@ -143,13 +154,16 @@ final class Plan {
         // but not yet planned too: the fields set the ends without a step,
         // so the step taken was still the empty route, and Clear Route
         // offered no Undo though its question says Undo brings it back.
-        if remembering { lastState = routeState }
+        if remembering {
+            lastState = routeState
+            lastPlanned = planning || course != nil || problem != nil
+        }
         dep = ""; dest = ""; stops = []
         ownAltitudeFt = nil; ownAltitudeLegal = false; altitudeChoice = nil; procedures = []
         extras = RouteExtras()
         typedStops = []; pickedChip = nil; routes = nil; routesProblem = nil; routesAskedFor = nil
         forgetPlanned()
-        remember()
+        remember(planned: false)
     }
 
     /// What the planner said of the route, gone with it.
@@ -180,7 +194,7 @@ final class Plan {
 
     /// A Direct to the planner couldn't be asked for: the route as it was
     /// put back, so the route box, the line and the legs are one route's,
-    /// never the new route's over the old legs (the offline audit).
+    /// never the new route's over the old legs.
     func undoDirect(_ before: RouteState) {
         let ident = extras.direct
         directFrom = nil

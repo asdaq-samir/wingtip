@@ -8,8 +8,8 @@ import { isPosition, positionIdent } from "../../../lib/identSchema";
 import { feel } from "../../../lib/haptics";
 import { positionNow, useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
-import { chartCycle, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
-import { panelNow, riseToSee, type PlannedRoute, navlogQuery, type PlanParams } from "../../plan";
+import { chartCycle, courseQuery, queryClient } from "../../../lib/queryClient";
+import { panelNow, riseToSee, type PlannedRoute, navlogQuery, prefetchRoute, type PlanParams } from "../../plan";
 
 /** Fly Here's plan from `from` to the card's airport, as the page will ask
  *  for it once the route is in: from the card, with the plan's own
@@ -107,7 +107,7 @@ export function useFlyHere({
   // and puts one first once the pilot does (app.chart_model._reading), so
   // they hold none of its readers from a route being planned, and the tap's
   // own requests join them where they are. They were 1.2 to 1.4 s after
-  // the tap (the speed audit, 2026-11-10). Kept out of the page's cache,
+  // the tap. Kept out of the page's cache,
   // as the Recents planned ahead are (usePlanAhead): the route then draws
   // as it comes. Not from a present position, which has moved by the
   // tap; and let go if the card closes without Fly Here.
@@ -167,9 +167,7 @@ export function useFlyHere({
       // Load's count the one it is about to be (setLoad, below).
       if (from) {
         const plan = flyHerePlan(from, to.ident, { depart, aircraft, load, showWaypoints, flightRules });
-        void queryClient.prefetchQuery(courseQuery(from, to.ident));
-        if (showWaypoints) void queryClient.prefetchQuery(checkpointsQuery(from, to.ident));
-        void queryClient.prefetchQuery(navlogQuery(plan, showWaypoints));
+        prefetchRoute(plan, showWaypoints);
         // And the route as entered beside it where the course, read ahead as
         // the card opened, said the chart along it is still to be read --
         // as the page would ask, once the course is in (usePlan).

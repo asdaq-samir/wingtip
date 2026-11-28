@@ -77,6 +77,8 @@ interface ProcedurePicks {
     runway: string | null;
     name?: string;
     label: string;
+    /** The transition picked, none from vectors (RouteProcedure). */
+    transition?: string | null;
     fixes?: BranchFix[];
     direct?: string | null;
     /** Loaded, not flown; activated, its missed approach unsuspended; its
@@ -152,10 +154,9 @@ interface StopPlans {
    *  check); none known, no fuel shown. */
   fuel?: { usableGal: number; taxiGal: number; reservesGal: (number | null)[]; alternateGal?: number | null } | null;
   /** The pilot's own fuel leaving a field, gallons by its ident (the
-   *  address's `tanks`), and setting it from the field's gauge (FuelSet);
-   *  null back to full. None, the gauges are read only. */
+   *  address's `tanks`); the gauges read only (the owner, 2026-11-25:
+   *  "Tapping fuel tanks should not do anything"). */
   tanks?: Record<string, number>;
-  onTanks?: (ident: string, gallons: number | null) => void;
 }
 
 /** What FPL's route list (ProceduresRoute) is given: the route's data, and
@@ -174,7 +175,7 @@ export interface ProceduresRouteProps {
   /** The route's points as the address has them, the departure first:
    *  a row not among them -- a fix along an airway typed as V100 -- has no
    *  Direct to, Remove or Create a fix, which work on the typed points
-   *  (the audit's finding: they did nothing there, or the wrong thing). */
+   *  (they did nothing there, or the wrong thing). */
   routePoints: string[];
   /** As many stops as the planner takes (MAX_STOPS): no Create a fix. */
   stopsFull?: boolean;
@@ -190,3 +191,11 @@ export interface ProceduresRouteProps {
    *  at its end. None, the route as it is read (in flight, a dry run). */
   edit?: RouteListEdit;
 }
+
+/** The list's props read flat (useProceduresRoute): the route's data and
+ *  each group's fields side by side, as the list's hooks are handed them. */
+export type RouteListFlat = Omit<ProceduresRouteProps, "runways" | "procedurePicks" | "pointActions" | "stopPlans"> &
+  RunwayPicks &
+  ProcedurePicks &
+  PointActions &
+  StopPlans;

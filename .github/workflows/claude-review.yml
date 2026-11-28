@@ -1,28 +1,14 @@
 name: Claude review
 
-# A review by Claude on every pull request but Dependabot's: inline
-# comments where something is wrong, one summary. It reviews; it does not
-# gate -- main's ruleset requires CI, not this, so a pull request with no
-# review (no secret set, a failed run) still merges on a green CI. On
-# Claude's own pull requests (a claude/ branch) a second job then puts
-# right what the review found and pushes, at most twice a branch; on the
-# owner's it only comments. Needs, outside this file: the Claude GitHub
-# App on the repository (https://github.com/apps/claude, or
-# /install-github-app in Claude Code) and one secret, ANTHROPIC_API_KEY
-# (an API account's) or CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`, a
-# Claude subscription's). Without either it says so and stops.
-#
-# On demand only, since the owner's decision of 2026-11-06 ("Ok to not
-# having review"): a pull request is reviewed when someone puts the
-# "review" label on it, and never by itself, so no merge waits for a
-# review (auto-merge-agents.yml turns auto-merge on when the pull request
-# opens) and "CI passed" is the one gate. Before that it reviewed every
-# pull request once as it opened; a review and a fix at each push, the
-# fix's own push starting the next, had been the bulk of the repository's
-# automated traffic, and GitHub suspended the owner's account in October
-# 2026 after a burst of it. A label rather than workflow_dispatch keeps the
-# pull request's own event, which the action needs for its inline comments.
-# Take the label off and put it on again for another review.
+# A review by Claude, only when someone puts the "review" label on a pull
+# request (the owner, 2026-11-06: "Ok to not having review"; take the label
+# off and on for another): inline comments and one summary. It never gates
+# a merge; main's ruleset requires CI. A label, not workflow_dispatch, keeps
+# the pull request's own event, which the action needs for inline comments.
+# Reviewing every push had been most of the automated traffic before GitHub
+# suspended the owner's account in October 2026. On a claude/ branch the
+# address job then puts right what it found, at most twice a branch.
+# Needs the Claude GitHub App and ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN.
 
 on:
   pull_request:
@@ -41,7 +27,7 @@ concurrency:
 jobs:
   review:
     if: ${{ github.event.label.name == 'review' && github.event.pull_request.user.login != 'dependabot[bot]' }}
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -63,12 +49,8 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Claude's own pull requests are opened and pushed by the Claude app, a
-          # bot, and the action refuses a bot unless it is named here. Without
-          # it, Claude's pull requests got no review, no fixes and no autofix.
-          # github-actions too: a fix pushed from a workflow starts the
-          # next review as that bot, and the action refused it ("non-human
-          # actor"), so a branch's second review never ran.
+          # The action refuses a bot not named here: Claude's app opens and
+          # pushes Claude's pull requests, github-actions a workflow's fix.
           allowed_bots: claude,github-actions
           use_sticky_comment: true
           prompt: |
@@ -120,31 +102,31 @@ jobs:
           EOF
 
   # On Claude's own pull requests, what an asked-for review found is put
-  # right on the branch, so the pull request merges with it fixed rather
-  # than with comments nobody reads. At most twice a branch ("Address
-  # review" in the commit). It runs only after such a review (it needs
-  # review, which runs only for the label). The owner's branches are never
-  # pushed to.
+  # right on the branch, at most twice ("Address review" in the commit),
+  # after such a review only. The owner's branches are never pushed to.
+  # This job runs the branch's code, so it holds no MERGE_TOKEN (approve does).
   address:
     needs: review
     if: ${{ startsWith(github.head_ref, 'claude/') && github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 60
     permissions:
       contents: write
       pull-requests: write
       issues: write
       id-token: write
-      # To let the fix's held checks run (the last step).
-      actions: write
+    outputs:
+      go: ${{ steps.tries.outputs.go }}
     env:
       HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' || secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
     steps:
+      # No token left in .git/config: the action sets its own for Claude's push.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         if: env.HAS_KEY == 'true'
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
+          persist-credentials: false
       - name: Twice at most
         id: tries
         if: env.HAS_KEY == 'true'
@@ -168,10 +150,11 @@ jobs:
           distribution: temurin
           java-version-file: .tool-versions
           cache: maven
+      # No install scripts: a package's could leave a fake gh or git behind.
       - name: The web app's packages
         if: steps.tries.outputs.go == 'true'
         working-directory: apps/web
-        run: npm ci
+        run: npm ci --ignore-scripts
       # Only the review's own comments, and the owner's, reach Claude: on a
       # public pull request anyone can comment, and a comment is text
       # Claude would read with write access to the branch. Inline
@@ -202,12 +185,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Claude's own pull requests are opened and pushed by the Claude app, a
-          # bot, and the action refuses a bot unless it is named here. Without
-          # it, Claude's pull requests got no review, no fixes and no autofix.
-          # github-actions too: a fix pushed from a workflow starts the
-          # next review as that bot, and the action refused it ("non-human
-          # actor"), so a branch's second review never ran.
+          # As in review: the bots that open and push these pull requests.
           allowed_bots: claude,github-actions
           prompt: |
             REPO: ${{ github.repository }}
@@ -230,27 +208,29 @@ jobs:
             change nothing.
           claude_args: |
             --allowedTools "Skill,Edit,MultiEdit,Write,Read,Glob,Grep,LS,Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(python:*),Bash(python3:*),Bash(pip:*),Bash(mvn:*),Bash(cd:*),Bash(ls:*),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(find:*),Bash(wc:*),Bash(diff:*),Bash(pytest:*),Bash(ruff:*),Bash(uv:*),Bash(java:*)"
-      # A commit pushed from a workflow starts its pull request's checks as
-      # github-actions[bot], and GitHub holds those for approval
-      # (action_required): on 2026-10-08 the fixes on #107 and #116 sat
-      # there, and a pull request whose CI never runs never merges. They
-      # are this repository's own workflow's commits, so they are approved
-      # here, with the owner's token where there is one. The runs appear a
-      # few seconds after the push: the newest commit is asked after for
-      # two minutes.
-      - name: Let the pushed fix's checks run
-        if: always() && steps.tries.outputs.go == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.MERGE_TOKEN || github.token }}
-          GH_REPO: ${{ github.repository }}
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          git fetch -q origin "$BRANCH" || exit 0
-          sha=$(git rev-parse FETCH_HEAD)
-          for _ in 1 2 3 4 5 6; do
-            for id in $(gh api "repos/$GH_REPO/actions/runs?head_sha=$sha&status=action_required" --jq '.workflow_runs[].id'); do
-              gh api -X POST "repos/$GH_REPO/actions/runs/$id/approve" > /dev/null && echo "approved run $id on ${sha:0:7}" \
-                || echo "::warning title=Checks held::run $id on ${sha:0:7} waits for approval, and this token cannot give it"
-            done
-            sleep 20
-          done
+
+  # A fix pushed from a workflow has its checks held for approval
+  # (action_required; #107 and #116 sat there on 2026-10-08): they are
+  # approved here, with the owner's token where there is one, on a GitHub
+  # machine that never ran the branch's code, with main's scripts alone
+  # checked out (security review 2026-11-23, H1). The fix's own push turns auto-merge off, so the
+  # owner looks at what a review (which may fetch pages) wrote before it
+  # merges (M6); `gh pr merge <n> --auto --merge` turns it on again.
+  approve:
+    needs: address
+    if: always() && needs.address.outputs.go == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions: { contents: read, pull-requests: write, actions: write }
+    env:
+      GH_TOKEN: ${{ secrets.MERGE_TOKEN || github.token }}
+      GH_REPO: ${{ github.repository }}
+      BRANCH: ${{ github.head_ref }}
+      PR: ${{ github.event.pull_request.number }}
+      # The head the review ran on: any commit after it is the address job's.
+      BEFORE: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: { ref: main, persist-credentials: false, sparse-checkout: scripts/ci }
+      - name: Auto-merge off, and the pushed fix's checks let run
+        run: scripts/ci/review_fix_approve.sh

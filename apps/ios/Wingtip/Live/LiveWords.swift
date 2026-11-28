@@ -21,7 +21,7 @@ enum LiveWords {
     /// gives none (the web's programLine).
     static func programLine(_ p: FlowProgram) -> String? {
         guard p.restriction != true, let program = p.program, !program.isEmpty else { return nil }
-        let name = program.prefix(1).uppercased() + program.dropFirst()
+        let name = Format.capital(program)
         let until = p.ends.map { " until \(zulu($0))" } ?? ""
         let delay = p.averageDelayMin.map { ", delays average \($0) min" } ?? ""
         return "\(name) at \(p.airport)\(until)\(delay)"
@@ -112,7 +112,7 @@ enum LiveWords {
 
     /// A broadcast's title: "Arrival D-ATIS, information K".
     static func datisTitle(which: String?, letter: String?) -> String {
-        let kind = which.map { $0.prefix(1).uppercased() + $0.dropFirst() + " D-ATIS" } ?? "D-ATIS"
+        let kind = which.map { Format.capital($0) + " D-ATIS" } ?? "D-ATIS"
         return kind + (letter.map { ", Information \($0)" } ?? "")
     }
 }

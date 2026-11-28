@@ -22,6 +22,20 @@ struct IPadTests {
         #expect(!SplitRoom.cardFitsBesideSidebar(width: width))
     }
 
+    /// The split view waits for an empty inspector's column to go only
+    /// where it leaves no room for the sidebar beside the map: an upright
+    /// 11-inch's 554 of 834, not a 13-inch's 752 of 1,032. A narrow window
+    /// with no inspector is iPadOS's own to lay out, and a card's room is
+    /// its own rule (cardFitsBesideSidebar).
+    @Test func theEmptyInspectorPutsTheSidebarAwayOnlyWhereItCrowdsTheMap() {
+        #expect(!SplitRoom.Need(width: 1032, split: 752, cardUp: false).emptyInspectorCrowds)
+        #expect(SplitRoom.Need(width: 834, split: 554, cardUp: false).emptyInspectorCrowds)
+        #expect(!SplitRoom.Need(width: 834, split: 834, cardUp: false).emptyInspectorCrowds)
+        #expect(!SplitRoom.Need(width: 680, split: 680, cardUp: false).emptyInspectorCrowds)
+        #expect(!SplitRoom.Need(width: 834, split: 459, cardUp: true).emptyInspectorCrowds)
+        #expect(SplitRoom.Need(width: 834, split: 459, cardUp: true).cardCrowds)
+    }
+
     @Test func theSidebarsRoomAddsUpToAPhonesWidthOfMap() {
         #expect(SplitRoom.sidebar + SplitRoom.inspector + SplitRoom.leastMap == 1125)
     }

@@ -3,7 +3,7 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import type { Course } from "../../../api/types";
 import type { AirspaceClass } from "../../../preferences";
 import { courseColour } from "../../marks/chartColors";
-import { ROUTE_FIX_NAMES, ROUTE_MARKS, ROUTE_MARK_LAYERS, routeMarks } from "../../marks/routeMarks";
+import { ROUTE_FIELD_IDENTS, ROUTE_FIX_NAMES, ROUTE_MARKS, ROUTE_MARK_LAYERS, fieldSides, routeMarks } from "../../marks/routeMarks";
 import { useTurnedNames } from "../useTurnedNames";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
@@ -170,7 +170,7 @@ export function RouteGl({
   // The checkpoints' names the chart shows, those MapLibre placed clear of
   // each other (a name it could not fit is not drawn), for the tests.
   useGlProbe("checkpoint-names", [NAMES.id], (f) => ({ name: f.properties.name }));
-  useNamesInView();
+  useNamesInView(checkpoints);
   const dots = useMemo<GeoJSON.FeatureCollection>(
     () => ({
       type: "FeatureCollection",
@@ -222,13 +222,15 @@ export function RouteGl({
   );
   // Under the ways' chips wherever the two come in (WaysGl), so the
   // route's names give way to the chips rather than cut through their
-  // words (the UI audit's B6), and every way's chip is placed before them;
+  // words, and every way's chip is placed before them;
   // with no ways, at the top of the marks as before.
   useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field, under: WAY_CHIPS_LOWEST });
   // Each turn's dot drawn, and the side its name is put, for the tests.
   useGlProbe("route-turns", ["route-fix-dots"], (f) => ({ name: f.properties.text, out: f.properties.out }));
   // A route point's name stays outside its turn as the map turns.
   useTurnedNames(ROUTE_FIX_NAMES);
+  // A route field's ident too, outside its turn on the turned map.
+  useTurnedNames(ROUTE_FIELD_IDENTS, fieldSides);
   // A tap on the course within a finger's reach of it, nothing nearer
   // taken first (LEG_RANK), the nearest leg's sheet.
   const { map } = useGlMap();
@@ -261,34 +263,30 @@ export function RouteGl({
  *  comes to rest. MapLibre places a symbol up to a margin past the view's
  *  edge, so a dot just off the screen had its name drawn on it with no dot
  *  beside it ("Milny Lake" for a dot 17 points past the left edge,
- *  checkpoints.spec, 2026-11-18): a name is kept with its dot. */
-function useNamesInView() {
+ *  checkpoints.spec, 2026-11-18): a name is kept with its dot.
+ *
+ *  Picked here, by their keys, and the filter set only when they change:
+ *  a `within` filter set at every rest had MapLibre test each name against
+ *  the view's polygon and lay the layer out again, and in flight the map
+ *  comes to rest at each fix own ship's follow eases to, about once a
+ *  second, nearly always with the same names in view. */
+function useNamesInView(checkpoints: GlCheckpoint[]) {
   const { map } = useGlMap();
   useEffect(() => {
+    let last: string | null = null;
     const inView = () => {
       if (!map.getLayer(NAMES.id)) return;
       const b = map.getBounds();
-      const [w, s, e, n] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
-      map.setFilter(NAMES.id, [
-        "within",
-        {
-          type: "Polygon",
-          coordinates: [
-            [
-              [w, s],
-              [e, s],
-              [e, n],
-              [w, n],
-              [w, s],
-            ],
-          ],
-        },
-      ]);
+      const keys = checkpoints.filter((c) => b.contains([c.lon, c.lat])).map((c) => c.key);
+      const said = keys.join("\n");
+      if (said === last && map.getFilter(NAMES.id)) return;
+      last = said;
+      map.setFilter(NAMES.id, ["in", ["get", "key"], ["literal", keys]]);
     };
     inView();
     map.on("moveend", inView);
     return () => {
       map.off("moveend", inView);
     };
-  }, [map]);
+  }, [map, checkpoints]);
 }

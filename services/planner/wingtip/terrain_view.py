@@ -6,11 +6,15 @@ ground. app.routers.terrain serves them."""
 
 import hashlib
 import inspect
+import io
 from functools import cache
 from pathlib import Path
 
-from . import elevation, faa_data, terrain, terrain_fine
+import numpy as np
+
+from . import chart_coverage, elevation, faa_data, geo, terrain, terrain_fine
 from .atomic import atomic_path
+from .chart_kinds import SECTIONAL
 from .engine import ask as engine
 
 #: The finest terrain tile served: one finer than the planner's own
@@ -49,6 +53,11 @@ def tile_png(z: int, x: int, y: int) -> bytes:
         raise NoSuchTile(f"terrain tiles exist for zoom 0-{MAX_ZOOM}")
     if z == terrain_fine.FINE_ZOOM:
         return terrain_fine.fine_tile_png(x, y)
+    if not _charted(z, x, y):
+        # Past the charts the map draws no relief worth a fetch: every new
+        # tile elsewhere was fetched from AWS and kept twice, for anyone
+        # who asked.
+        return _sea_level_png()
     folder = _cleaned_dir()
     path = folder / str(z) / str(x) / f"{y}.png" if folder else None
     if path is not None and path.exists():
@@ -59,6 +68,25 @@ def tile_png(z: int, x: int, y: int) -> bytes:
         with atomic_path(path, durable=False) as part:
             part.write_bytes(png)
     return png
+
+
+def _charted(z: int, x: int, y: int) -> bool:
+    """Whether the tile meets a sectional's sheet: the country the planner
+    charts (wingtip.chart_coverage), Alaska and Hawaii included."""
+    north, west = geo.tile_lat_lon(x, y, z)
+    south, east = geo.tile_lat_lon(x + 1, y + 1, z)
+    box = (west, south, east, north)
+    return any(chart_coverage.intersects(sheet, box) for _, sheet in chart_coverage.sheets(SECTIONAL))
+
+
+@cache
+def _sea_level_png() -> bytes:
+    """A whole tile of the sea's surface, the terrarium encoding's 0 m."""
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.fromarray(elevation.terrarium_rgb(np.zeros((1, 1))), "RGB").resize((256, 256)).save(out, "PNG")
+    return out.getvalue()
 
 
 @cache

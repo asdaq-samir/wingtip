@@ -252,7 +252,7 @@ export function WaypointActions({ rated, filters, counts, onFilterChange, canUnd
     <>
       <ResponsivePopover open={filtersOpen} onOpenChange={setFiltersOpen}>
         <ResponsivePopoverTrigger asChild>
-          <ToolbarButton text="Filter" label="Filters" icon={<ListFilter />} data-testid="waypoint-filters-button" />
+          <ToolbarButton text="Filter" icon={<ListFilter />} data-testid="waypoint-filters-button" />
         </ResponsivePopoverTrigger>
         <ResponsivePopoverContent
           title="Filters"

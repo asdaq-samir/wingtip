@@ -36,7 +36,8 @@ if [[ "${RELEASE:-}" == true ]]; then
     echo "::notice title=Unsigned release::no ANDROID_UPLOAD_KEYSTORE secret; the bundle is built unsigned"
   fi
 fi
-./gradlew --stacktrace --build-cache "${tasks[@]}"
+# A red build names each failed test and lint error (android_failures.py).
+./gradlew --stacktrace --build-cache "${tasks[@]}" || { python3 "$here/android_failures.py" .; exit 1; }
 if [[ "${RELEASE:-}" == true ]]; then
   python3 "$here/android_16k.py" app/build/outputs/apk/release/*.apk app/build/outputs/bundle/release/*.aab
 fi

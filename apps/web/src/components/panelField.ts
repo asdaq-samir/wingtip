@@ -8,7 +8,7 @@
  *  is. */
 export const PANEL_FIELD_FILL =
   // A white card on the sheet's grey, as Apple's Maps on the web sets its
-  // search field and its directions' stops (the style audit, 2026-10-26).
+  // search field and its directions' stops.
   "bg-card shadow-none";
 export const PANEL_FIELD = `min-h-[2.5625rem] ${PANEL_FIELD_FILL}`;
 

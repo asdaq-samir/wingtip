@@ -19,6 +19,8 @@ pub mod options;
 pub mod picks;
 pub mod points;
 pub mod route_file;
+pub mod typed;
+pub mod typed_picks;
 pub mod way_warning;
 
 /// Python's str.strip(): its whitespace is Unicode's White_Space, which

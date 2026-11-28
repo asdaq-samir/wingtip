@@ -91,7 +91,7 @@ struct StopServicesSections: View {
             s.courtesyCar == true ? FieldRow(symbol: "car.fill", colour: Badge.car, title: "Courtesy Car", detail: (s.groundNotes ?? []).joined(separator: " ")) : nil,
             s.tieDown == true ? FieldRow(symbol: "parkingsign", colour: Badge.runway, title: "Tie-downs") : nil,
             s.hangar == true ? FieldRow(symbol: "house.lodge", colour: Badge.runway, title: "Hangars") : nil,
-            repair.isEmpty ? nil : FieldRow(symbol: "wrench.and.screwdriver", colour: Badge.other, title: "Repair", value: repair.prefix(1).uppercased() + repair.dropFirst()),
+            repair.isEmpty ? nil : FieldRow(symbol: "wrench.and.screwdriver", colour: Badge.other, title: "Repair", value: Format.capital(repair)),
             s.oxygen == true ? FieldRow(symbol: "aqi.medium", colour: Badge.other, title: "Oxygen") : nil,
             s.landingFee.map { FieldRow(symbol: "doc.text", colour: Badge.other, title: "Landing Fee", value: $0 ? "Yes" : "None") },
         ].compactMap { $0 }

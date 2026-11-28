@@ -61,9 +61,29 @@ impl Flat {
     }
 }
 
+/// The least distance from a point to a segment on a plane, in the
+/// plane's own units: to the foot of the perpendicular where it falls
+/// within the segment, else to the nearer end (to `a` where the two ends
+/// are one). The engine's one copy, on this frame's miles or on a plane of
+/// degrees a caller has scaled its longitudes on.
+pub fn to_segment(p: (f64, f64), a: (f64, f64), b: (f64, f64)) -> f64 {
+    let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+    let len2 = dx * dx + dy * dy;
+    let t = if len2 > 0.0 { (((p.0 - a.0) * dx + (p.1 - a.1) * dy) / len2).clamp(0.0, 1.0) } else { 0.0 };
+    let (ex, ey) = (a.0 + dx * t - p.0, a.1 + dy * t - p.1);
+    (ex * ex + ey * ey).sqrt()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_point_is_as_far_from_a_segment_as_from_its_nearest_point() {
+        assert_eq!(to_segment((0.0, 1.0), (-1.0, 0.0), (1.0, 0.0)), 1.0);
+        assert_eq!(to_segment((4.0, 4.0), (-1.0, 0.0), (1.0, 0.0)), 5.0);
+        assert_eq!(to_segment((3.0, 4.0), (0.0, 0.0), (0.0, 0.0)), 5.0);
+    }
 
     #[test]
     fn a_minute_of_latitude_is_a_mile_and_of_longitude_its_cosine() {

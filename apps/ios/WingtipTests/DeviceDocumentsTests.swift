@@ -40,7 +40,7 @@ struct DeviceDocumentsTests {
         #expect(doc.bytes > 0)
         let container = try Records.inMemory()
         let defaults = try #require(UserDefaults(suiteName: "documents-\(UUID().uuidString)"))
-        let library = DocumentLibrary(store: spaced, cloud: DocumentCloud(defaults: defaults, context: { container.mainContext }),
+        let library = DocumentLibrary(store: spaced, cloud: DocumentCloud(defaults: defaults, container: { container }),
                                       places: ReaderPlaces(file: root.appending(path: "places.json")))
         let (source, _) = try await library.source(for: .own("b"))
         guard case .pdf(let file) = source else { Issue.record("not the PDF"); return }
@@ -124,23 +124,34 @@ struct DeviceDocumentsTests {
         #expect(again.page("aim") == nil && again.bookmarks("aim").isEmpty)
     }
 
-    @Test func keepInICloudMirrorsTheOwnAndTakesTheOthers() throws {
+    /// Each document's record saved in a context of its own: what the
+    /// store holds is read through a fresh one, as another device's
+    /// records come in through CloudKit's own.
+    @Test func keepInICloudMirrorsTheOwnAndTakesTheOthers() async throws {
         let container = try Records.inMemory()
+        let stored = { try ModelContext(container).fetch(FetchDescriptor<OwnDocumentRecord>()) }
         let defaults = try #require(UserDefaults(suiteName: "documents-\(UUID().uuidString)"))
-        let cloud = DocumentCloud(defaults: defaults, context: { container.mainContext })
+        let cloud = DocumentCloud(defaults: defaults, container: { container })
         let library = DocumentLibrary(store: store, cloud: cloud, places: ReaderPlaces(file: store.root.appending(path: "places.json")))
         try store.addOwn(from: try samplePDF(), id: "mine")
         library.reloadDevice()
         // Off: nothing leaves the device.
-        cloud.pushed(library.own, from: store)
-        #expect(try container.mainContext.fetch(FetchDescriptor<OwnDocumentRecord>()).isEmpty)
+        await cloud.pushed(library.own, from: store)
+        #expect(try stored().isEmpty)
         // Another device's document, in iCloud.
-        container.mainContext.insert(OwnDocumentRecord(id: "theirs", name: "Club Rules", added: Date(), pdf: try Data(contentsOf: try samplePDF())))
-        cloud.set(true, library: library)
-        #expect(try container.mainContext.fetch(FetchDescriptor<OwnDocumentRecord>()).map(\.id).sorted() == ["mine", "theirs"])
+        let theirs = ModelContext(container)
+        theirs.insert(OwnDocumentRecord(id: "theirs", name: "Club Rules", added: Date(), pdf: try Data(contentsOf: try samplePDF())))
+        try theirs.save()
+        await cloud.set(true, library: library)
+        #expect(try stored().map(\.id).sorted() == ["mine", "theirs"])
+        #expect(try stored().first { $0.id == "mine" }?.pdf == (try Data(contentsOf: store.ownFile("mine"))))
         #expect(library.own.map(\.name).sorted() == ["Club Rules", "Sample Briefing Guide"])
-        cloud.set(false, library: library)
-        #expect(try container.mainContext.fetch(FetchDescriptor<OwnDocumentRecord>()).isEmpty)
+        #expect(library.own.first { $0.id == "theirs" }?.bytes ?? 0 > 0)
+        // Sent once, however often asked.
+        await cloud.pushed(library.own, from: store)
+        #expect(try stored().count == 2)
+        await cloud.set(false, library: library)
+        #expect(try stored().isEmpty)
         #expect(library.own.count == 2)
     }
 }

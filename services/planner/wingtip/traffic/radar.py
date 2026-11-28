@@ -10,11 +10,13 @@ import logging
 import math
 
 from ..geo import box_around, distance_nm
+from .. import kept_answers
 from ..geo_boxes import split_box
 from . import ladd, store
 from .adsb_lol import NEAR_RADIUS_NM, REGION_DEG, WIDE_REGION_DEG, _region
 from .common import STALE_S, _NM_PER_DEG, _wall
-from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, _followed, _key, _last_recorded, _record, followed
+from .opensky import KEEP_S as OPENSKY_KEEP_S
+from .recorded import FOLLOW_KEEP_S, FOLLOW_UNHEARD_S, RECORD_KEEP_S, _followed, _key, _last_recorded, _record, followed
 
 #: A followed airplane's report from elsewhere is recorded at most this
 #: often, s: STARS sweeps every 4.8 s; a point a quarter minute is a
@@ -98,12 +100,16 @@ def prune() -> dict[str, int]:
     (app.main) so nothing outlives its promise when ingest or the map is
     quiet: the regions nobody looks at (LOOKED_S), the airplanes whose card
     has not been opened for FOLLOW_KEEP_S and the track points past
-    RECORD_KEEP_S. How many of each went."""
+    RECORD_KEEP_S, OpenSky's days and paths past their KEEP_S, and the
+    sources' answers past their own time (an airplane's photo within
+    Planespotters.net's day). How many of each went."""
     now = _wall()
     return {
         "looked": forget_looks(),
-        "followed": store.unfollow_before(now - FOLLOW_KEEP_S),
+        "followed": store.unfollow_before(now - FOLLOW_KEEP_S) + store.unfollow_unheard(now - FOLLOW_UNHEARD_S),
         "points": store.forget_points(now - RECORD_KEEP_S),
+        "opensky": store.forget_opensky(now - OPENSKY_KEEP_S),
+        "answers": kept_answers.forget(now),
     }
 
 
@@ -124,7 +130,7 @@ def radar_wanted() -> tuple[list[tuple[float, float, float]], set[str]]:
     owner's Mac (2026-10-20); reading it all while one map looked at one
     place took 40% of the planner's time from the planning a pilot waits
     on (py-spy, 2026-10-20). ingest asks this each second."""
-    return store.looked(_wall() - LOOKED_S), followed()
+    return store.looked(_wall() - LOOKED_S), set(followed())
 
 
 def _heard_elsewhere_now(hex_id: str) -> dict | None:

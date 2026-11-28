@@ -38,7 +38,10 @@ describe("the phone's own airport search", () => {
   });
 
   test("names each row as the planner's search does", () => {
+    // `whole`: an open field's ident typed whole, which a navaid of the
+    // same ident is put after when the planner's waypoints come in.
     expect(searchIndex(INDEX, "C81")[0]).toEqual({
+      whole: true,
       ident: "C81",
       name: "Campbell Airport",
       municipality: "Grayslake",
@@ -61,6 +64,35 @@ describe("the phone's own airport search", () => {
     expect(searchIndex(placed, "campbell", 8, [{ lat: 42.3, lon: -88.0 }]).map((r) => r.ident)).toEqual(["C81", "06XS", "1A3"]);
     // Still found by its other ident, after the place.
     expect(searchIndex(placed, "KC81")[0]!.ident).toBe("C81");
+  });
+});
+
+describe("the search, letter by letter", () => {
+  test("answers a letter added from the last answer's matches, as a whole scan would", () => {
+    const rows = Array.from(
+      { length: 40 },
+      (_, i) => [`K${String(i).padStart(3, "0")}`, `Field ${i}`, "Town", "WI", i % 4] as [string, string, string, string, number],
+    );
+    const index = indexOf(rows);
+    const fresh = indexOf(rows);
+    searchIndex(index, "K");
+    searchIndex(index, "K0");
+    expect(searchIndex(index, "K01").map((r) => r.ident)).toEqual(searchIndex(fresh, "K01").map((r) => r.ident));
+    // Taken back, every row is read again.
+    expect(searchIndex(index, "K").map((r) => r.ident)).toEqual(searchIndex(indexOf(rows), "K").map((r) => r.ident));
+  });
+
+  test("keeps the best eight of many in the sorted order", () => {
+    const rows = Array.from(
+      { length: 30 },
+      (_, i) => [`K${String(29 - i).padStart(2, "0")}`, "Field", "Town", "WI", (i * 7) % 4] as [string, string, string, string, number],
+    );
+    const got = searchIndex(indexOf(rows), "K").map((r) => r.ident);
+    const sorted = [...rows]
+      .sort((a, b) => a[4] - b[4] || (a[0] < b[0] ? -1 : 1))
+      .slice(0, 8)
+      .map((r) => r[0]);
+    expect(got).toEqual(sorted);
   });
 });
 

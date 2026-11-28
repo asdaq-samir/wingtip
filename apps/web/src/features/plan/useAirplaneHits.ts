@@ -73,8 +73,11 @@ export function useAirplaneHits({ typed, tail, live, enabled }: { typed: string;
       ? {
           key: `registry-${tail}`,
           title: tail,
+          // Its registration's standing where it is not in effect -- a
+          // canceled one ("Deregistered", the owner's N6460R, 2026-11-27) or
+          // one lapsed -- where "FAA registry" read as registered.
           detail: record
-            ? `${[[record.manufacturer, record.model].filter(Boolean).join(" "), record.year].filter(Boolean).join(", ")} · FAA registry`
+            ? `${[[record.manufacturer, record.model].filter(Boolean).join(" "), record.year].filter(Boolean).join(", ")} · ${record.standing === "lapsed" && record.status ? record.status : "FAA registry"}`
             : lookup.fetching
               ? "Fetching from the FAA registry…"
               : whole(tail)

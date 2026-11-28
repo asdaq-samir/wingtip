@@ -168,7 +168,7 @@ export default memo(function RouteMap({
   // The fields that wear a chip of their own already: the route's own,
   // the Class B ones, always drawn (ClassBGl), and the Stops' and the fuel
   // stops' while they are pinned (StopMarksGl): the tile layer leaves each
-  // out, so no field's ident is drawn twice (the labels audit, 2026-11-18).
+  // out, so no field's ident is drawn twice.
   const { data: classBAirports } = useQuery({ ...classBQuery, enabled: false });
   const chippedFields = useMemo(
     () => [...airports.filter((a) => a.kind === "airport"), ...(classBAirports ?? []), ...stopFields, ...fuelStops],

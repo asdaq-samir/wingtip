@@ -1,6 +1,8 @@
 import type { ProcedureFix, ProcedureList } from "./api/types";
-import { callEngine, engineLoaded } from "./engine/engine";
+import { callEngine } from "./engine/engine";
 import { altFt } from "./format";
+// The one same-field test, kept beside the idents (identSchema).
+export { sameField } from "./identSchema";
 
 /** An instrument procedure picked at a field of the route (the route's
  *  Procedures): the field, the procedure's coded identifier ("I08-Y"),
@@ -48,6 +50,14 @@ export function transitionWords(kind: "approach" | "arrival" | "departure", tran
   return inLine ? words.charAt(0).toLowerCase() + words.slice(1) : words;
 }
 
+/** A procedure's name as the route shows it: a circling-only approach's
+ *  letter set apart from its kind, "RNAV (GPS) -B", "VOR -A", where the
+ *  FAA's list runs them together (the owner, 2026-11-24: "you need a space
+ *  before -B"). */
+export function procedureTitle(name: string): string {
+  return name.replace(/(\S)-([A-Z])$/, "$1 -$2");
+}
+
 /** The runway an approach lands on, as a pattern's chip names it: "ILS
  *  RWY 09L" is "9L"; a circling-only approach ("VOR-A", "RNAV (GPS)-B")
  *  has none. */
@@ -83,42 +93,33 @@ export interface TypedProcedure {
   after: string | null;
 }
 
-/** A typed procedure as picked, found where it can be flown: a departure
- *  out of the route's departure, by the fix after it where that is one of
- *  its transitions; else an arrival into the destination, joined at the
- *  fix before it. With the kind, so the field's pick of that kind it
- *  replaces can be found; null where neither field publishes it. */
-export async function typedProcedure(
-  typed: TypedProcedure,
+/** The typed procedures as picked, each found where it can be flown (the
+ *  engine's route_typed_picks: a departure out of the route's departure,
+ *  by the fix after it where that is one of its transitions; else an
+ *  arrival into the destination, joined at the fix before it), with the
+ *  names neither field publishes (`missed`) and those not found where an
+ *  end's list could not be had (`unchecked`: not looked at there, so never
+ *  said unpublished). `lists`, each end's procedures, for the field's pick
+ *  of that kind it replaces to be found. */
+export async function typedProcedures(
+  typed: TypedProcedure[],
   route: { dep: string; dest: string },
   list: (ident: string) => Promise<ProcedureList>,
-): Promise<{ picked: PickedProcedure; kind: "departure" | "arrival"; list: ProcedureList } | null> {
-  const ends = [
-    [route.dep, "departure", typed.after],
-    [route.dest, "arrival", typed.before],
-  ] as const;
-  for (const [field, kind, join] of ends) {
-    if (!field) continue;
-    const found = await list(field).catch(() => null);
-    const procedure = found?.procedures.find((p) => p.kind === kind && p.id === typed.name);
-    if (found && procedure) {
-      const transition = join && procedure.transitions.includes(join) ? join : null;
-      return { picked: { ident: field, id: procedure.id, transition }, kind, list: found };
-    }
-  }
-  return null;
-}
-
-/** Whether two idents name one field: the CIFP names it by its ICAO ident
- *  (KBUR) where the route may have the FAA's (BUR), and a typed one may
- *  come with a space round it. The one test for the app, which the
- *  traffic's (fbo) had a second of. */
-export function sameField(a: string, b: string): boolean {
-  // Before the engine is in (a page's first draw can ask, a kept route's
-  // ways read on load): the idents alike as written, never a throw that
-  // takes the page down; the engine's answer, KBUR for BUR, once it is.
-  if (!engineLoaded()) return a.trim().toUpperCase() === b.trim().toUpperCase();
-  return callEngine("same_field", { a, b });
+): Promise<{
+  picks: (PickedProcedure & { kind: "departure" | "arrival" })[];
+  missed: string[];
+  unchecked: string[];
+  lists: ProcedureList[];
+}> {
+  const listed = (ident: string) => (ident ? list(ident).catch(() => null) : Promise.resolve(null));
+  const [dep, dest] = await Promise.all([listed(route.dep), listed(route.dest)]);
+  const end = (ident: string, found: ProcedureList | null) => (found ? { ident, procedures: found.procedures } : null);
+  const { picks, missed, unchecked } = callEngine("route_typed_picks", {
+    procedures: typed,
+    departure: end(route.dep, dep),
+    arrival: end(route.dest, dest),
+  });
+  return { picks, missed, unchecked, lists: [dep, dest].flatMap((l) => (l ? [l] : [])) };
 }
 
 /** The picks the route flies: an approach only loaded left out (the

@@ -89,7 +89,7 @@ final class DepartureWindow {
 
     /// The clock time with its zone, "07:00 CST", for a time said in a
     /// sentence: a bare "07:00" beside reports in Z could be read as
-    /// either (the web audit's WEB-9).
+    /// either.
     static func zoned(_ iso: String, zone: TimeZone = .current) -> String {
         let at = AirportWords.date(iso) ?? Date()
         return clock(iso, zone: zone) + (zone.abbreviation(for: at).map { " \($0)" } ?? "")

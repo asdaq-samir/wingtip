@@ -3,6 +3,7 @@ package app.wingtipmaps.android.map
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipMapZoom
 import app.wingtipmaps.android.plates.PlacedPlate
 import app.wingtipmaps.android.plates.PlateLook
 import app.wingtipmaps.android.plates.PlateTagsModel
@@ -97,9 +98,9 @@ class PlateLayer(private val density: Float) {
             finals.setGeoJson(drawing.finals)
         } else {
             style.addSource(GeoJsonSource(FINALS, drawing.finals))
-            // The final approach's cyan, ForeFlight's (design/tokens.json).
+            // The final approach's cyan, ForeFlight's (design/tokens.json), dimmed at night with the chart by its colour.
             val line = LineLayer(FINALS, FINALS).withProperties(
-                PropertyFactory.lineColor(WingtipColors.Chart.FINAL_APPROACH_HEX.toColorInt()),
+                PropertyFactory.lineColor(MapDim.colour(WingtipColors.Chart.FINAL_APPROACH_HEX.toColorInt())),
                 PropertyFactory.lineWidth(FINAL_WIDTH),
                 PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
             )
@@ -118,7 +119,14 @@ class PlateLayer(private val density: Float) {
             PropertyFactory.iconOffset(arrayOf(TAG_OFFSET, 0f)),
             PropertyFactory.iconAllowOverlap(true),
             PropertyFactory.iconIgnorePlacement(true),
+            // A picture, so at night at the chart's light by its opacity, as the style's own icons (MapDim).
+            PropertyFactory.iconOpacity(MapDim.opacity()),
         )
+        // From the procedures' words' zoom (map.zoom.procedure-words), as the
+        // web's PlateTagsGl: farther out an approach's tags piled on its
+        // field, over the fields round it (the owner's screenshot,
+        // 2026-11-23: KLAS's over KSLC).
+        symbols.minZoom = MapStyle.glZoom(WingtipMapZoom.PROCEDURE_WORDS).toFloat()
         val over = OwnShipPuck.under(style).takeIf { style.getLayer(it) != null }
         if (over != null) style.addLayerBelow(symbols, over) else style.addLayer(symbols)
     }
@@ -147,12 +155,13 @@ class PlateLayer(private val density: Float) {
          * A page's paint: its opacity, and inverted for night by setting
          * the raster's brightness range end for end (MapLibre's style spec:
          * raster-brightness-min over raster-brightness-max maps white to
-         * black and black to white).
+         * black and black to white), its light end at the chart's own
+         * brightness, the Dimmer's (PlateLook.brightness).
          */
         fun paint(look: PlateLook) = arrayOf(
             PropertyFactory.rasterOpacity(look.opacity),
-            PropertyFactory.rasterBrightnessMin(if (look.invert) 1f else 0f),
-            PropertyFactory.rasterBrightnessMax(if (look.invert) 0f else 1f),
+            PropertyFactory.rasterBrightnessMin(if (look.inverted) look.brightness else 0f),
+            PropertyFactory.rasterBrightnessMax(if (look.inverted) 0f else look.brightness),
         )
     }
 }

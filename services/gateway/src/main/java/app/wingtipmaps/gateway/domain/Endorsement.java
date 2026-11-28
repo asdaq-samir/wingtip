@@ -31,16 +31,25 @@ public class Endorsement {
     @Column(nullable = false)
     private LocalDate endorsedOn;
 
+    // The make and model a solo or solo cross-country endorsement names
+    // (V58; 14 CFR 61.87(n), 61.93(c)(2): "for the specific make and model
+    // of aircraft to be flown"); null where the pilot didn't record it, and
+    // 61.93(d)(4) and (5) then can't tell.
+    @Column(length = 80)
+    private String makeModel;
+
     protected Endorsement() {
         // JPA
     }
 
-    public Endorsement(Long pilotId, String code, LocalDate endorsedOn) {
+    public Endorsement(Long pilotId, String code, LocalDate endorsedOn, String makeModel) {
         this.key = new Key(pilotId, code);
         this.endorsedOn = endorsedOn;
+        this.makeModel = makeModel;
     }
 
-    public void endorsedOn(LocalDate day) {
+    public void endorsedOn(LocalDate day, String makeModel) {
         this.endorsedOn = day;
+        this.makeModel = makeModel;
     }
 }

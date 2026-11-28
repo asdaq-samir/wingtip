@@ -140,6 +140,10 @@ public class OAuthClientsConfig {
                 // and both sub/email Apple ever asserts already arrive
                 // on the ID token itself.
                 .jwkSetUri("https://appleid.apple.com/auth/keys")
+                // So the ID token's iss is checked, as Google's is: the
+                // token comes from Apple's token endpoint, signed by Apple,
+                // but nothing else said it was Apple's.
+                .issuerUri("https://appleid.apple.com")
                 .userNameAttributeName(IdTokenClaimNames.SUB)
                 .clientName("Apple")
                 .build();

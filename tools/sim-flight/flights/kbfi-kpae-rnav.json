@@ -1,0 +1,59 @@
+{
+  "name": "KBFI to KPAE, RNAV (GPS) RWY 34L by RARYO",
+  "about": "The test flight the free X-Plane 12 demo can fly, as its scenery is only the Seattle area's: off Boeing Field's runway 32L, a climb to 3,000 ft, direct to RARYO, then the RNAV (GPS) RWY 34L at Paine Field from RARYO, the approach's initial and intermediate fix, flown as vectors to final (no transition): RARYO at 3,000, the final approach fix USDAW at or above 2,000, the step-down ZEREN at 1,160, the threshold at 629, a full-stop landing on 34L and a stop on the runway. VFR's cruising altitudes (14 CFR 91.159) start more than 3,000 ft above the surface, which 3,000 ft above sea level never is on the way, and 3,000 is the approach's own altitude at RARYO; it is inside the Seattle Class B, which needs ATC's clearance (14 CFR 91.131(a)(1)), and that is the alert expected. Fixes, runway ends and altitudes are the FAA's CIFP, cycle 2610 (FAACIFP18, data/raw/faa_cifp/261029): the approach's legs (SUSAP KPAE F R34L), RARYO and ZEREN (SUSAP KPAE C), USDAW (SUSAEAENRT), the runways (SUSAP KBFI/KPAE G); the airspace names are NASR's Class_Airspace shapefile, cycle 2610 (SEATTLE CLASS B, EVERETT CLASS D). Every point lies in X-Plane's scenery tile +47-123, Seattle-Tacoma's own, the middle of the demo's Seattle area (docs/XPLANE-TRIAL.md, \"The demo's limits\"); X-Plane 12.4.4's manifest lists it with the area's other tiles, +44 to +48 and -125 to -121. The speeds and rates are the test's own, a Cessna 172's in round figures, not the app's: nothing here is a figure the app states.",
+  "plan": "/app/plan?dep=KBFI&dest=KPAE&procs=KPAE:R34L",
+  "start": "KBFI on runway 32L",
+  "minutes": 20,
+  "airplane": { "profile": "c172", "label": "C172 · Cessna 172", "xplane": "Aircraft/Laminar Research/Cessna 172 SP/Cessna_172SP.acf" },
+  "own": { "hex": "f0f0f0", "callsign": "N1SIM" },
+  "scenery": { "sim": "X-Plane 12 demo", "tiles": ["+47-123"] },
+  "places": {
+    "KBFI 32L": { "lat": 47.518844, "lon": -122.293011, "elev_ft": 22 },
+    "KBFI 14R": { "lat": 47.540542, "lon": -122.311356, "elev_ft": 18 },
+    "KPAE 34L": { "lat": 47.896639, "lon": -122.285303, "elev_ft": 578 },
+    "KPAE 16R": { "lat": 47.921336, "lon": -122.28585, "elev_ft": 563 }
+  },
+  "points": [
+    { "name": "KBFI 32L", "at": "KBFI 32L", "kt": 0, "phase": "takeoff", "ground": true },
+    { "name": "Lift-off", "at": "KBFI 32L", "toward": "KBFI 14R", "fraction": 0.15, "kt": 60, "phase": "takeoff", "ground": true },
+    { "name": "Climb-out", "at": "KBFI 32L", "toward": "KBFI 14R", "fraction": 1.0, "alt_ft": 3000, "kt": 75, "phase": "climb" },
+    { "name": "RARYO", "lat": 47.747319, "lon": -122.281981, "alt_ft": 3000, "kt": 100, "phase": "enroute" },
+    { "name": "USDAW", "lat": 47.824922, "lon": -122.283717, "alt_ft": 2000, "kt": 80, "phase": "approach" },
+    { "name": "ZEREN", "lat": 47.868325, "lon": -122.284678, "alt_ft": 1160, "kt": 70, "phase": "final" },
+    { "name": "KPAE 34L", "at": "KPAE 34L", "alt_ft": 629, "kt": 65, "phase": "final" },
+    { "name": "Touchdown", "at": "KPAE 34L", "toward": "KPAE 16R", "fraction": 0.12, "kt": 55, "phase": "landing", "ground": true },
+    { "name": "Stop", "at": "KPAE 34L", "toward": "KPAE 16R", "fraction": 0.4, "kt": 0, "phase": "rollout", "ground": true }
+  ],
+  "rates": { "climb_fpm": 700, "descent_fpm": 500 },
+  "rest_s": 240,
+  "autopilot": { "from": "Climb-out", "to": "ZEREN" },
+  "power": { "climb": 1.0, "enroute": 0.75, "approach": 0.55, "final": 0.45 },
+  "traffic": [
+    {
+      "callsign": "N4SIM",
+      "hex": "a4f001",
+      "after": "Climb-out",
+      "delay_s": 180,
+      "for_s": 240,
+      "ahead_nm": 4,
+      "right_nm": 2,
+      "above_ft": 500,
+      "kt": 110,
+      "turn_deg": -100
+    }
+  ],
+  "expect": {
+    "checkpoints": ["RARYO", "USDAW", "ZEREN", "KPAE"],
+    "alerts": [
+      { "kind": "airspace", "class": "B", "name": "SEATTLE", "phases": ["takeoff", "climb", "enroute"] },
+      { "kind": "airspace", "class": "D", "name": "EVERETT", "phases": ["enroute", "approach", "final"] }
+    ],
+    "landings": 1,
+    "route_has": ["BFI", "PAE"],
+    "budgets": {
+      "engine_calls_per_fix_p95": 80,
+      "mutations_per_fix_p95": 600,
+      "rule_per_fix": { "magnetic_variation": 0.1 }
+    }
+  }
+}

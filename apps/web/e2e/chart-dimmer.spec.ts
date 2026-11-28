@@ -75,6 +75,22 @@ test("the Dimmer and Contrast sliders set the chart's paint as they move, and su
 test.describe("at night", () => {
   test.use({ colorScheme: "dark" });
 
+  /** The first frame dark: first-frame.js (lib/prefs/firstFrame) puts the night class on
+   *  <html> before the body paints, where next-themes' effect came after
+   *  React's first render and the page was white till then (AIM 8-1-6; the
+   *  round-4 themes audit). Read as soon as the body is there, before the
+   *  app's script has run. */
+  test("opens on a dark page, never a white one", async ({ page }) => {
+    await page.goto("/app/plan?dep=C81&dest=KDLH", { waitUntil: "commit" });
+    await page.waitForFunction(() => !!document.body);
+    const first = await page.evaluate(() => ({
+      dark: document.documentElement.classList.contains("dark"),
+      ground: getComputedStyle(document.body).backgroundColor,
+    }));
+    expect(first.dark).toBe(true);
+    expect(first.ground).not.toBe("rgb(255, 255, 255)");
+  });
+
   test("sunlight keeps the dark Dimmer, the row enabled with no note, and adds its contrast", async ({ page }) => {
     test.setTimeout(slow(60_000));
     await page.goto("/app/plan?dep=C81&dest=KDLH");

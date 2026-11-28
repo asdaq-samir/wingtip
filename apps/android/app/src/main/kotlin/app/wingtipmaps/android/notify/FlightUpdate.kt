@@ -108,8 +108,8 @@ data class FlightUpdate(
             val destination = progress.destination
             // The fuel the plan expects in the tanks now, the engine's
             // (in_flight's fuel_now_gal: from the last fuel stop passed, the
-            // tanks filled there, less the start and taxi allowance; the
-            // aviation audit's AV-4), planning data as the nav log's fuel
+            // tanks filled there, less the start and taxi allowance),
+            // planning data as the nav log's fuel
             // column is. No subtraction here.
             val fuelLeft = if (airplaneChosen) progress.fuelNowGal else null
             return FlightUpdate(

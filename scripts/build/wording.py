@@ -32,6 +32,8 @@ import re
 import sys
 from pathlib import Path
 
+from emit import write_or_check
+
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "design" / "wording.json"
 WEB_TS = ROOT / "apps/web/src/lib/wording/generated/wording.ts"
@@ -171,24 +173,11 @@ def doc(words, current):
 
 
 def main():
-    check = "--check" in sys.argv[1:]
     words = load()
     outputs = {WEB_TS: web(words), IOS_SWIFT: ios(words), ANDROID_XML: android(words)}
     outputs[DOC] = doc(words, DOC.read_text())
-    stale = []
-    for path, text in outputs.items():
-        if (path.read_text() if path.exists() else None) == text:
-            continue
-        if check:
-            stale.append(str(path.relative_to(ROOT)))
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(text)
-            print(f"wrote {path.relative_to(ROOT)}")
-    if stale:
-        print("Out of date with design/wording.json (run scripts/build/wording.sh and commit):", *stale, sep="\n  ")
-        sys.exit(1)
+    return write_or_check(outputs, ROOT, "design/wording.json", "scripts/build/wording.sh")
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

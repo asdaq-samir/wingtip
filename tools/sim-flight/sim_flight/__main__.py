@@ -51,13 +51,16 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.command == "prepare":
-            path = scenario.write_plugin_files(scenario.load(args.scenario), args.out, args.fly, args.feed)
+            scn = scenario.load(args.scenario)
+            path = scenario.write_plugin_files(scn, args.out, args.fly, args.feed)
             print(f"sim-flight: the flight file is {path}")
+            print(f"sim-flight: {scn['name']}, from {scn['start']}, about {scn['minutes']} minutes")
             return 0
         if args.command == "feed":
             scn = scenario.load(args.scenario)
-            own = scn.get("own", {})
-            me = feed.Identity(int(own.get("hex", "f0f0f0"), 16), own.get("callsign", "N1SIM"))
+            # Own ship as the script names it (scenario.check holds it to
+            # one address and call sign, none a scripted airplane's).
+            me = feed.Identity(int(scn["own"]["hex"], 16), scn["own"]["callsign"])
             the_feed = feed.Feed(args.run, me)
             try:
                 feed.serve(the_feed, scenario.for_test(scn), args.http, args.listen, args.gdl90)

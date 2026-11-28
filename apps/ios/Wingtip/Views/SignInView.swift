@@ -33,7 +33,7 @@ struct SignInView: View {
                     SignInWithAppleButton(.signIn) { request in
                         request.requestedScopes = [.email, .fullName]
                         // The gateway's nonce for this attempt, hashed as
-                        // Apple asks (the security audit's L5).
+                        // Apple asks.
                         nonce = session.appleNonce
                         request.nonce = nonce.map(Session.hashedNonce)
                     } onCompletion: { result in

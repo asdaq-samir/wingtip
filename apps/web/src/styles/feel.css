@@ -34,13 +34,13 @@
 
 @layer base {
   /* Type set as a reader's app sets it: grey-scale smoothing on a Mac's
-     screen, a face's optical sizes where it has them (Inter's), and
-     headings balanced over their lines and prose without a lone last
-     word. */
+     screen, and headings balanced over their lines and prose without a
+     lone last word. No optical sizes: Barlow has none, and the Inter
+     loaded is its weight axis alone; what size does to the type is the
+     roles' tracking (design/tokens.json, web.tracking). */
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-optical-sizing: auto;
     text-rendering: optimizeLegibility;
   }
   :where(h1, h2, h3, h4, [data-slot$="-title"]) {
@@ -106,13 +106,36 @@
   }
 }
 
+/* The same arrival from a side of its own (--appear-from, an x and a
+   y): a runway line unfolding from its head, the folded chip from its
+   end, the flying head from the top. A page's time, on the sheet's
+   curve. A transition from @starting-style plays as the element comes
+   in: one put in again (a second tap that mounts it anew) starts it over,
+   as keyframes would; only a change to an element still there turns
+   back from where it is. */
+@utility appear-slide {
+  @media (prefers-reduced-motion: no-preference) {
+    @variant branded {
+      transition:
+        opacity var(--motion-page) var(--motion-sheet-ease),
+        translate var(--motion-page) var(--motion-sheet-ease);
+      @starting-style {
+        opacity: 0;
+        translate: var(--appear-from);
+      }
+    }
+  }
+}
+
 /* A figure that changes in place -- the route's distance, time and fuel
-   as a plan comes in or a dry run flies -- brings its new digits into
-   focus, rising into place where it is a button's (an inline figure
+   as a plan comes in or a dry run flies -- fades its new digits in,
+   rising into place where it is a button's (an inline figure
    cannot move, and stays inline so a long one still ends in an
    ellipsis), rather than blinking: the element is keyed on its value, so
    each new value is a new one, as iOS's numeric content transition
-   rolls its digits. Still with Reduce Motion, in the Native look, and in
+   rolls its digits. No blur: a filter is painted again each frame, and
+   on a phone every figure at once (the feel audit, 2026-11-27). Still
+   with Reduce Motion, in the Native look, and in
    flight (FigureStrip's `still`: the GPS figures change every second). */
 @utility figure-roll {
   @media (prefers-reduced-motion: no-preference) {
@@ -121,10 +144,16 @@
     }
   }
 }
+/* A closing card's still copy (sheet/useCardFrame's keepFace) replays
+   nothing: its figures' rolls and arrivals were done on the card itself. */
+[data-card-face],
+[data-card-face] * {
+  animation: none !important;
+  transition: none !important;
+}
 @keyframes figure-roll {
   from {
     opacity: 0;
     translate: 0 0.35em;
-    filter: blur(2px);
   }
 }
