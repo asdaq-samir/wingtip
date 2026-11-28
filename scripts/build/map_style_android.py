@@ -8,7 +8,7 @@ Standard library only.
 
 import json
 
-from map_style import BANNER, Hook, Resolver, camel, layers, upper
+from map_style import BANNER, Hook, Resolver, camel, layers, public, upper
 
 
 def android_hooks(r, node):
@@ -61,6 +61,7 @@ def android(style, tokens):
     lines, marks = android_hooks(r, lines), android_hooks(r, marks)
     groups = {**g1, **{k: g1.get(k, []) + v for k, v in g2.items()}}
     consts = lambda s: [f'        const val {upper(camel(n))} = "{n}"' for n in sorted(s)]  # noqa: E731
+    exprs = {k: android_hooks(r, r.named("expressions", {"$use": k})) for k in public(style["expressions"])}
     out = [
         f"// {BANNER}",
         "",
@@ -91,6 +92,11 @@ def android(style, tokens):
         "    /** The map's global state the layers read, set by the app. */",
         "    object State {",
         *consts(r.states),
+        "    }",
+        "",
+        "    /** The layers' named expressions, for the app's own queries over the same tiles, as JSON. */",
+        "    object Expressions {",
+        *[f"        val {upper(camel(k))}: String = {kotlin_string(v)}" for k, v in exprs.items()],
         "    }",
         "}",
         "",

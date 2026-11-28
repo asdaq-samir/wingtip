@@ -31,16 +31,14 @@ VFR_CHARTS = {"SECTIONAL", "VFR TERMINAL AREA"}
 #: NASR's CHARTS name for the IFR Enroute Low Altitude chart.
 ENROUTE_LOW_CHART = "ENROUTE LOW"
 
-#: The navaids the sectional draws as a VOR, by NAV_BASE's NAV_TYPE:
-#: the VOR's hexagon, the VOR/DME's in its box and the VORTAC's (FAA
-#: Aeronautical Chart User's Guide, VFR Terms and Symbols, Radio Aids to
-#: Navigation).
-VOR_KINDS = ("VORTAC", "VOR/DME", "VOR")
-
-#: The navaids a route may fly over, by NAV_BASE's NAV_TYPE, in the order
-#: one is kept over another of the same ident: not the VOR test facilities
-#: (VOT), the fan markers or a marine beacon, which no route flies to.
-NAVAID_KINDS = ("VORTAC", "VOR/DME", "VOR", "DME", "TACAN", "NDB/DME", "NDB")
+#: The navaids by NAV_BASE's NAV_TYPE, the engine's navaid_kinds (one copy
+#: for every reader; the maps' filter is design/map-style.json's vorKinds):
+#: VOR_KINDS, the navaids the sectional draws as a VOR (FAA Aeronautical
+#: Chart User's Guide, Radio Aids to Navigation); NAVAID_KINDS, those a
+#: route may fly over, in the order one is kept over another of an ident.
+_KINDS = engine("navaid_kinds")
+VOR_KINDS = tuple(_KINDS["vor"])
+NAVAID_KINDS = tuple(_KINDS["navaid"])
 
 
 def _read(path: Path) -> dict[str, dict]:

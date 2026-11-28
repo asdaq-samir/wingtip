@@ -40,11 +40,13 @@ struct AirportReadyCard: View {
 struct AirportTiles: View {
     let place: AirportPlace
     let photos: AirportPhotos?
+    /// The runways' sketch the card holds (RunwaySketchLayout), none where the engine lays none.
+    let sketch: [RunwaySketchLayout.Strip]
     @Binding var shown: ShownPicture?
 
     var body: some View {
         let ident = place.ident
-        let sketched = !RunwaySketch.strips(place.runways, lat: place.lat, lon: place.lon).isEmpty
+        let sketched = !sketch.isEmpty
         PictureStrip {
             if let photos {
                 PictureTile(caption: "From the Air", label: "\(ident) from the air, full screen") {
@@ -65,9 +67,9 @@ struct AirportTiles: View {
                 }
             } else if sketched {
                 PictureTile(caption: "Runways", label: "\(ident) runways sketch, full screen") {
-                    shown = AirportChartsTab.sketch(place)
+                    shown = AirportChartsTab.sketch(place, sketch)
                 } picture: {
-                    RunwaySketch(runways: place.runways, lat: place.lat, lon: place.lon).background(.background)
+                    RunwaySketch(strips: sketch).background(.background)
                 }
             }
             if let photo = photos?.photo {

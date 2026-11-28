@@ -50,6 +50,7 @@ from .routers import airports, airspace as airspace_router, basemaps, briefing, 
 from .routers import airport_card, airport_charts, airport_stops, navlog
 from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
 from .routers import aircraft_form, airplanes, library, usage, weather_flow
+from .routers import approach_teaching
 from .routers import forecast_run, logbook_draft, notam_rank, offline, plate_sets, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
@@ -165,6 +166,7 @@ ROUTERS = (
     (route_options, gonogo, figures, clearance, packs, words, weather_map, weather_flow, weather_loop, forecast_run),
     (pilot, live, feeds, terrain, window, emergency, copilot, logbook_draft, notam_rank, offline, plate_sets, coach),
     (mcp, plates, aircraft_form, airplanes, library, usage),
+    (approach_teaching,),
 )
 for group in ROUTERS:
     for module in group:

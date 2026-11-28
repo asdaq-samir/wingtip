@@ -21,7 +21,9 @@ PYTHON = Path("services/jobs/charts/map_zoom.py")
 # re-exports, so lib/tokens stays within the 400-line budget
 # (scripts/ci/file_sizes.py; generated/ folders are left out of it).
 WEB = Path("apps/web/src/lib/generated/mapTokens.ts")
-TS_REEXPORT = 'export { CHART_LOOK, DIMMER, MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";'
+# The Dimmer's figures for the engine's map_dim_words (design_tokens_chartlook.rust).
+RUST = Path("engine/crates/core/src/map_dim_figures.rs")
+TS_REEXPORT = 'export { CHART_LOOK, CHART_PAINT, DIMMER, MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";'
 HEAD = "From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1."
 
 
@@ -73,4 +75,4 @@ def outputs(tree, root, banner):
     charts job's zooms and the web's MAP_ZOOM, with its MAP_LABEL
     (design_tokens_label) and CHART_LOOK (design_tokens_chartlook)."""
     web = "/* %s */\n\n%s\n\n%s\n\n%s\n" % (banner, ts(tree), label.ts(tree), chartlook.ts(tree))
-    return {root / PYTHON: python(tree, banner), root / WEB: web}
+    return {root / PYTHON: python(tree, banner), root / WEB: web, root / RUST: chartlook.rust(tree, banner)}

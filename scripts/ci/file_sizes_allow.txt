@@ -7,13 +7,13 @@
 # reformat of scripts/dev/format.sh, a commit a language), not new code.
 
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 641
-apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 420
+apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 415
 apps/ios/Wingtip/Views/ChartMap.swift 670
 apps/ios/Wingtip/Views/ChartOverlays.swift 706
 apps/ios/Wingtip/Views/InFlightViews.swift 418
 apps/ios/Wingtip/Views/InstructorView.swift 406
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 464
-scripts/build/design_tokens.py 537
+scripts/build/design_tokens.py 520
 scripts/build/engine-contract-apps.mjs 435
 services/ingest/ingest/swim.py 403
 services/jobs/charts/tests/test_overlays.py 791

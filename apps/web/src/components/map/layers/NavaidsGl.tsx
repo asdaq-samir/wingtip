@@ -14,6 +14,7 @@ import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { NEAR_DEG, useLinkedTileFeature } from "../../../lib/map/gl/useLinkedTileFeature";
 import { TAP } from "../../../lib/map/gl/layers/common";
 import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
+import { OVERLAY_EXPRESSIONS } from "../../../lib/generated/overlayLayers";
 
 const VFR = "vfr-waypoints";
 
@@ -35,10 +36,7 @@ export function NavaidsGl() {
 /** The VORs of the overlay tiles loaded round the view, as VorPins. */
 function tileVors(map: ReturnType<typeof useGlMap>["map"]): VorPin[] {
   const seen = new Map<string, VorPin>();
-  for (const f of map.querySourceFeatures(OVERLAY_SOURCE, {
-    sourceLayer: "navaids",
-    filter: ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]],
-  })) {
+  for (const f of map.querySourceFeatures(OVERLAY_SOURCE, { sourceLayer: "navaids", filter: OVERLAY_EXPRESSIONS.vorKinds })) {
     const vor = vorOfTile(f);
     seen.set(`${vor.ident}-${vor.lat}`, vor);
   }

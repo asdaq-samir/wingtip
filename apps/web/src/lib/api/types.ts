@@ -111,6 +111,12 @@ export type TerminalChart = Schemas["TerminalChart"];
 export type ProcedureList = Schemas["ProcedureList"];
 export type ProcedureSummary = Schemas["ProcedureSummary"];
 export type ProcedureDrawing = Schemas["ProcedureDrawing"];
+/** What the planner asks to teach an approach, and to debrief one or a flight against a flown track. */
+export type LessonAsk = Schemas["LessonAsk"];
+export type ApproachFindAsk = Schemas["ApproachFindAsk"];
+export type ApproachTransitionAsk = Schemas["ApproachTransitionAsk"];
+export type DebriefAsk = Schemas["DebriefAsk"];
+export type DebriefAnswer = Schemas["DebriefAnswer"];
 export type PlateOverlay = Schemas["PlateOverlay"];
 /** A plate's own georeference, for own ship on its page (plate_page_point). */
 export type PlateGeoreference = Schemas["PlateGeoreference"];

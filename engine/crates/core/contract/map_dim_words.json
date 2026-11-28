@@ -1,0 +1,50 @@
+{
+  "x-call": "wingtip_core::map_dim::call",
+  "description": "The Dimmer's words and paper at night, one copy for every app: the chart's white as MapLibre's raster shader draws it (raster-contrast about the middle, 1/(1-k) over 0 and 1+k under, then raster-brightness-max), the share of their night inks the map's light-haloed words take so that none is brighter than the paper under it (AIM 8-1-6, Vision in Flight: the pilot's dark adaptation), floored under the night's own contrast, and a night warning's light against the paper's. A display's look, not an aviation figure; its figures are design/tokens.json's map-dim group, its cases apps/web/src/lib/fixtures/mapDim.json.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "MapDimWordsInput",
+      "type": "object",
+      "properties": {
+        "night": {
+          "type": "boolean",
+          "description": "After dark: by day the words take no share (0) and the warnings their whole light (1)."
+        },
+        "brightness": {
+          "type": "number",
+          "description": "The chart's raster-brightness-max, 0 to 1 (held to it)."
+        },
+        "contrast": {
+          "type": "number",
+          "description": "The chart's raster-contrast, -1 to 1."
+        }
+      },
+      "required": ["night", "brightness", "contrast"]
+    },
+    "answer": {
+      "title": "MapDimWords",
+      "type": "object",
+      "properties": {
+        "paper": {
+          "type": "number",
+          "description": "The chart's white as drawn, encoded sRGB 0 to 1."
+        },
+        "words": {
+          "type": "number",
+          "description": "The share of their night inks the light-haloed words take, in hundredths: 0 by day, at least 0.01 at night."
+        },
+        "warning": {
+          "type": "number",
+          "description": "A night warning's colour's share of light, the paper's times map-dim.warning-under-paper, in hundredths; 1 by day."
+        }
+      },
+      "required": ["paper", "words", "warning"]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

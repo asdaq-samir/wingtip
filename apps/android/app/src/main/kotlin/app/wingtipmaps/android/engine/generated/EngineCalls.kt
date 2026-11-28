@@ -1495,6 +1495,12 @@ fun Engine.magneticVariation(lat: Double, lon: Double, date: String? = null, yea
     rule("magnetic_variation", EngineContract.MagneticVariationInput(lat = lat, lon = lon, date = date, year = year))
 
 /**
+ * The Dimmer's words and paper at night, one copy for every app: the chart's white as MapLibre's raster shader draws it (raster-contrast about the middle, 1/(1-k) over 0 and 1+k under, then raster-brightness-max), the share of their night inks the map's light-haloed words take so that none is brighter than the paper under it (AIM 8-1-6, Vision in Flight: the pilot's dark adaptation), floored under the night's own contrast, and a night warning's light against the paper's. A display's look, not an aviation figure; its figures are design/tokens.json's map-dim group, its cases apps/web/src/lib/fixtures/mapDim.json.
+ */
+fun Engine.mapDimWords(night: Boolean, brightness: Double, contrast: Double): Result<EngineContract.MapDimWordsAnswer> =
+    rule("map_dim_words", EngineContract.MapDimWordsInput(night = night, brightness = brightness, contrast = contrast))
+
+/**
  * The distress call in AIM 6-3-2(a)(3)'s order, filled from what the app knows, each part it does not know a blank in brackets and listed in missing; the code (7700, AIM 6-2-2; an assigned code kept while talking to ATC, 6-3-2(a)(2)); and the frequencies to call on: the one in use, the nearest approach or departure control and tower the app lists, then 121.5 MHz.
  */
 fun Engine.maydayCall(station: String? = null, callsign: String? = null, airplaneType: String? = null, nature: String? = null, weather: String? = null, intentions: String? = null, position: String? = null, headingMagDeg: Double? = null, altitudeFt: Double? = null, fuelMin: Double? = null, souls: Double? = null, frequencies: List<EngineContract.MaydayCallInputFrequenciesItem>? = null): Result<EngineContract.MaydayCallAnswer> =
@@ -1541,6 +1547,12 @@ fun Engine.nameCase(text: String? = null, texts: List<String?>? = null, kind: St
  */
 fun Engine.navaidHours(hours: String? = null): Result<String?> =
     rule("navaid_hours", EngineContract.NavaidHoursInput(hours = hours))
+
+/**
+ * The navaid kinds by NASR's NAV_BASE NAV_TYPE, one copy for every reader: `vor`, the navaids the sectional draws as a VOR (the VOR's hexagon, the VOR/DME's in its box and the VORTAC's; FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Radio Aids to Navigation), and `navaid`, every kind a route may fly over, in the order one is kept over another of the same ident (not the VOR test facilities, VOT, the fan markers or a marine beacon, which no route flies to).
+ */
+fun Engine.navaidKinds(): Result<EngineContract.NavaidKindsAnswer> =
+    rule("navaid_kinds", EngineContract.NavaidKindsInput())
 
 /**
  * The leg from the destination on to the IFR alternate for 14 CFR 91.167(a)(2)'s fuel, at the last altitude in its air, or in still air (still_air) where none was read or the leg cannot be flown in it.

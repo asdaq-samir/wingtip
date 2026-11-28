@@ -14,7 +14,7 @@ import { localDay } from "../../../lib/format";
 import { procedureQuery, proceduresQuery, queryClient } from "../../../lib/queryClient";
 import { findApproaches, type ApproachDebrief } from "../../../components/approachDebriefModel";
 import type { TrackPoint } from "../../../lib/track";
-import { debriefOf } from "../debrief";
+import { debriefAsk } from "../debrief";
 import type { CoachDebrief } from "./coachApi";
 
 /** The newest flights looked at: a few weeks' flying, and each one asks
@@ -26,10 +26,11 @@ const RECENT_MS = 183 * 86_400_000;
 /** A field's approaches drawn at most: the CIFP lists a dozen at a big one. */
 const MOST_APPROACHES = 6;
 
-/** The flight's debrief as the engine gives it, trimmed; null where the
- *  track never flew. `patterns` are its fields' pattern altitudes. */
-function flightDebrief(flight: Flight, points: TrackPoint[], patterns: Record<string, number>, flownOn: string): CoachDebrief | null {
-  const { debrief: d } = debriefOf(flight, points, patterns);
+/** The flight's debrief as the engine gives it (the planner's, with its
+ *  fields' pattern altitudes), trimmed; null where the track never flew. */
+async function flightDebrief(flight: Flight, points: TrackPoint[], flownOn: string): Promise<CoachDebrief | null> {
+  if (points.length < 2) return null;
+  const { debrief: d } = await api.debrief(debriefAsk(flight, points));
   if (!d) return null;
   return {
     kind: "flight",
@@ -79,20 +80,12 @@ async function ofFlight(summary: FlightSummary): Promise<CoachDebrief[]> {
   if (!track || !first) return [];
   const flight = await api.flights.get(summary.id);
   const flownOn = dayOf(first.t);
-  const fields = [...new Set([flight.departureIdent, flight.destinationIdent])];
-  const places = await Promise.all(fields.map((f) => api.airport(f).catch(() => null)));
-  const patterns = Object.fromEntries(
-    fields.flatMap((f, i) => {
-      const ft = places[i]?.pattern?.altitude_ft;
-      return ft == null ? [] : [[f, ft]];
-    }),
-  );
-  const out: CoachDebrief[] = [];
-  const flown = flightDebrief(flight, track.points, patterns, flownOn);
-  if (flown) out.push(flown);
   const dest = flight.destinationIdent;
-  const elevation = places[fields.indexOf(dest)]?.elevation_ft ?? null;
-  for (const a of findApproaches(await drawings(dest), track.points)) out.push(approachDebrief(a, elevation, flownOn));
+  const out: CoachDebrief[] = [];
+  const flown = await flightDebrief(flight, track.points, flownOn);
+  if (flown) out.push(flown);
+  const elevation = (await api.airport(dest).catch(() => null))?.elevation_ft ?? null;
+  for (const a of await findApproaches(await drawings(dest), track.points)) out.push(approachDebrief(a, elevation, flownOn));
   return out;
 }
 

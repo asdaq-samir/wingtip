@@ -3,11 +3,12 @@ import { useQueries } from "@tanstack/react-query";
 import { Check, TriangleAlert, X } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "./GroupedList";
+import { FieldError } from "./ui/field";
 import { NumberField } from "./ui/number-field";
 import { WHOLE } from "./ui/numberFormats";
 import { procedureQuery, proceduresQuery } from "../lib/queryClient";
 import type { ProcedureDrawing, ProcedureList } from "../lib/api/types";
-import { findApproaches, withMinimums, withTransition, type ApproachDebrief as Debriefed, type Tone } from "./approachDebriefModel";
+import { approachesQuery, transitionQuery, withMinimums, type ApproachDebrief as Debriefed, type Tone } from "./approachDebriefModel";
 import { clockTime } from "../lib/format";
 import { sameField, transitionWords, type PickedProcedure } from "../lib/procedures";
 import { FINDING_TONE } from "../lib/findings";
@@ -69,15 +70,23 @@ export default function ApproachDebriefs({
   });
   const listsPending = lists.some((l) => l.isPending);
   const [minimums, setMinimums] = useState<Record<string, number | null>>({});
-  const found = useMemo(() => {
-    if (drawings.pending || drawings.drawn.length === 0) return [];
-    const byField = new Map<string, ProcedureDrawing[]>();
-    for (const d of drawings.drawn) byField.set(d.airport, [...(byField.get(d.airport) ?? []), d]);
-    return [...byField].flatMap(([airport, ds]) => {
-      const pick = picked.find((q) => sameField(q.ident, airport))?.id ?? null;
-      return findApproaches(ds, points, pick);
-    });
+  // Each field's approaches looked for in the track, the planner's
+  // (approach_find), once every one of them is drawn.
+  const byField = useMemo(() => {
+    if (drawings.pending) return [];
+    const by = new Map<string, ProcedureDrawing[]>();
+    for (const d of drawings.drawn) by.set(d.airport, [...(by.get(d.airport) ?? []), d]);
+    return [...by].map(([airport, ds]) => approachesQuery(ds, points, picked.find((q) => sameField(q.ident, airport))?.id ?? null));
   }, [drawings, points, picked]);
+  const searched = useQueries({
+    queries: byField,
+    combine: (results) => ({
+      found: results.flatMap((r) => r.data ?? []),
+      pending: results.some((r) => r.isPending),
+      error: results.find((r) => r.error)?.error ?? null,
+    }),
+  });
+  const found = searched.found;
 
   // The transition it came in by, where it was not picked: each of the
   // found approaches' transitions drawn, and the one the track flew kept.
@@ -89,16 +98,16 @@ export default function ApproachDebriefs({
     queries: more.map(({ d, t }) => procedureQuery({ ident: d.airport, id: d.id, transition: t })),
     combine: (results) => ({ drawn: results.flatMap((r) => (r.data ? [r.data] : [])), pending: results.some((r) => r.isPending) }),
   });
-  const flown = useMemo(
-    () =>
-      found.map((d) => {
-        const own = transitions.drawn.filter((t) => t.airport === d.airport && t.id === d.id);
-        return own.length ? withTransition(d, own, points) : d;
-      }),
-    [found, transitions, points],
-  );
+  // Each found with the transition it came in by, the planner's
+  // (approach_transition); from vectors where it has none drawn, or until
+  // the planner says.
+  const owned = found.map((d) => transitions.drawn.filter((t) => t.airport === d.airport && t.id === d.id));
+  const flown = useQueries({
+    queries: found.map((d, k) => ({ ...transitionQuery(d, owned[k]!, points), enabled: owned[k]!.length > 0 })),
+    combine: (results) => found.map((d, k) => results[k]?.data ?? d),
+  });
 
-  if (listsPending || drawings.pending) {
+  if (listsPending || drawings.pending || searched.pending) {
     return fields.length ? (
       <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>
         Looking for an approach in the track…
@@ -106,6 +115,13 @@ export default function ApproachDebriefs({
     ) : null;
   }
   const shown = only ? flown.filter((d) => d.id === only) : flown;
+  if (searched.error && shown.length === 0) {
+    return (
+      <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+        The track could not be read against the approaches: {searched.error.message}
+      </FieldError>
+    );
+  }
   if (shown.length === 0) {
     return none ? <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>{none}</p> : null;
   }

@@ -139,6 +139,21 @@ async def alternate(*, dest: str, eta: str, tas_kt: float, alternate: str | None
     return await _send('GET', '/api/alternate', query={'dest': dest, 'eta': eta, 'tas_kt': tas_kt, 'alternate': alternate}, body=None, headers={})
 
 
+async def approach_debriefs(*, body: dict[str, Any]) -> Any:
+    """POST /api/approach/debriefs: Approach Debriefs"""
+    return await _send('POST', '/api/approach/debriefs', query={}, body=body, headers={})
+
+
+async def approach_transition(*, body: dict[str, Any]) -> Any:
+    """POST /api/approach/debriefs/transition: Approach Transition"""
+    return await _send('POST', '/api/approach/debriefs/transition', query={}, body=body, headers={})
+
+
+async def approach_lesson(*, body: dict[str, Any]) -> Any:
+    """POST /api/approach/lesson: Approach Lesson"""
+    return await _send('POST', '/api/approach/lesson', query={}, body=body, headers={})
+
+
 async def briefing(*, dep: str, dest: str, stops: str | None = None, depart: str | None = None, ete_min: float | None = None, fixes: str | None = None, leg_min: str | None = None, ground_min: str | None = None) -> Any:
     """GET /api/briefing: Briefing"""
     return await _send('GET', '/api/briefing', query={'dep': dep, 'dest': dest, 'stops': stops, 'depart': depart, 'ete_min': ete_min, 'fixes': fixes, 'leg_min': leg_min, 'ground_min': ground_min}, body=None, headers={})

@@ -34,23 +34,14 @@ check "The phones' generated models and engine calls" scripts/ci/phones_generate
   'scripts/build/api-models-apps.*' 'scripts/build/engine-contract-apps.*' scripts/ci/phones_generated.sh \
   apps/ios/Wingtip/API/Generated apps/ios/WingtipAPI apps/ios/Wingtip/Engine/Generated \
   "$A/api/generated" "$A/engine/generated"
-check "The design tokens" "scripts/build/design-tokens.sh --check" -- \
-  design/tokens.json 'scripts/build/design-tokens.sh' 'scripts/build/design_tokens*' \
-  apps/web/src/styles/tokens.css apps/web/src/lib/tokens.ts apps/ios/Wingtip/Design/Generated "$A/design/generated" \
-  services/jobs/charts/map_zoom.py
-check "The map's overlay layers" "scripts/build/map-style.sh --check" -- \
-  design/map-style.json design/tokens.json 'scripts/build/map-style.sh' 'scripts/build/map_style*.py' \
-  apps/web/src/lib/generated/overlayLayers.ts "$A/map/generated"
-check "The screens and their links" "scripts/build/screens.sh --check" -- \
-  design/screens.json 'scripts/build/screens.*' docs/navigation.md \
-  apps/web/src/lib/navigation/generated apps/ios/Wingtip/Navigation/Generated "$A/navigation/generated"
-check "The words every app says the same" "scripts/build/wording.sh --check" -- \
-  design/wording.json 'scripts/build/wording.*' docs/design/rules.md \
-  apps/web/src/lib/wording/generated apps/ios/Wingtip/Design/Generated \
-  apps/android/app/src/main/res/values/wording_strings.xml
-check "Each card's actions" "scripts/build/card-actions.sh --check" -- \
-  design/card-actions.json design/wording.json 'scripts/build/card-actions.*' 'scripts/build/card_actions.*' docs/design/icons.md \
-  apps/web/src/lib/generated/cardActions.ts apps/ios/Wingtip/Design/Generated/CardActions.swift "$A/design/generated/CardActions.kt"
+# The design generators, each its own check, from scripts/areas.yml's
+# `generators` table: a new one is an entry there, not a line here.
+set -f # the globs go to git as they are
+while IFS=$'\t' read -r _ title script sources outputs; do
+  # shellcheck disable=SC2086 # each a path or a glob, one a word
+  check "$title" "$script --check" -- $sources $outputs
+done < <(python3 scripts/areas.py generators)
+set +f
 check "The app icons" "scripts/build/app-icons.sh --check" -- \
   docs/brand docs/store design/tokens.json 'scripts/build/app-icons.sh' 'scripts/build/app_icons*' \
   'scripts/build/brand-render*' apps/ios/Wingtip/Assets.xcassets apps/ios/WingtipWatch/Assets.xcassets \

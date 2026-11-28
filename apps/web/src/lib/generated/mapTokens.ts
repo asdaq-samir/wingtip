@@ -116,6 +116,16 @@ export const CHART_LOOK = {
   routeEdgeSunlight: 0.9,
 } as const;
 
+/** The chart's raster paint by look, its contrast and saturation (design/tokens.json's chart-paint group). */
+export const CHART_PAINT = {
+  dayContrast: 0.1,
+  daySaturation: 0.1,
+  nightContrast: 0.13,
+  nightSaturation: 0,
+  sunlightContrast: 0.2,
+  sunlightSaturation: 0.2,
+} as const;
+
 /** The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group). */
 export const DIMMER = {
   state: "mapDim",
@@ -128,7 +138,7 @@ export const DIMMER = {
   wordGamma: 2.2,
   wordLeast: 0.01,
   wordFloor: 0.75,
-  wordFloorContrast: 0.13,
   wordLight: 0.4460834275041789,
+  wordFloorContrast: 0.13,
   nightWord: {"#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#5cc685", "#1c1a17": "#afb1b4", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8db2fc", "#b45309": "#dfaa20", "#7c3aed": "#bba1ff", "#78716c": "#b6b1ad", "#be185d": "#f58cc4", "#0f766e": "#4ac4b9", "#57534e": "#b6b1ad", "#9333ea": "#c99cff"},
 } as const;

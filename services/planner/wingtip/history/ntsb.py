@@ -227,7 +227,7 @@ def build(rows: Rows, path: Path | None = None) -> int:
         try:
             db.executescript(_SCHEMA)
             count = _load(db, rows, {}, replace=False)
-            db.execute(f"PRAGMA user_version = {SCHEMA}")
+            stores.stamp(db, SCHEMA)
             db.commit()
         finally:
             db.close()

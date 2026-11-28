@@ -283,8 +283,8 @@ pub fn find(limit: Option<&str>, runs: &[&str], places: &[Place]) -> FoundPlaces
     }
 }
 
-/// The navaid kinds a route flies over, as wingtip.fixes keeps them.
-const NAVAID_KINDS: &[&str] = &["VORTAC", "VOR/DME", "VOR", "DME", "TACAN", "NDB/DME", "NDB"];
+// The navaid kinds a route flies over.
+use crate::navaid_kinds::NAVAID_KINDS;
 
 mod places;
 pub use places::*;

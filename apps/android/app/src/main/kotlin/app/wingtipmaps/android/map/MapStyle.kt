@@ -4,6 +4,8 @@ import androidx.compose.ui.graphics.toArgb
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.overlayArchive
+import app.wingtipmaps.android.design.generated.WingtipChartLook
+import app.wingtipmaps.android.design.generated.WingtipChartPaint
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipMapZoom
 import app.wingtipmaps.android.design.generated.WingtipPalettes
@@ -74,21 +76,16 @@ object MapStyle {
      *  OVERZOOM (glStyle chartStyle's maxZoom). */
     fun maxZoom(chartMaxZoom: Int): Double = glZoom((chartMaxZoom + OVERZOOM).toDouble())
 
-    /** The day chart's lift, the web's DAY_CONTRAST and DAY_SATURATION:
-     *  a touch more contrast and colour than the scan, as ForeFlight's
-     *  chart reads beside ours (the owner's screenshots, 2026-11-07). */
-    const val DAY_CONTRAST = 0.1f
-    const val DAY_SATURATION = 0.1f
-
-    /** The chart's paint (the web's chartPaint): by day the lift above;
-     *  at night, with the phone's dark theme (the web's default "dimmed"
-     *  chart at night), half as bright with a little more contrast and
-     *  no added colour. Each tile drawn in the frame it comes, with no
-     *  fade, and sampled smoothly between levels. */
+    /** The chart's paint (the web's chartPaint), design/tokens.json's
+     *  chart-paint group: by day a touch more contrast and colour than the
+     *  scan; at night, with the phone's dark theme, at chart-look's night
+     *  brightness with a little more contrast and no added colour. Each
+     *  tile drawn in the frame it comes, with no fade, sampled smoothly. */
     data class ChartPaint(val brightnessMax: Float, val contrast: Float, val saturation: Float)
 
     fun chartPaint(night: Boolean): ChartPaint =
-        if (night) ChartPaint(0.5f, 0.13f, 0f) else ChartPaint(1f, DAY_CONTRAST, DAY_SATURATION)
+        if (night) ChartPaint(1f - WingtipChartLook.NIGHT_DIM, WingtipChartPaint.NIGHT_CONTRAST, WingtipChartPaint.NIGHT_SATURATION)
+        else ChartPaint(1f, WingtipChartPaint.DAY_CONTRAST, WingtipChartPaint.DAY_SATURATION)
 
     /** The archive's address through the gateway (PlannerProxyController
      *  passes the Range on), as MapLibre Native's PMTiles source reads it:
@@ -126,8 +123,6 @@ object MapStyle {
 
     /** The airports' farthest zoom, Leaflet's: design/tokens.json's map.zoom, the overlay layers' too. */
     const val AIRPORTS_FARTHEST_ZOOM = WingtipMapZoom.AIRPORTS_FARTHEST
-    /** The VORs a pilot tunes (wingtip.fixes.VOR_KINDS, NASR NAV_TYPE), as the navaids layers' filter. */
-    val VOR_KINDS = listOf("VORTAC", "VOR/DME", "VOR")
 
     /** The pictures the layers ask for, by id (OverlayPictures draws them). */
     fun airspaceTab(cls: String) = "airspace|tab|$cls"

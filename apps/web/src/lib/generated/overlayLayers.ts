@@ -525,7 +525,8 @@ export const OVERLAY_STATE = { airportWeather: "airportWeather", ringsByField: "
 /** The feature states they read. */
 export const OVERLAY_FEATURE_STATE = { placed: "placed", selected: "selected" } as const;
 /** The layers' named expressions, for the app's own layers over the same tiles. */
-export const OVERLAY_EXPRESSIONS: Record<"militaryShown" | "privateShown" | "notRouteAirport" | "notRouteWaypoint" | "keptField" | "classCField" | "towered" | "airportIdentInk" | "airportWeather" | "tileAirportIcon" | "markSize" | "airportIconSize" | "namedFar" | "airportIdentFar" | "airportIconNamed" | "suaRestricted" | "bandWidth" | "bandOffset", ExpressionSpecification> = {
+export const OVERLAY_EXPRESSIONS: Record<"vorKinds" | "militaryShown" | "privateShown" | "notRouteAirport" | "notRouteWaypoint" | "keptField" | "classCField" | "towered" | "airportIdentInk" | "airportWeather" | "tileAirportIcon" | "markSize" | "airportIconSize" | "namedFar" | "airportIdentFar" | "airportIconNamed" | "suaRestricted" | "bandWidth" | "bandOffset", ExpressionSpecification> = {
+  "vorKinds": ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]],
   "militaryShown": ["any", ["boolean", ["global-state", "showMilitary"], false], ["!=", ["get", "military"], "military"]],
   "privateShown": ["any", ["boolean", ["global-state", "showPrivate"], false], ["!=", ["get", "use"], "private"]],
   "notRouteAirport": ["!", ["in", ["get", "ident"], ["coalesce", ["global-state", "routeAirports"], ["literal", []]]]],

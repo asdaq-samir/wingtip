@@ -125,7 +125,7 @@ def _upgrade(db: sqlite3.Connection) -> None:
         _keep_by_place(db)
     for key, raw, text in db.execute("SELECT id, raw, text FROM notams WHERE raw LIKE '%&%' OR text LIKE '%&%'").fetchall():
         db.execute("UPDATE notams SET raw = ?, text = ? WHERE id = ?", (html.unescape(raw or ""), html.unescape(text or ""), key))
-    db.execute(f"PRAGMA user_version = {STORE_VERSION}")
+    stores.stamp(db, STORE_VERSION)
     db.commit()
 
 

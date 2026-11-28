@@ -26,7 +26,7 @@ class MapDimTest {
 
     @Test
     fun androidKeepsEverySectionTheFixtureNamesItIn() {
-        val mine = setOf("dim", "colour", "opacity", "layers", "paper", "words", "nightInks")
+        val mine = setOf("dim", "colour", "opacity", "layers", "nightInks")
         val named = shared.filterKeys { it != "_note" }.filterValues { s -> s.jsonObject.getValue("apps").jsonArray.any { it.jsonPrimitive.content == "android" } }.keys
         assertEquals(mine, named)
     }
@@ -56,11 +56,10 @@ class MapDimTest {
     }
 
     @Test
-    fun theSharedPaperWordsAndNightInks() {
-        for (c in cases("paper")) assertEquals(c.toString(), c.num("paper"), MapDim.paperOf(c.num("brightness"), c.num("contrast")), 1e-6)
-        for (c in cases("words")) {
-            assertEquals(c.toString(), c.num("share"), MapDim.wordLight(c.getValue("night").jsonPrimitive.boolean, c.num("brightness"), c.num("contrast")), 0.0)
-        }
+    fun theWordsLightIsTheEnginesAndTheNightInksTheTokens() {
+        // The engine's map_dim_words, its cases its own (engine/facade/tests/map_dim.rs).
+        val c = cases("words").first()
+        assertEquals(c.toString(), c.num("share"), MapDim.wordLight(c.getValue("night").jsonPrimitive.boolean, c.num("brightness"), c.num("contrast")), 0.0)
         for ((day, night) in shared.getValue("nightInks").jsonObject.getValue("inks").jsonObject) assertEquals(day, night.jsonPrimitive.content, MapDim.nightWord(day))
     }
 

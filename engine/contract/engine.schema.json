@@ -20329,6 +20329,63 @@
       ],
       "additionalProperties": false
     },
+    "map_dim_words": {
+      "description": "The Dimmer's words and paper at night, one copy for every app: the chart's white as MapLibre's raster shader draws it (raster-contrast about the middle, 1/(1-k) over 0 and 1+k under, then raster-brightness-max), the share of their night inks the map's light-haloed words take so that none is brighter than the paper under it (AIM 8-1-6, Vision in Flight: the pilot's dark adaptation), floored under the night's own contrast, and a night warning's light against the paper's. A display's look, not an aviation figure; its figures are design/tokens.json's map-dim group, its cases apps/web/src/lib/fixtures/mapDim.json.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "MapDimWordsInput",
+          "type": "object",
+          "properties": {
+            "night": {
+              "type": "boolean",
+              "description": "After dark: by day the words take no share (0) and the warnings their whole light (1)."
+            },
+            "brightness": {
+              "type": "number",
+              "description": "The chart's raster-brightness-max, 0 to 1 (held to it)."
+            },
+            "contrast": {
+              "type": "number",
+              "description": "The chart's raster-contrast, -1 to 1."
+            }
+          },
+          "required": [
+            "night",
+            "brightness",
+            "contrast"
+          ]
+        },
+        "answer": {
+          "title": "MapDimWords",
+          "type": "object",
+          "properties": {
+            "paper": {
+              "type": "number",
+              "description": "The chart's white as drawn, encoded sRGB 0 to 1."
+            },
+            "words": {
+              "type": "number",
+              "description": "The share of their night inks the light-haloed words take, in hundredths: 0 by day, at least 0.01 at night."
+            },
+            "warning": {
+              "type": "number",
+              "description": "A night warning's colour's share of light, the paper's times map-dim.warning-under-paper, in hundredths; 1 by day."
+            }
+          },
+          "required": [
+            "paper",
+            "words",
+            "warning"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "mayday_call": {
       "description": "The distress call in AIM 6-3-2(a)(3)'s order, filled from what the app knows, each part it does not know a blank in brackets and listed in missing; the code (7700, AIM 6-2-2; an assigned code kept while talking to ATC, 6-3-2(a)(2)); and the frequencies to call on: the one in use, the nearest approach or departure control and tower the app lists, then 121.5 MHz.",
       "type": "object",
@@ -20913,6 +20970,46 @@
           "type": [
             "string",
             "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "navaid_kinds": {
+      "description": "The navaid kinds by NASR's NAV_BASE NAV_TYPE, one copy for every reader: `vor`, the navaids the sectional draws as a VOR (the VOR's hexagon, the VOR/DME's in its box and the VORTAC's; FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Radio Aids to Navigation), and `navaid`, every kind a route may fly over, in the order one is kept over another of the same ident (not the VOR test facilities, VOT, the fan markers or a marine beacon, which no route flies to).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NavaidKindsInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "NavaidKinds",
+          "type": "object",
+          "properties": {
+            "vor": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The VORs, VORTAC first."
+            },
+            "navaid": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Every kind a route flies over, the likelier to fly to first."
+            }
+          },
+          "required": [
+            "vor",
+            "navaid"
           ]
         }
       },
@@ -36750,6 +36847,7 @@
     "lost_comms",
     "magnetic_of",
     "magnetic_variation",
+    "map_dim_words",
     "mayday_call",
     "mode_c_veil",
     "model_weather_bands",
@@ -36758,6 +36856,7 @@
     "n_number",
     "name_case",
     "navaid_hours",
+    "navaid_kinds",
     "navlog_alternate_leg",
     "navlog_approach_end",
     "navlog_candidates",

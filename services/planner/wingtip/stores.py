@@ -85,6 +85,13 @@ def user_version(db: sqlite3.Connection) -> int:
         return UNREADABLE
 
 
+def stamp(db: sqlite3.Connection, schema: int) -> None:
+    """Mark an open store as of shape `schema`, its PRAGMA user_version,
+    the one `user_version` reads back: a builder's last step before its
+    commit. A PRAGMA takes no bound parameter, so the int is checked here."""
+    db.execute(f"PRAGMA user_version = {int(schema)}")
+
+
 def version(path: Path) -> int:
     """The shape of the store at `path`: 0 where there is none,
     UNREADABLE where SQLite cannot read it."""

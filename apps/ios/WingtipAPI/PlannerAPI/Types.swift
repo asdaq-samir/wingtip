@@ -341,6 +341,39 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/approach-plate/{cycle}/{ident}/{procedure}.png`.
     /// - Remark: Generated from `#/paths//api/approach-plate/{cycle}/{ident}/{procedure}.png/get(approach_plate)`.
     func approachPlate(_ input: Operations.ApproachPlate.Input) async throws -> Operations.ApproachPlate.Output
+    /// Approach Debriefs
+    ///
+    /// The approaches a track flew, one for each time it came down a final:
+    /// of the field's approaches drawn, the one whose final it fitted best,
+    /// the one picked where it fits as well, each fix by fix against the
+    /// procedure (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) in the engine's
+    /// ApproachDebrief. A POST for the drawings and the track; it changes
+    /// nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/post(approach_debriefs)`.
+    func approachDebriefs(_ input: Operations.ApproachDebriefs.Input) async throws -> Operations.ApproachDebriefs.Output
+    /// Approach Transition
+    ///
+    /// Of an approach's transitions drawn, the one the track came in by:
+    /// every fix of it before the final passed, the closest to it on the way;
+    /// null where none was flown, so the approach stays from vectors.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs/transition`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/transition/post(approach_transition)`.
+    func approachTransition(_ input: Operations.ApproachTransition.Input) async throws -> Operations.ApproachTransition.Output
+    /// Approach Lesson
+    ///
+    /// An approach taught as an instructor teaches it, from the FAA's coded
+    /// procedure (FAA-H-8083-16B, chapter 4): the briefing, the steps flown
+    /// fix by fix at `gs_kt` with the way to each, the quiz, and the side
+    /// view. What the coded data does not hold, the minimums above all, is
+    /// "See the plate", never a figure made up. A POST for the drawing; it
+    /// changes nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/lesson`.
+    /// - Remark: Generated from `#/paths//api/approach/lesson/post(approach_lesson)`.
+    func approachLesson(_ input: Operations.ApproachLesson.Input) async throws -> Operations.ApproachLesson.Output
     /// Briefing
     ///
     /// Everything the nav log's own leg math doesn't cover: adverse
@@ -2038,6 +2071,63 @@ extension APIProtocol {
         try await approachPlate(Operations.ApproachPlate.Input(
             path: path,
             headers: headers
+        ))
+    }
+    /// Approach Debriefs
+    ///
+    /// The approaches a track flew, one for each time it came down a final:
+    /// of the field's approaches drawn, the one whose final it fitted best,
+    /// the one picked where it fits as well, each fix by fix against the
+    /// procedure (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) in the engine's
+    /// ApproachDebrief. A POST for the drawings and the track; it changes
+    /// nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/post(approach_debriefs)`.
+    public func approachDebriefs(
+        headers: Operations.ApproachDebriefs.Input.Headers = .init(),
+        body: Operations.ApproachDebriefs.Input.Body
+    ) async throws -> Operations.ApproachDebriefs.Output {
+        try await approachDebriefs(Operations.ApproachDebriefs.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Approach Transition
+    ///
+    /// Of an approach's transitions drawn, the one the track came in by:
+    /// every fix of it before the final passed, the closest to it on the way;
+    /// null where none was flown, so the approach stays from vectors.
+    ///
+    /// - Remark: HTTP `POST /api/approach/debriefs/transition`.
+    /// - Remark: Generated from `#/paths//api/approach/debriefs/transition/post(approach_transition)`.
+    public func approachTransition(
+        headers: Operations.ApproachTransition.Input.Headers = .init(),
+        body: Operations.ApproachTransition.Input.Body
+    ) async throws -> Operations.ApproachTransition.Output {
+        try await approachTransition(Operations.ApproachTransition.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Approach Lesson
+    ///
+    /// An approach taught as an instructor teaches it, from the FAA's coded
+    /// procedure (FAA-H-8083-16B, chapter 4): the briefing, the steps flown
+    /// fix by fix at `gs_kt` with the way to each, the quiz, and the side
+    /// view. What the coded data does not hold, the minimums above all, is
+    /// "See the plate", never a figure made up. A POST for the drawing; it
+    /// changes nothing.
+    ///
+    /// - Remark: HTTP `POST /api/approach/lesson`.
+    /// - Remark: Generated from `#/paths//api/approach/lesson/post(approach_lesson)`.
+    public func approachLesson(
+        headers: Operations.ApproachLesson.Input.Headers = .init(),
+        body: Operations.ApproachLesson.Input.Body
+    ) async throws -> Operations.ApproachLesson.Output {
+        try await approachLesson(Operations.ApproachLesson.Input(
+            headers: headers,
+            body: body
         ))
     }
     /// Briefing

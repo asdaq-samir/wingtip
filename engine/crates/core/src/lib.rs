@@ -7,6 +7,7 @@
 //! - wmm: magnetic variation from the World Magnetic Model;
 //! - plate: a position on an approach plate's page, by its GeoPDF's
 //!   Lambert projection and affine;
+//! - map_dim: the Dimmer's words and paper at night, the apps' one copy;
 //! - grid: route options' straight lines over the grid (sums: the
 //!   Python's float sums, kept exactly);
 //! - time: UTC dates, and ago: how long ago, in words ("23m ago");
@@ -27,6 +28,7 @@ pub mod geo;
 pub mod geo_many;
 pub mod grid;
 pub mod json;
+pub mod map_dim;
 mod notam_text;
 pub mod plate;
 pub mod sort;

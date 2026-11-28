@@ -2,9 +2,9 @@
 out here for the native app so the phone computes no aviation figure
 (docs/NATIVE.md; app.figures): the debrief of a flown track, the
 diversion drill, a hold's entry and wind, and lost communications'
-altitudes. The web app works them out with the same engine, in the
-browser (lib/debrief, lib/diversion, lib/holdEntry, lib/lostComms, through
-its WebAssembly)."""
+altitudes. The web asks the debrief here too (features/pilot/debrief),
+which its WebAssembly leaves out, and works the other three out with the
+same engine in the browser (lib/diversion, lib/holdEntry, lib/lostComms)."""
 
 import logging
 from datetime import datetime

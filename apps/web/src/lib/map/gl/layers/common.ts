@@ -34,7 +34,7 @@ function labelByZoom(stops: readonly (readonly [glZoom: number, px: number])[]):
 
 /** The map's global state (MapLibre's `global-state`) that holds the light
  *  the map's light-haloed words take after dark, their night inks' share
- *  (mapDim's wordLight: the paper's luminance under the Dimmer, so no word
+ *  (mapDimWords' words: the paper's luminance under the Dimmer, so no word
  *  is brighter than the chart under it), and 0 by day: set by ChartGl from
  *  the page's dark theme and the Dimmer as committed. One figure for both,
  *  so a theme's change, or a Dimmer's commit at night, is one change of
@@ -59,7 +59,7 @@ const HALO_COLOUR: ExpressionSpecification = ["case", NIGHT, CHART.tag, CHART.ca
 export const LABEL_HALO = { "text-halo-color": HALO_COLOUR, "text-halo-width": MAP_LABEL.halo } as const;
 
 /** Each day ink's night ink, a lighter one brought down to the towered
- *  blue's light (map-dim's wordLight)
+ *  blue's light (map-dim's word-light)
  *  (the fixes' near white, the VFR green, the mountains' grey), so that at
  *  the words' light (LIGHT) every word is as light as the paper under the
  *  Dimmer and none brighter (AIM 8-1-6); one darker kept as it is. Worked

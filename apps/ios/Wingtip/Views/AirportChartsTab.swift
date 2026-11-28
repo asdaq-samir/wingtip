@@ -6,6 +6,8 @@ import SwiftUI
 /// as the FAA prints it, as pilots know it from the plate.
 struct AirportChartsTab: View {
     let place: AirportPlace
+    /// The runways' sketch the card holds (RunwaySketchLayout), none where the engine lays none.
+    let sketch: [RunwaySketchLayout.Strip]
     @Binding var shown: ShownPicture?
     /// The diagram with the airplane on it (DiagramOwnShipView), open.
     @State private var ownShipDiagram = false
@@ -56,8 +58,8 @@ struct AirportChartsTab: View {
 
     /// The sketch full screen, for a field the FAA draws no diagram for.
     @MainActor
-    static func sketch(_ place: AirportPlace) -> ShownPicture {
-        let renderer = ImageRenderer(content: RunwaySketch(runways: place.runways, lat: place.lat, lon: place.lon)
+    static func sketch(_ place: AirportPlace, _ strips: [RunwaySketchLayout.Strip]) -> ShownPicture {
+        let renderer = ImageRenderer(content: RunwaySketch(strips: strips)
             .frame(width: 900, height: 900).background(Color.white).environment(\.colorScheme, .light))
         renderer.scale = 2
         let image = renderer.uiImage
@@ -66,7 +68,7 @@ struct AirportChartsTab: View {
 
     var body: some View {
         let charts = place.procedures ?? []
-        let sketched = !RunwaySketch.strips(place.runways, lat: place.lat, lon: place.lon).isEmpty
+        let sketched = !sketch.isEmpty
         Section("Airport") {
             ForEach(Self.publicationNotes(place), id: \.title) { note in
                 VStack(alignment: .leading) {
@@ -82,7 +84,7 @@ struct AirportChartsTab: View {
             } else if let url = place.airportDiagramUrl {
                 row("Airport Diagram", "map") { shown = .faaChart("\(place.ident) Airport Diagram", url: url, airport: place.ident) }
             } else if sketched {
-                row("Airport Diagram", "map", detail: "A sketch of the runways: the FAA publishes none") { shown = Self.sketch(place) }
+                row("Airport Diagram", "map", detail: "A sketch of the runways: the FAA publishes none") { shown = Self.sketch(place, sketch) }
             } else if place.publications?.plates?.state != "unavailable" {
                 Text("The FAA publishes no airport diagram for this field").foregroundStyle(.secondary)
             }

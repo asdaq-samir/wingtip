@@ -8410,6 +8410,24 @@ nonisolated enum EngineContract {
         var year: Double?
     }
 
+    nonisolated struct MapDimWordsAnswer: Codable, Equatable, Sendable {
+        /// The chart's white as drawn, encoded sRGB 0 to 1.
+        var paper: Double
+        /// The share of their night inks the light-haloed words take, in hundredths: 0 by day, at least 0.01 at night.
+        var words: Double
+        /// A night warning's colour's share of light, the paper's times map-dim.warning-under-paper, in hundredths; 1 by day.
+        var warning: Double
+    }
+
+    nonisolated struct MapDimWordsInput: Codable, Equatable, Sendable {
+        /// After dark: by day the words take no share (0) and the warnings their whole light (1).
+        var night: Bool
+        /// The chart's raster-brightness-max, 0 to 1 (held to it).
+        var brightness: Double
+        /// The chart's raster-contrast, -1 to 1.
+        var contrast: Double
+    }
+
     nonisolated struct MaydayCallAnswer: Codable, Equatable, Sendable {
         var lines: [String]
         var words: String
@@ -8604,6 +8622,16 @@ nonisolated enum EngineContract {
 
     nonisolated struct NavaidHoursInput: Codable, Equatable, Sendable {
         var hours: String?
+    }
+
+    nonisolated struct NavaidKindsAnswer: Codable, Equatable, Sendable {
+        /// The VORs, VORTAC first.
+        var vor: [String]
+        /// Every kind a route flies over, the likelier to fly to first.
+        var navaid: [String]
+    }
+
+    nonisolated struct NavaidKindsInput: Codable, Equatable, Sendable {
     }
 
     /// A leg's air at one altitude, looked up at its midpoint: no wind is no winds-aloft station near, no temperature a standard day.

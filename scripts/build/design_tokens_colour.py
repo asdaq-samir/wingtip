@@ -6,7 +6,14 @@ import re
 
 
 def _srgb_encode(c):
+    """Linear light to sRGB's encoded 0 to 1 (IEC 61966-2-1)."""
     return 12.92 * c if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
+
+
+def linear(c):
+    """sRGB's encoded 0 to 1 to its linear light, as WCAG 2 takes a
+    colour's luminance: the one copy the generators and the site use."""
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
 
 def rgba(value):

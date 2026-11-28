@@ -174,7 +174,7 @@ def build(zip_path: Path, db_path: Path) -> int:
             db.execute("CREATE INDEX aircraft_mode_s ON aircraft (mode_s_hex)")
             # DEREG, DOCINDEX and RESERVED, where the archive has them.
             registry_history.build(archive, db, zip_csv)
-            db.execute(f"PRAGMA user_version = {SCHEMA}")
+            stores.stamp(db, SCHEMA)
             db.commit()
         finally:
             db.close()

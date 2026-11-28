@@ -78,8 +78,12 @@ WASM = ROOT / "apps/web/src/lib/engine/wingtip-engine.wasm"
 # asked by the planner with a field's NOTAMs (app.notam_reading), with
 # the round's rule changes (variable winds, closed alternates, the
 # standard day) in.
-RAW_BUDGET = 1_125_000
-GZIP_BUDGET = 506_000
+# 2026-11-27: lowered again to just over the module, 1,065,881 bytes and
+# 480,555 gzipped from 1,121,772 and 504,505: approach teaching and the
+# debriefs asked of the planner (app.routers.approach_teaching, POST
+# /api/debrief), twelve rules out, and map_dim_words in.
+RAW_BUDGET = 1_068_000
+GZIP_BUDGET = 482_000
 # A warning, not a failure, from here: the budget is not raised, so the next
 # rule that grows the module should be looked at before it is the one that fails.
 WARN_AT = 0.95

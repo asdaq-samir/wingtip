@@ -12,6 +12,7 @@
   },
   "expressions": {
     "$comment": "Named parts of the layers, and of the apps' own layers over the same tiles (AirportsGl's open field, markLayers' idents), exported to the web as OVERLAY_EXPRESSIONS.",
+    "vorKinds": { "$comment": "The VORs a pilot tunes by NASR NAV_TYPE (NAV_BASE.csv), a VOR, VOR/DME or VORTAC: the navaids' layers and each app's query for the stations about the view (the engine's airspace::navaid_kinds the same for its rules).", "$value": ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]] },
     "placedRing": {
       "$comment": "A Class C's or D's ring only where its primary field is drawn (the airspace's `ident`, NASR's IDENT, the field's ARPT_ID), so no ring stands bare where its field gave way to a bigger one (the owner's iPhone recording, 2026-11-23). An opacity by feature state, set by the web's usePlacedFieldRings; a map that never sets ringsByField (the training map, Android) draws every ring. Not times the Dimmer: the rings are dimmed by their colour.",
       "$value": ["case", ["!", ["boolean", ["global-state", "ringsByField"], false]], { "$arg": "opacity" }, ["boolean", ["feature-state", "placed"], false], { "$arg": "opacity" }, 0]
@@ -380,13 +381,13 @@
       "minzoom": { "$zoom": "{map.zoom.fix}" }
     },
     {
-      "$comment": "The VORs a pilot tunes (wingtip.fixes.VOR_KINDS, NASR NAV_TYPE), from a region's zoom.",
+      "$comment": "The VORs a pilot tunes (vorKinds), from a region's zoom.",
       "id": "navaids",
       "$with": { "$use": "navaidMark", "kind": "vor" },
       "source": "faa-overlays",
       "source-layer": "navaids",
       "group": "navaids",
-      "filter": ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]],
+      "filter": { "$use": "vorKinds" },
       "minzoom": { "$zoom": "{map.zoom.vor}" }
     },
     {
@@ -398,7 +399,7 @@
       "source": "faa-overlays",
       "source-layer": "navaids",
       "group": "navaids",
-      "filter": ["in", ["get", "kind"], ["literal", ["VORTAC", "VOR/DME", "VOR"]]],
+      "filter": { "$use": "vorKinds" },
       "minzoom": { "$zoom": "{map.zoom.vor}" }
     },
     {"$comment": "Every field but a Class B's or a Class C's, the untowered in magenta and, over them so placed first, the towered in blue (Chart User's Guide, Airports): MapLibre places a higher layer first, and the towered fields are field_mark_rank's first tier, so rank order holds.", "id": "airports", "$with": {"$use": "airportMarks", "kept": ["!", {"$use": "keptField"}], "tier": ["!", {"$use": "classCField"}], "tower": ["!", {"$use": "towered"}], "ink": "{color.chart.untowered}"}, "layout": {"icon-image": {"$use": "airportIconNamed"}, "icon-allow-overlap": false, "text-optional": false}},

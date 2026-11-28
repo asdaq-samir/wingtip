@@ -20,6 +20,8 @@ import re
 import sys
 from pathlib import Path
 
+from emit import write_or_check
+
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "design" / "screens.json"
 WEB_TS = ROOT / "apps/web/src/lib/navigation/generated/screens.ts"
@@ -314,28 +316,14 @@ def doc(spec, current):
 
 
 def main():
-    check = "--check" in sys.argv[1:]
     spec = load()
     outputs = {WEB_TS: web(spec), IOS_SWIFT: ios(spec), ANDROID_KT: android(spec)}
     outputs[ANDROID_SHORTCUTS] = android_shortcuts(spec)
     outputs[ANDROID_SHORTCUT_WORDS] = android_shortcut_words(spec)
     outputs[WEB_SHORTCUTS] = web_shortcuts(spec)
     outputs[DOC] = doc(spec, DOC.read_text() if DOC.exists() else "")
-    stale = []
-    for path, text in outputs.items():
-        now = path.read_text() if path.exists() else None
-        if now == text:
-            continue
-        if check:
-            stale.append(str(path.relative_to(ROOT)))
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(text)
-            print(f"wrote {path.relative_to(ROOT)}")
-    if stale:
-        print("Out of date with design/screens.json (run scripts/build/screens.sh and commit):", *stale, sep="\n  ")
-        sys.exit(1)
+    return write_or_check(outputs, ROOT, "design/screens.json", "scripts/build/screens.sh")
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
