@@ -79,7 +79,7 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param glide the still-air glide ring about own ship (InFlight, the
  *   engine's glide_ring), its outline as latitude and longitude pairs,
  *   drawn dashed; empty for none.
- * @param selectedField the field whose card is open, ringed (SelectedAirportLayer).
+ * @param selectedField the field whose card is open, ringed (SelectedAirportLayer); `sight` a tracked airplane kept in sight (Track).
  * @param plates the approach plates laid on the chart and their tags (PlateLayer).
  * @param emergency the emergency assistant's line to the field picked
  *   (EmergencyLayer); null while it is shut.
@@ -100,8 +100,7 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param onRevealed told once, when the map is first at rest with the
  *   chart and the overlays drawn, or REVEAL_LATEST_MS after its style
  *   was set: the loading mark over it (MapLoading) then fades.
- * @param onPick a tap on an airport, a VOR, a fix, a VFR waypoint, an
- *   airspace ring or an airplane: what it picked (MapPick).
+ * @param onPick a tap on an airport, a VOR, a fix, a VFR waypoint, an airspace ring or an airplane: what it picked (MapPick).
  * @param onView the view each time the map comes to rest.
  */
 @Composable
@@ -128,6 +127,7 @@ fun ChartMap(
     glide: () -> List<List<Double>> = { emptyList() },
     emergency: EmergencyLine? = null,
     selectedField: MapField? = null,
+    sight: MapField? = null,
     plates: PlatesShown = PlatesShown(),
     follow: Boolean = false,
     onDragged: () -> Unit = {},
@@ -183,7 +183,7 @@ fun ChartMap(
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
     LaunchedEffect(holder, selectedField) { holder.selectField(selectedField).also { MapTerrain.selected(selectedField?.ident) } }
-    LaunchedEffect(holder, selectedField) { selectedField?.let { holder.showField(it.lat, it.lon) } }
+    LaunchedEffect(holder, selectedField, sight) { (selectedField ?: sight)?.let { holder.showField(it.lat, it.lon) } }
     LaunchedEffect(holder, plates) { holder.plates(plates) }
     LaunchedEffect(holder) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { holder.keepTfrs() } }
 

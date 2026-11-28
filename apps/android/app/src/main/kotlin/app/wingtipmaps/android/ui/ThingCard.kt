@@ -26,6 +26,9 @@ import androidx.core.graphics.toColorInt
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.airplane.AirplaneActionRow
+import app.wingtipmaps.android.airplane.AirplaneRow
+import app.wingtipmaps.android.airplane.AirplaneRowState
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.name
 import app.wingtipmaps.android.design.generated.CardAction
@@ -41,6 +44,7 @@ import app.wingtipmaps.android.live.DepartureLine
 import app.wingtipmaps.android.live.SpecialUseRows
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
+import app.wingtipmaps.android.records.WatchKind
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 
@@ -150,8 +154,9 @@ internal fun ink(hex: String) = Color(hex.toColorInt())
 
 /** An airplane heard (the web's traffic card): what it is, its height
  *  against own ship's as TCAS writes it (the engine's `traffic_marks`),
- *  its speed and track, and Track, which follows it (Tracking) and keeps
- *  it ringed on the map. */
+ *  its speed and track, and the airplane card's four buttons in the air
+ *  (PlaneActions): Track, which follows it (Tracking) and keeps it ringed
+ *  and in sight on the map, Alerts, Favorite and Figures. */
 @Composable
 private fun PlaneCard(hex: String, flight: FlightModel = hiltViewModel()) {
     val traffic = flight.traffic
@@ -186,11 +191,41 @@ private fun PlaneCard(hex: String, flight: FlightModel = hiltViewModel()) {
     mark?.label?.takeIf { it.isNotEmpty() }?.let { Fact(stringResource(R.string.fact_height), it) }
     // The tower's departure event, where TDES sent one.
     DepartureLine(plane.callsign ?: plane.registration)
-    // Track is the card's one action, filled, where every card's first
-    // action sits (CardButtonGroup).
-    val isTracked = tracked == hex.lowercase()
-    val trackWord = stringResource(if (isTracked) R.string.stop_tracking else R.string.track)
-    CardButtonGroup(listOf(GroupAction(trackWord, null, filled = true) { tracking.track(if (isTracked) null else hex, plane) }), Modifier.fillMaxWidth())
+    PlaneActions(plane, tracking, isTracked = tracked == hex.lowercase())
     val source by traffic.source.collectAsStateWithLifecycle()
     Text(Traffic.credit(source), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+/** An airplane heard's row of the airplane card (AirplaneActionRow, the
+ *  web's AirplaneCard in the air): Track; Alerts and Favorite by its ICAO
+ *  address; Figures, its N-number's card on its Figures page, where the
+ *  planner can fly it (its type's book, or the pilot's own). */
+@Composable
+private fun PlaneActions(plane: app.wingtipmaps.android.api.generated.TrafficAircraft, tracking: Tracking, isTracked: Boolean) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val follow by tracking.follow.collectAsStateWithLifecycle()
+    val favorites by tracking.favorites.collectAsStateWithLifecycle()
+    val watches by tracking.watches.collectAsStateWithLifecycle()
+    val books by app.wingtipmaps.android.airplane.AirplaneBook.profiles.collectAsStateWithLifecycle()
+    val records by androidx.compose.runtime.remember(context) { app.wingtipmaps.android.airplane.OwnAirplanes.of(context) }.records.collectAsStateWithLifecycle()
+    val hex = plane.hex.lowercase()
+    val tail = plane.registration?.trim()?.uppercase()?.takeIf(app.wingtipmaps.android.search.SearchGroups::looksLikeTail)
+    val owned = tail != null && records.containsKey(app.wingtipmaps.android.airplane.OwnRecord.key(tail, ""))
+    val stock = plane.type?.lowercase()?.takeIf { it in books }
+    val alerting = watches.any { it.hex == hex }
+    val can = AirplaneRow.Can(
+        airborne = true, trackable = true, flyable = AirplaneRow.flyable(tail, stock, owned, flying = false), flying = false, hex = hex, keepable = true,
+    )
+    AirplaneActionRow(
+        can, AirplaneRowState(following = isTracked && follow, alerting = alerting, starred = favorites.any { it.hex == hex }),
+        onTrack = { on ->
+            tracking.track(hex, plane)
+            tracking.follow.value = on
+        },
+        onFly = {},
+        onAlerts = { WatchKind.entries.forEach { kind -> if (tracking.watching(hex, kind) == alerting) tracking.toggleWatch(hex, plane.name, kind) } },
+        onFavorite = { tracking.toggleFavorite(hex, plane.name, plane.type) },
+        onFigures = { app.wingtipmaps.android.airplane.ProfileOpen.open(tail, figures = true) },
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
