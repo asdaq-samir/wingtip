@@ -1,7 +1,4 @@
-import { useMemo } from "react";
-import type { CoachStep } from "../../lib/approachLesson";
-import { lessonProfile } from "../../lib/approachLesson";
-import type { ProcedureDrawing } from "../../lib/api/types";
+import type { CoachStep, Lesson } from "../../lib/approachLesson";
 import { altFt } from "../../lib/format";
 import { TEXT_POINTS } from "../../lib/text";
 import { CHART } from "../../lib/tokens";
@@ -12,8 +9,19 @@ import { CHART } from "../../lib/tokens";
  * from the FAF at its coded angle dashed in the tint, and the airplane at
  * the step's fix. No minimums: they are the plate's.
  */
-export function LessonProfile({ drawing, steps, at }: { drawing: ProcedureDrawing; steps: CoachStep[]; at: number }) {
-  const { marks, path } = useMemo(() => lessonProfile(drawing), [drawing]);
+export function LessonProfile({
+  profile,
+  glidepathDeg,
+  steps,
+  at,
+}: {
+  profile: Lesson["profile"];
+  /** The approach's coded glidepath angle, said with the path. */
+  glidepathDeg: number | null | undefined;
+  steps: CoachStep[];
+  at: number;
+}) {
+  const { marks, path } = profile;
   const known = marks.filter((m) => m.ft != null);
   if (known.length < 1 || marks.length < 2) return null;
   const W = 288,
@@ -40,7 +48,7 @@ export function LessonProfile({ drawing, steps, at }: { drawing: ProcedureDrawin
       className="h-24 w-full rounded-xl bg-muted/60"
       role="img"
       data-testid="approach-profile"
-      aria-label={`The approach from the side: ${known.map((m) => `${m.ident} ${altFt(m.ft)} ft`).join(", ")}${path ? `, then down at ${drawing.glidepath_deg?.toFixed(2)}°` : ""}`}
+      aria-label={`The approach from the side: ${known.map((m) => `${m.ident} ${altFt(m.ft)} ft`).join(", ")}${path ? `, then down at ${glidepathDeg?.toFixed(2)}°` : ""}`}
     >
       <polyline points={line} fill="none" stroke="currentColor" strokeWidth={1.5} className="text-procedure" />
       {path && (

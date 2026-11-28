@@ -371,6 +371,34 @@ interface PlannerApi {
     suspend fun alternate(@Query("dest") dest: kotlin.String, @Query("eta") eta: kotlin.String, @Query("tas_kt") tasKt: kotlin.Double, @Query("alternate") alternate: kotlin.String? = ""): Response<app.wingtipmaps.android.api.generated.Alternates>
 
     /**
+     * POST approach/debriefs
+     * Approach Debriefs
+     * The approaches a track flew, one for each time it came down a final: of the field&#39;s approaches drawn, the one whose final it fitted best, the one picked where it fits as well, each fix by fix against the procedure (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) in the engine&#39;s ApproachDebrief. A POST for the drawings and the track; it changes nothing.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedApproachFindAsk
+     * @return [kotlin.collections.List<kotlin.collections.Map<kotlin.String, kotlin.Any>>]
+     */
+    @POST("approach/debriefs")
+    suspend fun approachDebriefs(@Body appWingtipmapsAndroidApiGeneratedApproachFindAsk: app.wingtipmaps.android.api.generated.ApproachFindAsk): Response<kotlin.collections.List<kotlin.collections.Map<kotlin.String, kotlin.Any>>>
+
+    /**
+     * POST approach/lesson
+     * Approach Lesson
+     * An approach taught as an instructor teaches it, from the FAA&#39;s coded procedure (FAA-H-8083-16B, chapter 4): the briefing, the steps flown fix by fix at &#x60;gs_kt&#x60; with the way to each, the quiz, and the side view. What the coded data does not hold, the minimums above all, is \&quot;See the plate\&quot;, never a figure made up. A POST for the drawing; it changes nothing.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedLessonAsk
+     * @return [app.wingtipmaps.android.api.generated.ApproachTaught]
+     */
+    @POST("approach/lesson")
+    suspend fun approachLesson(@Body appWingtipmapsAndroidApiGeneratedLessonAsk: app.wingtipmaps.android.api.generated.LessonAsk): Response<app.wingtipmaps.android.api.generated.ApproachTaught>
+
+    /**
      * GET approach-plate/{cycle}/{ident}/{procedure}.png
      * Approach Plate
      * The plan view of an approach&#39;s plate placed on the map (&#x60;airport_procedure_plate&#x60;), as a picture: black on clear, north up, for the cycle in force.
@@ -403,6 +431,20 @@ interface PlannerApi {
      */
     @GET("approach-plate-page/{cycle}/{ident}/{procedure}.png")
     suspend fun approachPlatePage(@Path("cycle") cycle: kotlin.String, @Path("ident") ident: kotlin.String, @Path("procedure") procedure: kotlin.String): Response<Unit>
+
+    /**
+     * POST approach/debriefs/transition
+     * Approach Transition
+     * Of an approach&#39;s transitions drawn, the one the track came in by: every fix of it before the final passed, the closest to it on the way; null where none was flown, so the approach stays from vectors.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedApproachTransitionAsk
+     * @return [Unit]
+     */
+    @POST("approach/debriefs/transition")
+    suspend fun approachTransition(@Body appWingtipmapsAndroidApiGeneratedApproachTransitionAsk: app.wingtipmaps.android.api.generated.ApproachTransitionAsk): Response<Unit>
 
     /**
      * GET briefing

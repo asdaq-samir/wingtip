@@ -46,8 +46,8 @@ describe("the engine, by name", () => {
     const named = callEngine("lost_comms", { segments: [{ name: "Ö’Hare → “B” 😀", minimum_ft: 3000 }] });
     expect(named.segments[0]!.name).toBe("Ö’Hare → “B” 😀");
     const big = Array.from({ length: 5000 }, (_, i) => ({ t: i * 1000, lat: 42 + i / 3600, lon: -88, alt_ft: 3000 }));
-    for (let i = 0; i < 20; i++) callEngine("debrief_airborne", { points: big });
-    expect(callEngine("debrief_airborne", { points: big })).toEqual([[0, 4999]]);
+    for (let i = 0; i < 20; i++) callEngine("thin_track", { points: big, most: 4000 });
+    expect(callEngine("thin_track", { points: big, most: 4000 })).toHaveLength(4000);
   });
 });
 

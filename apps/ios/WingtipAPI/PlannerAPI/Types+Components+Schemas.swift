@@ -3082,6 +3082,45 @@ extension Components {
                 case runway
             }
         }
+        /// A field's approaches as drawn, each from vectors or with the
+        /// transition picked, the track, the approach picked for the flight and
+        /// the pilot's minimums (DA or MDA, ft MSL) where typed.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ApproachFindAsk`.
+        public struct ApproachFindAsk: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ApproachFindAsk/drawings`.
+            public var drawings: [Components.Schemas.ProcedureDrawing]
+            /// - Remark: Generated from `#/components/schemas/ApproachFindAsk/minimums_ft`.
+            public var minimumsFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ApproachFindAsk/picked`.
+            public var picked: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ApproachFindAsk/points`.
+            public var points: [Components.Schemas.TrackPoint]
+            /// Creates a new `ApproachFindAsk`.
+            ///
+            /// - Parameters:
+            ///   - drawings:
+            ///   - minimumsFt:
+            ///   - picked:
+            ///   - points:
+            public init(
+                drawings: [Components.Schemas.ProcedureDrawing],
+                minimumsFt: Swift.Double? = nil,
+                picked: Swift.String? = nil,
+                points: [Components.Schemas.TrackPoint]
+            ) {
+                self.drawings = drawings
+                self.minimumsFt = minimumsFt
+                self.picked = picked
+                self.points = points
+            }
+            public enum CodingKeys: String, CodingKey {
+                case drawings
+                case minimumsFt = "minimums_ft"
+                case picked
+                case points
+            }
+        }
         /// The approach's runway as the CIFP's runway record gives it: its
         /// threshold (`ident` "RW36"), the threshold's elevation (ARINC 424-18
         /// 5.68) and the threshold crossing height (5.67), ft; and its touchdown
@@ -3133,6 +3172,170 @@ extension Components {
                 case tchFt = "tch_ft"
                 case tdzeFt = "tdze_ft"
                 case thresholdFt = "threshold_ft"
+            }
+        }
+        /// The lesson: the briefing (approach_brief), the steps flown fix by
+        /// fix at the ground speed (approach_coaching), each with `way`, the
+        /// procedure's line from the step before's place to its own (the way the
+        /// lesson's airplane flies it), the quiz (approach_quiz) and the side
+        /// view (approach_profile).
+        ///
+        /// - Remark: Generated from `#/components/schemas/ApproachTaught`.
+        public struct ApproachTaught: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/BriefPayload`.
+            public struct BriefPayloadPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `BriefPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/brief`.
+            public typealias BriefPayload = [Components.Schemas.ApproachTaught.BriefPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/brief`.
+            public var brief: Components.Schemas.ApproachTaught.BriefPayload
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/profile`.
+            public struct ProfilePayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `ProfilePayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/profile`.
+            public var profile: Components.Schemas.ApproachTaught.ProfilePayload
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/QuizPayload`.
+            public struct QuizPayloadPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `QuizPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/quiz`.
+            public typealias QuizPayload = [Components.Schemas.ApproachTaught.QuizPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/quiz`.
+            public var quiz: Components.Schemas.ApproachTaught.QuizPayload
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/StepsPayload`.
+            public struct StepsPayloadPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `StepsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/steps`.
+            public typealias StepsPayload = [Components.Schemas.ApproachTaught.StepsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/ApproachTaught/steps`.
+            public var steps: Components.Schemas.ApproachTaught.StepsPayload
+            /// Creates a new `ApproachTaught`.
+            ///
+            /// - Parameters:
+            ///   - brief:
+            ///   - profile:
+            ///   - quiz:
+            ///   - steps:
+            public init(
+                brief: Components.Schemas.ApproachTaught.BriefPayload,
+                profile: Components.Schemas.ApproachTaught.ProfilePayload,
+                quiz: Components.Schemas.ApproachTaught.QuizPayload,
+                steps: Components.Schemas.ApproachTaught.StepsPayload
+            ) {
+                self.brief = brief
+                self.profile = profile
+                self.quiz = quiz
+                self.steps = steps
+            }
+            public enum CodingKeys: String, CodingKey {
+                case brief
+                case profile
+                case quiz
+                case steps
+            }
+        }
+        /// An approach found from vectors (its final approach fix's time and
+        /// the way-in fixes it passed) and its transitions as drawn, with the
+        /// track: which transition it came in by.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk`.
+        public struct ApproachTransitionAsk: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/drawings`.
+            public var drawings: [Components.Schemas.ProcedureDrawing]
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/faf_at`.
+            public var fafAt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/minimums_ft`.
+            public var minimumsFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/passed`.
+            public var passed: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ApproachTransitionAsk/points`.
+            public var points: [Components.Schemas.TrackPoint]
+            /// Creates a new `ApproachTransitionAsk`.
+            ///
+            /// - Parameters:
+            ///   - drawings:
+            ///   - fafAt:
+            ///   - minimumsFt:
+            ///   - passed:
+            ///   - points:
+            public init(
+                drawings: [Components.Schemas.ProcedureDrawing],
+                fafAt: Swift.Double,
+                minimumsFt: Swift.Double? = nil,
+                passed: Swift.Int,
+                points: [Components.Schemas.TrackPoint]
+            ) {
+                self.drawings = drawings
+                self.fafAt = fafAt
+                self.minimumsFt = minimumsFt
+                self.passed = passed
+                self.points = points
+            }
+            public enum CodingKeys: String, CodingKey {
+                case drawings
+                case fafAt = "faf_at"
+                case minimumsFt = "minimums_ft"
+                case passed
+                case points
             }
         }
         /// The Brief's one line for the route's borders (app.route_borders):
@@ -12232,6 +12435,52 @@ extension Components {
                 case moreNm = "more_nm"
                 case nm
                 case path
+            }
+        }
+        /// An approach as drawn (GET /api/airport/{ident}/procedures/{id}),
+        /// the field's radio from its card, the airplane's VREF or landing
+        /// configuration's stall speed where its figures carry either (its
+        /// approach category, 14 CFR 97.3), and the ground speed it is flown at.
+        ///
+        /// - Remark: Generated from `#/components/schemas/LessonAsk`.
+        public struct LessonAsk: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/drawing`.
+            public var drawing: Components.Schemas.ProcedureDrawing
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/frequencies`.
+            public var frequencies: [Components.Schemas.Frequency]?
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/gs_kt`.
+            public var gsKt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/vref_kt`.
+            public var vrefKt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/LessonAsk/vso_kt`.
+            public var vsoKt: Swift.Double?
+            /// Creates a new `LessonAsk`.
+            ///
+            /// - Parameters:
+            ///   - drawing:
+            ///   - frequencies:
+            ///   - gsKt:
+            ///   - vrefKt:
+            ///   - vsoKt:
+            public init(
+                drawing: Components.Schemas.ProcedureDrawing,
+                frequencies: [Components.Schemas.Frequency]? = nil,
+                gsKt: Swift.Double,
+                vrefKt: Swift.Double? = nil,
+                vsoKt: Swift.Double? = nil
+            ) {
+                self.drawing = drawing
+                self.frequencies = frequencies
+                self.gsKt = gsKt
+                self.vrefKt = vrefKt
+                self.vsoKt = vsoKt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case drawing
+                case frequencies
+                case gsKt = "gs_kt"
+                case vrefKt = "vref_kt"
+                case vsoKt = "vso_kt"
             }
         }
         /// The shelf in its order.
@@ -22190,6 +22439,44 @@ extension Components {
                 case unflyableLegs = "unflyable_legs"
                 case usableFuelGal = "usable_fuel_gal"
                 case winds
+            }
+        }
+        /// A point of a flown track: when, ms since 1970; GPS altitude, feet
+        /// above sea level, where it has one.
+        ///
+        /// - Remark: Generated from `#/components/schemas/TrackPoint`.
+        public struct TrackPoint: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TrackPoint/alt_ft`.
+            public var altFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/TrackPoint/lat`.
+            public var lat: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TrackPoint/lon`.
+            public var lon: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/TrackPoint/t`.
+            public var t: Swift.Double
+            /// Creates a new `TrackPoint`.
+            ///
+            /// - Parameters:
+            ///   - altFt:
+            ///   - lat:
+            ///   - lon:
+            ///   - t:
+            public init(
+                altFt: Swift.Double? = nil,
+                lat: Swift.Double,
+                lon: Swift.Double,
+                t: Swift.Double
+            ) {
+                self.altFt = altFt
+                self.lat = lat
+                self.lon = lon
+                self.t = t
+            }
+            public enum CodingKeys: String, CodingKey {
+                case altFt = "alt_ft"
+                case lat
+                case lon
+                case t
             }
         }
         /// The airplanes ADS-B receivers hear near a point, from adsb.lol's

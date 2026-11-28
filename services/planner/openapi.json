@@ -3770,6 +3770,55 @@
         "title": "ApproachFacts",
         "type": "object"
       },
+      "ApproachFindAsk": {
+        "description": "A field's approaches as drawn, each from vectors or with the\ntransition picked, the track, the approach picked for the flight and\nthe pilot's minimums (DA or MDA, ft MSL) where typed.",
+        "properties": {
+          "drawings": {
+            "items": {
+              "$ref": "#/components/schemas/ProcedureDrawing"
+            },
+            "maxItems": 120,
+            "title": "Drawings",
+            "type": "array"
+          },
+          "minimums_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimums Ft"
+          },
+          "picked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Picked"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TrackPoint"
+            },
+            "maxItems": 20000,
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "drawings",
+          "points"
+        ],
+        "title": "ApproachFindAsk",
+        "type": "object"
+      },
       "ApproachRunway": {
         "description": "The approach's runway as the CIFP's runway record gives it: its\nthreshold (`ident` \"RW36\"), the threshold's elevation (ARINC 424-18\n5.68) and the threshold crossing height (5.67), ft; and its touchdown\nzone elevation, ft MSL to a tenth, from NASR (APT_RWY_END's TDZ_ELEV),\nNone where NASR has none.",
         "properties": {
@@ -3813,6 +3862,97 @@
           "tch_ft"
         ],
         "title": "ApproachRunway",
+        "type": "object"
+      },
+      "ApproachTaught": {
+        "description": "The lesson: the briefing (approach_brief), the steps flown fix by\nfix at the ground speed (approach_coaching), each with `way`, the\nprocedure's line from the step before's place to its own (the way the\nlesson's airplane flies it), the quiz (approach_quiz) and the side\nview (approach_profile).",
+        "properties": {
+          "brief": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Brief",
+            "type": "array"
+          },
+          "profile": {
+            "additionalProperties": true,
+            "title": "Profile",
+            "type": "object"
+          },
+          "quiz": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Quiz",
+            "type": "array"
+          },
+          "steps": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "brief",
+          "steps",
+          "quiz",
+          "profile"
+        ],
+        "title": "ApproachTaught",
+        "type": "object"
+      },
+      "ApproachTransitionAsk": {
+        "description": "An approach found from vectors (its final approach fix's time and\nthe way-in fixes it passed) and its transitions as drawn, with the\ntrack: which transition it came in by.",
+        "properties": {
+          "drawings": {
+            "items": {
+              "$ref": "#/components/schemas/ProcedureDrawing"
+            },
+            "maxItems": 120,
+            "title": "Drawings",
+            "type": "array"
+          },
+          "faf_at": {
+            "title": "Faf At",
+            "type": "number"
+          },
+          "minimums_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimums Ft"
+          },
+          "passed": {
+            "minimum": 0.0,
+            "title": "Passed",
+            "type": "integer"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TrackPoint"
+            },
+            "maxItems": 20000,
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "faf_at",
+          "passed",
+          "drawings",
+          "points"
+        ],
+        "title": "ApproachTransitionAsk",
         "type": "object"
       },
       "BorderLine": {
@@ -13669,6 +13809,60 @@
           "more_gal"
         ],
         "title": "LegProcedure",
+        "type": "object"
+      },
+      "LessonAsk": {
+        "description": "An approach as drawn (GET /api/airport/{ident}/procedures/{id}),\nthe field's radio from its card, the airplane's VREF or landing\nconfiguration's stall speed where its figures carry either (its\napproach category, 14 CFR 97.3), and the ground speed it is flown at.",
+        "properties": {
+          "drawing": {
+            "$ref": "#/components/schemas/ProcedureDrawing"
+          },
+          "frequencies": {
+            "items": {
+              "$ref": "#/components/schemas/Frequency"
+            },
+            "maxItems": 200,
+            "title": "Frequencies",
+            "type": "array"
+          },
+          "gs_kt": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 400.0,
+            "title": "Gs Kt",
+            "type": "number"
+          },
+          "vref_kt": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 400.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vref Kt"
+          },
+          "vso_kt": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 400.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vso Kt"
+          }
+        },
+        "required": [
+          "drawing",
+          "gs_kt"
+        ],
+        "title": "LessonAsk",
         "type": "object"
       },
       "Library": {
@@ -24910,6 +25104,45 @@
         "title": "Totals",
         "type": "object"
       },
+      "TrackPoint": {
+        "description": "A point of a flown track: when, ms since 1970; GPS altitude, feet\nabove sea level, where it has one.",
+        "properties": {
+          "alt_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alt Ft"
+          },
+          "lat": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lon",
+            "type": "number"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon"
+        ],
+        "title": "TrackPoint",
+        "type": "object"
+      },
       "Traffic": {
         "description": "The airplanes ADS-B receivers hear near a point, from adsb.lol's\nopen data, under the Open Database License 1.0, which asks that the\nmap say so where it draws them.",
         "properties": {
@@ -27935,6 +28168,149 @@
         "x-gateway": {
           "access": "public",
           "cache": true
+        }
+      }
+    },
+    "/api/approach/debriefs": {
+      "post": {
+        "description": "The approaches a track flew, one for each time it came down a final:\nof the field's approaches drawn, the one whose final it fitted best,\nthe one picked where it fits as well, each fix by fix against the\nprocedure (AIM 1-1-9, 1-1-17, 5-4-5; 14 CFR 91.175) in the engine's\nApproachDebrief. A POST for the drawings and the track; it changes\nnothing.",
+        "operationId": "approach_debriefs_api_approach_debriefs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproachFindAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Approach Debriefs Api Approach Debriefs Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approach Debriefs",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
+        }
+      }
+    },
+    "/api/approach/debriefs/transition": {
+      "post": {
+        "description": "Of an approach's transitions drawn, the one the track came in by:\nevery fix of it before the final passed, the closest to it on the way;\nnull where none was flown, so the approach stays from vectors.",
+        "operationId": "approach_transition_api_approach_debriefs_transition_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproachTransitionAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": true,
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Approach Transition Api Approach Debriefs Transition Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approach Transition",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
+        }
+      }
+    },
+    "/api/approach/lesson": {
+      "post": {
+        "description": "An approach taught as an instructor teaches it, from the FAA's coded\nprocedure (FAA-H-8083-16B, chapter 4): the briefing, the steps flown\nfix by fix at `gs_kt` with the way to each, the quiz, and the side\nview. What the coded data does not hold, the minimums above all, is\n\"See the plate\", never a figure made up. A POST for the drawing; it\nchanges nothing.",
+        "operationId": "approach_lesson_api_approach_lesson_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApproachTaught"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approach Lesson",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
         }
       }
     },
