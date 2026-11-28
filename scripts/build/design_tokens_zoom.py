@@ -21,7 +21,7 @@ PYTHON = Path("services/jobs/charts/map_zoom.py")
 # re-exports, so lib/tokens stays within the 400-line budget
 # (scripts/ci/file_sizes.py; generated/ folders are left out of it).
 WEB = Path("apps/web/src/lib/generated/mapTokens.ts")
-TS_REEXPORT = 'export { CHART_LOOK, MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";'
+TS_REEXPORT = 'export { CHART_LOOK, DIMMER, MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";'
 HEAD = "From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1."
 
 

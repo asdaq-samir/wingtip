@@ -13016,6 +13016,80 @@ nonisolated enum EngineContract {
         }
     }
 
+    nonisolated struct RunwaySketchAnswer: Codable, Equatable, Sendable {
+        /// Each runway drawn, in the order asked.
+        var strips: [EngineContract.RunwaySketchAnswerStripsItem]
+        /// How many runways with two ends are not drawn, so the card can say its picture is partial.
+        var leftOut: Int
+
+        enum CodingKeys: String, CodingKey {
+            case strips
+            case leftOut = "left_out"
+        }
+    }
+
+    nonisolated struct RunwaySketchAnswerStripsItem: Codable, Equatable, Sendable {
+        /// Which runway asked it is, from 0.
+        var runway: Int
+        /// Its first end, nautical miles east and north of the field's point.
+        var a: [Double]
+        /// Its second end, the same.
+        var b: [Double]
+        /// Its width as drawn, feet.
+        var widthFt: Double
+        /// Laid along its heading through the field's point, its true place not known.
+        var guessed: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case runway
+            case a
+            case b
+            case widthFt = "width_ft"
+            case guessed
+        }
+    }
+
+    nonisolated struct RunwaySketchInput: Codable, Equatable, Sendable {
+        /// The field's point, degrees north (NASR APT_BASE's ARP).
+        var lat: Double
+        /// And east.
+        var lon: Double
+        /// The field's runways as the planner sends them, in the card's order.
+        var runways: [EngineContract.RunwaySketchInputRunwaysItem]
+    }
+
+    nonisolated struct RunwaySketchInputRunwaysItem: Codable, Equatable, Sendable {
+        /// Its ends, the first end first; the first two are drawn.
+        var runwayEnds: [EngineContract.RunwaySketchInputRunwaysItemRunwayEndsItem]?
+        /// APT_RWY RWY_LEN, feet.
+        var lengthFt: Double?
+        /// APT_RWY RWY_WIDTH, feet.
+        var widthFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case runwayEnds = "runway_ends"
+            case lengthFt = "length_ft"
+            case widthFt = "width_ft"
+        }
+    }
+
+    nonisolated struct RunwaySketchInputRunwaysItemRunwayEndsItem: Codable, Equatable, Sendable {
+        var ident: String?
+        /// The end's surveyed position, degrees north (APT_RWY_END LAT_DECIMAL).
+        var lat: Double?
+        /// And east (LONG_DECIMAL).
+        var lon: Double?
+        /// Its true heading (APT_RWY_END TRUE_ALIGNMENT).
+        var headingTrueDeg: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case lat
+            case lon
+            case headingTrueDeg = "heading_true_deg"
+        }
+    }
+
     nonisolated struct RunwaysReadAnswerItem: Codable, Equatable, Sendable {
         var part: String
         var pick: EngineContract.RunwaysReadAnswerItemPick?

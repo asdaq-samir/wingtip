@@ -1,18 +1,68 @@
 package app.wingtipmaps.android.map
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.double
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** What is drawn on the chart at the chart's own light at night (the
  *  web's mapDim.test.ts; AIM 8-1-6): the dim's figure and how each kind
- *  of opacity takes it. */
+ *  of opacity takes it, and the cases every app is held to
+ *  (apps/web/src/lib/fixtures/mapDim.json, the web's mapDimShared.test.ts
+ *  and iOS's MarkDimTests the same), so a drift from the web fails here. */
 class MapDimTest {
     private val dim = """["coalesce",["global-state","mapDim"],1]"""
+    private val shared = Json.parseToJsonElement(checkNotNull(javaClass.classLoader!!.getResource("mapDim.json")).readText()).jsonObject
+    private fun cases(section: String) = shared.getValue(section).jsonObject.getValue("cases").jsonArray.map { it.jsonObject }
+    private fun JsonObject.num(key: String) = getValue(key).jsonPrimitive.double
+
+    @Test
+    fun androidKeepsEverySectionTheFixtureNamesItIn() {
+        val mine = setOf("dim", "colour", "opacity", "layers", "paper", "words", "nightInks")
+        val named = shared.filterKeys { it != "_note" }.filterValues { s -> s.jsonObject.getValue("apps").jsonArray.any { it.jsonPrimitive.content == "android" } }.keys
+        assertEquals(mine, named)
+    }
+
+    @Test
+    fun theSharedDimsOpacitiesAndLayers() {
+        for (c in cases("dim")) assertEquals(c.toString(), c.num("dim").toFloat(), MapDim.of(c.getValue("night").jsonPrimitive.boolean, c.num("brightness").toFloat()), 0f)
+        for (c in cases("opacity")) {
+            val value = c.getValue("value").takeIf { it != JsonNull }
+            assertEquals(c.getValue("about").toString(), c.getValue("dimmed"), MapDim.dimmedOpacity(value))
+        }
+        for (c in cases("layers")) assertEquals(c.getValue("about").toString(), c.getValue("paint"), MapDim.layer(c.getValue("layer").jsonObject)["paint"] ?: JsonNull)
+    }
+
+    @Test
+    fun theSharedColoursGoToBlackWithTheDim() {
+        // MapDim.colour's stops are black and the colour, linear in the dim:
+        // at the dim its sRGB times it, as the web's dimmedColour.
+        for (c in cases("colour")) {
+            val parts = MapDim.colour(java.awt.Color.decode(c.getValue("colour").jsonPrimitive.content).rgb).toArray()
+            fun rgb(at: Int) = (parts[at] as Array<*>).drop(1).take(3).map { (it as Number).toDouble() }
+            assertEquals(listOf(0.0, 0.0, 0.0), rgb(4))
+            val k = c.num("dim")
+            val got = "#" + rgb(6).joinToString("") { String.format(java.util.Locale.US, "%02x", Math.round(it * k)) }
+            assertEquals(c.toString(), c.getValue("dimmed").jsonPrimitive.content, got)
+        }
+    }
+
+    @Test
+    fun theSharedPaperWordsAndNightInks() {
+        for (c in cases("paper")) assertEquals(c.toString(), c.num("paper"), MapDim.paperOf(c.num("brightness"), c.num("contrast")), 1e-6)
+        for (c in cases("words")) {
+            assertEquals(c.toString(), c.num("share"), MapDim.wordLight(c.getValue("night").jsonPrimitive.boolean, c.num("brightness"), c.num("contrast")), 0.0)
+        }
+        for ((day, night) in shared.getValue("nightInks").jsonObject.getValue("inks").jsonObject) assertEquals(day, night.jsonPrimitive.content, MapDim.nightWord(day))
+    }
 
     @Test
     fun theDimIsTheChartsBrightnessAtNightAndOneByDay() {

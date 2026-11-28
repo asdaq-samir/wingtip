@@ -420,7 +420,10 @@ changes over it:
   not drawn.
 
 At night the Dimmer reaches what is drawn on the chart (`map/MapDim`, the
-web's mapDim): the style's lines, circles and words by their opacity, and
+web's mapDim, the same `map-dim` tokens and fixture): the style's lines,
+circles and icons by their opacity, its light-haloed words by their
+colour at the words' light (`MapDim.wordLight`, `nightWord`) on the halo
+kept whole, as is a TFR's number (`MapDim.word`), and
 the lines and marks added in code by their colour (`MapDim.colour`, the
 web's DIM_BY_COLOUR), each a constant colour a layer, darkened with the
 chart so its contrast with it is kept: the course and its dark edge, the

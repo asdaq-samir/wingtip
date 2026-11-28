@@ -3801,6 +3801,13 @@ export interface EngineContract {
     answer: RunwayProximityAnswer;
   };
   /**
+   * Where the airport card's runway sketch lays each runway, the picture runway_closure_marks places its crosses on: one layout for every app. A runway with both ends surveyed is drawn between them (NASR APT_RWY_END LAT_DECIMAL and LONG_DECIMAL, OurAirports' for a field NASR does not list), in nautical miles east and north of the field's point on the engine's flat frame (a minute of latitude a mile, a minute of longitude cos(latitude) of one). Where no runway of the field has both ends surveyed, each is guessed through the field's point along its first end's true heading (APT_RWY_END TRUE_ALIGNMENT) for its length (APT_RWY RWY_LEN), the first end where a landing on it starts; the guess is the drawing's alone (`guessed`), none is guessed beside a surveyed runway, and none within a degree of a heading already guessed (a field's parallels). Its drawn width is APT_RWY RWY_WIDTH, else 75 ft, an assumption for the drawing only and no FAA figure. A runway with fewer than two ends (a helipad) is not drawn; one with two ends and nothing to place it by is counted in `left_out`.
+   */
+  runway_sketch: {
+    input: RunwaySketchInput;
+    answer: RunwaySketchAnswer;
+  };
+  /**
    * Each runway's favoured end, the planner's RunwayWind or null.
    */
   runway_with_winds: {
@@ -14454,6 +14461,87 @@ export interface RunwayProximityAnswer {
    * Changes when what is said changes, never with a distance: speak when it changes.
    */
   key: string;
+}
+export interface RunwaySketchInput {
+  /**
+   * The field's point, degrees north (NASR APT_BASE's ARP).
+   */
+  lat: number;
+  /**
+   * And east.
+   */
+  lon: number;
+  /**
+   * The field's runways as the planner sends them, in the card's order.
+   */
+  runways: RunwaySketchRunway[];
+}
+export interface RunwaySketchRunway {
+  /**
+   * Its ends, the first end first; the first two are drawn.
+   */
+  runway_ends?: RunwaySketchEnd[] | null;
+  /**
+   * APT_RWY RWY_LEN, feet.
+   */
+  length_ft?: number | null;
+  /**
+   * APT_RWY RWY_WIDTH, feet.
+   */
+  width_ft?: number | null;
+}
+export interface RunwaySketchEnd {
+  ident?: string;
+  /**
+   * The end's surveyed position, degrees north (APT_RWY_END LAT_DECIMAL).
+   */
+  lat?: number | null;
+  /**
+   * And east (LONG_DECIMAL).
+   */
+  lon?: number | null;
+  /**
+   * Its true heading (APT_RWY_END TRUE_ALIGNMENT).
+   */
+  heading_true_deg?: number | null;
+}
+export interface RunwaySketchAnswer {
+  /**
+   * Each runway drawn, in the order asked.
+   */
+  strips: RunwaySketchStrip[];
+  /**
+   * How many runways with two ends are not drawn, so the card can say its picture is partial.
+   */
+  left_out: number;
+}
+export interface RunwaySketchStrip {
+  /**
+   * Which runway asked it is, from 0.
+   */
+  runway: number;
+  /**
+   * Its first end, nautical miles east and north of the field's point.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  a: [number, number];
+  /**
+   * Its second end, the same.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  b: [number, number];
+  /**
+   * Its width as drawn, feet.
+   */
+  width_ft: number;
+  /**
+   * Laid along its heading through the field's point, its true place not known.
+   */
+  guessed: boolean;
 }
 export interface RunwayWithWindsInput {
   runways?:

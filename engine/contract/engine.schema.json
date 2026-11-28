@@ -30771,6 +30771,158 @@
       ],
       "additionalProperties": false
     },
+    "runway_sketch": {
+      "description": "Where the airport card's runway sketch lays each runway, the picture runway_closure_marks places its crosses on: one layout for every app. A runway with both ends surveyed is drawn between them (NASR APT_RWY_END LAT_DECIMAL and LONG_DECIMAL, OurAirports' for a field NASR does not list), in nautical miles east and north of the field's point on the engine's flat frame (a minute of latitude a mile, a minute of longitude cos(latitude) of one). Where no runway of the field has both ends surveyed, each is guessed through the field's point along its first end's true heading (APT_RWY_END TRUE_ALIGNMENT) for its length (APT_RWY RWY_LEN), the first end where a landing on it starts; the guess is the drawing's alone (`guessed`), none is guessed beside a surveyed runway, and none within a degree of a heading already guessed (a field's parallels). Its drawn width is APT_RWY RWY_WIDTH, else 75 ft, an assumption for the drawing only and no FAA figure. A runway with fewer than two ends (a helipad) is not drawn; one with two ends and nothing to place it by is counted in `left_out`.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RunwaySketchInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number",
+              "description": "The field's point, degrees north (NASR APT_BASE's ARP)."
+            },
+            "lon": {
+              "type": "number",
+              "description": "And east."
+            },
+            "runways": {
+              "type": "array",
+              "description": "The field's runways as the planner sends them, in the card's order.",
+              "items": {
+                "title": "RunwaySketchRunway",
+                "type": "object",
+                "properties": {
+                  "runway_ends": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "description": "Its ends, the first end first; the first two are drawn.",
+                    "items": {
+                      "title": "RunwaySketchEnd",
+                      "type": "object",
+                      "properties": {
+                        "ident": {
+                          "type": "string"
+                        },
+                        "lat": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "description": "The end's surveyed position, degrees north (APT_RWY_END LAT_DECIMAL)."
+                        },
+                        "lon": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "description": "And east (LONG_DECIMAL)."
+                        },
+                        "heading_true_deg": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "description": "Its true heading (APT_RWY_END TRUE_ALIGNMENT)."
+                        }
+                      }
+                    }
+                  },
+                  "length_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "APT_RWY RWY_LEN, feet."
+                  },
+                  "width_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "APT_RWY RWY_WIDTH, feet."
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "runways"
+          ]
+        },
+        "answer": {
+          "title": "RunwaySketchAnswer",
+          "type": "object",
+          "properties": {
+            "strips": {
+              "type": "array",
+              "description": "Each runway drawn, in the order asked.",
+              "items": {
+                "title": "RunwaySketchStrip",
+                "type": "object",
+                "properties": {
+                  "runway": {
+                    "type": "integer",
+                    "description": "Which runway asked it is, from 0."
+                  },
+                  "a": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Its first end, nautical miles east and north of the field's point."
+                  },
+                  "b": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Its second end, the same."
+                  },
+                  "width_ft": {
+                    "type": "number",
+                    "description": "Its width as drawn, feet."
+                  },
+                  "guessed": {
+                    "type": "boolean",
+                    "description": "Laid along its heading through the field's point, its true place not known."
+                  }
+                },
+                "required": [
+                  "runway",
+                  "a",
+                  "b",
+                  "width_ft",
+                  "guessed"
+                ]
+              }
+            },
+            "left_out": {
+              "type": "integer",
+              "description": "How many runways with two ends are not drawn, so the card can say its picture is partial."
+            }
+          },
+          "required": [
+            "strips",
+            "left_out"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "runway_with_winds": {
       "description": "Each runway's favoured end, the planner's RunwayWind or null.",
       "type": "object",
@@ -36594,6 +36746,7 @@
     "runway_ends_traffic",
     "runway_hard_surface",
     "runway_proximity",
+    "runway_sketch",
     "runway_with_winds",
     "runways_read",
     "rvr_check",

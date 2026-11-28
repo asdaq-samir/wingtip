@@ -1237,6 +1237,23 @@ nonisolated enum WingtipChartLook {
     static let plateLeastOpacity: Double = 0.1
 }
 
+/// The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group).
+nonisolated enum WingtipDimmer {
+    static let state: String = "mapDim"
+    static let wordState: String = "labelNight"
+    static let warningState: String = "warningDim"
+    static let metadata: String = "wingtip:dim"
+    static let opacity: [String: [String]] = ["line": ["line-opacity"], "circle": ["circle-opacity", "circle-stroke-opacity"], "symbol": ["icon-opacity", "text-opacity"]]
+    static let colour: [String: [String]] = ["line": ["line-color"], "circle": ["circle-color", "circle-stroke-color"], "symbol": ["text-color", "icon-color"]]
+    static let warningUnderPaper: Double = 0.85
+    static let wordGamma: Double = 2.2
+    static let wordLeast: Double = 0.01
+    static let wordFloor: Double = 0.75
+    static let wordFloorContrast: Double = 0.13
+    static let wordLight: Double = 0.4460834275041789
+    static let nightWord: [String: String] = ["#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#5cc685", "#1c1a17": "#afb1b4", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8db2fc", "#b45309": "#dfaa20", "#7c3aed": "#bba1ff", "#78716c": "#b6b1ad", "#be185d": "#f58cc4", "#0f766e": "#4ac4b9", "#57534e": "#b6b1ad", "#9333ea": "#c99cff"]
+}
+
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.
 nonisolated enum WingtipFlow {
     typealias Stop = (at: Double, colour: UIColor, alpha: UInt8)

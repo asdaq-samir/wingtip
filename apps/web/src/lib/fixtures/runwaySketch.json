@@ -1,0 +1,358 @@
+{
+  "_note": "Where the airport card's runway sketch lays each runway, the engine's runway_sketch (engine/crates/weather/src/runway_closure/sketch.rs), worked by hand on the engine's flat frame: a minute of latitude a nautical mile, a minute of longitude cos(latitude) of one, a runway's length over 6,076.115 ft (1,852 m) a nautical mile; ends to six places of a mile. Surveyed ends are NASR APT_RWY_END's, headings its TRUE_ALIGNMENT, lengths and widths APT_RWY's RWY_LEN and RWY_WIDTH; 75 ft is the drawing's width where NASR gives none, an assumption and no FAA figure. engine/facade/tests/runway_closure.rs asks the engine each case; the web's runwayDrawing.test.ts and iOS's RunwaySketchTests read the same.",
+  "cases": [
+    {
+      "about": "18/36 surveyed: drawn between its ends, the 18 end 0.6 nm north of the field's point (a hundredth of a degree), its NASR width.",
+      "input": {
+        "lat": 43,
+        "lon": -89,
+        "runways": [
+          {
+            "runway_ends": [
+              {
+                "ident": "18",
+                "heading_true_deg": 180,
+                "lat": 43.01,
+                "lon": -89
+              },
+              {
+                "ident": "36",
+                "heading_true_deg": 0,
+                "lat": 43,
+                "lon": -89
+              }
+            ],
+            "length_ft": 3600,
+            "width_ft": 150
+          }
+        ]
+      },
+      "answer": {
+        "strips": [
+          {
+            "runway": 0,
+            "a": [
+              0,
+              0.6
+            ],
+            "b": [
+              0,
+              0
+            ],
+            "width_ft": 150,
+            "guessed": false
+          }
+        ],
+        "left_out": 0
+      }
+    },
+    {
+      "about": "9/27 with no surveyed ends, 6,000 ft and no width: guessed along 9's true heading through the field, half its length (0.493737 nm) each side, the 9 end west where a landing on it starts; 75 ft wide for the drawing.",
+      "input": {
+        "lat": 43,
+        "lon": -89,
+        "runways": [
+          {
+            "runway_ends": [
+              {
+                "ident": "9",
+                "heading_true_deg": 90,
+                "lat": null,
+                "lon": null
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 270,
+                "lat": null,
+                "lon": null
+              }
+            ],
+            "length_ft": 6000,
+            "width_ft": null
+          }
+        ]
+      },
+      "answer": {
+        "strips": [
+          {
+            "runway": 0,
+            "a": [
+              -0.493737,
+              0.0
+            ],
+            "b": [
+              0.493737,
+              0.0
+            ],
+            "width_ft": 75,
+            "guessed": true
+          }
+        ],
+        "left_out": 0
+      }
+    },
+    {
+      "about": "A surveyed 18/36 and an unsurveyed 9/27: none guessed beside a surveyed runway, which it might cross where it does not; 9/27 left out.",
+      "input": {
+        "lat": 43,
+        "lon": -89,
+        "runways": [
+          {
+            "runway_ends": [
+              {
+                "ident": "18",
+                "heading_true_deg": 180,
+                "lat": 43.01,
+                "lon": -89
+              },
+              {
+                "ident": "36",
+                "heading_true_deg": 0,
+                "lat": 43,
+                "lon": -89
+              }
+            ],
+            "length_ft": 3600,
+            "width_ft": 100
+          },
+          {
+            "runway_ends": [
+              {
+                "ident": "9",
+                "heading_true_deg": 90,
+                "lat": null,
+                "lon": null
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 270,
+                "lat": null,
+                "lon": null
+              }
+            ],
+            "length_ft": 4000,
+            "width_ft": 75
+          }
+        ]
+      },
+      "answer": {
+        "strips": [
+          {
+            "runway": 0,
+            "a": [
+              0,
+              0.6
+            ],
+            "b": [
+              0,
+              0
+            ],
+            "width_ft": 100,
+            "guessed": false
+          }
+        ],
+        "left_out": 1
+      }
+    },
+    {
+      "about": "18L/36R and 18R/36L half a degree apart, neither surveyed, and 9/27: one guess for the parallels, which would lie on each other, and one for 9/27.",
+      "input": {
+        "lat": 43,
+        "lon": -89,
+        "runways": [
+          {
+            "runway_ends": [
+              {
+                "ident": "18L",
+                "heading_true_deg": 180,
+                "lat": null,
+                "lon": null
+              },
+              {
+                "ident": "36R",
+                "heading_true_deg": 0,
+                "lat": null,
+                "lon": null
+              }
+            ],
+            "length_ft": 4000,
+            "width_ft": null
+          },
+          {
+            "runway_ends": [
+              {
+                "ident": "18R",
+                "heading_true_deg": 180.5,
+                "lat": null,
+                "lon": null
+              },
+              {
+                "ident": "36L",
+                "heading_true_deg": 0.5,
+                "lat": null,
+                "lon": null
+              }
+            ],
+            "length_ft": 4000,
+            "width_ft": null
+          },
+          {
+            "runway_ends": [
+              {
+                "ident": "9",
+                "heading_true_deg": 90,
+                "lat": null,
+                "lon": null
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 270,
+                "lat": null,
+                "lon": null
+              }
+            ],
+            "length_ft": 4000,
+            "width_ft": null
+          }
+        ]
+      },
+      "answer": {
+        "strips": [
+          {
+            "runway": 0,
+            "a": [
+              0.0,
+              0.329158
+            ],
+            "b": [
+              0.0,
+              -0.329158
+            ],
+            "width_ft": 75,
+            "guessed": true
+          },
+          {
+            "runway": 2,
+            "a": [
+              -0.329158,
+              0.0
+            ],
+            "b": [
+              0.329158,
+              0.0
+            ],
+            "width_ft": 75,
+            "guessed": true
+          }
+        ],
+        "left_out": 1
+      }
+    },
+    {
+      "about": "A helipad (one end) is never drawn nor counted; a runway with neither surveyed ends nor a heading, and one with no length, are left out.",
+      "input": {
+        "lat": 43,
+        "lon": -89,
+        "runways": [
+          {
+            "runway_ends": [
+              {
+                "ident": "H1",
+                "heading_true_deg": null,
+                "lat": null,
+                "lon": null
+              }
+            ],
+            "length_ft": null,
+            "width_ft": null
+          },
+          {
+            "runway_ends": [
+              {
+                "ident": "9",
+                "heading_true_deg": null,
+                "lat": null,
+                "lon": null
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": null,
+                "lat": null,
+                "lon": null
+              }
+            ],
+            "length_ft": 3000,
+            "width_ft": null
+          },
+          {
+            "runway_ends": [
+              {
+                "ident": "9",
+                "heading_true_deg": 90,
+                "lat": null,
+                "lon": null
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 270,
+                "lat": null,
+                "lon": null
+              }
+            ],
+            "length_ft": null,
+            "width_ft": null
+          }
+        ]
+      },
+      "answer": {
+        "strips": [],
+        "left_out": 2
+      }
+    },
+    {
+      "about": "East of the field at 60 degrees north: a minute of longitude is half a nautical mile there (cos 60), so 9/27's ends a tenth of a degree apart east to west lie 3 nm apart.",
+      "input": {
+        "lat": 60,
+        "lon": -150,
+        "runways": [
+          {
+            "runway_ends": [
+              {
+                "ident": "9",
+                "heading_true_deg": 90,
+                "lat": 60,
+                "lon": -150.05
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 270,
+                "lat": 60,
+                "lon": -149.95
+              }
+            ],
+            "length_ft": 18228,
+            "width_ft": 150
+          }
+        ]
+      },
+      "answer": {
+        "strips": [
+          {
+            "runway": 0,
+            "a": [
+              -1.5,
+              0
+            ],
+            "b": [
+              1.5,
+              0
+            ],
+            "width_ft": 150,
+            "guessed": false
+          }
+        ],
+        "left_out": 0
+      }
+    }
+  ]
+}

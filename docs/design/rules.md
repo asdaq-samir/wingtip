@@ -306,6 +306,11 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    2026-11-23). The card's grabber and its ground above the bar take the
    drag; the bar is for taps.
    This replaces T4's tabs under the actions and its one-line report.
+   The sketch's runways are laid out by the engine (`runway_sketch`):
+   between NASR's surveyed ends, else, where no runway has them, guessed
+   along a runway's true heading through the field's point, 75 ft wide
+   where NASR gives no width (the drawing's assumption); the web and iOS
+   draw its answer.
    A closed runway is crossed out on the pictures' runway sketch where
    the airport marks it on the ground, the engine's
    `runway_closure_marks` (2026-11-17; AC 150/5340-1M 5.6 and 5.7, AIM
@@ -1751,8 +1756,12 @@ word and figure drawn on the map, on all three apps, follows these rules:
    at the share of light that brings it to the paper's under the Dimmer
    and the Contrast (`mapDim`'s `wordLight`), so no word is brighter than
    the chart and each reads about 5:1 on its halo at the night's default
-   Dimmer, where faded with its halo it was about 2:1 (the themes audit,
-   round 6; the phones to follow, and `halo-night` to 1 with them).
+   Dimmer, where faded with its halo it was about 2:1. Under the night's
+   own contrast the words' share keeps to `map-dim.word-floor` (0.75, or
+   the paper's own light where the Dimmer takes it lower), so a flatter
+   chart leaves them 4.5:1 and more. Android and iOS letter their words
+   the same way, from the same tokens (`map-dim`), held to the web by
+   one fixture (`lib/fixtures/mapDim.json`).
 7. **A field's ident looks the same whoever draws it.** Its colour is
    blue where it is towered and magenta where it is not, as the chart
    sets it. Its size follows the zoom. This holds on the tiles, a Class B

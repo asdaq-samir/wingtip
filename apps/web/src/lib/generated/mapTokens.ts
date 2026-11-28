@@ -112,3 +112,20 @@ export const CHART_LOOK = {
   plateOpacity: 0.85,
   plateLeastOpacity: 0.1,
 } as const;
+
+/** The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group). */
+export const DIMMER = {
+  state: "mapDim",
+  wordState: "labelNight",
+  warningState: "warningDim",
+  metadata: "wingtip:dim",
+  opacity: {"line": ["line-opacity"], "circle": ["circle-opacity", "circle-stroke-opacity"], "symbol": ["icon-opacity", "text-opacity"]},
+  colour: {"line": ["line-color"], "circle": ["circle-color", "circle-stroke-color"], "symbol": ["text-color", "icon-color"]},
+  warningUnderPaper: 0.85,
+  wordGamma: 2.2,
+  wordLeast: 0.01,
+  wordFloor: 0.75,
+  wordFloorContrast: 0.13,
+  wordLight: 0.4460834275041789,
+  nightWord: {"#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#5cc685", "#1c1a17": "#afb1b4", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8db2fc", "#b45309": "#dfaa20", "#7c3aed": "#bba1ff", "#78716c": "#b6b1ad", "#be185d": "#f58cc4", "#0f766e": "#4ac4b9", "#57534e": "#b6b1ad", "#9333ea": "#c99cff"},
+} as const;

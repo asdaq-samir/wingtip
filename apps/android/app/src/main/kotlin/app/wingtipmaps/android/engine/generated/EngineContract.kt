@@ -13620,6 +13620,97 @@ object EngineContract {
     )
 
     @Serializable
+    data class RunwaySketchAnswer(
+        /**
+         * Each runway drawn, in the order asked.
+         */
+        val strips: List<EngineContract.RunwaySketchAnswerStripsItem>,
+        /**
+         * How many runways with two ends are not drawn, so the card can say its picture is partial.
+         */
+        @SerialName("left_out")
+        val leftOut: Int,
+    )
+
+    @Serializable
+    data class RunwaySketchAnswerStripsItem(
+        /**
+         * Which runway asked it is, from 0.
+         */
+        val runway: Int,
+        /**
+         * Its first end, nautical miles east and north of the field's point.
+         */
+        val a: List<Double>,
+        /**
+         * Its second end, the same.
+         */
+        val b: List<Double>,
+        /**
+         * Its width as drawn, feet.
+         */
+        @SerialName("width_ft")
+        val widthFt: Double,
+        /**
+         * Laid along its heading through the field's point, its true place not known.
+         */
+        val guessed: Boolean,
+    )
+
+    @Serializable
+    data class RunwaySketchInput(
+        /**
+         * The field's point, degrees north (NASR APT_BASE's ARP).
+         */
+        val lat: Double,
+        /**
+         * And east.
+         */
+        val lon: Double,
+        /**
+         * The field's runways as the planner sends them, in the card's order.
+         */
+        val runways: List<EngineContract.RunwaySketchInputRunwaysItem>,
+    )
+
+    @Serializable
+    data class RunwaySketchInputRunwaysItem(
+        /**
+         * Its ends, the first end first; the first two are drawn.
+         */
+        @SerialName("runway_ends")
+        val runwayEnds: List<EngineContract.RunwaySketchInputRunwaysItemRunwayEndsItem>? = null,
+        /**
+         * APT_RWY RWY_LEN, feet.
+         */
+        @SerialName("length_ft")
+        val lengthFt: Double? = null,
+        /**
+         * APT_RWY RWY_WIDTH, feet.
+         */
+        @SerialName("width_ft")
+        val widthFt: Double? = null,
+    )
+
+    @Serializable
+    data class RunwaySketchInputRunwaysItemRunwayEndsItem(
+        val ident: String? = null,
+        /**
+         * The end's surveyed position, degrees north (APT_RWY_END LAT_DECIMAL).
+         */
+        val lat: Double? = null,
+        /**
+         * And east (LONG_DECIMAL).
+         */
+        val lon: Double? = null,
+        /**
+         * Its true heading (APT_RWY_END TRUE_ALIGNMENT).
+         */
+        @SerialName("heading_true_deg")
+        val headingTrueDeg: Double? = null,
+    )
+
+    @Serializable
     data class RunwaysReadAnswerItem(
         val part: String,
         val pick: EngineContract.RunwaysReadAnswerItemPick? = null,

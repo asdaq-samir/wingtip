@@ -17,7 +17,7 @@ import type { AirportPlace } from "../../lib/api/types";
 import { useGeo, type LatLon } from "../../lib/geo";
 import { placeWeather } from "./placeWeather";
 import { awayOf, distanceOf, kindOf, knownOf } from "./placeCardWords";
-import { runwaysLeftOut, stripsOf } from "./runwayDrawing";
+import { sketchOf } from "./runwayDrawing";
 import { prefersReducedMotion } from "../../lib/motion";
 import { airportQuery, photosQuery, servicesQuery } from "../../lib/queryClient";
 import { StopStrip, type SuggestedStop } from "./StopServices";
@@ -162,8 +162,8 @@ export default function PlaceCard({
   // the pictures: a tap shows it full screen -- the FAA's diagram, or for
   // a field the FAA draws none for the sketch (SketchViewer).
   const { sketchedRunways, leftOut } = useMemo(() => {
-    const strips = place ? stripsOf(place.runways, place.lat, place.lon) : [];
-    return { sketchedRunways: strips.map((r) => r.ends.join("/")), leftOut: place ? runwaysLeftOut(place.runways, strips) : 0 };
+    const { strips, leftOut } = place ? sketchOf(place.runways, place.lat, place.lon) : { strips: [], leftOut: 0 };
+    return { sketchedRunways: strips.map((r) => r.ends.join("/")), leftOut };
   }, [place]);
   const sketched = sketchedRunways.length > 0;
   // The field from the air, the USGS's, and from the ground where

@@ -36,6 +36,7 @@
 //! Figure A-27); the colour is the app's to choose.
 
 mod part;
+pub mod sketch;
 #[cfg(test)]
 mod tests;
 

@@ -8,7 +8,9 @@ import MapKit
 /// than the chart under it and the pilot's dark adaptation is kept (AIM
 /// 8-1-6, Vision in Flight); by day it is 1. Own ship, the GPS's or the
 /// dry run's airplane, keeps its full light: the one mark the pilot must
-/// find at a glance.
+/// find at a glance. The policy's figures are design/tokens.json's map-dim
+/// group (WingtipDimmer), and apps/web/src/lib/fixtures/mapDim.json holds
+/// this to the web's and Android's cases (MarkDimTests).
 enum MarkDim {
     /// The marks' alpha: the chart's brightness, one less the Dimmer's
     /// shade, at night; 1 by day (the web's mapDimOf).
@@ -42,18 +44,42 @@ enum MarkDim {
         }
     }
 
-    /// A word's ink at the chart's brightness, dimmed by colour so its
-    /// light falls as the paper's does. The brightness is the chart's
-    /// sRGB factor, which takes the paper's luminance down by about its
-    /// 2.2th power; the word's sRGB times the brightness to the 1/2.2
-    /// takes its luminance down by the brightness itself, so a light
-    /// night ink stays about 4:1 or better against its opaque dark halo
-    /// at the default Dimmer (WCAG 2's relative luminance), where fading
-    /// the whole mark faded the halo into the paper with the words, about
-    /// 2:1. Never brighter than the chart's own words would be.
+    /// A word's ink at the chart's brightness, dimmed by colour on its
+    /// opaque dark halo, as the web's labelInk: its night ink (already
+    /// brought to the towered blue's light, MapLabelLook.ink) times the
+    /// words' share of light (wordLight), so a word is as light as the
+    /// paper under the Dimmer and none brighter (AIM 8-1-6), about 5:1 on
+    /// its halo at the night's default Dimmer. iOS draws its chart's
+    /// contrast itself, so the share is taken at the night's own contrast
+    /// (map-dim.word-floor-contrast), where the web follows its slider.
     nonisolated static func word(_ ink: UIColor, brightness: CGFloat) -> UIColor {
         guard brightness < 1 else { return ink }
-        return OverlayDim.colour(ink, brightness: pow(max(0, brightness), 1 / 2.2)) ?? ink
+        let share = wordLight(night: true, brightness: Double(brightness), contrast: WingtipDimmer.wordFloorContrast)
+        return OverlayDim.colour(ink, brightness: CGFloat(share)) ?? ink
+    }
+
+    /// The chart's white as MapLibre's raster shader draws it, encoded sRGB
+    /// 0 to 1: the contrast about the middle (1/(1-k) over 0, 1+k under),
+    /// then the brightness (the web's paperOf).
+    nonisolated static func paperOf(brightness: Double, contrast: Double) -> Double {
+        let factor = contrast > 0 ? 1 / (1 - contrast) : 1 + contrast
+        return min(1, (0.5 * factor + 0.5) * min(1, max(0, brightness)))
+    }
+
+    /// The words' share of their night inks after dark, 0 by day: the
+    /// paper's light against the towered blue's, floored under the night's
+    /// own contrast at map-dim.word-floor, in hundredths (the web's
+    /// wordLight; apps/web/src/lib/fixtures/mapDim.json holds the two).
+    nonisolated static func wordLight(night: Bool, brightness: Double, contrast: Double) -> Double {
+        guard night else { return 0 }
+        func paperShare(_ k: Double) -> Double {
+            let c = paperOf(brightness: brightness, contrast: k)
+            let linear = c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
+            return pow(linear / WingtipDimmer.wordLight, 1 / WingtipDimmer.wordGamma)
+        }
+        let floor = min(WingtipDimmer.wordFloor, paperShare(WingtipDimmer.wordFloorContrast))
+        let share = max(paperShare(contrast), floor)
+        return max(WingtipDimmer.wordLeast, min(1, (share * 100).rounded() / 100))
     }
 }
 

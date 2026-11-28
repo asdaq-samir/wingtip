@@ -102,15 +102,17 @@ internal class TfrLayer {
     /**
      * The number's ink and halo by day or night (the web's labelInk and
      * labelHalo for a hazard): the red on the white halo by day; at night
-     * map.label.night-ink's lighter red, dimmed by its colour, on the tag's
-     * dark halo, which is left whole so the words keep their contrast with
-     * it (the round-6 themes audit's N1).
+     * its night word, map.label.night-ink's lighter red brought to the
+     * paper's light by its colour (MapDim.word, the web's wordLight), on
+     * the tag's dark halo, which is left whole so the number keeps about
+     * 4.8:1 on it at the night's default Dimmer, where the red dimmed as a
+     * line is (MapDim.colour) left it 2.4:1.
      */
     fun paint(style: Style, night: Boolean) {
         this.night = night
-        val ink = if (night) WingtipMapLabel.NIGHT_INK[WingtipColors.Chart.TFR_HEX] ?: WingtipColors.Chart.TFR_HEX else WingtipColors.Chart.TFR_HEX
+        val red = WingtipColors.Chart.TFR_HEX
         style.getLayerAs<SymbolLayer>(LABEL)?.setProperties(
-            PropertyFactory.textColor(MapDim.colour(ink.toColorInt())),
+            PropertyFactory.textColor(if (night) MapDim.word(red) else MapDim.colour(red.toColorInt())),
             PropertyFactory.textHaloColor(if (night) MapLabels.NIGHT_HALO else WingtipColors.Chart.CASING_HEX),
         )
     }

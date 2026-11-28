@@ -44,7 +44,7 @@ struct AirportTiles: View {
 
     var body: some View {
         let ident = place.ident
-        let sketched = !RunwaySketch.strips(place.runways).isEmpty
+        let sketched = !RunwaySketch.strips(place.runways, lat: place.lat, lon: place.lon).isEmpty
         PictureStrip {
             if let photos {
                 PictureTile(caption: "From the Air", label: "\(ident) from the air, full screen") {
@@ -67,7 +67,7 @@ struct AirportTiles: View {
                 PictureTile(caption: "Runways", label: "\(ident) runways sketch, full screen") {
                     shown = AirportChartsTab.sketch(place)
                 } picture: {
-                    RunwaySketch(runways: place.runways).background(.background)
+                    RunwaySketch(runways: place.runways, lat: place.lat, lon: place.lon).background(.background)
                 }
             }
             if let photo = photos?.photo {
