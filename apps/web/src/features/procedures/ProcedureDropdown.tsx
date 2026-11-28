@@ -22,8 +22,7 @@ import { transitionWords } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import { WORDING } from "../../lib/wording/generated/wording";
 import type ProcedureMenu from "./ProcedureMenu";
-import { PROCEDURES_FAILED } from "./ProcedureMenu";
-import { ALL, approachGroups, NONE, shortName } from "./procedureWords";
+import { ALL, approachGroups, NONE, PROCEDURES_FAILED, shortName } from "./procedureWords";
 import { procedureTrigger, TITLE } from "./ProcedureTrigger";
 
 type MenuProps = Parameters<typeof ProcedureMenu>[0];

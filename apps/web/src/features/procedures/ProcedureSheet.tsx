@@ -15,9 +15,8 @@ import { faaWords } from "../../lib/advisories";
 import { procedureQuery } from "../../lib/queryClient";
 import { Chips, NONE } from "./RunwayChips";
 import { CHIP } from "./routeListStyle";
-import { KIND_TITLE } from "./procedureWords";
+import { KIND_TITLE, PROCEDURES_FAILED } from "./procedureWords";
 import QueryState from "../../components/QueryState";
-import { PROCEDURES_FAILED } from "./ProcedureMenu";
 
 // The procedures sheet's pages (ProceduresRoute): a kind's list, and one
 // procedure's own page.

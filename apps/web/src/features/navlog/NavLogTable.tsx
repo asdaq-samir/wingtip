@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useMemo, useState, type ReactNode } from "react";
 import { cn } from "cn";
-import { flexRender, useTable, type ColumnDef } from "@tanstack/react-table";
+import { flexRender, useTable } from "@tanstack/react-table";
 import { NoteRow, SelectableRow } from "../../components/SelectableRows";
 import { isLegPoint, legOf, rowPoint, type NavLogRow } from "../plan";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
@@ -9,12 +9,12 @@ import { hoverLeg } from "../../lib/map/marks/mapHover";
 import { GROUP_HEADING, TEXT } from "../../lib/text";
 import NavLogAge from "./NavLogAge";
 import { NavLogTotals } from "./NavLogTotals";
-import { columnClass, navLogTableFeatures } from "./navLogColumns";
+import { columnClass, navLogColumns, navLogTableFeatures } from "./navLogColumns";
 
 /** The nav log as a table: the desktop's dense one and paper's. */
 export function NavLogTable({
   data,
-  columns,
+  columnsOf,
   onDesk,
   printing,
   airplane,
@@ -30,7 +30,9 @@ export function NavLogTable({
   setFlyingRow,
 }: {
   data: NavLogRow[];
-  columns: ColumnDef<typeof navLogTableFeatures, NavLogRow>[];
+  /** What its columns are made from (navLogColumns), made here, with the
+   *  table, on the chunk the two share (navLogTableChunk). */
+  columnsOf: Parameters<typeof navLogColumns>[0];
   onDesk: boolean;
   printing: boolean;
   airplane: boolean;
@@ -46,6 +48,7 @@ export function NavLogTable({
   setSelectedRow: (el: HTMLElement | null) => void;
   setFlyingRow: (el: HTMLElement | null) => void;
 }) {
+  const columns = navLogColumns(columnsOf);
   const metaClass = (meta?: { className?: string }) => columnClass(meta, onDesk);
   // With no airplane no tops of climb and descent, as NavLogList has it:
   // where the airplane levels off is its climb's.

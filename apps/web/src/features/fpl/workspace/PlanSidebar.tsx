@@ -1,4 +1,4 @@
-import { lazy, useEffect, useEffectEvent } from "react";
+import { lazy, useEffect, useEffectEvent, useState } from "react";
 import { fromChunk } from "../../../lib/fromChunk";
 import { loadAccountPanels } from "../../pilot";
 import type { LatLon } from "../../../lib/geo";
@@ -107,9 +107,16 @@ export default function PlanSidebar({
   const { askFor, favorites, home, moveFavoriteAirport, pickAirplane, pickPlace, setHomeAirport, toggleFavoriteAirport } = vm.search;
   const typing = useSearchQuery((s) => s.query !== "");
   usePrefetchAircraftTiles();
+  // The search's own page drawn once it is the page up, or once the route
+  // the page opened on has drawn: drawn under a route link's plan, out of
+  // sight beside it, its chunk with the carousel's and Favorites' came in
+  // the route's first seconds (route-load.spec), though it waits for them.
+  const [homeDue, setHomeDue] = useState(view === "search");
+  if (view === "search" && !homeDue) setHomeDue(true);
   useEffect(() => {
     // Once the route opened has drawn (lib/routeDrawn), out of its first seconds.
     return afterRouteDrawn(() => {
+      setHomeDue(true);
       searchHome.prefetch();
       recentsPage.prefetch();
       recentRoutesPage.prefetch();
@@ -284,7 +291,8 @@ export default function PlanSidebar({
             <Waits>{model.sent ? <SearchResultsPage /> : <TypedResults />}</Waits>
           </TabPage>
         ) : (
-          stripsDrawn && (
+          stripsDrawn &&
+          homeDue && (
             <SearchHome vm={vm} pickIdent={model.pick ? model.pickIdent : undefined} refusal={model.pick ? model.refusal : undefined} />
           )
         )}
