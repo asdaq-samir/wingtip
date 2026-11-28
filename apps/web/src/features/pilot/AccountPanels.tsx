@@ -48,6 +48,9 @@ function formOf(a: AircraftRequest): AircraftFormValues {
     equipment: a.equipment ?? "",
     surveillance: a.surveillance ?? "",
     colour: a.colour ?? "",
+    category: a.kind?.category ?? "",
+    aircraftClass: a.kind?.aircraftClass ?? "",
+    gear: a.kind?.tailwheel == null ? "" : a.kind.tailwheel ? "tailwheel" : "tricycle",
   };
 }
 
@@ -122,6 +125,12 @@ export function AircraftPanel() {
         surveillance: values.surveillance.trim() || null,
         colour: values.colour.trim() || null,
         figures: null, // its own figures as they are: the airplane's profile sets them (features/airplane)
+        // What passenger currency is judged by (14 CFR 61.57(a)(1)(ii)), each none until said.
+        kind: {
+          category: values.category || null,
+          aircraftClass: values.aircraftClass || null,
+          tailwheel: values.gear ? values.gear === "tailwheel" : null,
+        },
       },
     });
   };

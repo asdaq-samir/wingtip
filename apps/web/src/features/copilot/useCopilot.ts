@@ -8,7 +8,7 @@ import { copilotVoice } from "../../lib/copilot/voice";
 import { useAhead } from "../../lib/map/position/ahead";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { usePreferences } from "../../lib/preferences";
-import { currencyQuery } from "../../lib/queryClientRecords";
+import { useCurrency } from "../../lib/useCurrency";
 import { alongLine, copilotInput, nightCurrent, rememberCategories, restOfRoute, watch, type CopilotMessage } from "./copilotInput";
 
 /** How often the copilot looks again at where the airplane is: the
@@ -34,7 +34,7 @@ export function useCopilot(): { message: CopilotMessage | null; dismiss: () => v
   const flight = useCopilotFlight((s) => s.flight);
   const on = mode !== "off" && flying && !!flight;
   const ahead = useAhead();
-  const { data: currency } = useQuery({ ...currencyQuery, enabled: on, retry: false, meta: { silent: true } });
+  const { data: currency } = useCurrency({ enabled: on, silent: true });
 
   // Where to ask the planner from: rounded, so the question changes as
   // the airplane gets somewhere new, not at every fix.

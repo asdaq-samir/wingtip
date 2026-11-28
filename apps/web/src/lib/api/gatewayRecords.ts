@@ -1,5 +1,6 @@
 import { gateway, data } from "./http";
 import { ApiError } from "./errors";
+import type { Flying } from "../airplaneKind";
 import type {
   Aircraft,
   AssignLessonRequest,
@@ -88,7 +89,10 @@ export const gatewayRecords = {
     remove: async (id: number): Promise<void> => {
       await gateway.DELETE("/api/logbook/{id}", { params: { path: { id } } });
     },
-    currency: () => gateway.GET("/api/logbook/currency").then(data<Currency>),
+    /** Judged for the airplane to be flown where it is given (14 CFR
+     *  61.57(a)(1)(ii)), else for the newest flight's. */
+    currency: (flying: Flying | null = null) =>
+      gateway.GET("/api/logbook/currency", { params: { query: flying ?? {} } }).then(data<Currency>),
     setCurrencyDates: (request: CurrencyDatesRequest) => gateway.PUT("/api/logbook/currency", { body: request }).then(data<Currency>),
     /** Whether the pilot is emailed before their currency runs out. */
     reminders: () => gateway.GET("/api/logbook/reminders").then(data<Reminders>),

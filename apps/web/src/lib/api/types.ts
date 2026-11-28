@@ -299,6 +299,8 @@ export type SignInCapabilities = Gateway["Capabilities"];
  *  fuel check. */
 export type Aircraft = Gateway["AircraftDto"];
 export type AircraftRequest = Gateway["AircraftRequest"];
+/** A saved airplane's category, class and gear (14 CFR 61.5(b)), each null where not said. */
+export type AirplaneKind = Gateway["AirplaneKind"];
 /** An airplane's own handbook figures on its record, each null where not given. */
 export type OwnFigures = Gateway["OwnFigures"];
 /** An airplane's handbook figures as its pilot confirmed them from a photo. */
