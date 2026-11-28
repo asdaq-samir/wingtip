@@ -4,7 +4,7 @@ caller passes it), a time-out, and the held copy's validators so an
 unchanged file is a 304; through wingtip.outside's shared session, which
 asks again on a dropped connection, a 429 and a 502 to 504, so this module
 keeps no retry loop of its own (it had one, tenacity's, around the
-session's, round-3 audit 2026-11-27)."""
+session's)."""
 
 from __future__ import annotations
 

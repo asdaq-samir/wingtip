@@ -21,10 +21,10 @@ Each is a job on ingest's scheduler (wingtip.schedule): a failure is
 logged and tried again at the next turn; neither holds up the feeds. The
 three heavy ones take their first turns FIRST_TURNS_APART_S apart, the
 registry first: all three at start-up, a rebuild of the registry beside
-the NTSB's and the airmen's, held ingest's 384 MB at once (round 4's audit).
+the NTSB's and the airmen's, held ingest's 384 MB at once.
 A store on disk of an older shape than the planner reads goes first,
 whatever that order: the planner reads it as none until it is built
-again, and the NTSB's waited 300 s behind the registry (round 5's audit).
+again, and the NTSB's waited 300 s behind the registry.
 """
 
 from __future__ import annotations

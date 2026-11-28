@@ -105,8 +105,7 @@ def stage_to_bucket(
     pyramid drawn and its archives published ahead under next.json
     (wingtip.chart_publish), which every planner takes at 0901Z on its
     date. Without it the task drew a new cycle only from that date, and
-    the map served the expired one for the hours the drawing took (the
-    ops audit, 2026-11-21). Each day of the lead tries again until it is
+    the map served the expired one for the hours the drawing took. Each day of the lead tries again until it is
     staged; once next.json names it, a run costs one read. Returns the
     state: WAITING, NOT_PUBLISHED, STAGED or FAILED (some sheets missing,
     nothing published)."""

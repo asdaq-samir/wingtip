@@ -69,8 +69,8 @@ DETAIL_KEYS = (
     "ceiling_ft",
     "ceiling_ref",
     # An area's floor or ceiling given AGL beside another's MSL, so which
-    # is lowest (highest) depends on the ground under it (tfr_detail_read;
-    # round 7's N17): lost on the next fetch when left out of here.
+    # is lowest (highest) depends on the ground under it (tfr_detail_read):
+    # lost on the next fetch when left out of here.
     "floor_varies",
     "ceiling_varies",
     "instructions",

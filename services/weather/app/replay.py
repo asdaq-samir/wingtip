@@ -1,7 +1,7 @@
 """A recorded day of weather, for the browser suite: what the service
 would fetch, written once from a recording instead, every time in it moved
 to now, so a spec's red never depends on the day's weather (docs/CI.md
-rule 9; CI audit 2026-11-23, M2: brief-glance's private-field line and
+rule 9; brief-glance's private-field line and
 pass-times' TFRs went red on one night's METARs and TFRs alone).
 
     python -m app.replay record STORE OUT   a live store's products into OUT
