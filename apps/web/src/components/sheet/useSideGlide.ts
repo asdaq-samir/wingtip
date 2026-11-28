@@ -10,8 +10,8 @@ import { prefersReducedMotion, timing } from "../../lib/motion";
  * on the screen that did not move (the apple-design audit of 2026-11-23,
  * H2). Its layout changes at once, as before -- its head alone, or the
  * whole panel -- and only what is drawn eases. Out, the panel is uncovered
- * from its head down, by a clip. In, a copy of its ground, the look's own
- * classes, is drawn where it was inside a box of its old height that
+ * from its head down, by a clip. In, a copy of its ground, the look's
+ * solid sheet with no frost, is drawn where it was inside a box of its old height that
  * clips it, and the box slides up while the copy slides down as much,
  * the copy still and the box's foot closing up to the head: transforms
  * alone, which WebKit composites, where a clip-path animation is drawn on
@@ -72,8 +72,11 @@ export function useSideGlide(panel: HTMLElement | null, size: PanelState, radius
     const ground = document.createElement("div");
     for (const { name, value } of panel.attributes)
       if (name.startsWith("data-") && name !== "data-testid" && name !== "data-slot") ground.setAttribute(name, value);
-    ground.className = panel.className;
-    ground.style.cssText = `position:absolute;inset:0;border-radius:${radius}px`;
+    // The look's solid ground (`--sheet`), not the panel's classes: those
+    // brought its frost and its backdrop-filter, and WebKit blurred the map
+    // twice each frame of the glide, under the panel and under the copy
+    // (round 7's W4). At an edge in motion the two look the same.
+    ground.style.cssText = `position:absolute;inset:0;border-radius:${radius}px;background-color:var(--sheet, var(--background))`;
     shut.append(ground);
     panel.before(shut);
     const rise = Math.max(0, from - height);

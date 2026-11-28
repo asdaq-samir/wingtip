@@ -75,12 +75,22 @@ export function FlightNowBox({
  * way flown to draw. Nothing where it has none.
  */
 export function FlightPictures({
-  live,
+  flown,
   title,
   photo,
   trafficPhoto,
 }: {
-  live: FlightLive;
+  /** What it draws of the flight, apart from the rest of it, so it is
+   *  drawn again only when these change (useAirplaneCardModel's `pictures`). */
+  flown: {
+    name: string;
+    trail: FlightLive["trail"];
+    latest: FlightLive["latest"];
+    trackDeg: number | null;
+    from: FlightLive["fromField"];
+    to: FlightLive["toField"];
+    note: string;
+  };
   title: string;
   photo: CardSlide | null;
   /** Traffic with no N-number: its photo by its ICAO address (Planespotters). */
@@ -88,7 +98,7 @@ export function FlightPictures({
 }) {
   const geo = useGeo();
   const { data: picture } = useQuery({ ...planePhotoQuery(trafficPhoto ?? ""), enabled: !!trafficPhoto });
-  const { name, plane, trail } = live;
+  const { name, trail } = flown;
   const slides: (CardSlide | null)[] = [
     photo,
     trafficPhoto && picture
@@ -120,13 +130,13 @@ export function FlightPictures({
           label: `Where ${name} has flown`,
           picture: (
             <LiveSketch
-              latest={live.latest}
+              latest={flown.latest}
               points={trail}
               // Its track now, or, not heard, its last flight's last way.
-              trackDeg={plane?.track_deg ?? (geo ? geo.bearingDeg(trail.at(-2)!, trail.at(-1)!) : null)}
-              from={live.fromField}
-              to={live.toField}
-              empty={live.sketchNote}
+              trackDeg={flown.trackDeg ?? (geo ? geo.bearingDeg(trail.at(-2)!, trail.at(-1)!) : null)}
+              from={flown.from}
+              to={flown.to}
+              empty={flown.note}
             />
           ),
         }

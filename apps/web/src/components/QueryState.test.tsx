@@ -52,6 +52,12 @@ describe("what is still coming", () => {
     expect(screen.getByTestId("card-info-coming").querySelectorAll("[data-slot=skeleton]").length).toBeGreaterThanOrEqual(11);
   });
 
+  it("keeps a caption line under the fact with a note, and under no other", () => {
+    render(<SkeletonCardInfo facts={5} note={1} fetching="Fetching the airport…" />);
+    const facts = screen.getByTestId("card-facts-coming").children;
+    expect([...facts].map((fact) => fact.querySelectorAll("dd").length)).toEqual([1, 2, 1, 1, 1]);
+  });
+
   it("gives skeleton rows as separate rows, so a group draws its lines between them", () => {
     const rows = skeletonRows({ rows: 3, fetching: "Fetching its flights…" });
     expect(rows).toHaveLength(3);

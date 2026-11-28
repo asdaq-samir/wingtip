@@ -306,11 +306,14 @@ function CardDrawer({
               {/* Its scroller ends over the grabber's box where the grabber is
                   at the foot (the side panel, a top sheet), so a row scrolled
                   to the foot is not under the box: the iOS audit's P1 found
-                  "plates-row" and a nav log row there, lost 3 to the grabber. */}
+                  "plates-row" and a nav log row there, lost 3 to the grabber.
+                  Only where the grabber is drawn, the card on top: one under
+                  another, or kept mounted, kept 16 empty points at its foot
+                  (round 7's W6), and the two rules now stay in step. */}
               <div
                 className={cn(
                   "flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]",
-                  !(onPhone && fromBottom) && !p.inspector && GRABBER_FOOT_ROOM,
+                  !(onPhone && fromBottom) && top && !p.inspector && GRABBER_FOOT_ROOM,
                 )}
               >
                 <CardScroller {...p} pill={onPhone && at === "peek"} raise={() => ask("half")} slot={slot} footPx={footPx} />

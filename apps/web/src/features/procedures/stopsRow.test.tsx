@@ -9,7 +9,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { listedPoints, stopsTitle } from "./stopsRow";
-import { StopsRow } from "./TimelineRows";
+import { StopsRow } from "./TimelineStopRows";
 
 afterEach(cleanup);
 

@@ -38,7 +38,10 @@ describe("the phone's own airport search", () => {
   });
 
   test("names each row as the planner's search does", () => {
+    // `whole`: an open field's ident typed whole, which a navaid of the
+    // same ident is put after when the planner's waypoints come in.
     expect(searchIndex(INDEX, "C81")[0]).toEqual({
+      whole: true,
       ident: "C81",
       name: "Campbell Airport",
       municipality: "Grayslake",

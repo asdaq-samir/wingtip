@@ -125,6 +125,31 @@ describe("useAirportSearch with fixes and the copy in", () => {
     expect(result.current.airportsAnswered).toBe(true);
   });
 
+  test("keeps a field typed whole first, and highlighted, when a navaid of its ident comes in", async () => {
+    // OSH is both Wittman Regional's FAA ID and the Oshkosh VORTAC: the
+    // field the pilot saw first, highlighted for Enter by its place, stays
+    // first, the navaid after it, the other waypoints after the airports.
+    vi.mocked(api.airportIndex).mockResolvedValue({
+      airports: [
+        ["KOSH", "Wittman Regional", "Oshkosh", "WI", 1, 43.98, -88.56, "OSH"],
+        ["KOSHA", "Oshawa", "Oshawa", "", 3],
+      ],
+    } as never);
+    vi.mocked(api.airportSearch).mockResolvedValue([
+      { ident: "OSH", name: "Oshkosh", municipality: null, region: null, kind: "fix" },
+      { ident: "OSHKO", name: "Oshko", municipality: null, region: null, kind: "fix" },
+    ] as never);
+    const { result } = renderHook(() => useAirportSearch("osh", true, true), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.rows.map((r) => r.ident)).toEqual(["KOSH", "OSH", "KOSHA", "OSHKO"]));
+    expect(result.current.answered).toBe(true);
+  });
+
+  test("puts a navaid typed whole first where no field has its ident", async () => {
+    vi.mocked(api.airportSearch).mockResolvedValue([{ ident: "OS", name: "Os", municipality: null, region: null, kind: "fix" }] as never);
+    const { result } = renderHook(() => useAirportSearch("os", true, true), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.rows.map((r) => r.ident)).toEqual(["OS", "KOSH"]));
+  });
+
   test("asks the planner once for letters typed again", async () => {
     vi.mocked(api.airportSearch).mockResolvedValue([]);
     const { result, rerender } = renderHook(({ text }) => useAirportSearch(text, true, true), {

@@ -1,10 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { create } from "zustand";
 import { api } from "../../lib/api/client";
 import type { PlateStateCharts } from "../../lib/api/types";
 import { chartKey, keepChart, PLATES_CACHE } from "../../lib/kept/keepChart";
 import { keptRecordStore } from "../keptForAir";
-import { keptStore } from "../../lib/storage";
+import { keptStatesStore, useStateDownloads, type KeptState } from "./keptStates";
 
 /**
  * The FAA's plates kept a state at a time (Settings → Plates), as the
@@ -17,27 +16,12 @@ import { keptStore } from "../../lib/storage";
  * (0901Z on its AIRAC date, the engine's data_cycle through the planner);
  * from then it is fetched again for the new cycle and the old one's pages
  * deleted (useStatePlatesFresh). Public data, so it outlives a sign-out.
+ * What is kept and what runs is keptStates', on the first load; this, the
+ * fetching and the deleting, is asked for only when one is due.
  */
 
-/** A state kept, or being kept: how far it has come and its bytes. */
-export interface KeptState {
-  id: string;
-  name: string;
-  cycle: string;
-  /** When the next cycle takes over, ISO, 0901Z on its date. */
-  nextAt: string;
-  charts: number;
-  done: number;
-  failed: number;
-  bytes: number;
-}
+export { keptStatesStore, replaced, unfinished, useStateDownloads, type KeptState } from "./keptStates";
 
-const KEPT_STATES_KEY = "wingtip.state-plates";
-export const keptStatesStore = () => keptStore<KeptState[]>(KEPT_STATES_KEY, []);
-
-/** The states being fetched now, by id, and those whose list could not be
- *  had, the words said on their row. */
-export const useStateDownloads = create<{ running: string[]; problems: Record<string, string> }>(() => ({ running: [], problems: {} }));
 const controllers = new Map<string, AbortController>();
 
 const CONCURRENCY = 4;
@@ -164,10 +148,3 @@ export async function deleteState(client: QueryClient, id: string): Promise<void
   const list = await client.fetchQuery(listQuery(kept.cycle, id)).catch(() => null);
   if (list) await forget(chartKeys(list), await keysOfKept(client, id));
 }
-
-/** Whether a kept state's cycle has been replaced at `nowMs`: its next
- *  cycle's 0901Z, as the planner gave it, has come. */
-export const replaced = (kept: KeptState, nowMs: number) => Date.parse(kept.nextAt) <= nowMs;
-
-/** Whether a kept state's fetch stopped short of its every chart. */
-export const unfinished = (kept: KeptState) => kept.done < kept.charts;

@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
-import { searchIndex, useAirportIndex, type AirportSearchRow } from "./airportIndex";
+import { searchIndex, useAirportIndex, type AirportSearchRow, type LocalSearchRow } from "./airportIndex";
 import { useOwnShipNear } from "./map/position/ownShip";
 import { useDebounced } from "./useDebounced";
 
@@ -94,12 +94,20 @@ export function useAirportSearch(text: string, enabled = true, fixes = false) {
 
 const NONE: AirportSearchRow[] = [];
 
-/** The copy's airports with the planner's waypoints: one whose ident is
- *  what is typed first (a navaid typed whole, ORD), the rest after the
- *  airports. */
-function merged(airports: AirportSearchRow[], fixRows: AirportSearchRow[], typed: string): AirportSearchRow[] {
+/** The copy's airports with the planner's waypoints, the first row kept
+ *  where an open field's ident was typed whole: the list's first row is
+ *  the one highlighted for Enter (the root's autoHighlight "always", by
+ *  its place), so a navaid of the same ident put first some 200 ms after
+ *  the letter (OSH, ORD, DLH, MSP) took the highlight from the field and
+ *  an Enter took the navaid. A navaid typed whole goes after the fields
+ *  typed whole, else first (one only the navaid's ident names), and the
+ *  other waypoints after the airports. */
+function merged(airports: LocalSearchRow[], fixRows: AirportSearchRow[], typed: string): AirportSearchRow[] {
   if (fixRows.length === 0) return airports;
   const upper = typed.toUpperCase();
   const whole = fixRows.filter((r) => r.ident.toUpperCase() === upper);
-  return [...whole, ...airports, ...fixRows.filter((r) => r.ident.toUpperCase() !== upper)];
+  const rest = fixRows.filter((r) => r.ident.toUpperCase() !== upper);
+  const fields = airports.filter((r) => r.whole);
+  const others = airports.filter((r) => !r.whole);
+  return [...fields, ...whole, ...others, ...rest];
 }

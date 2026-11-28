@@ -15,6 +15,7 @@ import {
 } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { showPage } from "./oneSearch";
+import { violations } from "./a11yAxe";
 
 /**
  * The one search (the owner's approved design, 2026-11-09), where the FPL,
@@ -85,9 +86,13 @@ test(
     await expect(top.getByTestId("search-top-fly-here")).toBeVisible();
     await expect(top.getByTestId("search-top-depart-from")).toBeVisible();
     await expect(results.getByRole("group", { name: "Suggestions" }).getByTestId("search-do-nearby")).toContainText("Search Nearby");
+    // The quick actions beside the top hit's option, in its group, are no
+    // axe violation of the listbox or the group (round 7's W3).
+    expect(await violations(page, '[data-testid="one-search-results"]')).toEqual([]);
 
-    // KOSH picked: its card, its four actions at its top and no others.
-    await searchAirports(page).filter({ hasText: "KOSH" }).first().click();
+    // KOSH picked by a tap in the free room under its title, left of its
+    // quick actions: the row's, as it was with them inside the option.
+    await top.getByTestId("airport-result-actions").click({ position: { x: 8, y: 3 } });
     const card = sideDrawer(page).getByTestId("place-card");
     await expect(card.getByTestId("place-name")).toHaveText("KOSH", { timeout: slow(10_000) });
     for (const id of ["fly-here", "place-add-stop", "place-call", "place-favorite"]) await expect(card.getByTestId(id)).toBeVisible();

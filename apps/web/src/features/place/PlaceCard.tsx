@@ -172,7 +172,10 @@ export default function PlaceCard({
   // airport diagram thumbnail", 2026-10-23). Which is open full screen.
   // Asked for with the field itself, not after it: they waited for the
   // card's first answer and went 0.6 s after the tap (the 23 Oct timings).
-  const { data: photos, isPending: photosPending } = useQuery(photosQuery(ident));
+  const { data: photos, isPending: photosPending, error: photosError } = useQuery(photosQuery(ident));
+  // Not had, where the planner's 404 says the field has none: offline, or
+  // the planner failing (PlacePictures keeps their place, saying why).
+  const photosUnhad = !!photosError && !(photosError instanceof ApiError && photosError.status === 404);
   // The services asked for with it, for the Info tab's foot (StopServices:
   // the fuel first in its On the field).
   usePrefetchQuery(servicesQuery(ident));
@@ -297,6 +300,7 @@ export default function PlaceCard({
                 pictures={{
                   photos,
                   photosPending,
+                  photosUnhad,
                   sketchedRunways,
                   leftOut,
                   noRunwaysPicture,
@@ -304,8 +308,9 @@ export default function PlaceCard({
                 }}
               />
             ) : (
-              // Its shape while it comes: the five facts and the first picture (PlaceFacts, PlacePictures).
-              <SkeletonCardInfo facts={5} fetching="Fetching the airport…" />
+              // Its shape while it comes: the five facts, Airspace's note
+              // line kept, and the first picture (PlaceFacts, PlacePictures).
+              <SkeletonCardInfo facts={5} note={1} fetching="Fetching the airport…" />
             )}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">
