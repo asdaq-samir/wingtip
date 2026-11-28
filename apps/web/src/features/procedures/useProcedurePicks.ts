@@ -72,7 +72,7 @@ export function useProcedurePicks({
   );
   // A SID or a STAR typed in the route box among its points ("KMSP BAEE1
   // BAE ... OSHH2 KATW"), picked as its field's (typedPicks): asked for at
-  // the typing, on a chunk of its own, off the first load (round 7's N14).
+  // the typing, on a chunk of its own, off the first load.
   const typeProcedures = useCallback(
     async (typed: TypedProcedure[], route: { dep: string; dest: string }) =>
       (await import("./typedPicks")).pickTyped(typed, route, pickProcedures),

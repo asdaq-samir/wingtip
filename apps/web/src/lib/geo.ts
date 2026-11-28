@@ -103,8 +103,7 @@ export function lonBounds(lons: readonly number[]): [number, number] {
  * field is nearest, which point of a line a target's -- a sampling step,
  * a label's spacing or a camera's offset, never a figure a pilot reads:
  * a distance or a course shown is the engine's geodesic (Geo, below).
- * Each was once written out by hand in its own file (the audit of
- * 2026-11-16).
+ * Each was once written out by hand in its own file.
  */
 /** Squared flat degrees between two points `dLat` and `dLon` apart: an
  *  order alone, with no square root to take. */
@@ -164,8 +163,7 @@ function destination(a: LatLon, bearing: number, nm: number): LatLon {
 /** From `a` to each of `to`, its distance, nm, and true bearing, in one
  *  call to the engine (`great_circles`): a list of fields or an area's
  *  corners measured from the airplane, where a call a field each was two
- *  crossings into the .wasm a field at each draw (the speed audit of
- *  2026-11-27). */
+ *  crossings into the .wasm a field at each draw. */
 function fromTo(a: LatLon, to: readonly LatLon[]): { distanceNm: number[]; bearingDeg: number[] } {
   if (!to.length) return { distanceNm: [], bearingDeg: [] };
   const { distance_nm, bearing_deg } = callEngine("great_circles", {

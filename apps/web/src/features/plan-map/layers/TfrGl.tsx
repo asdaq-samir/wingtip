@@ -45,8 +45,8 @@ const LAYERS = [FILL, FILL_LATER];
  *  DIM_WARNING; the owner, 2026-11-27, "Dim by colour"): the red under
  *  the paper's own light, so it holds 3:1 over the paper at the default
  *  Dimmer across the whole Contrast range (3.10:1 at -30%, 3.67:1 at the
- *  night's own; times the chart's brightness alone it was 2.57:1 at -30%,
- *  the themes audit, round 6, N3; see-through, 1.27:1). The numbers are
+ *  night's own; times the chart's brightness alone it was 2.57:1 at -30%;
+ *  see-through, 1.27:1). The numbers are
  *  words, lit by their night ink on their dark halo (labelInk). A
  *  restriction a pilot must know of (14 CFR 91.103) stays plain on the
  *  dimmed chart. */

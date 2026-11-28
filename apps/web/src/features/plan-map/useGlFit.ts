@@ -21,7 +21,7 @@ import { lonBounds } from "../../lib/geo";
  * Not past `maxZoom`, in the app's levels. Fitted by the camera's owner
  * (lib/map/gl/camera): every follow ends, as a route's fit ends it, and a
  * single point is brought into sight only if it is out of the room, not
- * fitted as a box of no size (the flicker audit's FL-20).
+ * fitted as a box of no size.
  */
 export function useGlFit(
   points: { lat: number; lon: number }[],

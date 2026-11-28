@@ -34,7 +34,7 @@ export default function BriefCard({
   name: ReactNode;
   /** Under the name in its pinned head, at every size: the altitude, when,
    *  the airplane, where from and to. It was a line under the head the
-   *  Brief scrolled over (the UI audit's B2, 2026-11-17). */
+   *  Brief scrolled over. */
   line: ReactNode;
   contents: Record<PanelTab, ReactNode>;
   /** The briefing's warnings, over every page. */
@@ -74,8 +74,7 @@ export default function BriefCard({
                 // The route, the altitude, when and the airplane wrap under
                 // "Brief" rather than run off the panel: at the owner's larger
                 // text a two-stop route lost its destination ("C81 → KGCT →
-                // KIML → KDE…") and an iPhone its time (the HIG audit of
-                // 2026-11-23, M1).
+                // KIML → KDE…") and an iPhone its time.
                 wrap
                 below={<VerdictPill />}
                 nameTestId="brief-name"

@@ -52,7 +52,7 @@ export default function AirportResults({
 
 /** A group's heading as every section's title is (SectionTitle's
  *  SECTION_TITLE, 20 points, its words as written): no small grey capitals
- *  over a section (docs/design/rules.md 1.8; the web audit's WEB-8). */
+ *  over a section (docs/design/rules.md 1.8). */
 export function PickerGroup({ heading, children }: { heading: string; children: ReactNode }) {
   return (
     <CommandGroup heading={heading} className="p-0" headingClassName={HEADING}>

@@ -39,7 +39,7 @@ type Latest = { plane: TrafficAircraft; at: number } | null;
 
 /** Where it is now, carried on from its report as the map draws it, on a
  *  clock of its own: only the parts that move each second redraw, not the
- *  card around them (the 6 Nov audit's W7, WEB-36). */
+ *  card around them. */
 function useHere(latest: Latest) {
   const geo = useGeo();
   const now = useClock(1000, !!latest);
@@ -121,7 +121,7 @@ function FlightSummary({
   className,
 }: {
   /** Its ends, or its last flight's, still asked for: their lines held from
-   *  the first frame, so nothing under them moves (the flicker audit's FL-10). */
+   *  the first frame, so nothing under them moves. */
   pending?: boolean;
   plane: TrafficAircraft | null;
   badge: StateBadge | null;
@@ -195,8 +195,9 @@ function FlightSummary({
         )}
       </div>
       {/* Its ends' row always there, so nothing under it moves as its ends
-          come in or come back empty (the flicker audit's FL-10; traffic.spec's
-          card opening at its size): held while they are asked for, "—" for
+          come in or come back empty (traffic.spec's
+          card opening at its size):
+          held while they are asked for, "—" for
           an end not known. */}
       {from ? (
         <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3">

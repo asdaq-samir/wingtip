@@ -41,7 +41,7 @@ export function kindOf(place: AirportPlace | undefined): string | null {
 
 /** A forecast's hour in the sentence over the hours, this device's clock
  *  with its zone, "15:00 CST": the card says "Observed 0355Z" beside it,
- *  and a bare "15:00" read as either (the web audit's WEB-9). */
+ *  and a bare "15:00" read as either. */
 export const zonedClock = (ms: number) => `${clockTime(new Date(ms))} ${zoneName(new Date(ms))}`;
 
 /** An airport's name and weather from whatever the map has already

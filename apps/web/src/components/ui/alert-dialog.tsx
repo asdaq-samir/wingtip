@@ -45,8 +45,7 @@ function AlertDialogContent({ className, size = "default", ...props }: AlertDial
           // Liquid Glass with an iOS alert's round corners, at the owner's
           // pick of the sheets audit (D3, 2026-10-17). Never to the screen's
           // edges: its 20 rem grows with the text, and at the owner's 19.65
-          // px it filled a 393-point phone side to side (the HIG review,
-          // 2026-11-21), where iOS keeps an alert off the edges at every size.
+          // px it filled a 393-point phone side to side, where iOS keeps an alert off the edges at every size.
           cn(GLASS_SHEET, DIALOG_CORNERS, "text-foreground"),
           className,
         )}

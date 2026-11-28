@@ -58,8 +58,7 @@ function wayWarning(hazards: RouteOptions["hazards"], crosses: number[]): string
  * word (2026-11-08): the route as typed by its own nav log's totals
  * (`typedNm`, `typedGal`), a way by the planner's answer for it
  * (RouteOption's distance_nm and fuel_gal), none worked out here. "None"
- * and "Over Land" at 1h 14m each told a pilot nothing apart (the FPL
- * audit's A15). Null where there are not two cards to pick between.
+ * and "Over Land" at 1h 14m each told a pilot nothing apart. Null where there are not two cards to pick between.
  */
 export function wayCards({
   chips,

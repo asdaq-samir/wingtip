@@ -30,8 +30,9 @@ function useGoogleCredit(html: string | null) {
 }
 
 /** Google's own Google Maps logo, as its Map Tiles API policies ask
- *  "whenever possible" (the licences audit's item 12, a rec the owner took
- *  on 2026-11-21): the official files from Google's attribution assets
+ *  "whenever possible" (a recommendation the owner took
+ *  on 2026-11-21):
+ *  the official files from Google's attribution assets
  *  (developers.google.com/maps/documentation/tile/policies, "Download the
  *  Google Maps attribution assets"), unaltered, at the 16 dp the policy
  *  sets as its least height, with its clear space (index.css). The credit

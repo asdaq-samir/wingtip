@@ -187,7 +187,7 @@ export default function SignInModal({
                 }}
               />
               {/* Its word on it, where a grey envelope alone read as nothing
-                to tap (the UI audit, 2026-11-09); a spinner in place of
+                to tap; a spinner in place of
                 the envelope while the link is on its way. */}
               <Button
                 type="submit"

@@ -172,10 +172,9 @@ export default function AirspaceCard({
       <CardHead
         // The point itself as the card's name, its name off the nearest
         // fix where it has one: the sheet's own title already says
-        // Airspace, and the card said it again under it (the UI audit,
-        // 2026-11-09). Where it is and the ground there the line under the
-        // name, in sight at the pill too (the card rule's 10; the selection
-        // audit, 2026-11-18: it scrolled away with the body); the fix's own
+        // Airspace, and the card said it again under it. Where it is and the ground there the line under the
+        // name, in sight at the pill too (the card rule's 10; it scrolled away with the body);
+        // the fix's own
         // name under the head.
         name={named?.ident ?? "Dropped Pin"}
         nameTestId="airspace-name"

@@ -15,7 +15,7 @@ import { useGroundTaps } from "./groundTaps";
  *  keeps out of it, its foot 4 points over the grabber's box, as the
  *  airport card's does (CardTabBar's GRABBER_ROOM; tab-consistency.spec):
  *  given back, the bar lay over the grabber, its pill on "Nav Log" and
- *  "Routes" (the HIG audit of 2026-11-23, M3). */
+ *  "Routes". */
 const SIDE_FLOAT_ROOM = EDGE_ROOM;
 
 /**
@@ -103,9 +103,9 @@ export function SheetFoot(p: {
  * The foot on a phone's bottom sheet in flight and in a dry run: like
  * FPL's bar on the ground (sheet/FootBar), still over the screen's foot
  * beside the Drawer's popup, in its viewport (SheetDrawer's `foot`), so the
- * sheet slides behind it and nothing in it follows the sheet (the
- * sheet-motion audit of 2026-11-23: anything that stays still at the foot
- * lives outside the sliding panel). It stood in the popup, moved back by
+ * sheet slides behind it and nothing in it follows the sheet (anything that stays still at the foot
+ * lives outside the sliding panel).
+ * It stood in the popup, moved back by
  * the Drawer's offset and the finger's movement on the Drawer's curve,
  * with the body cut where it began, and could slide apart from the sheet
  * on the iPhone mid-drag.

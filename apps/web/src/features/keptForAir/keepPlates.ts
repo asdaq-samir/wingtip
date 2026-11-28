@@ -6,8 +6,8 @@ import { courseFields } from "../../lib/course";
 import { keepChart } from "../../lib/kept/keepChart";
 
 /**
- * The plates Keep for the Air keeps for a flight (the market-gap audit's 3:
- * it kept the destination's approaches alone): the planner names them
+ * The plates Keep for the Air keeps for a flight (it kept the destination's approaches alone):
+ * the planner names them
  * (wingtip.plate_sets) -- the departure's, the destination's, each stop's,
  * the alternate's (the one filed, or the engine's pick, 14 CFR 91.169(c))
  * and those of the fields within the airplane's diversion range (the

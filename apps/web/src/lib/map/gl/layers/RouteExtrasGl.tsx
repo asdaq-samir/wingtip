@@ -345,7 +345,7 @@ export function PickedGl({
     [focus, carded, held],
   );
   // Each ring drawn, for the browser tests: a ring left on the map once its
-  // card has gone is the bug they hold (the selection audit, 2026-11-18).
+  // card has gone is the bug they hold.
   useGlProbe("picked-ring", ["picked-ring"], () => ({ ring: true }));
   useGlData(RING_SOURCE, data);
   const hold = useEffectEvent(onHold);

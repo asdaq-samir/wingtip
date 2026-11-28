@@ -15,9 +15,9 @@ const DayCalendar = lazy(() => import("./calendar").then((m) => ({ default: m.Da
  * jump by, a day's tap picking it and closing. Where it was React Aria's
  * DateField, a box of month, day and year segments some 20 points wide and
  * 25 apart, which no finger could each hit and no 44-point square could
- * each own without one covering the next (the iOS audit's P1 on the
- * Logbook's Instructing page; the owner, 2026-11-21: "one button ... as
- * iOS does"). Its value stays the string the field gave -- "2026-11-09",
+ * each own without one covering the next (the owner, 2026-11-21: "one button ... as
+ * iOS does").
+ * Its value stays the string the field gave -- "2026-11-09",
  * "" for none -- so a form and the gateway see no change; Clear, where a
  * day is set, gives "".
  *

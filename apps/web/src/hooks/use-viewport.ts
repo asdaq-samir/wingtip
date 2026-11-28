@@ -78,8 +78,7 @@ export function useSafeArea(): { top: number; bottom: number; left: number; righ
 /** How far a popover or menu keeps from the window's edges: past the
  *  status bar, the notch and the home indicator, then 8 more, where Base
  *  UI's stock 5 from the very edge let a menu at the top of the installed
- *  app (black-translucent status bar) sit under the clock (native audit
- *  L1). */
+ *  app (black-translucent status bar) sit under the clock. */
 export function useEdgeRoom(): { top: number; bottom: number; left: number; right: number } {
   const { top, bottom, left, right } = useSafeArea();
   return { top: top + 8, bottom: bottom + 8, left: left + 8, right: right + 8 };
@@ -99,7 +98,7 @@ const onVisual = (onChange: () => void) => {
   // read a frame later: moving from one field to the next fires focusout
   // before focusin, and read between them, with no field focused, the
   // keyboard (still up on iOS) read as down for a moment, enough for a
-  // layout read to start the foot bar's transition (the r9 audit).
+  // layout read to start the foot bar's transition.
   let frame = 0;
   const left = () => {
     cancelAnimationFrame(frame);
@@ -158,7 +157,7 @@ const keyboard = held(() => {
   // owner's iPhone, 2026-11-23). Only under a finger, and only while a
   // field that takes typing has the focus, the one thing the on-screen
   // keyboard comes up for: a desktop's window, an iPad's window dragged
-  // shorter or a touch laptop's is no keyboard (the r8 audit's W-L1).
+  // shorter or a touch laptop's is no keyboard.
   const touch = window.matchMedia("(any-pointer: coarse)").matches;
   const up = inset > 0 || (touch && typing() && tall - visual.height > KEYBOARD_PX);
   return `${inset}|${up ? 1 : 0}`;

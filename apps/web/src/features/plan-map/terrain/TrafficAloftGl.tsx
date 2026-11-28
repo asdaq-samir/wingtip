@@ -70,11 +70,9 @@ function Aloft({ geo }: { geo: Geo }) {
 
   // Each airplane carried on to now and given to the map and to deck.gl
   // (drawAloft), a step at a time, only while the page is in sight:
-  // hidden, nothing is drawn, and the step ran on for nothing (the
-  // in-flight audit, 2026-11-21). Back in sight it steps at once to now.
+  // hidden, nothing is drawn, and the step ran on for nothing. Back in sight it steps at once to now.
   // Stepped here, not by a state set each step: that drew the component
-  // again five times a second for what is only the map's (the speed
-  // audit of 2026-11-27).
+  // again five times a second for what is only the map's.
   const step = useEffectEvent(() => drawAloft(geo, map, { seen, hex, ownFt, stretch }));
   useEffect(() => {
     step();

@@ -23,8 +23,7 @@ const OBSTACLE_RING = 1.5;
  *  ring in the course's edge colour (CHART.routeEdge), day and night: the
  *  white ring it was dimmed to the paper at night and vanished on the
  *  sectional's white by day (1.00:1), and the amber, lighter than the
- *  dimmed paper, read 1.60:1 on it (the themes audit, round 6, K1, K3,
- *  N4). Dimmed by colour at night (the owner, 2026-11-27, "Dim by
+ *  dimmed paper, read 1.60:1 on it. Dimmed by colour at night (the owner, 2026-11-27, "Dim by
  *  colour"): the red as a warning (mapDim's DIM_WARNING), 3:1 or more over
  *  the paper across the Contrast at the default Dimmer; the amber and its
  *  ring with the chart (DIM_BY_COLOUR), the amber 3.17:1 on its ring and

@@ -27,7 +27,7 @@ const GROUPED = new Set(["APD", ...AIRPORT_CHARTS, ...CHART_GROUPS.flatMap((g) =
 /** A chart's row: its title in sentence case with its codes kept, "ILS or
  *  LOC rwy 24", "LEGOZ four (RNAV)" (lib/advisories faaWords) -- the plate
  *  card's own words (features/plates plateTitle), so one approach is not
- *  written two ways (the web audit's WEB-11; CLAUDE.md's Writing). Shown
+ *  written two ways (CLAUDE.md's Writing). Shown
  *  in the app, full screen (ChartRow), the viewer titled the same, not on
  *  the FAA's site. */
 function TerminalChartRow({ chart, airport, notam }: { chart: TerminalChart; airport: string; notam?: NotamMark }) {

@@ -193,8 +193,7 @@ export const classBQuery = queryOptions({
  *  chart marks and colours, the route's ends, a saved flight's fields, the
  *  traffic question's field, a Favorite kept. Ten wrote it out, fresh for
  *  five minutes or for an hour, raising the page's problem or not, so
- *  whether a failed lookup showed depended on which had mounted last (the
- *  commonality audit's N-13). Five minutes, a report's freshness; quiet,
+ *  whether a failed lookup showed depended on which had mounted last. Five minutes, a report's freshness; quiet,
  *  the card saying in place what it could not have (PlaceCard). */
 export const airportQuery = (ident: string) =>
   queryOptions({ queryKey: ["airport", ident], queryFn: () => api.airport(ident), staleTime: 5 * 60_000, meta: { silent: true } });

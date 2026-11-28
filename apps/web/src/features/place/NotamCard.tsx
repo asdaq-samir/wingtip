@@ -38,7 +38,7 @@ type PlanRole = keyof typeof ROLE_WORDS;
  *  or null where it is none of the address's dep, stops, dest and
  *  alternate filed, or reaches none of them. Which roles it reaches, and
  *  whether it takes a procedure one flies (red) or is the field's
- *  (neutral), is the engine's notam_affects (the r8 audit's S-M1), read
+ *  (neutral), is the engine's notam_affects, read
  *  on the planner (the NOTAM's `affects`). */
 function usePlanRole(n: FieldNotam, ident: string): { words: string; taken: boolean } | null {
   const [dep] = useAddressKey("dep");
@@ -106,8 +106,8 @@ function NotAuthorized({ card }: { card: NotamCardReading }) {
 function NotamFull({ n, ident, card, read }: { n: FieldNotam; ident: string; card: NotamCardReading; read: NotamReading }) {
   const tfr = n.kind === "tfr";
   // Only one in force affects the flight: an expired NOTAM, or one not
-  // yet begun, at the departure wore the red chip beside its own Inactive
-  // (the r5-ui audit's M6, 2026-11-23). Red only where it takes a
+  // yet begun, at the departure wore the red chip beside its own Inactive.
+  // Red only where it takes a
   // procedure away; a crane's light at the field is the neutral chip.
   const active = n.in_force !== false;
   const role = usePlanRole(n, ident);
@@ -168,7 +168,7 @@ function numberLine(n: FieldNotam, ident: string, card: NotamCardReading, read: 
  *  Municipal · FDC 6/3373"). */
 export function NotamCard({ n, ident, name, onClose }: { n: FieldNotam; ident: string; name?: string | null; onClose: () => void }) {
   // Asked of the engine once a render, each a trip through its WASM, and
-  // handed down (the r5-ui audit's L13).
+  // handed down.
   const card = cardOf(n);
   const read = readNotam(n);
   const title = n.kind === "tfr" ? null : card.title;

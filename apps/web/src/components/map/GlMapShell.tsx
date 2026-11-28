@@ -324,8 +324,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // opens at (half, cardOpening; or the inspector's column), known as it
   // opens, not measured once it is up, as it was: the map waited for the
   // card to settle and moved after it, 820 ms after the tap on a phone's
-  // CPU. One rule for every kind (the selection audit, 2026-11-18; rules.md
-  // §14): a thing tapped keeps the pilot's zoom; one picked elsewhere is
+  // CPU. One rule for every kind (rules.md
+  // §14):
+  // a thing tapped keeps the pilot's zoom; one picked elsewhere is
   // brought in to `zoom` at least (PICK_ZOOM), and flown to if it is off
   // the screen. A route point's was its own, in to the chart's last zoom
   // at twice the sheet's time with no room for the card, so it could land

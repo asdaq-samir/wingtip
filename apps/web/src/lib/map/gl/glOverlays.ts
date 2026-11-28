@@ -22,7 +22,7 @@ import { dimLayer } from "./mapDim";
 export { OVERLAY_SOURCE };
 /** The airports' own source on OVERLAY_SOURCE's archive: a change of the map's state their symbols read (each field's
  *  weather, the settings, the route's fields) lays out again every tile of their source, and on their own that is the
- *  airports alone, not the airspace, fixes and runways too (the map speed audit, 2026-11-27). */
+ *  airports alone, not the airspace, fixes and runways too. */
 export const AIRPORTS_SOURCE = OVERLAY_SOURCES.airports;
 /** The VFR waypoints' own source on the archive, for the same reason: the route's waypoints left off them (a filter by
  *  the map's state) lay out again their tiles alone at a route's edit, where every overlay tile was. */

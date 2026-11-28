@@ -11,12 +11,11 @@ const BELOW_CHIPS = "pt-[calc(var(--space-group)-var(--chips-foot))]";
 
 /** The one search's row, its field (OneSearchField, SHEET_BAR: FPL's
  *  title line over its pills, 49 at the default size) sixteen in from
- *  either side as everything in the sheet is (the sheet audit's F-P1,
- *  F-P2, 2026-11-10): on a bottom sheet under the grabber's 16-point room
+ *  either side as everything in the sheet is: on a bottom sheet under the grabber's 16-point room
  *  (SheetGrabber, the least iOS keeps: the owner, 2026-11-13) and what is
  *  left of the 68 under it, 3; else ten over it and the rest under, 9
  *  (BAR_HEIGHT). The field grew 3 when FPL's title took its 25-point
- *  line (the HIG review, 2026-11-21), taken from the row's foot so the
+ *  line, taken from the row's foot so the
  *  pill, this row alone, keeps its 68 (sheet/insets' 4.25 rem). The pill
  *  is this row alone: the title row over it went for the map's room (the
  *  owner, 2026-11-10). */

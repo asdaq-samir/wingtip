@@ -133,10 +133,10 @@ export function ChartGl({ course }: { course: Course | null }) {
   }, [map, kinds, look]);
   // And the brightness and contrast each chart layer is drawn at, read
   // from the map at rest, not from what was asked: the look said "dimmed"
-  // while the chart close in was drawn undimmed (UI audit B10). For the
+  // while the chart close in was drawn undimmed. For the
   // browser tests alone, as useGlProbe's are: a whole style read at every
   // rest is a cost a pilot's phone need not pay (in flight, about once a
-  // second, as the camera rests at each fix; the map audit, 2026-11-27).
+  // second, as the camera rests at each fix).
   useEffect(() => {
     if (!testDriven()) return;
     // Each layer by its role ("chart 0.5"), the hidden last base left out.

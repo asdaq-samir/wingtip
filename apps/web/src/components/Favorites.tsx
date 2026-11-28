@@ -236,8 +236,7 @@ function PillMenu<V extends string>({
       options={options}
       contentClassName={cn("min-w-44", className)}
       trigger={
-        // The app's one icon-only button, 36 with a 20 glyph (the iOS
-        // audit's P18), the heading's height kept round it.
+        // The app's one icon-only button, 36 with a 20 glyph, the heading's height kept round it.
         <IconButton label={label} className="-my-2 text-tint" data-testid={testId}>
           <ListFilter className="size-5" />
         </IconButton>
@@ -261,8 +260,7 @@ const STRIP = "-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1";
 /** A pill's row of small tiles, sliding sideways where more than fit (`className`: strips laid into it).
  *  Marked as made to slide (data-slides), as the hours' and runways'
  *  strips are, Apple Maps' Favorites row: its tiles past the edge are the
- *  design, not a panel spilling sideways (the iOS audit's P18 read
- *  Nearest's eight as "668 in 351"). */
+ *  design, not a panel spilling sideways. */
 export function PillStrip({ children, testId, className }: { children: ReactNode; testId?: string; className?: string }) {
   return (
     <div className={cn(STRIP, className)} data-testid={testId} data-slides="">

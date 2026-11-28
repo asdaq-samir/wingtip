@@ -90,8 +90,7 @@ export function SwipeRowImpl({ word, label, onRemove, children, chip = false }: 
   };
 
   // Open, any press elsewhere closes it, and the press goes on to what it
-  // was on: listened for only while open (the code audit of 2026-11-23's
-  // L8; the close an effect event, so a render while open does not listen
+  // was on: listened for only while open (the close an effect event, so a render while open does not listen
   // again).
   const closeAway = useEffectEvent(close);
   useEffect(() => {

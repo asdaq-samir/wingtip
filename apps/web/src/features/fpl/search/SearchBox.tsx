@@ -33,8 +33,7 @@ export default function SearchBox({
     inputRef.current?.focus();
   });
   // FPL's head's height (SHEET_BAR: 49 at the default size), a white card
-  // on the sheet's grey, its own 44-point hit area (the sheet audit's
-  // F-P2, 2026-11-10).
+  // on the sheet's grey, its own 44-point hit area.
   return (
     <label
       className={cn(
@@ -132,7 +131,7 @@ export default function SearchBox({
           // with the text, and at twice the size the field was 0 wide and
           // took no typing (card-scroll.spec's text size test, 2026-11-20).
           // A round icon button is 44, as Apple Maps' are, inside the
-          // field's 49 (the night's iOS audit, 2026-11-24: it was 36).
+          // field's 49 (it was 36).
           className="size-11 @max-[180px]/search:hidden"
         />
       )}

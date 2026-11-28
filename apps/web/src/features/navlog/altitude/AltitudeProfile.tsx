@@ -122,7 +122,7 @@ export function AltitudeProfile({
   // plot's height in feet: the slider is laid on the chart's own scale, so
   // its knob sits at the altitude its tag says. It sat a step a row down
   // the graph's whole height, and FL-145 was drawn at about 9,500 on a
-  // ruler topping at 12,000 (the UI audit's A1, 2026-11-17).
+  // ruler topping at 12,000.
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   // Under the graph, in the column's flow: the weather's key laid inside
   // the graph's fixed 224 ran out of its foot over the Set row, which no
@@ -163,7 +163,7 @@ export function AltitudeProfile({
               onValueChange={(ft) => {
                 const row = rowNear(ft as number);
                 // A tick at each altitude passed, as a picker's wheel
-                // ticks (haptic altitude; the r5-ui audit's L17).
+                // ticks (haptic altitude).
                 if (row !== (sliding ?? shownAt)) feel("altitude");
                 setSliding(row);
                 vm.live(row);

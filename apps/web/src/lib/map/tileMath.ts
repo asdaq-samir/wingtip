@@ -2,8 +2,7 @@
  * The slippy-map tile scheme's one formula, the Web Mercator projection
  * (EPSG:3857) the map, the chart's pyramid and the overlay archive are
  * all cut by: where a point falls on it, and in tiles at a zoom. It was
- * written four ways, some clamping the latitude and some not (the hand-built
- * audit, 2026-11-12). No MapLibre here: Keep for the Air reaches this from
+ * written four ways, some clamping the latitude and some not. No MapLibre here: Keep for the Air reaches this from
  * the page's first script (issue #87).
  *
  * Written out rather than taken from @mapbox/tilebelt (MIT, 2.0.3): its

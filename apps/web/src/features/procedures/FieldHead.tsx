@@ -71,11 +71,11 @@ export function FieldHead({
           )}
         >
           <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5">
-            {/* The row's one disclosure (the UI audit's C14): a tap anywhere on its lines folds the runways and
+            {/* The row's one disclosure: a tap anywhere on its lines folds the runways and
             procedures open, the whole line (the owner, 2026-11-05: "make the whole line tapable for unfolding"),
             no chevron of its own beside the symbol, which is the menu. The Collapsible's trigger laid over the lines
             (its own `absolute` wins over index.css's touch positioning), and twelve over them into the room above
-            the field (the iOS audit's P1); what has a tap of its own lies over it (z-10). */}
+            the field; what has a tap of its own lies over it (z-10). */}
             <CollapsibleTrigger
               render={
                 <Button
@@ -128,7 +128,7 @@ export function FieldHead({
             )}
           </div>
           <div className="relative z-10 col-start-2 row-start-1 justify-self-end">{end.time}</div>
-          {/* The wind grey as the elevation, a figure, not a link (the UI audit's C14); Direct to in the tint. */}
+          {/* The wind grey as the elevation, a figure, not a link; Direct to in the tint. */}
           <WindLine direct={end.direct} wind={wind} reported={reported} className="col-start-1 row-start-2" />
           <div className="col-start-2 row-start-2 justify-self-end">{end.elevation}</div>
           {end.grip && <div className="relative z-10 col-start-3 row-span-2 row-start-1 self-center">{end.grip}</div>}
@@ -138,8 +138,7 @@ export function FieldHead({
   );
 }
 
-/** A field's wind, grey as its elevation, a figure, not a link (the UI
- *  audit's C14), said in full to VoiceOver; Direct to in the tint where the
+/** A field's wind, grey as its elevation, a figure, not a link, said in full to VoiceOver; Direct to in the tint where the
  *  route flies direct to it. */
 export function WindLine({
   direct,

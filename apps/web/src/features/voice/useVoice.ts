@@ -10,7 +10,7 @@ const load = () => import("./voiceInput").then((m) => (voice = m));
 
 /** The listening code could not be fetched (offline, its chunk gone with a
  *  new release): said under the field, in place, and nothing listening. A
- *  tap did nothing and said nothing (the web audit's WEB-35). */
+ *  tap did nothing and said nothing. */
 const unloaded = (field: string) =>
   useVoiceInput.setState({
     field: null,

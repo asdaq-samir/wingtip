@@ -54,8 +54,7 @@ export function PlacePictures({
   const [picture, setPicture] = useState<"aerial" | "photo" | null>(null);
   // The sketch's numbers as written (RunwaySketch's onWritten), for its
   // tile's name: the words in sight are in the name a pilot's voice
-  // control is told to tap (WCAG 2.5.3, Label in Name; axe's
-  // label-content-name-mismatch on the iOS audit's reference iPhone).
+  // control is told to tap (WCAG 2.5.3, Label in Name).
   const [written, setWritten] = useState("");
   const online = useOnline();
   const ident = place.ident;
@@ -124,7 +123,7 @@ export function PlacePictures({
     // they came, and the aerial, coming later, went after it. Held too,
     // still and saying why, where they could not be had (offline on the
     // ramp, the planner's photos failing): the diagram grew from 70% to the
-    // card's width as the skeleton went (round 7's W5), and they fill the
+    // card's width as the skeleton went, and they fill the
     // tile in place when the query asks again and has them.
     !photos && (photosPending || photosUnhad)
       ? {

@@ -27,7 +27,7 @@ export default function DirectToField({ vm }: { vm: EmergencyModel }) {
   const Icon = ACTION.directTo.icon;
   // While the fields are asked for, the button in its place, not to be
   // pressed yet: it came in over the list once they were in, and the list
-  // jumped down under a pilot's thumb (the flicker audit's FL-9).
+  // jumped down under a pilot's thumb.
   if (!picked && vm.fix && !vm.ranked) {
     return (
       <div className="grid gap-1">

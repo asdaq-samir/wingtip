@@ -56,8 +56,7 @@ export default function ProcedureMenu({
   list: ProcedureList | undefined;
   /** Its ask: while it comes the list's shape, and where it could not be
    *  had, that it could not with Try again -- never "None published", which
-   *  told a pilot a field whose list failed has no approach (the audit's
-   *  CODE-4). */
+   *  told a pilot a field whose list failed has no approach. */
   query: UseQueryResult<ProcedureList> | undefined;
   /** The one of the kind in the route, and its name as the route's box
    *  says it. */

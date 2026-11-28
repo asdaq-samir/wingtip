@@ -147,7 +147,7 @@ export function useAirplaneCardModel({
   // What the facts strip and the pictures draw of its flight, each part
   // apart: handed the whole flight (`live`, a new object at each 5-second
   // report), the strip, its carousel and the pictures were drawn again at
-  // every report for as long as the card was open (round 7's W2).
+  // every report for as long as the card was open.
   const facts = liveFacts(hex, { detail: live.detail, planeType: live.plane?.type ?? null, registered: live.registered }, !tail);
   const pictures = {
     name: live.name,

@@ -104,7 +104,7 @@ export function buildGlance({
       finding: byKey(["weather", "altitude"]),
     },
     // Landed at the destination after the time in the air and the turnarounds
-    // at the stops, not the time in the air alone (the HIG audit, H1).
+    // at the stops, not the time in the air alone.
     arrive: course ? fieldAt(dest, "arrival", arriveMin != null ? new Date(leaving.getTime() + arriveMin * 60_000) : null) : null,
     // The route's points and its legs between, every 2 nm, and the ADIZs
     // it meets (14 CFR part 99): the engine's, asked by the planner with

@@ -142,7 +142,7 @@ export function ResultRow({
   // wrapped. A tap on the strip's free room round the buttons (its 6 over
   // them, 10 under, the gap and the indent) is the row's, as it was when
   // they were inside the option: a miss at the foot of the most tapped row
-  // did nothing (round 7's W3). Pointer alone: the keyboard is the field's,
+  // did nothing. Pointer alone: the keyboard is the field's,
   // and Enter takes the highlighted option; the buttons' taps stop at them.
   return (
     <div className={cn("has-data-highlighted:bg-muted", ICON_WIDTH[iconWidth])} data-result-row="">

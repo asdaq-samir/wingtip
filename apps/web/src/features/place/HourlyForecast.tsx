@@ -78,8 +78,9 @@ export function HourlyForecast({
         {hours.map((hour, i) => {
           const label = hour.now ? "Now" : clockTime(new Date(hour.at));
           // The clock's zone once, under the first hour after Now, as the nav
-          // log heads its ETAs (the web audit's WEB-9: "05:00" beside
-          // "Observed 0355Z" read as either); a blank line under the rest so
+          // log heads its ETAs ("05:00" beside
+          // "Observed 0355Z" read as either);
+          // a blank line under the rest so
           // the columns line up, as the wind's speed line does.
           const zone = !hour.now && (i === 0 || hours[i - 1]!.now) ? zoneName(new Date(hour.at)) : null;
           const wind = reportedWind(hour.windDirTrueDeg, hour.windSpeedKt, hour.windGustKt);

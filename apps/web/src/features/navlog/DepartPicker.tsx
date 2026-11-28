@@ -10,8 +10,7 @@ import { fromChunk } from "../../lib/fromChunk";
  *  page: one chunk for both (departPickerParts), asked as the trigger is
  *  touched, hovered or focused, ahead of the tap's open, and drawn from
  *  its module once in (fromChunk), where two `lazy()`s were each fetched
- *  only at the open and suspended it once more (the speed audit of
- *  2026-11-21). */
+ *  only at the open and suspended it once more. */
 const loadParts = () => import("./departPickerParts");
 const { Part: DayCalendar, prefetch: prefetchCalendar } = fromChunk(loadParts, (m) => m.DayCalendar);
 const { Part: TimeField, prefetch: prefetchTime } = fromChunk(loadParts, (m) => m.TimeField);
@@ -107,7 +106,7 @@ export default function DepartPicker({
             className={cn(
               // 44 tall round its 20 (12 over and under), so a tap just
               // above or below "Now" picks the time, not the field's row
-              // toggle under it (the audit's WEB-5); 10 either side.
+              // toggle under it; 10 either side.
               "relative shrink-0 gap-0.5 font-semibold tabular-nums hit-x-2.5 hit-y-3",
               TEXT.detail,
             )}
@@ -151,8 +150,7 @@ export default function DepartPicker({
             // Over the head under it (z-10), whose row starts inside its
             // 44-point area's foot, and 4 more after the pill before it,
             // whose end's glyph's area runs 4 past that pill (pillLook's
-            // PILL_END): its own area's edge clear of both (the iOS
-            // audit's P1, "Departure date" 57×32 on a local flight).
+            // PILL_END): its own area's edge clear of both.
             className={cn("relative z-10 ml-1 rounded-full px-2.5 font-normal pointer-coarse:px-1.5", CHIP_TEXT)}
             data-testid={testId}
             {...INTENT}
@@ -171,7 +169,7 @@ export default function DepartPicker({
           sheet puts it, and Now at its start where there is a "now" to go
           back to and the departure is not now already; the time above the calendar, so at half both the way
           out and the time picked are in view, and the calendar may run on
-          under the fold (the UI audit's B7, the owner's word 2026-11-17). */}
+          under the fold (the owner's word 2026-11-17). */}
       <ResponsivePopoverContent
         title={label}
         description={date ? `Leaving ${leaveWhen(date)}` : "Leaving now"}

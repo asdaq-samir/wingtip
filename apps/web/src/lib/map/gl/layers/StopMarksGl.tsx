@@ -15,8 +15,7 @@ const PIN = ["==", ["get", "kind"], "pin"] as ExpressionSpecification;
 const FIELD = ["==", ["get", "kind"], "field"] as ExpressionSpecification;
 
 /** A stop's field: its mark and its ident together or not at all, never
- *  a bare mark (the owner's "no bare map marks"; the r7 audit's W-L5,
- *  suggested stops 2 to 6 at the country's zoom). The mark may lie under
+ *  a bare mark (the owner's "no bare map marks"). The mark may lie under
  *  its own pin (which takes the room first, so the marks placed after it
  *  -- a Class B's field, the chart's fields and their idents -- give way
  *  to the pin), and it takes its room too, so no chart ident is drawn half

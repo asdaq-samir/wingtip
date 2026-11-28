@@ -194,7 +194,7 @@ export default function SheetDialog({
           track, its reasons under each figure) ran off the window's top and
           foot, its Log out of reach of a click or a scroll. Centred, so as
           far from both edges as the larger of the status bar's and the home
-          indicator's room, and a rem at the least (native audit L4). */}
+          indicator's room, and a rem at the least. */}
       <DialogContent
         ref={sheet}
         data-testid={testId}

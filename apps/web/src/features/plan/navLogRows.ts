@@ -231,7 +231,7 @@ export const phaseOf = (row: NavLogRow): "climb" | "descent" | "cruise" => legOf
  * Said on the row that ends the leg, where the minutes fall (a top of
  * climb or descent cuts the leg before them), so its miles over its
  * ground speed come to its minutes: "1.5 nm · 3.4 min" read as 1.5 nm
- * at 86 kt, a minute, with 2.3 unsaid (the FPL audit's A4, 2026-11-08).
+ * at 86 kt, a minute, with 2.3 unsaid.
  * What it is: a departure, a pattern landed by, or an approach.
  */
 export function procedureOf(row: NavLogRow): { nm: number; min: number | null; word: "departure" | "pattern" | "approach" } | null {

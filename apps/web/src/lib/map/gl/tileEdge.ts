@@ -83,8 +83,7 @@ export function edgeOfPieces(pieces: TilePiece[]): GeoJSON.MultiLineString {
  *  loaded now, its edge as one feature (null where none is loaded) and the
  *  key of the tiles it was stitched from; "drawn" where they are the tiles
  *  of the edge drawn last (`last`), so a rest that finds the same pieces
- *  neither stitches nor sends the edge again (the round-7 map audit's W3:
- *  in flight the camera rests about once a second with a card open). */
+ *  neither stitches nor sends the edge again (in flight the camera rests about once a second with a card open). */
 export function litEdge(
   map: MlMap,
   source: string,

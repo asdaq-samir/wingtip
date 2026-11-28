@@ -96,7 +96,7 @@ export function FplTabBar({
             openBrief();
           }}
           // Nothing to brief while a point of the route is not known, as
-          // the Nav Log and the Profile have nothing (the UI audit's B8).
+          // the Nav Log and the Profile have nothing.
           disabled={!!vm.plan.s.unknownPlace}
           testId="route-brief"
           data-finding={briefMark ?? undefined}

@@ -71,7 +71,7 @@ export function PointFigures({
           data-kind={kind}
         >
           {/* "pub", "elev" and a line over or under a figure are for the
-              eye; VoiceOver says them in words (the audit's finding). */}
+              eye; VoiceOver says them in words. */}
           {/* The field's elevation with the mountain, an altitude flown or
               set with the arrow up, at the owner's ask ("Elevation can have
               an icon like wind does"). */}
@@ -281,10 +281,10 @@ export function PointMenu({
               data-point-mark=""
               // Its area 44 round its 32 (the stock button's clear 1-point
               // edge is inside its box and the after is laid from inside it,
-              // so 6 past made 42; the iOS audit's P1, "C81: more" 32×32):
+              // so 6 past made 42):
               // 7 over and under, so the marks of two lines 12 apart meet
               // and do not overlap, where 8 took a point or two of the next
-              // mark's (the HIG audit of 2026-11-23, L6); 8 across, but 6 on
+              // mark's; 8 across, but 6 on
               // the words' side (7 from inside that edge), where the name's
               // area begins in the line's 16 (TimelineRows' TIMELINE_GAP).
               className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent hit-y-[7px] after:-left-2 after:-right-[7px]"

@@ -59,7 +59,7 @@ export interface StackProps {
  * side, by its id, in one Drawer of their own (`Cards`), whatever opens,
  * closes, is kept or raised over or under it, so React never draws one
  * anew with another parent (a card drawn all the way up for a frame, one
- * kept drawn anew closed: the flicker audit, 2026-11-14, FL-1 and FL-2).
+ * kept drawn anew closed).
  * Side by side they cannot tell the sheet themselves -- a Drawer tells its
  * parent how many are open over it by setting, not adding (useDialogRoot's
  * onNestedDialogOpen; @base-ui/react 1.9.0), so the last card to speak
@@ -308,8 +308,7 @@ function CardDrawer({
                   to the foot is not under the box: the iOS audit's P1 found
                   "plates-row" and a nav log row there, lost 3 to the grabber.
                   Only where the grabber is drawn, the card on top: one under
-                  another, or kept mounted, kept 16 empty points at its foot
-                  (round 7's W6), and the two rules now stay in step. */}
+                  another, or kept mounted, kept 16 empty points at its foot, and the two rules now stay in step. */}
               <div
                 className={cn(
                   "flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]",

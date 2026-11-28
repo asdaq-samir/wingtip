@@ -16,8 +16,7 @@ import { degreesMinutes } from "../../lib/coords";
  * weatherLayer's tiles, box and marks: features/plan-map/layers/WeatherGl).
  */
 
-/** UTC as reports give it, "1255Z": lib/format's one form (the code
- *  audit's CODE-32), where it was cut by hand from an ISO string. */
+/** UTC as reports give it, "1255Z": lib/format's one form, where it was cut by hand from an ISO string. */
 const zulu = (unix: number) => zuluTime(new Date(unix * 1000));
 
 export function AreaCard({ area, line, altitudeFt }: { area: WeatherArea; line: [number, number][] | null; altitudeFt: number | null }) {

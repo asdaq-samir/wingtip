@@ -54,7 +54,7 @@ export function foldWeather(kept: Map<string, Kept>, answers: WeatherAnswer[]): 
  * again in the worker: it was set from each new box's answer alone, so
  * every box crossed (one can land mid-pan, useGlView's box changes while
  * the map moves) and every ten-minute refresh relaid them, dropping the
- * last box's idents with it (the map audit's N2, round 6). Returns the
+ * last box's idents with it. Returns the
  * colours by ident, for the specs' probe.
  */
 export function useAirportWeatherState(map: MlMap, answers: WeatherAnswer[], off: boolean) {

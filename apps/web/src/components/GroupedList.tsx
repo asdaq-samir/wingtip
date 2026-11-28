@@ -63,7 +63,7 @@ export function ListGroup({
       {title && (
         <div className="flex items-end justify-between gap-2">
           {/* At the box's own edge, the sheet's and the card's one
-              sixteen-point inset (the sheet audit's F-B3), where four more
+              sixteen-point inset, where four more
               put the titles out of line with the card's name. */}
           <div className="flex items-center gap-2 pb-1.5">
             <SectionTitle id={id} className={inSection ? GROUP_LABEL : undefined}>

@@ -49,8 +49,7 @@ export default function MapBanners({ map }: { map: GlMap | null }) {
  * no longer runs over the food button. Beside a sheet at the side (a
  * phone on its side, MapPage's --map-inset-left) it is centred on the map
  * the sheet leaves, as the map's buttons stand: centred on the screen, a
- * could-not line went under the sheet's foot and the Stops button (the
- * iOS audit, landscape, 2026-10-28).
+ * could-not line went under the sheet's foot and the Stops button.
  *
  * At the top under a bottom sheet, clear of the map's buttons, which stand
  * at the top right there since the owner's Apple Maps screenshot
@@ -83,15 +82,13 @@ function MapBannersDrawn({ map }: { map: GlMap | null }) {
     const el = column.current;
     if (!el || typeof ResizeObserver === "undefined") return;
     // On the map's own element (MapPage's #content, insetVars' too), not
-    // the page's root, so a change restyles the map's part alone (the
-    // r5-ui audit's L9, 2026-11-23).
+    // the page's root, so a change restyles the map's part alone.
     const root = (el.closest<HTMLElement>("#content") ?? document.documentElement).style;
     // Over the map, as its reader, the weather's legend (FlowLegend), is drawn
     // in another part of the map, and written only as
     // the height changes:
     // a variable changed on the root restyles every element on the page,
-    // and the observer is told of every resize, the same height too (the
-    // animation audit of 2026-11-23, M9).
+    // and the observer is told of every resize, the same height too.
     const watch = new ResizeObserver(() => {
       const height = `${el.offsetHeight}px`;
       if (root.getPropertyValue("--map-banners-h") !== height) root.setProperty("--map-banners-h", height);

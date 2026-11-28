@@ -31,7 +31,7 @@ export type ClosedRunway<R> = R & {
  *  NOTAM in force shuts them to landing and takeoff (the engine's
  *  notam_subject badge, severity "unusable"): the Runways tab's rows and
  *  badges and the pictures' sketch read the one list, so a runway the tab
- *  says is Closed is drawn closed (UI audit A5, 2026-11-17). */
+ *  says is Closed is drawn closed. */
 export function withNotamClosures<R extends Pick<Runway, "closed">>(
   runways: readonly R[],
   marks: Pick<NotamMarks, "runway">,

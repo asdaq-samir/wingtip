@@ -8,9 +8,9 @@ import { create } from "zustand";
  * the slider commits it (Base UI's onValueCommitted: the finger lifted, a
  * key pressed), and with them the marks, lines and words over the chart
  * (ChartGl's MAP_DIM), whose global state goes over every layer reading
- * it and out to MapLibre's workers (the web audit and the map audit,
- * round 6, 2026-11-27: localStorage written at each of a drag's thirty-odd
- * steps, and the marks settled by a 120 ms timer). Null while no slider
+ * it and out to MapLibre's workers (localStorage written at each of a drag's thirty-odd
+ * steps, and the marks settled by a 120 ms timer).
+ * Null while no slider
  * is being moved.
  */
 type Preview = { dim: number | null; contrast: number | null };

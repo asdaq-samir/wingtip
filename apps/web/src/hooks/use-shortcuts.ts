@@ -5,7 +5,7 @@ import type { ScreenId } from "../lib/navigation/generated/screens";
 
 /**
  * The keyboard's ways round the planner, as a desktop's web apps have
- * them (the UI audit, 2026-11-09): `/` to the one search and Escape back
+ * them: `/` to the one search and Escape back
  * one level -- the close at the panel's top right, which goes back one
  * card, one list or one page (decision 0015) -- wherever the focus is
  * outside a field. A key a field, a menu or a dialog has used is left
@@ -16,8 +16,7 @@ import type { ScreenId } from "../lib/navigation/generated/screens";
  * keyboard. The letters and `/` are pressed only with Alt (Option on a
  * Mac; lib/shortcutKeys), never alone, so VoiceOver's quick nav and the
  * browser's find-as-you-type keep their keys. Heard by react-hotkeys-hook
- * (MIT), the stock hook, rather than a keydown handler of our own (the
- * stock-parts audit, 2026-11-21).
+ * (MIT), the stock hook, rather than a keydown handler of our own.
  */
 /** The letters for the screens a pilot opens most (lib/navigation). */
 export const SCREEN_KEYS: Partial<Record<ScreenId, string>> = { brief: "B", nearest: "N" };
@@ -84,7 +83,7 @@ const letterOf = (keys: readonly string[] | undefined) => keys?.[0]?.toUpperCase
 /** The shortcuts on the page, wherever there is a keyboard: a desktop's,
  *  and an iPad's Magic Keyboard or any hardware one, whose pointer is
  *  still touch -- read off the desktop's fine pointer, Escape and Alt+B
- *  did nothing on an iPad with its keyboard (the iPad audit, 2026-11-21).
+ *  did nothing on an iPad with its keyboard.
  *  A touch screen with none sends no keys outside a field, which typing
  *  leaves alone; the keys are shown (Kbd) on a desktop only. */
 export function useShortcuts(): void {

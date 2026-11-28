@@ -175,7 +175,7 @@ export interface ProceduresRouteProps {
   /** The route's points as the address has them, the departure first:
    *  a row not among them -- a fix along an airway typed as V100 -- has no
    *  Direct to, Remove or Create a fix, which work on the typed points
-   *  (the audit's finding: they did nothing there, or the wrong thing). */
+   *  (they did nothing there, or the wrong thing). */
   routePoints: string[];
   /** As many stops as the planner takes (MAX_STOPS): no Create a fix. */
   stopsFull?: boolean;

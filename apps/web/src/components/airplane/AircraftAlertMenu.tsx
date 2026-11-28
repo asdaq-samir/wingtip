@@ -111,8 +111,7 @@ export default function AircraftAlertMenu({
           8-point edges where there is not: the stock cap, Base UI's
           --available-width, is worked out as the menu opens and stayed 288
           when the window narrowed under the open menu at Safari's 150% page
-          zoom, so the page scrolled sideways (the iOS audit's P11, 50 past
-          a 250-point iPhone SE). The window's own width is never stale. */}
+          zoom, so the page scrolled sideways. The window's own width is never stale. */}
       <DropdownMenuContent
         align="start"
         className="w-72 max-w-[min(var(--available-width),calc(100vw-var(--spacing)*4))]"

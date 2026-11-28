@@ -17,7 +17,7 @@ interface Props {
 // Under 25rem of the panel's top row -- every phone, and the card from
 // `md` up, where the route shares the row with the panel's actions -- the
 // form steps down to iOS's next size, 15 on its 20 leading (it kept the
-// row's 22: the night's iOS audit, 2026-11-24), with slimmer padding and
+// row's 22), with slimmer padding and
 // chevrons: at 17 its Load button sat close enough to the next button
 // that their 44-point hit areas overlapped, and the hit areas are the
 // one size that cannot shrink. Past 30rem, room to spare, it widens.

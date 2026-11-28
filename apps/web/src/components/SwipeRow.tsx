@@ -18,7 +18,7 @@ const swipe = lazyModule(() => import("./swipe"));
 export function SwipeRow({ off = false, ...props }: SwipeRowProps & { off?: boolean }) {
   // A finger anywhere, not a primary pointer that is no mouse: an iPad
   // with a trackpad reports a fine pointer that hovers, and its rows did
-  // not swipe under a finger (the r5-ui audit's L17).
+  // not swipe under a finger.
   const finger = useMediaQuery("(any-pointer: coarse)");
   const module = swipe.use(finger && !off);
   if (!module || !finger || off) return props.children;

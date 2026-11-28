@@ -58,7 +58,7 @@ export function TriggerButton({
       label={SHARE_LABEL[card]}
       // The route's ••• the stock small icon button (32, in rem), not a 32
       // px one among rem neighbours, so it grows with the text as they do
-      // (the scale audit, the owner, 2026-11-21).
+      // (the owner, 2026-11-21).
       {...(card === "route" ? { variant: "ghost" as const, size: "icon-sm" as const } : {})}
       data-testid={testId}
       {...trigger}

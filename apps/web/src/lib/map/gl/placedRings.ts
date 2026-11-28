@@ -16,8 +16,7 @@ export const RINGS_BY_FIELD = OVERLAY_STATE.ringsByField;
  *  placedRing), so no ring stands bare where its field gave way to a bigger
  *  one (the owner's iPhone recording, 2026-11-23). An opacity by feature
  *  state, not a filter by the map's global state: a filter's change laid
- *  every overlay tile out again at each rest of the map (the map speed
- *  audit, 2026-11-27); a state's change repaints only. */
+ *  every overlay tile out again at each rest of the map; a state's change repaints only. */
 const PLACED = OVERLAY_FEATURE_STATE.placed;
 
 /** How long a map handed to the next tree (isParked) keeps its rings to
@@ -72,7 +71,7 @@ export function usePlacedFieldRings(map: MlMap, rings: string, fields: string, l
     // change). An idle comes after every frame drawn at rest too -- each
     // of the traffic's updates, a weather mark's, a paint's -- and a
     // whole-screen queryRenderedFeatures at each was some ten a second
-    // with traffic followed (the map audit, round 6).
+    // with traffic followed.
     let moved = true;
     const changed = () => {
       moved = true;

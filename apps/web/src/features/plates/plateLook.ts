@@ -52,7 +52,7 @@ export const usePlateLook = create<PlateLook>()(
       // Version 2: a plate follows the appearance until the pilot picks.
       // Version 1 kept "false" for every pilot who never touched the switch,
       // which drew a white plate on the night's dark map; that kept false is
-      // read as no choice (the themes audit, 2026-11-27).
+      // read as no choice.
       version: 2,
       migrate: migratePlateLook,
       partialize: (s) => ({ opacity: s.opacity, inverted: s.inverted, annotations: s.annotations }),

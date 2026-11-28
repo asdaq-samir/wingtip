@@ -48,7 +48,7 @@ export function useSheetSlide(map: GlMap | null, insetsRef: RefObject<MapInsets>
     let last = -1;
     // The map's foot, read once a slide starts, not every frame: it changes
     // only as the window does, and read each frame after the sheet's own
-    // writes it forced a layout (the animation audit of 2026-11-23, M10).
+    // writes it forced a layout.
     let bottom = 0;
     const step = () => {
       frame = 0;

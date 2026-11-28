@@ -60,7 +60,7 @@ export function useGlView<B>(boxOf: GlBoxOf<B> = ahead as unknown as GlBoxOf<B>,
     // tells as a move and a moveend) leaves the centre, zoom, bearing and
     // pitch as they were and asks for nothing new: looked at, every layer's
     // box was worked out each frame of a slide and a layer rendered as one
-    // crossed (the animation audit of 2026-11-23, M3). The canvas's size is
+    // crossed. The canvas's size is
     // in it too, for a window resized (its attributes, no layout read).
     let seen = "";
     const camera = () => {

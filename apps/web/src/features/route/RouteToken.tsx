@@ -61,8 +61,7 @@ interface ShortFlight {
 
 // One piece of a token, kept whole on its line: a pill, or a chip. Pieces
 // wrap as words do, so a field with an arrival, an approach and a
-// departure picked is never one run wider than the box (the r6 audit's
-// M9); a chip keeps to its pill at a gap of 4, the next point 8 on, each
+// departure picked is never one run wider than the box; a chip keeps to its pill at a gap of 4, the next point 8 on, each
 // gap at a piece's end, so a wrapped line starts at the left edge,
 // as ForeFlight's pills read, in order with no arrows (the owner, 2026-11-23).
 // Each piece's middle on the middle of the capitals typed beside it, not of
@@ -213,12 +212,12 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
     // <wbr> between two: two inline-flex boxes side by side with no space
     // between are one unbreakable run to WebKit (the owner's iPhone,
     // 2026-11-23). Each pill's and chip's 44-point area reaches half way
-    // across the gap to its neighbour's (the audit's WEB-4).
+    // across the gap to its neighbour's.
     <span className="font-sans leading-normal whitespace-normal normal-case">
       {pieces.map((piece, n) => {
         // The gap after a piece, before the break: a wrapped line starts at
         // the box's left edge as the first does, where a gap before a piece
-        // indented every line after the first (the r7 audit's W-M2).
+        // indented every line after the first.
         const next = pieces[n + 1];
         const gap = next ? (next.tight ? "me-1" : "me-2") : i < box.points.length - 1 ? "me-2" : undefined;
         return (

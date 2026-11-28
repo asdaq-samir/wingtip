@@ -18,7 +18,7 @@ import { PlacePictures } from "./PlacePictures";
  * Airspace fact tapped scrolls to the hours and opens the week, as Apple
  * Maps' Hours fact does. The hours are read at the field's own clock each
  * minute, by this page's own clock, so the minute draws the page and not
- * the whole card (the round-2 speed audit), and stops while it is out of
+ * the whole card, and stops while it is out of
  * sight (lib/shown).
  */
 export function PlaceInfoPage({

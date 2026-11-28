@@ -75,7 +75,7 @@ export function SheetScroller(p: ScrollerProps) {
       // A row focused or brought into view stops under the search's row,
       // not behind it (WCAG 2.4.11); one tabbed to at the foot stops over
       // the foot bar, not under it, where the page has its end
-      // room for it (the r6 UI audit's M5).
+      // room for it.
       style={
         { "--sheet-head": p.head, scrollPaddingTop: p.head, scrollPaddingBottom: p.endRoom === "bar" ? barPx : undefined } as CSSProperties
       }

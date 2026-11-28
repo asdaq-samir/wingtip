@@ -35,7 +35,7 @@ export function Flag({ finding, testId, children }: { finding: "stop" | "caution
 /** A section's line while what it shows is still coming, or failed.
  *  Coming, the shape of two lines with the words for a screen reader,
  *  where a grey line of words read as unfinished and then jumped
- *  (QueryState's bars, the feel audit, 2026-11-27). */
+ *  (QueryState's bars). */
 export function Pending({ children, coming = false }: { children: ReactNode; coming?: boolean }) {
   if (coming) return <SkeletonBars fetching={children} />;
   return (

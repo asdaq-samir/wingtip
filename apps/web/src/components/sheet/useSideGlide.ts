@@ -7,8 +7,7 @@ import { prefersReducedMotion, timing } from "../../lib/motion";
  * gliding, on the Drawer's time and curve, as the map's room and its
  * corner controls ease beside it: a tap on its grabber or Escape snapped
  * it between its head and the window's height in one frame, the one thing
- * on the screen that did not move (the apple-design audit of 2026-11-23,
- * H2). Its layout changes at once, as before -- its head alone, or the
+ * on the screen that did not move. Its layout changes at once, as before -- its head alone, or the
  * whole panel -- and only what is drawn eases. Out, the panel is uncovered
  * from its head down, by a clip. In, a copy of its ground, the look's
  * solid sheet with no frost, is drawn where it was inside a box of its old height that
@@ -74,8 +73,8 @@ export function useSideGlide(panel: HTMLElement | null, size: PanelState, radius
       if (name.startsWith("data-") && name !== "data-testid" && name !== "data-slot") ground.setAttribute(name, value);
     // The look's solid ground (`--sheet`), not the panel's classes: those
     // brought its frost and its backdrop-filter, and WebKit blurred the map
-    // twice each frame of the glide, under the panel and under the copy
-    // (round 7's W4). At an edge in motion the two look the same.
+    // twice each frame of the glide, under the panel and under the copy.
+    // At an edge in motion the two look the same.
     ground.style.cssText = `position:absolute;inset:0;border-radius:${radius}px;background-color:var(--sheet, var(--background))`;
     shut.append(ground);
     panel.before(shut);

@@ -85,6 +85,6 @@ export interface RouteBoxProps extends RouteParts {
   /** Drawn straight under the box, before its red message: the editor's
    *  toggle row, pulled up into the wrapped box's room under its last line
    *  (RouteEditor), so a message under the box is never under the toggle
-   *  and its Remove takes its own tap (the r7 audit's W-M1). */
+   *  and its Remove takes its own tap. */
   foot?: ReactNode;
 }

@@ -65,8 +65,7 @@ export default function RouteHead({
             data-testid="route-done"
             // Its area the row's 44 tall (11 over and under its 22-point
             // line) and 8 past its words each side, nothing grown that is
-            // seen: -inset-2 left it 38 tall (the iOS audit's P1, "Done"
-            // 46×22).
+            // seen: -inset-2 left it 38 tall.
             className={cn("relative px-1 font-semibold text-tint hit-x-2 hit-y-[11px]", TEXT.row)}
           >
             Done

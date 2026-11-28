@@ -18,7 +18,7 @@ import { CHART } from "../../../lib/tokens";
 /** The lit edge's own source: the volume picked, its edge from the tiles'
  *  pieces of it (tileEdge), so a pick sets this small source's data and
  *  lays out none of the overlay tiles again, as a filter on their layer
- *  did at each card's opening and closing (the map audit, round 6, N1). */
+ *  did at each card's opening and closing. */
 const PICKED_SOURCE = "airspace-picked";
 
 /** The volume whose card is open, its edge again, wide, in the selection's

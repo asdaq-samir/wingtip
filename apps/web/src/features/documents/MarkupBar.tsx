@@ -36,7 +36,7 @@ const TOOL = "relative size-10 rounded-full hit-0.5 [&_svg]:size-5";
  * and the page shared with its marks. Base UI's Toolbar round them, as
  * the playback bar's (PlaybackBar): one tab stop and the arrows between
  * its controls, the APG toolbar its role promises, where every button
- * was a tab stop of its own (the reuse audit of 2026-11-23, M3).
+ * was a tab stop of its own.
  */
 export function MarkupBar({ vm, page, at }: { vm: MarkupModel; page: number | null; at: "head" | "foot" }) {
   const head = at === "head";

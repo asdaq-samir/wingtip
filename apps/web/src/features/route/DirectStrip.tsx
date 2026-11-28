@@ -6,8 +6,7 @@ import { TEXT } from "../../lib/text";
 /** The route flown direct to a point (PlanWorkspace's directToPoint), said
  *  over the route's figures, as mock 5 of the owner's canvas has it, and
  *  Cancel: the route as it was. The words in the text's colour, Cancel
- *  alone in the tint, as only what is tapped is (the consistency audit,
- *  2026-10-23). Worked out on this device, the planner not to be had,
+ *  alone in the tint, as only what is tapped is. Worked out on this device, the planner not to be had,
  *  said under it. */
 export default function DirectStrip({ ident, onDevice = false, onCancel }: { ident: string; onDevice?: boolean; onCancel: () => void }) {
   return (

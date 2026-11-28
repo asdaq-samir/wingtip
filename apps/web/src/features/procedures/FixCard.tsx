@@ -52,8 +52,7 @@ export default function FixCard({
   if (!open) return null;
   return (
     // Its ident the name and what it is under it, as the chart's fix card
-    // has them ("BXCMB" / "Fix · IAF · I22 · KELD"; the selection audit,
-    // 2026-11-18: it had the bare ident and the line in its body).
+    // has them ("BXCMB" / "Fix · IAF · I22 · KELD"; it had the bare ident and the line in its body).
     <SheetCard
       title={open.fix.ident}
       description={["Fix", ...fixRoles(open.fix), open.procedure, open.field].join(" · ")}

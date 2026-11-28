@@ -22,7 +22,7 @@ export type HourlyFrom = {
  * forecast), and the hour the planned flight lands in. Read again each
  * minute by the Weather tab alone, as the hours move on: at the card's
  * root the minute drew the whole card again and asked the engine each
- * time (the round-2 speed audit), and the tab's clock stops while it is
+ * time, and the tab's clock stops while it is
  * out of sight (lib/shown).
  */
 export function usePlaceHourly({ metar, taf: tafText, arrival }: HourlyFrom): {

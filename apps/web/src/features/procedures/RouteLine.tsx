@@ -44,7 +44,7 @@ const figures = (c: RouteLineChoices["chips"][number]) =>
 
 /** A way's name on its chip: the planner's first kind, and how many more
  *  it is the best of ("Avoid Weather +2"), where "Avoid Weather & Fastest &
- *  Over Land" ran off the row (the UI audit's C7, 2026-11-17). Its name in
+ *  Over Land" ran off the row. Its name in
  *  full is its chip's name to a screen reader and on its line's callout. */
 function shortLabel(label: string): string {
   const kinds = label.split(" & ");
@@ -84,10 +84,10 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
         // room is laid over the strip's: the row's 44 laid out at the thin
         // strip's 28 (PIN_FIGURE's two lines, 1.75rem), so Routes swapping
         // the figures for the chips moves neither the bar nor the map's
-        // room (the r10 audit). There the row is only as wide as its chips
+        // room. There the row is only as wide as its chips
         // (w-fit), so the room after the last chip passes to the sheet
-        // behind the bar, as the figures do (sheet/FootBar; the r10 audit's
-        // W-L1). The row itself takes touches, where it took none and only
+        // behind the bar, as the figures do (sheet/FootBar).
+        // The row itself takes touches, where it took none and only
         // its chips did: iPhone's Safari would not scroll a row that takes
         // no touch, and a sideways swipe on the chips did nothing (the
         // owner, 2026-11-23: "Not able to slide the routes"). A sideways

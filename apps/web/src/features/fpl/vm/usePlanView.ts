@@ -44,8 +44,7 @@ export function usePlanView(
   // only while the sheet moved, they were built on the first frame of
   // every pull up from the pill and taken down again there, with the
   // finger and the map's follow of the sheet waiting behind them (the drag
-  // probe at CPU 4x, 2026-11-04: 100 to 170 ms each; the animation audit
-  // of 2026-11-23, M8).
+  // probe at CPU 4x, 2026-11-04: 100 to 170 ms each).
   // Once drawn, the selector is true for good, so a drag's start and its
   // settle no longer draw the whole view model again at the first frame of
   // each pull from the pill.

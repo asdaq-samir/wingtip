@@ -7,8 +7,8 @@ import SectionTitle from "./SectionTitle";
 import { Collapsible, CollapsibleTrigger } from "./ui/collapsible";
 
 // The title as a way somewhere, its 44-point area a pseudo-element round
-// it (the iOS audit's P1), the chevron in the tint: ten over and under the
-// 25-point title, eight was 41 and missed (the web audit's WEB-45), and
+// it, the chevron in the tint: ten over and under the
+// 25-point title, eight was 41 and missed, and
 // the eight under the head keep it off the first row.
 const MORE = cn(
   "group relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring hit-x-2 hit-y-2.5",

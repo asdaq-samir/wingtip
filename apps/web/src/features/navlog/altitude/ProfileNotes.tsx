@@ -40,7 +40,7 @@ export default function ProfileNotes({
   // The Class B band the altitude in sight is in, the engine's rule (14 CFR
   // 91.131(a)(1)): where the view compared it here and took a band with no
   // ceiling to top out at 10,000 ft, which Class B tops from 7,000 to
-  // 12,500 ft are not (the aviation audit's AV-9).
+  // 12,500 ft are not.
   const bravoAt =
     profile && shownAt !== null
       ? callEngine("class_b_at_altitude", {

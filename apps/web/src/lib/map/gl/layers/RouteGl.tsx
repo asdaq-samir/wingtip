@@ -222,7 +222,7 @@ export function RouteGl({
   );
   // Under the ways' chips wherever the two come in (WaysGl), so the
   // route's names give way to the chips rather than cut through their
-  // words (the UI audit's B6), and every way's chip is placed before them;
+  // words, and every way's chip is placed before them;
   // with no ways, at the top of the marks as before.
   useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field, under: WAY_CHIPS_LOWEST });
   // Each turn's dot drawn, and the side its name is put, for the tests.
@@ -269,8 +269,7 @@ export function RouteGl({
  *  a `within` filter set at every rest had MapLibre test each name against
  *  the view's polygon and lay the layer out again, and in flight the map
  *  comes to rest at each fix own ship's follow eases to, about once a
- *  second, nearly always with the same names in view (the speed audit of
- *  2026-11-27). */
+ *  second, nearly always with the same names in view. */
 function useNamesInView(checkpoints: GlCheckpoint[]) {
   const { map } = useGlMap();
   useEffect(() => {

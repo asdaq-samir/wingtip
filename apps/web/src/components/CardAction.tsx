@@ -72,8 +72,7 @@ export function CardAction({
     // clear one inset its fill a point, out of line with the tiles beside
     // and under it. Its glyph a fixed 20 px while
     // its word grows, so the tiles stay inside the half sheet at a larger
-    // text size: size.glyph-card-action, a token, not an accident (the
-    // scale audit's Q2, the owner, 2026-11-21).
+    // text size: size.glyph-card-action, a token, not an accident (the owner, 2026-11-21).
     "h-auto min-w-0 flex-col gap-0.5 rounded-xl border-0 px-1 py-1.5 [&_svg:not([class*='size-'])]:size-(--size-glyph-card-action)",
     !filled &&
       cn(
@@ -81,14 +80,12 @@ export function CardAction({
         // The Native look's words, as the stock grey button had them.
         "native:text-secondary-foreground",
         // Its grey kept at 8% while its menu is open (the glass's 12% there):
-        // on the darker grey the tint read 4.44 to 1, short of WCAG's 4.5 (the
-        // iOS audit's P15, an airplane's Alert menu, 2026-11-05); the menu
+        // on the darker grey the tint read 4.44 to 1, short of WCAG's 4.5; the menu
         // under it says it is open.
         "aria-expanded:bg-foreground/8",
         // By night the glass's 8% of the light foreground is a lighter grey
-        // under the tint, 4.43 to 1 on a side panel's card (the iOS audit's
-        // P15, an iPad's and a sideways iPhone's airport and airplane cards,
-        // the nightly run of 2026-11-20): 5% there.
+        // under the tint, 4.43 to 1 on a side panel's card (an iPad's and a sideways iPhone's airport and airplane cards):
+        // 5% there.
         "dark:bg-foreground/5",
       ),
   );

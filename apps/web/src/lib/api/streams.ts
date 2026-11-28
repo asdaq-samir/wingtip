@@ -46,7 +46,7 @@ const BATCH_MS = 120;
  * A stream's lines handed on in batches: the ones that come within
  * `windowMs` of the first, together. Each line was a render of the whole
  * route panel -- the nav log's thirty-odd, one after another, each 60 to
- * 85 ms of a phone's (the 19 Oct audit), so the app stopped answering a
+ * 85 ms of a phone's, so the app stopped answering a
  * tap for the seconds a plan took, the owner's "why does the app become
  * unresponsive". Lines before a failure are handed on before it is
  * thrown, as the streamed query keeps them.

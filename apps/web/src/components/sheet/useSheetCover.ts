@@ -16,7 +16,7 @@ import { shownPx } from "./insets";
  * Base UI writes that as 0 until the popup has measured itself, so each
  * card's first frame read as the card all the way up, and the map's
  * padding went 844 then 368 as every card opened, and through 0 as the
- * phone turned (the flicker audit, 2026-11-14, FL-4 and FL-17).
+ * phone turned.
  */
 export function useSheetCover(
   sheet: HTMLElement | null,

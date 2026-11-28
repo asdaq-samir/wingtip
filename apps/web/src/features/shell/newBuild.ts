@@ -11,8 +11,8 @@ export const OFFER_AFTER_MS = 5 * 60_000;
 
 /** How often a page kept in front looks for a new build: every twenty
  *  minutes, and at once each time it comes back to the front. Each minute
- *  it was 60 requests an hour for a build that comes a few times a day
- *  (the speed audit, 2026-11-27); a deploy reaches a page in front within
+ *  it was 60 requests an hour for a build that comes a few times a day;
+ *  a deploy reaches a page in front within
  *  the twenty, and one brought back at once. */
 const CHECK_EVERY_MS = 20 * 60_000;
 

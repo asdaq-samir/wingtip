@@ -103,7 +103,7 @@ export default function LostCommsPage() {
         {/* Each segment two rows: its name and minimum, then what is flown
             on it, a tap saying the expected altitude applies from there. The
             altitude was a line under the name, and its tap area reached into
-            the name field's (the iOS audit, 2026-10-14). */}
+            the name field's. */}
         {segments.flatMap((s, i) => {
           const f = flown[i]!;
           return [

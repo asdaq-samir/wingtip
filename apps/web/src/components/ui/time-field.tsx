@@ -71,7 +71,7 @@ function Wheel({
  * screen reader, the time in sight in its name, WCAG 2.5.3). Where it was
  * React Aria's TimeField, an hour and a minute segment each some 20 points
  * wide and 25 apart, which no 44-point square could each own without one
- * covering the other (the iOS audit's P1 on the departure picker; the
+ * covering the other (the
  * owner, 2026-11-21: "one button ... as iOS does"). Not the browser's
  * `<input type="time">`: on an iPhone set to the 12-hour clock it says
  * "3:00 PM", and every browser draws it its own way.

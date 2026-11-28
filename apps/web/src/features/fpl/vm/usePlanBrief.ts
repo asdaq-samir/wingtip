@@ -131,8 +131,7 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
       // Written as the route box writes it (FL-090), the owner's format.
       cruiseFt ? flightLevel(cruiseFt) : null,
       // With its zone, "leaving 14:00 CST", as the Depart row and the
-      // timeline write a clock time: a bare "14:00" read as Z or local
-      // (the Brief audit of 2026-11-21, finding 13).
+      // timeline write a clock time: a bare "14:00" read as Z or local.
       depart ? `leaving ${clockTime(new Date(depart))} ${zoneName(new Date(depart))}` : "leaving now",
       shortName(aircraftLabel),
     ]

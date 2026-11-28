@@ -300,7 +300,7 @@ const ranges = new WeakMap<MlMap, Map<string, [number, number]>>();
  *  layer added after the paint was set (made again from its spec, or not
  *  there yet) came back in its spec's day paint, and in the dark theme
  *  the chart close in was drawn undimmed while the region's level under
- *  it was dimmed (UI audit B10, 2026-11-17). */
+ *  it was dimmed. */
 export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
   const { map } = useGlMap();
   const key = JSON.stringify(paint);
@@ -364,7 +364,7 @@ const TAP_SLOP_PX = 6;
 /** `lifted` at each lift within TAP_SLOP_PX of its press, with no second
  *  finger down in between, at the point in the map's own pixels. At the
  *  lift, not the press: at the press every pan and pinch paid a
- *  queryRenderedFeatures on its first frame (the round-2 speed audit). */
+ *  queryRenderedFeatures on its first frame. */
 function onTapLift(map: MlMap, lifted: (point: { x: number; y: number }) => void): () => void {
   const target = map.getCanvasContainer();
   let press: { id: number; x: number; y: number } | null = null;

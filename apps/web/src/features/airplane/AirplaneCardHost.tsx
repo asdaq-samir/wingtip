@@ -7,8 +7,7 @@ import { fromChunk } from "../../lib/fromChunk";
 
 /** The card's own chunk: nothing of it in the map page's first load
  *  (the web's bundle budget), fetched once the page is idle, so an
- *  airplane's card opens at once, not after a download (the speed audit of
- *  2026-11-21), and drawn straight from its module (fromChunk). */
+ *  airplane's card opens at once, not after a download, and drawn straight from its module (fromChunk). */
 const { Part: AirplaneCard, prefetch } = fromChunk(
   () => import("./AirplaneCard"),
   (m) => m.default,

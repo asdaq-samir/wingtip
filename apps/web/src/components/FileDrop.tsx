@@ -22,8 +22,8 @@ async function filesOf(items: DropItem[], types: readonly string[]): Promise<Fil
  * an iPad, a PDF or a track dragged in from Files beside the app in Split
  * View or Stage Manager, or with the Apple Pencil, as iPadOS's apps take
  * one; on a desktop, from the Finder. The list's own row with the file
- * picker (FileTrigger) stays the way in without a drag (the iPad audit,
- * 2026-11-21: the documents library and the debrief took no drop). Ringed
+ * picker (FileTrigger) stays the way in without a drag (the documents library and the debrief took no drop).
+ * Ringed
  * in the tint while a file it takes is over it.
  */
 export default function FileDrop({ label, types, onFiles, children }: Props) {

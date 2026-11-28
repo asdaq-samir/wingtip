@@ -119,8 +119,7 @@ startFresh();
 //
 // React Router's declarative mode (BrowserRouter and Routes), not the data
 // router: the app has no loader, action or fetcher left, and the data
-// router's own code was 59.5 KB of the first load (the speed audit,
-// 2026-11-12). nuqs's React Router adapter reads the address through
+// router's own code was 59.5 KB of the first load. nuqs's React Router adapter reads the address through
 // useNavigate and useSearchParams, which both modes have (nuqs.dev,
 // "Adapters", React Router).
 

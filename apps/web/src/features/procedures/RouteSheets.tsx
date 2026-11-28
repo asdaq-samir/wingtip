@@ -120,7 +120,7 @@ export function RouteSheets({ vm, children }: { vm: ProceduresRouteModel; childr
           owner's pick. */}
         <ResponsivePopoverContent
           // The FAA's name as the plate's card writes it, "KDLH ILS or LOC
-          // rwy 09", one way everywhere (the audit's WEB-11).
+          // rwy 09", one way everywhere.
           title={on ? (procedure ? plateTitle(on.ident, procedure.name) : listTitle(on.ident, on.kind)) : "Procedures"}
           className="max-h-[70dvh] w-80 overflow-y-auto p-3"
           align="start"

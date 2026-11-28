@@ -6,7 +6,7 @@ import type { Map as GlMap } from "maplibre-gl";
  * every frame) reads back blank once its frame is on the screen, in Safari
  * as in Chrome, so a card's still copy on its close (useCardFrame's
  * keepFace) drew the airport diagram, the plate beside the map and a
- * chart's pages as nothing (the r6-ui audit's M3). A map put here is drawn
+ * chart's pages as nothing. A map put here is drawn
  * again at once, in the same task, as its canvas is read: the frame is
  * still in its buffer then.
  */

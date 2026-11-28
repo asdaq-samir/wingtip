@@ -62,10 +62,10 @@ export function endFit({
     // The end by its ident, so a landing on it is judged against its own
     // landing distance available or past its displaced threshold (NASR
     // APT_RWY_END; AIM 2-3-3), the engine reading them from the runway's
-    // ends (the web audit's WEB-1).
+    // ends.
     end: { ident: end.ident, heading_true_deg: end.heading_true_deg ?? null },
     // The variable arc too: 27015G25KT 230V310 is 16 kt across 27 at its
-    // worst, where the mean alone read 0 (round 7's N4).
+    // worst, where the mean alone read 0.
     wind: wind
       ? {
           dir_true_deg: wind.dirTrueDeg ?? null,

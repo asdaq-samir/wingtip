@@ -26,7 +26,7 @@ const today = () => localDay();
 // Its own chunk: it reads the saved flights' debriefs only when opened.
 const CoachPage = lazy(() => import("./coach/CoachPage"));
 
-/** A currency date (the flight review's, the medical's, the IPC's), saved
+/** A currency date, saved
  *  as it is picked: a whole day at a time, from the calendar. */
 function DateField({
   value,
@@ -62,7 +62,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
   // Signed out, the logbook is You's Sign In, said once, and nothing of it
   // is asked for: opened by a link (?open=logbook) past You's greyed row it
   // fetched five of the pilot's lists to 401s and read "could not be
-  // fetched" in red and "Not current" from no data (the web audit's WEB-40).
+  // fetched" in red and "Not current" from no data.
   const { data: pilot, isPending } = useQuery(pilotQuery);
   if (isPending) return null;
   if (!pilot)

@@ -53,7 +53,7 @@ const FOLLOW_FIRST_MS = 250;
 /** A pick's or a fit's move on the map, ms, on the camera's own ease:
  *  near enough at once that the map answers the tap, long enough to see
  *  where it went. 600 to 800 ms had the map still moving after the card
- *  was up (the speed audit of 2026-11-27). */
+ *  was up. */
 export const CAMERA_MS = 400;
 /** The shortest and longest a follow's ease runs, ms: a frame-rate stream
  *  is not eased shorter than this, and a GPS gone quiet for a while is not
@@ -79,8 +79,7 @@ export const linear = (t: number) => t;
 
 /** A dry run's scrub's first step after the press (camera's `glide`): the
  *  press may land miles along the course, so the map eases there on a
- *  page's time (motion.page), fast first and settling, rather than jump
- *  (the round-2 speed audit). */
+ *  page's time (motion.page), fast first and settling, rather than jump. */
 export const SCRUB_GLIDE = { duration: MOTION.page * 1000, easing: (t: number) => 1 - (1 - t) ** 3 };
 
 /** A frame at 60 Hz, ms: a glide with less left than this is over. */
@@ -121,8 +120,7 @@ export const FOLLOW_LEAST_PX = 1;
 /** The step under which own ship's real-GPS follow jumps once a fix
  *  rather than easing, px. A linear ease redraws the whole map every
  *  frame, 60 a second, to move the chart a pixel or two at cruise (at
- *  120 kt about 0.5 px/s at zoom 9, 2 px/s at zoom 11: the in-flight
- *  audit, 2026-11-21), which is battery for nothing; a step this small
+ *  120 kt about 0.5 px/s at zoom 9, 2 px/s at zoom 11), which is battery for nothing; a step this small
  *  looks the same jumped. The owner took it (Q1, 2026-11-21). */
 export const FOLLOW_JUMP_UNDER_PX = 8;
 

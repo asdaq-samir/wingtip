@@ -62,8 +62,7 @@ const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA" };
 const AREA = "relative z-10 max-w-full hit-x-1 hover:no-underline hover:opacity-80";
 // Its area 44 points tall whatever the figure's size, as the timeline's
 // chips' (TimelineRows' CHIP_44): a band of 12 over and under a figure of
-// 16 to 25 made 40 to 49, under 44 on the thin strip (the HIG audit of
-// 2026-11-23, M5). The figure itself never grows.
+// 16 to 25 made 40 to 49, under 44 on the thin strip. The figure itself never grows.
 const AREA_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
 
 /** A figure an airplane makes (the time, the fuel), with none picked: a
@@ -139,8 +138,7 @@ export default function TripFigures({
   // without airplane profile, don't assume").
   // The columns kept all the same, the time a dash in
   // the tint that asks for an airplane (lib/pickAirplane), where it
-  // went and the strip said nothing of why (the UI audit's C2,
-  // 2026-11-17): what the airplane would make of the route, none assumed.
+  // went and the strip said nothing of why: what the airplane would make of the route, none assumed.
   const airplane = useAirplaneChosen();
   // The airplane's GPS altitude at the strip's end whenever its position
   // is known (gpsFigure: what the figure is and where it comes from).
@@ -156,7 +154,7 @@ export default function TripFigures({
       .map((f) => (airplane || f.name === "To" || f.name === "Dist" ? f : wantsAirplane(f)))
       // The destination the planner does not know, said on the figure in
       // red with its mark, the pill too, where the pill read "ZZZZ" over
-      // a dash as if nothing were wrong (the UI audit's B8).
+      // a dash as if nothing were wrong.
       .map((f) =>
         f.name === "To" && unknown?.ident && f.value.toUpperCase() === unknown.ident.toUpperCase()
           ? { ...f, alert: true, said: `${f.said ?? f.value} ${unknownWhy(unknown)}` }
@@ -259,8 +257,7 @@ export default function TripFigures({
   // The pill's one row holds every figure that fits, the GPS altitude too
   // (the owner, 2026-11-26: "GPS alt doesnt show on the pill size?"),
   // where it held four at most and left the GPS out first: five then
-  // stacked two by two, three rows tall in a bar one row high (the r6 UI
-  // audit's H1), which the strip's `row` now never does, dropping from the
+  // stacked two by two, three rows tall in a bar one row high, which the strip's `row` now never does, dropping from the
   // end only what does not fit.
   return (
     <FigureStrip

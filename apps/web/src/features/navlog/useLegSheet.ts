@@ -59,7 +59,7 @@ export function useLegSheet({
   // Its ring put away by any other pick, a tap on the chart, or the card
   // it was picked with closing (lib/map/mapPick, GlMapShell's openCard):
   // it was kept till the route changed, a second yellow ring beside the
-  // next field picked (the selection audit, 2026-11-18).
+  // next field picked.
   useMapPickOwner("point", !!selectedPoint, deselectPoint);
   // The route in order in FPL, the nav log's place: its fields with their
   // runways and procedures, and the tops of climb and descent and the

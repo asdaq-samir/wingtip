@@ -25,7 +25,7 @@ const NOTES: Record<Fit, (f: EndFit) => string> = {
   close: () => "Little to spare",
   beyond: () => "Past the POH's tables",
   // No temperature reported: the distances are a standard day's, and a
-  // hot day's are longer (FAA-H-8083-25C, chapter 11; round 7's N6).
+  // hot day's are longer (FAA-H-8083-25C, chapter 11).
   standard_day: () => "Assumes a standard day",
 };
 
@@ -38,8 +38,7 @@ export function endChoice(runway: Runway, end: RunwayEnd, into: string | null, f
   const tail = fitted && fitted.tailwind_kt > 0 ? fitted.tailwind_kt : 0;
   const level = fitted?.fit ?? undefined;
   // Never "into the wind" with the wind behind it: the pick's best end
-  // where only one end has a heading can have it (the aviation audit,
-  // 2026-11-25).
+  // where only one end has a heading can have it.
   const windward = into === id && !tail;
   const said = fitted?.short
     ? ", too short today"

@@ -27,7 +27,7 @@ const FADE = { duration: MOTION.fade * 1000, easing: `cubic-bezier(${MOTION.shee
  *  none: out of sight (the keyboard up, the route's field open), or in
  *  sight with its figures put away (a stop typed under a card, FlightFoot's
  *  figuresAway), it is too short for the pill, which shrank to the edge's
- *  room and hid the sheet's head (the r7 audit's W-L3). */
+ *  room and hid the sheet's head. */
 function foldedHeight(el: HTMLElement): number | undefined {
   const folded = el.dataset.at === "peek" && !el.inert && !!el.querySelector("[data-foot-strip]");
   return folded ? Math.round(el.offsetHeight) || undefined : undefined;
@@ -38,8 +38,8 @@ function foldedHeight(el: HTMLElement): number | undefined {
  * (Brief, Nav Log, Routes, More), ONE fixed bar over the screen's foot,
  * outside the sliding Drawer -- a sibling of its popup in its viewport, as
  * iOS 26 puts a tab bar's bottom accessory over its tab bar -- so the sheet
- * slides behind it and nothing in it follows the sheet (the sheet-motion
- * audit of 2026-11-23, option B, the owner's pick): anything that stays
+ * slides behind it and nothing in it follows the sheet (option B, the owner's pick, 2026-11-23):
+ * anything that stays
  * still at the foot lives outside the sliding panel, never counter-moved
  * inside it.
  *

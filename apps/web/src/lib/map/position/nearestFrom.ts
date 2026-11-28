@@ -15,7 +15,7 @@ interface Placed {
  * fix does not ask again at every move (lib/queryClient's nearestQuery);
  * its distances and bearings are from that rounded point, up to about 3 nm
  * off, and a pilot turning to a row's arrow was given the wrong way and
- * the wrong miles (the audit's WEB-3: C81 read 1.9 nm SW from C81 itself).
+ * the wrong miles (C81 read 1.9 nm SW from C81 itself).
  * Each field's great circle from the fix is the engine's (lib/geo's Geo:
  * WGS-84, Karney's geodesic), handed in once the engine is loaded.
  */

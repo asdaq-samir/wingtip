@@ -56,7 +56,7 @@ export function MapCard({
               // owner's iPhone, 2026-11-14, a TFR's card). One line each,
               // cut short, at CardHeadRow's sizes (the card's name, a note's
               // 13 under it), so every card's head is the same height at the
-              // pill (the selection audit, 2026-11-18: these were 15 and
+              // pill (these were 15 and
               // wrapped).
               className={cn("truncate text-center font-bold text-foreground outline-none", TEXT.card)}
             >

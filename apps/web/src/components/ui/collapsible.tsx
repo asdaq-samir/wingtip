@@ -21,11 +21,10 @@ function CollapsibleTrigger({ ...props }: CollapsiblePrimitive.Trigger.Props) {
  * (data-starting-style). The panel needs that one child, `<div>`. A
  * long fold (foldPanel's `rows`, LONG_FOLD_ROWS or more) opens and closes
  * at once: a grid's rows eased lay out every row anew each frame, and a
- * procedure's twenty fixes stuttered on a phone (the feel audit,
- * 2026-11-27); 0.01 ms, as Reduce Motion's, so its transitionend still
+ * procedure's twenty fixes stuttered on a phone; 0.01 ms, as Reduce Motion's, so its transitionend still
  * comes (onTheLine's FoldSection waits on it). Told by its caller's row
  * count, where a :has() rule counted them, matched again at every style
- * change under it (the round-2 speed audit).
+ * change under it.
  */
 export const FOLD_PANEL =
   "grid grid-rows-[1fr] transition-[grid-template-rows] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:grid-rows-[0fr] data-starting-style:grid-rows-[0fr] [&>div]:min-h-0 [&>div]:overflow-hidden [&>div]:[transition:overflow_0s_var(--motion-fade)_allow-discrete] [&[data-open]:not([data-starting-style]):not([data-ending-style])>div]:overflow-visible data-ending-style:[&>div]:[transition:overflow_0s]";

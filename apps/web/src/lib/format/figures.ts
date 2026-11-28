@@ -114,13 +114,12 @@ export function feetRange(alts: number[]): string {
 
 /** Statute miles as reported: "2.5 sm", and "6+ sm" where the report
  *  says more than that (a METAR's P6SM, FAA JO 7900.5; the engine's
- *  visibility_plus): it printed a bare "6 sm" (the commonality audit's
- *  FIG-3, CODE-12). To the hundredth, down: a visibility read from
+ *  visibility_plus): it printed a bare "6 sm". To the hundredth, down: a visibility read from
  *  metres (4000 m is 2.4854... sm) printed every figure of its float,
  *  and rounding it up would show more than was seen. A report's "less
  *  than" ("M1/4SM", FMH-1 chapter 6; the engine's visibility_minus) is
  *  said as such, "less than 1/4 sm", in the report's own fraction: it
- *  printed "0.25 sm", more than was seen (round 7's N13). */
+ *  printed "0.25 sm", more than was seen. */
 export function miles(sm: number | null | undefined, plus = false, minus = false): string {
   if (sm === null || sm === undefined) return "—";
   if (minus) {

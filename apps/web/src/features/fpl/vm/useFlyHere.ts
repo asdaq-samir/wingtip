@@ -107,7 +107,7 @@ export function useFlyHere({
   // and puts one first once the pilot does (app.chart_model._reading), so
   // they hold none of its readers from a route being planned, and the tap's
   // own requests join them where they are. They were 1.2 to 1.4 s after
-  // the tap (the speed audit, 2026-11-10). Kept out of the page's cache,
+  // the tap. Kept out of the page's cache,
   // as the Recents planned ahead are (usePlanAhead): the route then draws
   // as it comes. Not from a present position, which has moved by the
   // tap; and let go if the card closes without Fly Here.

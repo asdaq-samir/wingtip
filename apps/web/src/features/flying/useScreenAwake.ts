@@ -4,8 +4,8 @@ import { useEffect } from "react";
  * The screen kept on while `on` (flying mode), by the stock Screen Wake
  * Lock API, as EFBs keep it in flight: a phone that dimmed and locked on
  * its own timer took the map, the head and the copilot's voice with it,
- * since Safari suspends a hidden page (the in-flight audit, the owner's
- * Q2, 2026-11-21). The browser lets the lock go as the page is hidden, so
+ * since Safari suspends a hidden page (the owner, 2026-11-21).
+ * The browser lets the lock go as the page is hidden, so
  * it is taken again as the page comes back; it goes with flying mode (the
  * ground, Done flying). Where the API is missing or refuses (low battery,
  * a browser's own policy) the screen dims as before: no error to say.

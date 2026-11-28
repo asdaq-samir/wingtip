@@ -103,7 +103,7 @@ export function RouteGrid(props: RouteGridProps) {
         {props.items.map((item) => (
           // A point's row takes no word selection or iOS callout from a hold,
           // as the list's own draggable rows do: a hold that began before the
-          // drag chunk came selected the ident instead (native audit L3).
+          // drag chunk came selected the ident instead.
           <div
             key={item.id}
             role="row"
@@ -138,7 +138,7 @@ export function PointGrip({ ident }: { ident: string }) {
       // arrow for expanding list"); a finger or a mouse drags the row itself,
       // and the point's menu has Move Up and Move Down. Shown with its
       // grip while the keyboard has it, so a Tab never lands out of sight
-      // (WCAG 2.4.7; the grouped box's audit, 2026-11-20).
+      // (WCAG 2.4.7).
       className="sr-only data-focus-visible:not-sr-only data-focus-visible:grid data-focus-visible:size-11 data-focus-visible:shrink-0 data-focus-visible:place-items-center data-focus-visible:rounded-lg data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:outline-none"
     >
       <GripVertical className="size-4 text-muted-foreground" aria-hidden="true" />

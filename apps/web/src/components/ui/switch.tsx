@@ -4,8 +4,7 @@ import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 function Switch({ className, size = "default", ...props }: SwitchPrimitive.Root.Props & { size?: "sm" | "default" }) {
   // To a finger, iOS's own switch: a 51 by 31 track and a 27-point thumb
   // with its shadow, where shadcn's is 32 by 18 -- the pilot's one
-  // exception to stock controls' stock size (the iOS audit's "switch
-  // 51×31"). It was lost when the stock switch was added again; a mouse
+  // exception to stock controls' stock size. It was lost when the stock switch was added again; a mouse
   // keeps the stock one.
   return (
     <SwitchPrimitive.Root

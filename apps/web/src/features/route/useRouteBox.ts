@@ -197,9 +197,9 @@ export function useRouteBox({
   };
   // Return with no row lit (the list takes it on a lit row): the first row
   // shown, once the rows answer what is typed -- an airport first, as the
-  // list shows them, else a waypoint, as Maps' search does (the FPL
-  // audit's A1, 2026-11-08: typed key by key, as a phone's keyboard does,
-  // rows that come after the last change can be none lit). What is no
+  // list shows them, else a waypoint, as Maps' search does (typed key by key, as a phone's keyboard does,
+  // rows that come after the last change can be none lit).
+  // What is no
   // row's ident (a town's name, "madison", or a short one, "reno", which
   // stopOf takes for an ident) takes the first airport shown at once,
   // before the planner's waypoints answer; else what was typed goes in.

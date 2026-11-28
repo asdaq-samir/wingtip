@@ -51,7 +51,7 @@ export function AircraftFavoriteStrip({
       ))}
       {/* One Add at a time: with no airplane of the pilot's own, its tile's
           Add is the strip's, where a second Add tile beside it read as the
-          same twice (the UI audit, 2026-11-09). */}
+          same twice. */}
       {showAdd && (mine || favorites.length > 0) && (
         <SmallTile
           mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />}

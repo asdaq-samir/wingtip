@@ -39,8 +39,8 @@ const VARIATION_STEP_NM = 1;
 /** The variation (`magnetic_variation`) on the UTC day of `now()`, kept
  *  while the point stays within VARIATION_STEP_NM of the one it was asked
  *  at and the day is the same: the strip's track asks it at every GPS fix,
- *  about once a second, for a figure that changes over miles and years
- *  (the waste audit of 2026-11-21, item 12). */
+ *  about once a second, for a figure that changes over miles and years.
+ */
 export function nearVariation(now: () => Date = () => new Date()): Declination {
   let last: { lat: number; lon: number; date: string; east: number } | null = null;
   return (lat, lon) => {

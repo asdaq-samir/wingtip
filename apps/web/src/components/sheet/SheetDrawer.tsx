@@ -107,9 +107,7 @@ export function SheetDrawer({
   // The stock Drawer's own gaps, left to it, not drawn by hand (decision
   // 0016): a sheet caught as it settles jumps to where it was going, it
   // has no rubber band below the pill, and the 17 px before a swipe starts
-  // is never caught up. Drafted as Base UI issues for the owner to file
-  // (the r5-ui audit's L16, wingtip-audits/2026-11-23/base-ui-issues.md,
-  // 3 to 5).
+  // is never caught up. Drafted as Base UI issues for the owner to file.
   return (
     <Drawer.Root
       open
@@ -170,8 +168,7 @@ export function SheetDrawer({
                 // Its transform alone eased: its ground, edge and shadow go
                 // at once under a card, which covers them as it comes and
                 // goes, where easing them repainted the largest box on the
-                // screen for 450 ms as a card mounted (the animation audit of
-                // 2026-11-23, M7). Kept under Reduce Motion (SHEET_SLIDE).
+                // screen for 450 ms as a card mounted. Kept under Reduce Motion (SHEET_SLIDE).
                 ready && "transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease)",
                 SHEET_SLIDE,
                 "data-swiping:transition-none",
@@ -270,8 +267,7 @@ type Snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPo
  * alone, and the page told (`snapped`, MapPanel's letGo, whose new size
  * re-renders the whole workspace) once the slide's first frame is drawn
  * (a frame, then a task), as a transition: told within the let-go, that
- * render held the sheet still for 164 ms at 4x CPU (the animation audit of
- * 2026-11-23, M1). The pick is held
+ * render held the sheet still for 164 ms at 4x CPU. The pick is held
  * only while the page's own snap point is the one it had when picked, so
  * the page's answer rules as soon as it comes; let go past the pill (no
  * snap point) the page is told at once, as it refuses the close there.

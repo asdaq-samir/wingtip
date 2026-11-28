@@ -84,12 +84,12 @@ export function PlaceWeatherTab({
                 "refresh can go in the weather tab itself"), the round glass
                 button at its own 44 as every one is (IconButton's `round`,
                 the owner's "make all buttons same size as Apple Maps",
-                2026-11-20), where it was held to 32 (the iOS audit's P18). */}
+                2026-11-20), where it was held to 32. */}
             {place && <RefreshNow card="airport" label={`Refresh ${place.ident}`} />}
           </ListRow>
           {/* The hours only where there is a forecast to show (a TAF): Now
               alone was a column of the summary's own figures in a mostly
-              empty strip (UI audit C10, 2026-11-17). */}
+              empty strip. */}
           {place && hourly.hours.length > 1 && (
             <div className="min-w-0">
               <HourlyForecast hours={hourly.hours} arrival={arrival} />
@@ -110,7 +110,7 @@ export function PlaceWeatherTab({
                 {/* When it was observed, first: a report's age is what a
                     pilot weighs it by (and where it came from, where it is
                     own ship's receiver); said once, in the summary over
-                    it, where that is this report's (UI audit C10). Its
+                    it, where that is this report's. Its
                     wind is true, as reported. */}
                 {metar.observed_at && metar.observed_at !== observedAt && (
                   <ListRow title={<Observed at={metar.observed_at} />} data-testid="place-observed" />

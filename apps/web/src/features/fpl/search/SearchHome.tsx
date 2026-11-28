@@ -71,8 +71,7 @@ export default function SearchHome({
       <FindNearby onFind={findNearby} />
       <PillSection title="Favorites" onMore={() => openList("favorites")} testId="pill-section-favorites">
         {/* Home and the airports, then the Airplane and the airplanes, in one
-            row sliding sideways, as Apple Maps' Favorites are (the sheet
-            audit's F-L2): they stood in two rows, a tile each. Each strip's
+            row sliding sideways, as Apple Maps' Favorites are: they stood in two rows, a tile each. Each strip's
             own box laid out of the way (display: contents), its tiles in
             this one. */}
         <PillStrip testId="pill-favorites-row" className="[&>div]:contents">

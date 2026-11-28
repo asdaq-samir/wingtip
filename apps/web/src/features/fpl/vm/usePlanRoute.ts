@@ -130,8 +130,7 @@ export function usePlanRoute() {
   // log asked for (usePlan's `settling`), once, not again for each as it
   // came. Not the runways into the wind: the planner picks those itself
   // (askedRunways, below), so the nav log no longer waits on the fields'
-  // cards and the page's picks, about a second on each new route (the speed
-  // audit of 2026-11-21).
+  // cards and the page's picks, about a second on each new route.
   const picksComing = useQueries({ queries: pickQueries, combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle") });
   // Those the CIFP has, once drawn, each with the fix ATC sent the airplane
   // direct to where there is one: one string, so the plan's key changes
@@ -167,8 +166,7 @@ export function usePlanRoute() {
   // The runway each departure picked is left from ("KSTL:30R"): the
   // departure field's runway picked, a stop's to leave from -- flown by its
   // runway transition for it (wingtip.procedure_paths), where St. Louis's
-  // BERYY6 went out by its first, runway 11's, off 30R (the audit of
-  // 2026-10-21). A runway the wind turns, or the pilot picks, asks for the
+  // BERYY6 went out by its first, runway 11's, off 30R. A runway the wind turns, or the pilot picks, asks for the
   // log again, which the planner answers from its cache: the legs are
   // planned without the runways, their paths laid on after
   // (with_procedures).

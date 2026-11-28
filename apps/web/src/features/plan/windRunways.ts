@@ -13,7 +13,7 @@ import { autoOf } from "./planAddress";
  * wind_picks: "so a first plan flies its patterns and is the plan the page
  * then asks for"). Asked with the page's picks as well, the route's nav log
  * waited about a second for the cards and the picks (usePlanRoute's
- * `settling`, the speed audit of 2026-11-21: Add Fuel Stops' nav log left
+ * `settling`: Add Fuel Stops' nav log left
  * 0.96-1.40 s after the tap), or was asked twice, once before them and once
  * after, for the same answer. A runway the wind turns later, or one the
  * pilot picks, is asked for by name, and the route planned again with it.

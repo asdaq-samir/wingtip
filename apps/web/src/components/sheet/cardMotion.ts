@@ -3,7 +3,7 @@ import { SHEET_SLIDE } from "./insets";
 
 /** How a card is put away: on a page's time (motion.page), shorter than
  *  its coming, as a system answers faster than the pilot decides (the
- *  feel audit, 2026-11-27, the owner taking it). Base UI's own ending
+ *  owner took it, 2026-11-27). Base UI's own ending
  *  style, its time alone changed: the Drawer waits on the popup's own
  *  transition, so nothing mirrors it. SheetDrawer's GIVE_WAY brings the
  *  sheet back on the same time. */
@@ -31,12 +31,10 @@ export const EASE = `transition-[transform,opacity] duration-(--motion-drawer) e
  * once it is gone (--card-to, set as it closes, sheetTopSlot's
  * frontUnder) and faded out, the sheet's content fading back in under it
  * (SheetDrawer's GIVE_WAY) -- only its face fades, the map's buttons
- * riding its top from the first frame as before (the apple-design audit
- * of 2026-11-23, M1: it came in with a cut and left with a fade in place).
+ * riding its top from the first frame as before (it came in with a cut and left with a fade in place).
  * Swiped away (a settings card at half), --card-to is the screen's foot,
  * so it carries on down from where the finger let it go, as the stock
- * PhoneSheet does, rather than going back up as it fades (the gestures
- * audit's M3; CardStack sets it).
+ * PhoneSheet does, rather than going back up as it fades (CardStack sets it).
  *
  * Base UI plays that entry only for a drawer that opens after it has
  * mounted; one mounted already open is drawn where it rests from its first
@@ -57,8 +55,8 @@ export const RISE = cn(
  *  with a fade and a short move from where it stands -- from the right
  *  edge in the inspector's column, up over the side panel -- on the
  *  Drawer's time, as Apple Maps' place card does on an iPad, where it was
- *  there and gone in one frame while the map eased to make room for it
- *  (the apple-design audit of 2026-11-23, H1). Opacity only under Reduce
+ *  there and gone in one frame while the map eased to make room for it.
+ * Opacity only under Reduce
  *  Motion. */
 export const SIDE_EASE = `card-fade transition-[translate,opacity] duration-(--motion-drawer) ease-(--motion-drawer-ease) ${AWAY} data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:translate-none`;
 export const FROM_EDGE = "data-starting-style:translate-x-4 data-ending-style:translate-x-4";

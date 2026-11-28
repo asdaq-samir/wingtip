@@ -68,8 +68,7 @@ function SavedTiles({ signedIn }: { signedIn: boolean }) {
   const flightsAsked = useQuery({ ...flightsQuery, enabled: signedIn });
   const flights = flightsAsked.data;
   const shown = [...(flights ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, STRIP_MOST);
-  // "Sign in" the way there, a tinted link, where the note was a dead end
-  // (the FPL audit's A21).
+  // "Sign in" the way there, a tinted link, where the note was a dead end.
   if (!signedIn)
     return (
       <StripNote>

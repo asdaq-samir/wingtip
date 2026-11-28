@@ -102,7 +102,7 @@ export function FuelStopChip({
 
 /**
  * A suggested stop's pill, one stop's (FuelStopChip) or a flight's folded
- * (FuelStopFold), one interaction written once (the r10 audit): the stock
+ * (FuelStopFold), one interaction written once: the stock
  * Button (the owner, 2026-11-10) at the pills' size, 28 tall, round, the
  * detail's type in their weight, so the line reads as one row of pills
  * (RoutePill). One dashed border on the button itself, in the fuel's amber

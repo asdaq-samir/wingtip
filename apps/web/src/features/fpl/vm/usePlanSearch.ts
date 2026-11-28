@@ -23,8 +23,8 @@ export function usePlanSearch(
   // The search's own page in sight (SearchHome), its Nearest asked for
   // while it is: the list's own question, shared.
   const homeShown = view === "search" && !place && !heldPoint && !nearOpen && !favoritesOpen && !airportRecentsOpen;
-  // With no position, the fields nearest the map's middle (lib/map/mapCentre;
-  // the UI audit's C9): the strip says which it is near (`nearMap`). Only
+  // With no position, the fields nearest the map's middle (lib/map/mapCentre):
+  // the strip says which it is near (`nearMap`). Only
   // while that page asks, so a pan elsewhere draws nothing here (useSearchCentre).
   const asked = useSearchCentre(homeShown && !nearOrigin);
   // Kept as it was while the page is put away under a card: a right-click's

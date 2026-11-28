@@ -43,7 +43,7 @@ export function timeLines(n: FieldNotam, read: NotamReading, untilCharts: boolea
   const [starts, ends] = [dateOf(window.starts), dateOf(window.ends)];
   const active = n.in_force !== false;
   // The year as the lines show it, in the field's zone, not UTC's: near
-  // New Year the two differ (the r7 audit's W-L8).
+  // New Year the two differ.
   // A zone this browser does not know is UTC, as corner writes it then.
   const inZone = (zone && formatIn(zone, YEAR)) || formatIn("UTC", YEAR)!;
   const yearOf = (at: Date | number) => inZone.format(at);

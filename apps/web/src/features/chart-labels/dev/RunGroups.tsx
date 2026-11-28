@@ -40,8 +40,7 @@ export function RoutesGroup({ status, failed }: { status: Status | undefined; fa
           // The route's row brings it onto the map to rate, unless it is
           // there already; at the end, how far its rating has got. The
           // whole row is the link, as an iOS list's row is: the name
-          // alone, 19 tall, had its 44 taken by the row's own lines (the
-          // iOS audit's P1, 2026-11-05).
+          // alone, 19 tall, had its 44 taken by the row's own lines.
           <ListRow
             key={`${c.departure_ident}-${c.destination_ident}`}
             to={here ? undefined : `/dev?${route}`}

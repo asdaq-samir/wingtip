@@ -35,8 +35,8 @@ import { pickOnMap } from "../../../lib/map/mapPick";
  *  A frame sends the map's worker only the airplanes that changed
  *  (trafficSend), and comes once a second at the chart's scales, where an
  *  airplane at 120 kt moves a pixel or two in it, and up to four a second
- *  only zoomed in close (trafficFrameMs; the speed audit of 2026-11-27
- *  measured ten a second from zoom 10 as work for nothing). An airplane
+ *  only zoomed in close (trafficFrameMs; ten a second
+ *  from zoom 10 was measured as work for nothing). An airplane
  *  followed keeps ten a second: the camera's follow eases linearly between frames,
  *  so a mark stepped once a second would slide back on the screen and jump. */
 const EVERY_MS = 5000;
@@ -100,8 +100,9 @@ function viewOf(map: ReturnType<typeof useGlMap>["map"]) {
 function Traffic({ geo }: { geo: Geo }) {
   const { map } = useGlMap();
   // Own ship's height alone, to the nearest 10 ft, so the traffic is not
-  // drawn again at every fix (the in-flight audit; the owner's Q4,
-  // 2026-11-21): a GPS height wanders by tens of feet from fix to fix,
+  // drawn again at every fix (the owner's Q4,
+  // 2026-11-21):
+  // a GPS height wanders by tens of feet from fix to fix,
   // so 10 ft changes no real answer of the engine's 1,000 ft "near own
   // height" rule (traffic_marks), which still decides.
   const ownFt = useOwnShip((s) => (s.enabled && s.fix?.altitudeFt != null ? Math.round(s.fix.altitudeFt / 10) * 10 : null));
@@ -205,7 +206,7 @@ function Traffic({ geo }: { geo: Geo }) {
       // Blended from where it is drawn onto where the new report carries
       // it, not jumped: over a second, or two frames where a frame is a
       // second (the chart's scales), where the whole gap went in one frame
-      // and the mark hopped 1 to 3 px (the round-2 speed audit).
+      // and the mark hopped 1 to 3 px.
       const should = carriedOn(geo, plane, (now - at) / 1000);
       const { hex: tracked, follow: following } = useTracking.getState();
       const ms = Math.max(BLEND_MS, 2 * trafficFrameMs(appZoomOf(map.getZoom()), !!tracked && following));
@@ -241,7 +242,7 @@ function Traffic({ geo }: { geo: Geo }) {
   // The airplane tracked, followed: brought into sight as its first report
   // comes if it is out of sight, a pick that keeps the tracking's follow on; the follow's steps
   // (drawTargets) wait behind it (the camera's owner), where its jump
-  // every frame stopped this flight 124 ms in (the flicker audit's FL-7).
+  // every frame stopped this flight 124 ms in.
   const heard = useTracking((s) => !!s.hex && s.latest?.plane.hex === s.hex);
   useEffect(() => {
     if (!hex || !follow) return;

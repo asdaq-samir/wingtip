@@ -18,7 +18,7 @@ const windWords = (kt: number) => `${kt >= 0 ? "+" : "−"}${Math.abs(Math.round
  * warning (warn, never limit): where it sits on the row, what that means
  * once over them (the engine's `note`), and the altitude flown first, where
  * it was scrolled out of sight under a dozen rows each repeating the same
- * cut-off warning (the UI audit's C1). With no airplane picked, no time or
+ * cut-off warning. With no airplane picked, no time or
  * fuel, only the wind (the owner, 2026-11-09: nothing assumed). It
  * replaces the plan's menu.
  */
@@ -80,8 +80,7 @@ export default function AltitudeAdvisor({
                   {r.warning && (
                     // The note's size on its own leading: the stock xs item's
                     // description is 12 (text-xs), which took the size and
-                    // left the note's 18 line under it (the iOS audit's P3,
-                    // "Over the legal altitudes" 12 on 18).
+                    // left the note's 18 line under it.
                     <ItemDescription
                       className={cn("flex gap-1 text-caution-ink", TEXT.note, "group-data-[size=xs]/item:text-(length:--type-note)")}
                     >

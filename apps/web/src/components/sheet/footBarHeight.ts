@@ -28,7 +28,7 @@ function publish() {
  * the page's end room and the map's room under the sheet. Each bar mounted
  * is an owner and the last one mounted is told; one going leaves the one
  * under it told, where SheetFoot's going zeroed the height under FPL's bar
- * till its next resize (the round-2 speed audit). `folded` reads the bar's
+ * till its next resize. `folded` reads the bar's
  * height at the pill, where it has one (FPL's figures, footPillPx).
  */
 export function useTellFootBar(ref: RefObject<HTMLElement | null>, folded?: (el: HTMLElement) => number | undefined) {

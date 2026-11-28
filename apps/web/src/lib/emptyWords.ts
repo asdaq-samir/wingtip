@@ -3,7 +3,7 @@
  * meaning, in sentence case. "Nothing published" was said five ways --
  * "None listed", "No published frequencies", "No published runway data",
  * "No runway data", and a title-case "No Flights" -- for the same few
- * things (the commonality audit's FIG-16, CODE-36).
+ * things.
  */
 
 /** A field the FAA lists no frequency for. */

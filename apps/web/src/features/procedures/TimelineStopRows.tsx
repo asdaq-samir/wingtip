@@ -9,7 +9,7 @@ import { RowMark, TimelineAction } from "./TimelineRows";
 
 // The timeline's rows of a route with points (TimelineRoute) and the fuel
 // stops' pill (FuelPill), apart from the empty route's (TimelineRows), so
-// they load with the route's panel, not with the page (round 7's N14).
+// they load with the route's panel, not with the page.
 
 /**
  * The stops between the two ends as one row of the timeline below full
@@ -52,7 +52,7 @@ export function AddStopRow({ disabled, onClick, trailing }: { disabled: boolean;
       data-testid="timeline-add-stop"
     >
       Add a Stop
-      {/* Why it is greyed, said in it (the grouped box's audit, 2026-11-20). */}
+      {/* Why it is greyed, said in it. */}
       {disabled && <span className={cn("ml-2 truncate text-muted-foreground", TEXT.note)}>Up to {MAX_STOPS} stops</span>}
     </TimelineAction>
   );
@@ -97,7 +97,8 @@ export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () 
 
 /** Where a flight is short of fuel and the planner offers no stop on it,
  *  why, at Add a Stop's end where the fuel stops' pill would be (warn,
- *  never limit; the aviation audit of 2026-11-21, F7.6): the fuel on board
+ *  never limit):
+ *  the fuel on board
  *  at the start already under its start, taxi and reserve (14 CFR
  *  91.151(a), 91.167(a)), or no field with fuel in the tanks' reach. The
  *  first such flight, named by its two ends. */

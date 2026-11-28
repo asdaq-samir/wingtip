@@ -34,7 +34,7 @@ interface LookPick<V extends string> {
 /** A look's swatch beside its name in the menu: its tint on its sheet
  *  (tokens' LOOK_SWATCH), by day, and at night (.dark) the night's pair,
  *  so the menu shows each look as it is drawn now and no day sheet
- *  glares in a dark cockpit (AIM 8-1-6; the round-4 themes audit).
+ *  glares in a dark cockpit (AIM 8-1-6).
  *  Wingtip and Chart ink, both blue by day, are told apart by their paper.
  *  Edged, so a white sheet holds on a white menu. */
 function Swatch({ brand }: { brand: Brand }) {

@@ -32,13 +32,13 @@ export const TEXT = {
   /** A section's title in the planning panel's tabs, with font-semibold:
    *  20 on its 25 leading (iOS Title 3), and 18 with a mouse -- above a
    *  row's 17, where the same size in a heavier weight read as one more
-   *  row (the tabs' content audit, 2026-10-07). */
+   *  row. */
   heading: TYPE_CLASS.heading,
   /** A row's name and its value, a section's title: 17, 14. */
   row: TYPE_CLASS.row,
   /** A slim pill's words (the runway's, ARR's, the N-number's and FL's
    *  pills): 16 on 22 everywhere, a size under a row's so a 24-point pill
-   *  holds them (the iPad audit's H-L6). */
+   *  holds them. */
   pill: TYPE_CLASS.pill,
   /** The line under a row's name: 15, 12. */
   detail: TYPE_CLASS.detail,
@@ -59,7 +59,7 @@ export const TEXT = {
    *  and icon size a bit bigger so it fits nicely"; the tabs to "pop out
    *  more", 2026-10-22). The bars drew a note's 13 while this role said 12,
    *  and the 13-on-17 `tab` role had no caller; one role now, and `tab` is
-   *  gone (the scale audit's Q3, the owner, 2026-11-21). */
+   *  gone (the owner, 2026-11-21). */
   tabBar: TYPE_CLASS.tabBar,
   /** A figure's name, an ident, a chip's word in the display face
    *  (index.css --display: Barlow Condensed in the Chart ink look, the
@@ -104,8 +104,9 @@ export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row 
 /** A figure pinned at the map panel's foot (FigureStrip), its
  *  value, unit and name small at half and their own size at the pill and
  *  all the way up (MapPanel's --sheet-progress, 0 at half, 1 at the other
- *  two; the owner, 2026-11-05), each with its iOS leading at either end (the audit's P3: 15
- *  on 20 to 20 on 25, 11 on 13 to 13 on 18), eased between as the size
+ *  two; the owner, 2026-11-05), each with its iOS leading at either end (15
+ *  on 20 to 20 on 25, 11 on 13 to 13 on 18),
+ *  eased between as the size
  *  is. The value's size is `--fig`; the unit is a share of it, so the two grow
  *  together, 11 of 15 at half to 13 of 20 at the pill. On a kneeboard
  *  (index.css: an iPad, read at arm's length, where the side panel has no
@@ -158,7 +159,7 @@ export const PIN_FIGURE = {
   value: `[--fig:calc(0.8125rem+0.4375rem*var(--strip-full,1))] leading-[calc(1rem+0.5625rem*var(--strip-full,1))] ${KNEEBOARD_PIN}`,
   // Never under a Caption 2's 11 points (Apple's floor; in rem, so it grows
   // with the reader's text): 0.65 of the thin strip's 13 was 8.45 px, "nm"
-  // after Dist (the HIG audit of 2026-11-23, M2).
+  // after Dist.
   unit: "text-[length:max(0.6875rem,0.65em)] leading-(--lead-note)",
   name: `text-[length:calc(0.6875rem+0.125rem*var(--strip-full,1))] leading-[calc(0.75rem+0.375rem*var(--strip-full,1))] ${KNEEBOARD_PIN_NAME}`,
   unitScale: 0.65,

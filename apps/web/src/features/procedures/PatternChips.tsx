@@ -137,11 +137,10 @@ export function PatternChips({
     return (
       // The pull-downs under the tray where there is no room beside it:
       // a field with an arrival and an approach to add ran the nav log
-      // 41 points past a phone's width (the iOS audit's "no sideways
-      // scroll in a panel"). Laid out in the tray's own row (`contents`,
+      // 41 points past a phone's width. Laid out in the tray's own row (`contents`,
       // RunwayTray's `folded`), so where they wrap they start at the line's
-      // leading edge, under "Land RWY", not under the runway's chip (the
-      // HIG review, 2026-11-21; the owner took it). Open, they slide with
+      // leading edge, under "Land RWY", not under the runway's chip (the owner took it).
+      // Open, they slide with
       // the runways, as before.
       <div ref={line} className="contents" data-testid="procedure-patterns">
         {/* Still the group's choice to a screen reader, picked: the same
@@ -157,7 +156,7 @@ export function PatternChips({
           // to the pull-downs beside it (the iOS rule's gap-3), so the
           // runway's area, 3 past the tray, and a pull-down's, 6 round it,
           // do not cross: at 8 KDEN's runway lost 3 of its probes to
-          // "+ ARR" (the HIG review, 2026-11-21). A margin, so a pull-down
+          // "+ ARR". A margin, so a pull-down
           // wrapped under it starts at the line's edge.
           // It comes in from its end as the open line comes from its head,
           // the group and not the chip, whose own transition is its colour.
@@ -174,8 +173,7 @@ export function PatternChips({
             // Its area from the tray's head to the tray's own right edge, the
             // 3 of padding past the chip: sized to its own 44 across, it
             // stopped at the chip and the tray's 44-point square, 47 across,
-            // lost its two corners there above and below (the iOS audit's
-            // P1, on KDLH's folded runway, 2026-11-06), over index.css's rule.
+            // lost its two corners there above and below, over index.css's rule.
             className={cn(CHIP, "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px]", c.ring)}
             aria-label={`${c.words}${note ? `, ${note}` : ""}, picked: tap for the other runways`}
             data-testid="procedure-pattern"
@@ -202,7 +200,7 @@ export function PatternChips({
     <div ref={line} className="flex min-w-0 flex-1 flex-wrap items-center gap-2" data-testid="procedure-patterns">
       {a.runways === null || !ends.length ? (
         <>
-          {/* The runways' chips in outline while they come (the style audit, 2026-10-26), their words for a screen
+          {/* The runways' chips in outline while they come, their words for a screen
               reader; none for a field with none to give. The pull-downs wrap under them, never cut to "+ A…". */}
           {a.runways === null && (
             <span role="status" className={cn("flex items-center gap-2", TRAY_BODY)}>

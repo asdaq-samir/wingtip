@@ -59,7 +59,7 @@ export function useGlLines(
         // Each run's see-through in its colour (`ink`, withAlpha), the
         // layer's opacity left to the Dimmer alone (mapDim), a constant: an
         // opacity by feature times the Dimmer had MapLibre lay the source out
-        // again at each step of the slider at night (the round-4 themes audit).
+        // again at each step of the slider at night.
         paint: { "line-color": ["get", "ink"], "line-width": ["get", "width"], ...(dash ? { "line-dasharray": dash } : {}) },
       },
       // Read once a map (useGlLayer): the casing's look is the caller's constant.

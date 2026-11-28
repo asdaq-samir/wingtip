@@ -45,7 +45,7 @@ const FlightChart = memo(function FlightChart({
 }) {
   const data = useMemo(
     // A report with no height is none on the chart, so the line ends at
-    // the last good one rather than dipping to 0 ft (round 7's R7-1).
+    // the last good one rather than dipping to 0 ft.
     () => points.map((p, i) => ({ t: p.t, nm: alongNm?.[i] ?? null, alt: p.alt_ft ?? null, kt: p.gs_kt ?? null })),
     [points, alongNm],
   );

@@ -48,8 +48,7 @@ const NIGHT: ExpressionSpecification = [">", LIGHT, 0];
  *  dark halo (rules.md §13.6; the owner, 2026-11-21). Whole, not at
  *  map.label.halo-night's 0.85 nor faded with the Dimmer: the words were
  *  made see-through with the Dimmer, their halo with them, and read about
- *  2:1 on the halo turned the paper's grey (the themes audit, round 6,
- *  N1); now the words alone are dimmed, by colour (labelInk), and read
+ *  2:1 on the halo turned the paper's grey; now the words alone are dimmed, by colour (labelInk), and read
  *  4.2:1 or more on it at the night's default Dimmer. One expression, read
  *  by every layer's paint, so the theme's change is one
  *  setGlobalStateProperty. */
@@ -67,7 +66,7 @@ export const LABEL_HALO = { "text-halo-color": HALO_COLOUR, "text-halo-width": M
  *  the chart's white words (a runway's number, an altitude tab's, a VOR's
  *  on its tag, the open card's field's) take the fixes' near white, so
  *  after dark they are dimmed by their ink with the rest at the words'
- *  light, their dark halo or tab whole (the round-7 themes audit's R7-5). */
+ *  light, their dark halo or tab whole. */
 const NIGHT_WORD: Record<string, string> = DIMMER.nightWord;
 const NIGHT_INK: Record<string, string> = { ...NIGHT_WORD, [CHART.casing]: NIGHT_WORD[CHART.fixInk]! };
 

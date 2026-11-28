@@ -5,9 +5,9 @@ import { SECTION_TITLE } from "../lib/text";
 /** A section's title: every list group's, every tab's strip, every
  *  card's part (lib/text SECTION_TITLE), so the app has one, where it had
  *  small grey capitals over a list, 17-point words over a strip and a
- *  bold title over a card's part (the UI audit, 2026-11-09). A span
+ *  bold title over a card's part. A span
  *  (`as`) where the section is itself a button, which may hold no
- *  heading: the Brief's cards (the UI audit's C5, 2026-11-17). */
+ *  heading: the Brief's cards. */
 export default function SectionTitle({
   className,
   children,

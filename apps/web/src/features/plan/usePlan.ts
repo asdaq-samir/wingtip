@@ -84,8 +84,7 @@ export function usePlan({
   // Asked once the chart's cycle is known (kept from the last visit, or
   // the chart's answer, about a millisecond), which is in their keys: on a
   // first visit the course and the checkpoints were asked without it and
-  // again with it, and the first draw rendered twice (the speed audit of
-  // 2026-11-21). A chart that fails, or has not answered in a second,
+  // again with it, and the first draw rendered twice. A chart that fails, or has not answered in a second,
   // lets them go without it.
   const chartCycleQuery = useQuery({ ...chartQuery, select: (chart) => chart.chart_cycle });
   const cycle = chartCycleQuery.data;
@@ -197,8 +196,7 @@ export function usePlan({
   // which changes no leg, only the fuel checks: FPL's gauges are walked on
   // the device from the legs on screen and the figure just set (the
   // engine's fuel_in_tanks, routeTanks), so the gauge shows the new gallons
-  // at Done, where the legs went and it waited 543 ms on the re-plan (the
-  // speed audit of 2026-11-21).
+  // at Done, where the legs went and it waited 543 ms on the re-plan.
   const holdKey = planKey
     .filter((_, i) => i < 3 || (i >= 5 && i !== PLAN_KEY_RUNWAYS && i !== PLAN_KEY_TANKS && i < planKey.length - 1))
     .join("|");
@@ -329,7 +327,7 @@ export function usePlan({
     refetchInterval: 5 * 60_000,
     // The answer before kept up only while the route is the same -- a new
     // departure time, ETE or Load again -- not under a new route, where the
-    // old route's hazards and TFRs showed for a moment (the audit's finding).
+    // old route's hazards and TFRs showed for a moment.
     placeholderData: (previous, previousQuery) =>
       previousQuery && sameRoute(previousQuery.queryKey, [dep, dest, via]) ? previous : undefined,
     // A point not known, the route box's to say (courseQuery); the Brief

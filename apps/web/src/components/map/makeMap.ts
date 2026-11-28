@@ -158,7 +158,7 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets, ringsByField 
     fadeDuration: 0,
     // Two levels of tiles kept in memory a source, not MapLibre's five: the service worker and the overlay tiles'
     // store keep the bytes, and five levels of decoded chart and overlay tiles held an iPad's memory for views
-    // the pilot has left (the map speed audit, 2026-11-27).
+    // the pilot has left.
     maxTileCacheZoomLevels: 2,
     // And its world copies (its default): the Western Aleutian sectional runs across 180°.
   });

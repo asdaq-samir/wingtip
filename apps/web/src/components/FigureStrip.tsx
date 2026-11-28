@@ -65,7 +65,7 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unit
  * the value and the unit, sized to fit), it returns the button round the
  * face, or null where that figure is not one. A button's dd does not
  * clip, so its 44-point area (the button's after) reaches past it rather
- * than being cut off (the FPL audit's A17); the figure in it is cut short
+ * than being cut off; the figure in it is cut short
  * instead.
  */
 export default function FigureStrip({
@@ -82,8 +82,7 @@ export default function FigureStrip({
   testId?: string;
   tap?: (figure: StripFigure, face: ReactNode) => ReactNode;
   /** No roll as a figure changes: in flight the GPS's figures change every
-   *  second, and a roll on each blurred them all the time (the motion
-   *  review of 2026-11-22). */
+   *  second, and a roll on each blurred them all the time. */
   still?: boolean;
   /** One row whatever the width, never two by two: a bar one row high
    *  (FPL's pill), where figures are dropped from the end until the rest
@@ -98,16 +97,15 @@ export default function FigureStrip({
   const type = TYPE[size];
   const roll = still ? undefined : "figure-roll";
   // Two by two where the figures do not fit across at their full size
-  // (useFiguresFit), as below 16 rem: never one cut short (the HIG audit
-  // of 2026-11-23, H2).
+  // (useFiguresFit), as below 16 rem: never one cut short.
   const strip = useRef<HTMLDListElement>(null);
   const fitting = useFiguresFit(strip, figures.map((f) => `${f.label ?? f.name}${f.value}${f.unit ?? ""}`).join("|"));
   const fits = fitting >= figures.length;
   const fit = row || fits;
   // One row that does not hold them all at full size: figures dropped from
-  // the end until the rest fit, rather than any cut short with "…" (the r7
-  // audit's W-M3, at the owner's 17.88 and 19.65 px on a 375-point iPhone;
-  // the r8 audit's W-L2, three at 320 points in Slide Over), one kept
+  // the end until the rest fit, rather than any cut short with "…" (at the owner's 17.88 and 19.65 px on a 375-point iPhone;
+  // three at 320 points in Slide Over),
+  // one kept
   // whatever. Those dropped stay laid out, out of the grid and out of
   // sight, so what the strip needs is measured the same and the row never
   // flips between counts.
@@ -191,7 +189,7 @@ export default function FigureStrip({
                   button's name. */}
               {/* A name that explains itself (ETE, ETA) does not clip, as a
                   button's dd does not, so its 44-point area reaches past
-                  its line (the HIG audit of 2026-11-23, L3); its words are
+                  its line; its words are
                   one short abbreviation, nothing to cut. */}
               <dt
                 className={cn(

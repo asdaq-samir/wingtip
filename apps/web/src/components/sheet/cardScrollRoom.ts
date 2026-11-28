@@ -11,7 +11,7 @@ const FOOT = ".sticky.bottom-0";
  * a row focused or brought into view comes to rest clear of the pinned
  * head and of a tab bar at the foot, never under either (WCAG 2.4.11).
  * Measured, as a head with a line or a verdict under its name is taller
- * than any fixed room (the HIG audit of 2026-11-26, M2); with nothing
+ * than any fixed room; with nothing
  * measured the scroller's own class keeps its room. Each is found as the
  * card's content is put in and resizes, and measured as it resizes. On a
  * phone's bottom sheet the bar stands in the card's foot slot beside it
@@ -38,8 +38,7 @@ export function useCardScrollRoom(scroller: HTMLElement | null, footPx = 0) {
     // its parts come in or change, the head or the bar themselves, one
     // taken out (a detached element is resized to nothing) -- and as the
     // scroller's own children change: where a subtree MutationObserver
-    // ran at every node any part of the card put in or took out (the
-    // round-2 speed audit).
+    // ran at every node any part of the card put in or took out.
     const find = () => {
       const nowHead = scroller.querySelector<HTMLElement>(HEAD);
       const nowFoot = scroller.querySelector<HTMLElement>(FOOT);

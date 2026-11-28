@@ -5,7 +5,7 @@
  * figures and the next checkpoint over the map in flight (FlyingHead) --
  * in a chunk of their own (routePanelParts), fetched a few seconds after
  * the page is idle: they were in the route's panel, and so came with every
- * route opened (the speed audit of 2026-11-21, finding 2).
+ * route opened.
  */
 export { DryRunControls, DryRunFigures, FlyingHead, PastFlightCard } from "../flying/lazy";
 export { StopsCard } from "../stops/lazy";

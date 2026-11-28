@@ -96,8 +96,9 @@ export const IN_FLIGHT_READS: RuntimeCaching = {
 // As a chart tile of a newer edition is kept, the tiles of every older
 // edition of its kind go: the 56-day cycle's 20,000 tiles were held to
 // their 60 days, past the next cycle's start, and filled the cache a new
-// route's tiles wanted (the offline audit of 2026-11-21; owner recs, item
-// 48). Only older ones: a page still on a kept chart answer of the last
+// route's tiles wanted (owner recs, item
+// 48).
+// Only older ones: a page still on a kept chart answer of the last
 // cycle asking its tiles never sends the new ones away. Once a kind and
 // edition in the worker's life, so a run of tiles reads the cache's keys
 // once. Each tile's kind and edition from its address, the planner's

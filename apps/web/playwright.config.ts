@@ -109,7 +109,7 @@ export default defineConfig({
   // than a limit cutting it off unsaid: two minutes under ci.yml's
   // `timeout 1800`, so Playwright ends first and still writes its summary,
   // JSON and flaky list (at 30 the wrapper killed six to eight shards a
-  // night first, and nothing was written; CI audit 2026-11-23, H1).
+  // night first, and nothing was written).
   globalTimeout: ci ? 28 * 60_000 : undefined,
   fullyParallel: true,
   // In CI, the github reporter too: each failure and each flaky test an
@@ -119,7 +119,8 @@ export default defineConfig({
   use: {
     // A click on a control that never becomes enabled fails in 30 s with
     // its own words, not at the test's two minutes (the desktop emergency
-    // flow spent 1,380 s so; CI audit 2026-11-23, M1). As `expect` waits.
+    // flow spent 1,380 s so).
+    // As `expect` waits.
     actionTimeout: ci ? 30_000 : 15_000,
     baseURL: process.env.BASE_URL ?? "http://localhost:8080",
     // The app registers a service worker that answers API calls itself

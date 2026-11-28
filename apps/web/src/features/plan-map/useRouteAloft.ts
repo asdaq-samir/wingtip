@@ -21,7 +21,7 @@ export function useRouteAloft(mode: TerrainMode, rows: NavLogRow[] | undefined, 
     // a row): the leg that row ends.
     let row = 1;
     // A point with no height carries the last good one, and none before
-    // the first is drawn: never at 0 ft (round 7's R7-1).
+    // the first is drawn: never at 0 ft.
     let last: number | null = null;
     return run.points.flatMap((p) => {
       while (row < run.rowT.length - 1 && p.t > run.rowT[row]!) row++;

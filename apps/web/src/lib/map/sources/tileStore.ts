@@ -5,7 +5,7 @@
  * the map reads it in byte ranges, and a 206 answer is never kept (the
  * Cache API holds no partial answer), so every visit fetched every overlay
  * tile again over the network, and Safari kept none of them in its HTTP
- * cache either (the map speed audit, 2026-11-27).
+ * cache either.
  *
  * The archive's name carries its cycle, its version and its hash
  * (wingtip.vector_tiles, `2026-10-29-v3-0badf00d`), so a tile is kept by

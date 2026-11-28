@@ -19,7 +19,7 @@ import {
   type RoomHow,
 } from "./cameraParts";
 /**
- * The one owner of a map's camera (the flicker audit's cause D, 2026-11-14).
+ * The one owner of a map's camera.
  * Every mover asks it with an intent -- a pick brought into sight, a fit, a
  * follow of own ship, an airplane, the dry run or a replay, the sheet's
  * room -- and it decides which wins (cameraRules' verdict: the pilot's
@@ -302,8 +302,9 @@ class Camera {
    * The room the sheet leaves changed to `pad`. A pick under way that will
    * land in sight in the new room is left to land, and the room taken
    * then with the chart kept still: aimed again, it was a second move for
-   * one pick (the flicker audit's FL-8, a card's room arriving as the map
-   * flew to its field). One that would land hidden, and a fit, are aimed
+   * one pick (a card's room arriving as the map
+   * flew to its field).
+   * One that would land hidden, and a fit, are aimed
    * again at it, in the sheet's time (a second move would stop MapLibre's
    * first where it is, the course left half fitted). Otherwise the padding
    * is taken as `how` says.

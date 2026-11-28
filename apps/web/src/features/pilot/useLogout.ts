@@ -24,8 +24,7 @@ export function forgetWhereTheyFlew(): void {
   forgetRecordedTrack();
   // And own ship's trail, and the planner's answers asked at their
   // points (Nearest, the airspace there), which said where they were
-  // to the next person on a shared device (the prelaunch audit's P4
-  // and P5, the owner, 2026-11-21).
+  // to the next person on a shared device (the owner, 2026-11-21).
   clearOwnTrail();
   forgetPlannerAnswers();
   // The service worker's copy of their account, airplanes and

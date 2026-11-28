@@ -97,7 +97,7 @@ const fromRoutePanel = routePanel.part;
 export const NavLogView = fromRoutePanel("NavLogView");
 // FPL's route list, drawn only inside the nav log's view (its `route`),
 // which waits on this chunk already: 61 KB off the first load, which
-// stood 10 KB under its 1.10 MB budget (the 20 Oct audit).
+// stood 10 KB under its 1.10 MB budget.
 export const ProceduresRoute = fromRoutePanel("ProceduresRoute");
 // The Routes row, under the folded route's figures (FplRoute).
 export const RouteLine = fromRoutePanel("RouteLine");

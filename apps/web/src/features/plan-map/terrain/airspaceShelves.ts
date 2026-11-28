@@ -154,7 +154,7 @@ export function shelfLabelsOf(pieces: VolumePiece[], eye: [number, number] | nul
  *  still legible. Two layers, the held labels (`id`, placed first) over
  *  the fainter (shelfFadedId), each its opacity a constant: one by feature
  *  times the Dimmer had MapLibre lay the source out again at each step of
- *  the slider at night (the round-4 themes audit). */
+ *  the slider at night. */
 export function shelfLabelLayers(id: string, source: string): SymbolLayerSpecification[] {
   const held = shelfLabelLayer(id, source, true);
   return [

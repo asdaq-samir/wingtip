@@ -8,8 +8,7 @@ import { DEM, HILLSHADE, HILLSHADE_LAYER, SV_TINT, demSource } from "./dem";
  * source and hillshade layer (dem.ts), in the map's own script. It was the
  * first effect of the 3D module (TerrainGl), mounted on every map for this
  * alone, and that lazy chunk brought deck.gl with it at every open, in 2D
- * too, 183 KB over the wire before the chart was drawn (the performance
- * audit's PERF-2). The same source and layer, so the relief looks as it
+ * too, 183 KB over the wire before the chart was drawn. The same source and layer, so the relief looks as it
  * did; the 3D module stands the ground up on this source when 3D is on.
  */
 export default function ReliefGl() {

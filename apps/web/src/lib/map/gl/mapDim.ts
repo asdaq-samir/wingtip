@@ -5,8 +5,9 @@ import { LABEL_NIGHT } from "./layers/common";
 
 /**
  * The Dimmer over what is drawn on the chart, not the chart's tiles alone
- * (the themes audit, 2026-11-27: at night the Dimmer darkened the chart
- * while its words, marks and lines stayed at full light). At night every
+ * (at night the Dimmer darkened the chart
+ * while its words, marks and lines stayed at full light).
+ * At night every
  * symbol's words and icons, every line and every circle is drawn at the
  * chart's own brightness as an opacity (chartBrightness: 0.5 by default,
  * 0.3 at the Dimmer's deepest), so nothing on the map is brighter than
@@ -81,8 +82,8 @@ function reads(value: unknown, state: string): boolean {
 
 /** Whether a symbol layer's words are dimmed by their own ink (labelInk,
  *  which reads the words' light, LABEL_NIGHT): their opacity and colour
- *  are then left whole here, as fading them faded their halo with them
- *  (the themes audit, round 6, N1). A spec's paint, or a style layer's. */
+ *  are then left whole here, as fading them faded their halo with them.
+ *  A spec's paint, or a style layer's. */
 function wordsDimmed(layer: Dimmable): boolean {
   if (layer?.type !== "symbol") return false;
   const colour =

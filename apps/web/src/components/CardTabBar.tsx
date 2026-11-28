@@ -79,7 +79,7 @@ export function CardTabBar<T extends string>({
               // The picked tab in the tint, as iOS 26's tab bar, on the bar's
               // soft pill: Fly Here's blue by day, and by night the look's
               // light tint, which reads on the dark glass where the deep
-              // primary read 2.4 to 2.8:1 (the iOS audit's P15).
+              // primary read 2.4 to 2.8:1.
               // Its pill is the indicator under it (FLOATING_BAR_PICKED), so
               // the tab's own ground stays clear.
               "data-active:bg-transparent data-active:text-primary dark:data-active:border-transparent dark:data-active:bg-transparent dark:data-active:text-tint group-data-[variant=default]/tabs-list:data-active:shadow-none",
@@ -118,7 +118,7 @@ export function CardTabBar<T extends string>({
         // From the side panel's width up (md, the regular width) the card's
         // grabber is at its foot, 16 points tall (SheetGrabber): the bar rests
         // over it (GRABBER_ROOM), as FPL's does (SheetFoot), where it lay on the
-        // grabber's pill (the HIG audit of 2026-11-23, M3).
+        // grabber's pill.
         <div
           className={cn("sticky bottom-0 z-10", room)}
           style={{ ...foot, marginBottom: `calc(-1 * ${CARD_FOOT_ROOM})` }}

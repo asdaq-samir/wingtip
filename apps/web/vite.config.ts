@@ -70,7 +70,7 @@ export default defineConfig({
     // drew the whole panel again (MapPanel, TabBar, the route box).
     // Not the stock shadcn wrappers (components/ui), which hand their
     // props to Radix and gain nothing from a memo: 25.6 KB of the first
-    // load, measured per file with and without it (the 20 Oct audit).
+    // load, measured per file with and without it.
     // node_modules named again: an exclude replaces the plugin's default,
     // and without it the compiler ran over react-dom and MapLibre too.
     babel({ exclude: [/[/\\]node_modules[/\\]/, /\/components\/ui\//], presets: [reactCompilerPreset()] }),

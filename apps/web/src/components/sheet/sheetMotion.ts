@@ -8,8 +8,7 @@ import type { PanelState } from "../../lib/mapChrome";
  * nothing else: its data-swiping while a finger has it, and the popup's
  * transform transition from its start to its end (transitionrun to
  * transitionend or transitioncancel), a let-go or a size set by a tap.
- * No timer guesses the Drawer's time (the simplicity audit of 2026-11-23,
- * item 3: four detectors of one event, one of them a SETTLE_MS guess that
+ * No timer guesses the Drawer's time (four detectors of one event, one of them a SETTLE_MS guess that
  * failed on a slow runner).
  */
 const useSheetMoving = create<{ moving: boolean; offset: number }>(() => ({ moving: false, offset: 0 }));
@@ -43,7 +42,7 @@ function followPopup(popup: HTMLElement, told: (moving: boolean) => void): () =>
     // A new swipe ends any slide before it: one cut off with neither
     // transitionend nor transitioncancel (the popup detached, its display
     // changed) would leave `settling` on and useRestSize frozen till the
-    // next slide (the r7 audit's W-L4).
+    // next slide.
     if (swiping) settling = false;
     tell();
   });

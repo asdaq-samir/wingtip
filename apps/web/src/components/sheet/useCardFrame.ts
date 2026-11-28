@@ -94,7 +94,7 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
  * (an airport's ✕, a card swiped away): a still copy of what was drawn,
  * put in the card's own box as React takes the caller's nodes out, so the
  * card goes back down with its face on it, as a kept card does (CardStack's
- * RISE), not as an empty card (the apple-design audit of 2026-11-23, H3).
+ * RISE), not as an empty card.
  * A copy, because the real nodes cannot stay: they are the caller's, which
  * goes as the card closes (its store cleared on ✕), and CardLayer's `open`
  * keeps content alive only for a caller that stays drawn between openings

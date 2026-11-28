@@ -8,7 +8,7 @@ import type { TimeLine } from "./notamTimes";
  * until it ("· in 551d") would not fit beside the time, it falls to a
  * second line the box's one-line height leaves unseen, so the time stays
  * whole and the line is shortened, never wrapped; a time too wide even
- * alone is cut with "…" (the r7 audit's W-L9).
+ * alone is cut with "…".
  */
 export function NotamTimeLines({ lines, className }: { lines: TimeLine[]; className?: string }) {
   if (lines.length === 0) return null;

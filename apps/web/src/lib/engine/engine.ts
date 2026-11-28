@@ -60,8 +60,7 @@ const decoder = new TextDecoder();
  *  (a file:// shell, a CDN with the wrong type) refuse the streaming
  *  compile, and the bytes always work. One fetch: the stream reads a
  *  copy of the answer (clone), the bytes the answer itself, where a
- *  refused stream fetched the 1.2 MB file again (the round-2 speed
- *  audit). */
+ *  refused stream fetched the 1.2 MB file again. */
 async function fromNetwork(url: string): Promise<WebAssembly.Instance> {
   const response = await fetch(url);
   if (typeof WebAssembly.instantiateStreaming === "function") {

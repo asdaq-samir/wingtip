@@ -8,7 +8,7 @@ import { sameFields } from "../../../lib/steady";
  * (their "use no memo", for the first load's size), and a new slice with
  * nothing new in it drew every part handed it again -- the minute's clock,
  * a search's keystroke or one query's answer drew the map, the sheet's
- * pages and FPL's cards (the speed work's audit, 2026-11-27). Kept, a part
+ * pages and FPL's cards. Kept, a part
  * whose slices are as they were is skipped.
  *
  * Kept in a ref written as the render goes, which React's lint refuses

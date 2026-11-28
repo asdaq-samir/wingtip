@@ -22,7 +22,7 @@ export const sentFrequencies = (frequencies: readonly Frequency[]) =>
 /** A field's frequencies in the order a pilot dials them, the engine's
  *  (frequencies_in_order): its ATIS or AWOS first, then clearance, ground,
  *  the tower or CTAF, approach, and UNICOM last. The file's own order put
- *  KDLH's UNICOM first and its ATIS out of sight (the web audit's WEB-10).
+ *  KDLH's UNICOM first and its ATIS out of sight.
  *  Indices into `frequencies`, so a NOTAM's mark by index still finds its row. */
 export function inUseOrder(frequencies: readonly Frequency[]): number[] {
   return callEngine("frequencies_in_order", { frequencies: sentFrequencies(frequencies) });

@@ -12,7 +12,7 @@ import { sameField } from "../../lib/procedures";
  *  on the ground at the stops (Totals.ground_min, "the destination's arrival
  *  is ete_min and this after the departure"). FPL's timeline, the place
  *  card's forecast hour and the Brief's Arrive all read it, so the three
- *  say one time (the HIG audit of 2026-11-23, H1: the Brief left the
+ *  say one time (the Brief left the
  *  turnarounds out and read about an hour early on a two-stop flight). */
 export const arrivalMin = (totals: Pick<Totals, "ete_min" | "ground_min"> | null | undefined): number | null =>
   totals?.ete_min == null ? null : totals.ete_min + (totals.ground_min ?? 0);
@@ -199,7 +199,7 @@ export function shortFlights(totals: Totals | null): { name: string; shortGal: n
   if (!totals) return [];
   // Each named by its two ends' own names (pointName), found by the
   // flight's index (`hop`), not the engine's raw idents, where a pilot's
-  // own point read "@43.1,-89.3,4500" (the code audit's CODE-13). A route
+  // own point read "@43.1,-89.3,4500". A route
   // with no stops has no flight to name: "".
   return stripFuel(totals).short.map((s) => {
     const hop = s.hop == null ? undefined : totals.hops[s.hop];

@@ -26,8 +26,7 @@ export function holdAsked(ask: string): { fix: string; seen: number } {
 }
 
 /**
- * The sheets FPL's route list opens (the audit's WEB-19, out of its view
- * model): which one is up, and each one drawn from its first opening on so
+ * The sheets FPL's route list opens: which one is up, and each one drawn from its first opening on so
  * it closes as a sheet does, eased away by its own Drawer rather than
  * taken out from under it. A hold asked for from elsewhere (AirspaceCard's
  * Hold here, `askHold`) opens its sheet once the plan has the leg to it.

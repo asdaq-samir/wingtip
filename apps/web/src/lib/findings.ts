@@ -9,7 +9,7 @@
 export type Finding = "ok" | "caution" | "stop" | "unknown" | "pending";
 
 /** Each finding's colour for words and marks, at 4.5:1 or more on the
- *  panel in both themes (the iPhone audit's P15). */
+ *  panel in both themes. */
 export const FINDING_TONE: Record<Finding, string> = {
   ok: "text-go-ink",
   caution: "text-caution",

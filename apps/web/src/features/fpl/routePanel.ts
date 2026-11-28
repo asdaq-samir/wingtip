@@ -9,8 +9,7 @@
  * draws it. Only what a route draws as it opens: the cards drawn at a tap
  * (an airport's or an airspace's, placePanel; a flight's, the Stops and
  * the flying parts, cardsPanel) are chunks of their own, and so are the
- * Brief's airport sections, which draw an airport card's rows (the speed
- * audit of 2026-11-21: this chunk was 507 KB, every card in it).
+ * Brief's airport sections, which draw an airport card's rows (this chunk was 507 KB, every card in it).
  */
 export { NavLogView } from "../navlog/lazy";
 export { ProceduresRoute } from "../procedures/lazy";

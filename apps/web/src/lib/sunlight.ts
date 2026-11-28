@@ -11,7 +11,7 @@ import { usePreferences, type ChartLight } from "./preferences";
  * white with black figures by day (index.css, `html[data-chart-light="bright"]`;
  * tokens.css). At night the sheets keep the look's dark grounds with only
  * the grey words and edges lifted, never white (AIM 8-1-6, dark
- * adaptation; the themes audit, 2026-11-27).
+ * adaptation).
  *
  * Switched on by itself from the phone's ambient light sensor where the
  * browser has one (the Generic Sensor API's AmbientLightSensor: behind a

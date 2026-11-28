@@ -30,21 +30,20 @@ export function usePlanAnswer({ planned, depart, local, flightRules, ground, pla
   // plan is in or has failed: asked before it as well, the planner's
   // costliest call (1.4-2.6 s on a long new route) was made twice for
   // every route, 450 of them against 483 nav logs in its log, beside the
-  // nav log on the same workers (the speed audit of 2026-11-21).
+  // nav log on the same workers.
   const ways = useRouteWays({ planned, aircraft, depart, local, flightRules, altitudeFt, planSettled: planIn || s.planFailed });
   // The route's own time and miles: its nav log's once it is planned,
   // the grid's and the course's before (its weather strip's minutes).
   // The grid's minutes are its weather timing's, at a speed the planner
   // takes for the weather alone: a time on the route only with an airplane
   // picked, as the FPL figures and the nav log say none without one (the
-  // owner, 2026-11-08: "don't assume"; the UI audit's A3, "13h 38m" on the
-  // chart beside ETE "—").
+  // owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
   const gridOwnMin = airplane ? (ways.routeWays?.current_along?.bands ?? []).reduce((sum, b) => sum + b.min, 0) : 0;
   // And its minutes on the ground at the fields it lands at (`ground`,
   // else the owner's 30), as the ways count theirs: the nav log's totals
   // are air time alone, and the route as typed read shorter than a way through
-  // the same stop (the audit of 2026-10-24).
+  // the same stop.
   const own = useKept({
     minutes: s.totals?.ete_min ?? (gridOwnMin || null),
     nm: s.totals?.distance_nm ?? s.course?.distance_nm ?? null,

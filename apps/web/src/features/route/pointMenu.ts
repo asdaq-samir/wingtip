@@ -32,8 +32,7 @@ export const DROPDOWN: MenuKit = {
  * still held the focus, a desktop's popover lost it to the menu and took
  * that for a click outside it, and closed (the hold spec on the desktop
  * project); and with the focus back there as it opens, the sheet gives it
- * back there as it closes, where VoiceOver was left on the page (the
- * audit's). `keep`, the focus left where the opened thing puts it (the
+ * back there as it closes, where VoiceOver was left on the page. `keep`, the focus left where the opened thing puts it (the
  * route box's search, which takes it itself). `finalFocus` is Base UI's
  * menu popup's: true gives the focus back, false leaves it.
  */

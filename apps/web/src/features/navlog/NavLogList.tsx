@@ -32,13 +32,13 @@ const SELECTED_NIGHT = "dark:bg-foreground/5 dark:hover:bg-foreground/5 dark:foc
  *  else its course ("MC 258°"), which no airplane changes. The course is
  *  the great circle's at the leg's start less the leg's variation (the
  *  engine's navlog legs), as a pilot sets out on it; a bare
- *  "258°" read as either, and as true (the UI audit's A4). */
+ *  "258°" read as either, and as true. */
 function courseWords(leg: Leg, airplane: boolean): ReactNode {
   const heading = airplane ? leg.magnetic_heading_deg : null;
   // The abbreviation says what it means on a tap (Explain), nothing added.
   // Over the next line: the leg's words are 8 from its line's foot, so its
   // 44 reaches 4 into the next line's, which drew over it and took the
-  // taps there (the night's iOS audit, 2026-11-24).
+  // taps there.
   return heading != null ? (
     <>
       <Explain term="MH" className="z-10" /> {bearing(heading)}
@@ -154,7 +154,7 @@ export function NavLogList({
           className={cn("grid grid-cols-[2.125rem_minmax(0,1fr)_auto] gap-x-2.5 px-1.5 pb-0.5 text-right text-muted-foreground", TEXT.note)}
           data-testid="navlog-list-heads"
         >
-          {/* The clock's zone, once over the column (the FPL audit's A19). */}
+          {/* The clock's zone, once over the column. */}
           {airplane && <span className="col-start-3">ETA {zoneName(new Date(from))}</span>}
           {airplane && <span className="col-start-3">GS kt</span>}
         </div>
@@ -255,8 +255,7 @@ export function NavLogList({
                       selected && "rounded-b-none bg-foreground/8 hover:bg-foreground/8 focus-visible:bg-foreground/8",
                       // By night 5%, as a card's glass actions are (CardAction):
                       // the light foreground's 8% put the tint's words in it
-                      // (MH, Show the Work) at 4.43 to 1 on a side panel (the
-                      // iOS audit's P15, a sideways iPhone's nav log).
+                      // (MH, Show the Work) at 4.43 to 1 on a side panel.
                       selected && SELECTED_NIGHT,
                     )}
                   >
@@ -293,7 +292,7 @@ export function NavLogList({
                       {airplane ? etaAt(from, row.minutesFlown) : null}
                     </span>
                     {/* Grey, and the text's own colour on the selection's tint,
-                      where grey fell under 4.5:1 (the iPhone audit's P15). */}
+                      where grey fell under 4.5:1. */}
                     <span
                       className={cn(
                         "col-start-2 tabular-nums",

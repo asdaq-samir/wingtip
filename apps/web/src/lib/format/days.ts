@@ -1,7 +1,7 @@
 /**
  * The calendar days the app writes, "Mon 5 Jan, 14:30", "5 Jan 2026",
  * "1/5". They were date-fns's `format`, 19.5 KB of the first load for a
- * handful of patterns (the speed audit, 2026-11-10). English, as every
+ * handful of patterns. English, as every
  * other word the app writes is, in this device's time zone.
  *
  * The browser's Intl writes those it writes the same: the weekday, "1/5"

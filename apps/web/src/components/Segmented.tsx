@@ -7,8 +7,7 @@ import { TEXT } from "../lib/text";
  *  chosen one raised -- in the dark, iOS's own lighter grey for it, where
  *  a faint tint of the track left the choice hard to see.
  *  Each keeps 44 across everywhere, so a short word's (Top, VFR) is its
- *  own to tap: VFR's 43 lost its area's edge to IFR's (the iOS audit's
- *  P1, 2026-11-05). */
+ *  own to tap: VFR's 43 lost its area's edge to IFR's. */
 const SEGMENT = `min-w-11 rounded-md px-2.5 ${TEXT.note} text-foreground data-pressed:bg-background data-pressed:shadow-card dark:data-pressed:bg-foreground/20 [&_svg:not([class*='size-'])]:size-3.5`;
 
 /** Two to three choices, one of which is picked: shadcn's ToggleGroup as

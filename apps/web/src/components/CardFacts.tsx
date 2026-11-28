@@ -62,7 +62,7 @@ export function CardFact({
  * `fit`, the airport card's five, spread across the card's width with no
  * sideways scroll (the owner, 2026-11-14: "keep the info strip compact
  * enough so pilot doesn't have to scroll"), the last of them wrapping to a
- * second row where larger text leaves no room (UI audit B9, 2026-11-17).
+ * second row where larger text leaves no room.
  */
 export function CardFacts({ testId, fit, children }: { testId: string; fit?: boolean; children: ReactNode }) {
   return (

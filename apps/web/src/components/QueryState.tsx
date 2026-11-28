@@ -30,8 +30,7 @@ interface Asked {
  * Try again, in place, as CLAUDE.md asks errors to be shown: one line for
  * every list, where the checklist, the squawks, the checkride's record and
  * Nearest stayed on "Fetching…" for good after a failure, the logbook said
- * it had no flights, and the saved flights showed nothing at all (the
- * commonality audit's N-12). A row of a list (`row`), else a line of its
+ * it had no flights, and the saved flights showed nothing at all. A row of a list (`row`), else a line of its
  * own; nothing once the answer is in.
  */
 export default function QueryState({
@@ -50,7 +49,7 @@ export default function QueryState({
   row?: boolean;
   /** As many rows as are coming, where the count is known (a list of the
    *  planner's twelve fields): each a row's height from the first frame,
-   *  so nothing under them moves as they come (the flicker audit's FL-9). */
+   *  so nothing under them moves as they come. */
   rows?: number;
   /** The lines under each row's name, as the rows that come have them. */
   lines?: number;
@@ -80,8 +79,7 @@ export default function QueryState({
     );
   }
   // While it comes: the shape of what is coming, its words for a screen
-  // reader, where a grey line of "Fetching…" read as unfinished (the style
-  // audit, 2026-10-26).
+  // reader, where a grey line of "Fetching…" read as unfinished.
   if (query.isLoading || query.isError) {
     if (row && rows) return <SkeletonRows rows={rows} lines={lines} fetching={fetching} />;
     const bars = <SkeletonBars fetching={fetching} />;
@@ -131,7 +129,7 @@ const FACT_WIDTHS: readonly (readonly [string, string])[] = [
  *  so they grow with the pilot's text, and its pictures' first tile
  *  (CardPictures' 4:3 at 70 % of the card, 60 % from sm), so the card
  *  opens in its own shape and fills in place, where it stood empty under
- *  a grey "Fetching…" and then jumped (the feel audit, 2026-11-27). */
+ *  a grey "Fetching…" and then jumped. */
 export function SkeletonCardInfo({
   facts,
   fetching,
@@ -141,8 +139,7 @@ export function SkeletonCardInfo({
   fetching: string;
   /** The fact with a note under it, a caption line kept for it: the
    *  airport card's Airspace ("Part-time"), whose note pushed the pictures
-   *  down some 16 px when the facts came in at a part-time towered field
-   *  (round 7's N16). */
+   *  down some 16 px when the facts came in at a part-time towered field. */
   note?: number;
 }) {
   return (

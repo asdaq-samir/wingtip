@@ -63,8 +63,8 @@ const navaidAt = createParser<NavaidAt>({
 export const navaidLink = (n: NavaidAt, origin = "") => `${origin}${SCREEN_LINK.path}?navaid=${encodeURIComponent(navaidAt.serialize(n))}`;
 
 /** A chart mark's card in the address (`mark`), every card reached by a
- *  link (the owner's rule on easy navigation; the selection audit,
- *  2026-11-18): a low enroute chart's fix, a VFR waypoint, or a Class B, C
+ *  link (the owner's rule on easy navigation):
+ *  a low enroute chart's fix, a VFR waypoint, or a Class B, C
  *  or D volume by its number in the cycle's overlay tiles, each with where
  *  it is (a volume's, where it was tapped), as one ident names fixes in
  *  more than one place. "fix:BXCMB@42.1234,-88.2345". */

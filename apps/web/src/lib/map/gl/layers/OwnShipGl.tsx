@@ -23,8 +23,8 @@ import { svgPicture, useGlSymbols, type GlSymbol } from "../useGlSymbols";
  *  drawn, at the top of the marks' slot, so the chart's own labels give
  *  way round it, but under the top slot, where the route's own idents and
  *  the Class B fields' weather are placed first: parked at the departure,
- *  a 40-point room took the departure's name and KORD's weather disc
- *  (the r5-ui audit's M2, 2026-11-23). */
+ *  a 40-point room took the departure's name and KORD's weather disc.
+ */
 const ROOM = "own-ship-room";
 const ROOM_PICTURE = svgPicture(ROOM, () => '<svg width="34" height="34"></svg>');
 const ROOM_LAYERS = [pictureLayer(ROOM, ROOM, { room: true })];
@@ -50,8 +50,7 @@ let flownRecentre = 0;
  * (recentred), a pick; a drag before the first fix comes lets that go
  * too. Each fix is a step of the owner's follow, one linear ease lasting
  * till the next fix, so the dry run's four fixes a second move the map at
- * one steady pace rather than starting and stopping at each (the flicker
- * audit's FL-13). Grey at its last place when own ship is turned off (the
+ * one steady pace rather than starting and stopping at each. Grey at its last place when own ship is turned off (the
  * owner, 2026-10-06).
  */
 export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
@@ -66,8 +65,7 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
   const recentreZoom = useOwnShip((s) => s.recentreZoom);
   // The room moved a thousandth of a degree at a time (about 100 m: a
   // few pixels at a flight's zooms, within the plane's own picture), so a
-  // fix that only jitters on the ground sets no new data (the code audit
-  // of 2026-11-23, R5-20).
+  // fix that only jitters on the ground sets no new data.
   const roomLat = fix ? Math.round(fix.lat * 1000) / 1000 : null;
   const roomLon = fix ? Math.round(fix.lon * 1000) / 1000 : null;
   const room = useMemo<GlSymbol[]>(

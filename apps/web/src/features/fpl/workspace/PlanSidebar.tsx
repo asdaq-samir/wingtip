@@ -96,8 +96,8 @@ export default function PlanSidebar({
   // A card in the inspector at the map's right (an iPad on its side) is
   // beside the sheet, not over it: the search stays under its field, its
   // results with it, as Apple Maps keeps its list in the sidebar while a
-  // place's card shows (the HIG audit of 2026-11-23, M4, the owner taking
-  // its recommendation), where the sheet went blank under "KOSH".
+  // place's card shows (the owner took the recommendation, 2026-11-23),
+  // where the sheet went blank under "KOSH".
   const inspector = useInspector();
   const covered = cardUp && !inspector;
   const { flyHere, measuredFrom } = vm.map;

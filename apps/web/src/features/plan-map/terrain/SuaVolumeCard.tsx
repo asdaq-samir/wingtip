@@ -20,8 +20,7 @@ export function SuaVolumeCard({ area }: { area: SuaArea }) {
   if (area.controlling_agency) rows.push(["Controlled by", faaWords(area.controlling_agency)]);
   return (
     // Its name, and its kind under it, as every card's head; no badge
-    // before the name, which the head has no place for (the selection
-    // audit, 2026-11-18).
+    // before the name, which the head has no place for.
     <MapCard title={name} subtitle={kind}>
       <TermTable rows={rows} className={TEXT.row} />
     </MapCard>

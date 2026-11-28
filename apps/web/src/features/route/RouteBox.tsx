@@ -195,7 +195,7 @@ export default function RouteBox({
             onClick={toEnd}
             // Four over its line and four under it: the clear's 44-point
             // area, round its 20 in a line 28 tall, reached past the box's
-            // top and foot (the iOS audit's P1 on an approach's page). Its
+            // top and foot. Its
             // buttons are the sheet's first row's strip over it (FplBar;
             // the owner, 2026-11-14), not a footer of its own.
             className={cn(
@@ -281,7 +281,7 @@ export default function RouteBox({
                         // Wrapped, the line runs 8 past the field into the row's
                         // pr-2, so the gap each route piece keeps at its end
                         // (RouteToken) hangs there at a line's end rather than
-                        // wrapping a piece one place early (the r8 audit's nit).
+                        // wrapping a piece one place early.
                         wrapped ? "-me-2 w-[calc(100%+--spacing(2))] whitespace-pre-wrap! break-words" : "w-max whitespace-pre!",
                         TEXT.row,
                         // Wrapped, its lines 36 apart, the 28 of a pill and the 8
@@ -335,7 +335,7 @@ export default function RouteBox({
             anchor={boxEl}
             // At once, with no zoom: typing opens, closes and opens it
             // again as the box empties and fills, and a typed action is
-            // not animated (the design review of 2026-11-23, N5).
+            // not animated.
             className="w-(--anchor-width) max-w-[calc(100vw-16px)] gap-0 p-2 data-closed:animate-none data-open:animate-none"
             style={keyboard > 0 ? { paddingBottom: keyboard } : undefined}
             // The typing stays in the box.

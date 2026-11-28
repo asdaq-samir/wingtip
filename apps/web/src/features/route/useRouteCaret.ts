@@ -78,8 +78,7 @@ export function useRouteCaret({
   // A finger's 44 points round each pill, as iOS gives a control: the
   // pills are 28 tall in a row that clips them (it slides sideways), so
   // their own ::after could not reach, and a tap 8 points over or under
-  // one landed on the box, which started typing a new destination (the
-  // FPL audit's A18). A tap on the box's room within
+  // one landed on the box, which started typing a new destination. A tap on the box's room within
   // 22 points of a pill's middle and across it is that pill's.
   const pillNear = (e: MouseEvent<HTMLDivElement>): HTMLElement | null => {
     for (const pill of slide.current?.querySelectorAll<HTMLElement>("[data-point]") ?? []) {

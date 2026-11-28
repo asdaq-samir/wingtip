@@ -15,8 +15,8 @@ import { useNotamMarks, useNotamSheet } from "./notamBadges";
  * line no taller. Under it, the field's one use line where it has one (the
  * owner, 2026-11-13: one line on every app, the engine's words, "Private:
  * permission required"), or NASR's closed label (decision 0043), each a
- * status badge, as the search's rows and Nearest show them (rules.md §9;
- * the selection audit, 2026-11-18: they were red and grey words), a
+ * status badge, as the search's rows and Nearest show them (rules.md §9; they were red and grey words),
+ * a
  * joint-use field's too; beside the name in brackets, it cut a long name to
  * a few letters at an iPhone's width. Beside that badge, what kind of field
  * it is where it is not an airport, "Heliport" or "Seaplane base" (the

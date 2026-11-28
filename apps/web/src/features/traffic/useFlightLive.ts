@@ -126,7 +126,7 @@ export function useFlightLive(hex: string | null) {
       ? flying.airports.at(-1)!.ident
       : null
     : (last?.destination?.ident ?? null);
-  // Its ends still asked for: their lines held from the first frame (the flicker audit's FL-10).
+  // Its ends still asked for: their lines held from the first frame.
   const pending = !fromIdent && (detailLoading || (plane ? routeLoading : pastLoading));
   const { data: fromField } = useQuery(sketchField(fromIdent));
   const { data: toField } = useQuery(sketchField(toIdent));

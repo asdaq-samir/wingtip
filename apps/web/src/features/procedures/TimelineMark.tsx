@@ -25,8 +25,8 @@ import type { TimelinePoint } from "./lineModel";
  * runway's chip is, GLASS_PICKED) or carry their glyph in the ground's
  * colour, as a badge's figure is (TabCount): at night the tint, the red
  * and the grey are light, and a white glyph on them read 2.5:1 and less,
- * under WCAG 1.4.11's 3:1 for a graphic (the HIG review, 2026-11-21:
- * Add a Stop's + on the night's tint, 2.49:1). A flight category's
+ * under WCAG 1.4.11's 3:1 for a graphic (Add a Stop's + on the night's tint, 2.49:1).
+ * A flight category's
  * colour is the same at night, its glyph white.
  */
 export function TimelineMark({ point, position }: { point: TimelinePoint; position: boolean }) {
@@ -45,9 +45,9 @@ export function TimelineMark({ point, position }: { point: TimelinePoint; positi
       )}
       // The category's colour from the map's own scale (flightCategory),
       // ringed in the chart's casing as the map's dots are (DOT_RING): LIFR's
-      // #a371f7 was 2.75:1 on Chart ink's muted, 3.35:1 against the ring (the
-      // round-4 themes audit; the chip's deeper #7e3fb8 would be 1.96:1 on the
-      // night's muted). With no report, the text's grey, as a waypoint's: on
+      // #a371f7 was 2.75:1 on Chart ink's muted, 3.35:1 against the ring (the chip's deeper #7e3fb8 would be 1.96:1 on the
+      // night's muted).
+      // With no report, the text's grey, as a waypoint's: on
       // the map's own grey (CATEGORY_UNKNOWN) the white "•••" read 2.6:1.
       style={point.field && point.category && !point.problem && !position ? { backgroundColor: colourOf(point.category) } : undefined}
       data-testid={point.fuelStop ? "timeline-fuel" : undefined}
@@ -87,8 +87,7 @@ export function LineIdent({ point, change, onInfo }: { point: TimelinePoint; cha
         data-testid="timeline-ident"
         // The name cut short in a span of its own, not the
         // button: a button that clips (truncate's overflow) cut
-        // its own 44-point area to its 22-point line (the iOS
-        // audit's P1, "C81: change it" 25×22). Its area starts
+        // its own 44-point area to its 22-point line. Its area starts
         // 10 before the name, where the mark's ends (6 past the
         // marks' column, PointMenu's `bare`, in the line's 16),
         // and runs right to 44 wide at the least, over the fuel's
@@ -97,7 +96,7 @@ export function LineIdent({ point, change, onInfo }: { point: TimelinePoint; cha
         // Its line is 24, so 10
         // above and below make the 44: 12 made 48, and with the fields'
         // lines 45 apart each ident took 3 of the next's probes and the
-        // last field's took Add a Stop's (the night's iOS audit, 2026-11-24).
+        // last field's took Add a Stop's.
         className={cn(
           "relative min-w-0 font-normal hit-y-2.5 after:-left-2.5",
           "after:w-[max(54px,calc(100%+14px))]",

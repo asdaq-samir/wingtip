@@ -51,7 +51,7 @@ export const claudeViewConfig: InlineConfig = {
       // 4.0 MB with them, 1.08 MB without (rev-perf, 2026-11-22). The
       // app's folder is found from this file, not a repo path: the live
       // stack builds it mounted at /w, where "/apps/web/src/" never matched
-      // and the view grew past its limit, failing the build (11-23 audit).
+      // and the view grew past its limit, failing the build.
       treeshake: { moduleSideEffects: (id: string) => /\.css($|\?)/.test(id) || !id.startsWith(appSrc) },
       // A warning fails it, as the app's build (strictBuild), but one: a
       // dynamic import beside a static one, which says only that the

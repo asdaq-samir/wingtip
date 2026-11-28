@@ -95,7 +95,7 @@ export function describeError(err: unknown, fallback = "request failed"): string
   const firstLine = err instanceof Error ? err.message.split("\n")[0] : undefined;
   // An answer with no words of its own but HTTP's reason ("Not Found",
   // "Bad Gateway"), which the Brief printed raw ("Words unavailable: Not
-  // Found", the UI audit, 2026-11-09): said as what it means to a pilot.
+  // Found"): said as what it means to a pilot.
   // The gateway's own 404 while the planner restarts, which named its path.
   if (err instanceof ApiError && err.status === 404 && plannerUnreachable(err))
     return "The planner isn't answering. Try again in a moment.";
@@ -112,8 +112,8 @@ const BARE_REASON =
 
 /** Whether the planner could not find a point of the route: its 404,
  *  which names the ident in quotes ("No airport goes by 'KZZZ'."). The
- *  route box says it on that point's pill, not the map's problem line
- *  (the FPL audit's A2): the pilot typed it, the system is not down.
+ *  route box says it on that point's pill, not the map's problem line:
+ * the pilot typed it, the system is not down.
  *  A 404 that names nothing is not the planner's answer but the way's:
  *  the gateway's "no such planner endpoint" while the planner restarts
  *  and its document is not in, or a proxy's bare "Not Found" -- which

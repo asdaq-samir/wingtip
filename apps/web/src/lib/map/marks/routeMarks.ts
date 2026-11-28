@@ -19,8 +19,9 @@ import type { AirspaceClass } from "../../preferences";
  * chosen checkpoints as numbered dots, the nav log's numbers on them.
  *
  * They give way to each other by priority, as the iPhone's map gives way
- * (the FPL audit's A12, 2026-11-08: "TOC" under badge 1, KDLH's ident
- * under the TOD and TOC pills): MapLibre's collision places the
+ * ("TOC" under badge 1, KDLH's ident
+ * under the TOD and TOC pills):
+ * MapLibre's collision places the
  * destination's ident first, the route's other fields next, then the
  * checkpoints in flight order (the earlier of two that meet kept), and
  * the tops of climb and descent last (LegPointsGl, a layer under these);
@@ -57,8 +58,8 @@ const CLOCKWISE: FieldSide[] = ["left", "top", "right", "bottom"];
  *  first (the feature's `out`, degrees clockwise from north, as the screen
  *  shows it with the map turned to `bearing`; fieldSide), then its
  *  neighbours, the opposite last. Worked out north-up alone, with the map
- *  track up in flight the side outside the turn could lie on the leg again
- *  (the r5-ui audit's L14, 2026-11-23); RouteGl sets it again as the map
+ *  track up in flight the side outside the turn could lie on the leg again;
+ * RouteGl sets it again as the map
  *  turns (useTurnedNames), as the route points' names are. */
 export function fieldSides(bearing: number): Pick<Layout, "text-variable-anchor-offset"> {
   const turned = ["%", ["+", ["get", "out"], 720 - Math.round(bearing)], 360];

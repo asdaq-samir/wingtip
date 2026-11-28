@@ -104,7 +104,7 @@ export default function PanelTabs({
   const shown = printing ? contents : (deferred?.contents ?? null);
   // Another route's pages while this route's are drawn: dimmed, marked busy
   // and inert, never read or tapped as this route's weather and NOTAMs (2.5
-  // to 3.6 s of them on a phone in the round-2 speed audit). Only when the
+  // to 3.6 s of them on a phone). Only when the
   // route itself changed: a new figure or report on the same route redraws
   // its pages without a dim. The dim waits a moment (index.css's tab-stale),
   // so a draw that lands within a frame or two never shows it.
@@ -244,8 +244,7 @@ export default function PanelTabs({
           fixed size (it does not grow with the text, as iOS's tab bar's
           does not), so the five share the line evenly -- a 24-point glyph
           over a note's 13, at the pilot's ask: at 20 over 11 the way into
-          the panel was its smallest type, under the content's 17 and 20
-          (the proportion audit, 2026-10-07). A
+          the panel was its smallest type, under the content's 17 and 20. A
           tab whose findings (lib/verdict) have something to fix carries a
           red mark, something to look at an amber one, as its sections'
           titles do. */}
@@ -257,7 +256,7 @@ export default function PanelTabs({
           <TabsList
             data-testid="panel-tabs"
             // The stock 36 at every pointer, never grown to a finger's 44
-            // (CLAUDE.md: controls never grow; the audit's WEB-7): each
+            // (CLAUDE.md: controls never grow): each
             // segment's 44 a ::before (its ::after the stock indicator),
             // 7 over and under its 30, the segments' areas meeting.
             className="mx-4 my-2 w-auto shrink-0 group-data-[orientation=horizontal]/tabs:h-9 print:hidden"
@@ -295,8 +294,7 @@ export default function PanelTabs({
           data-testid="brief-scroller"
         >
           {/* The notice over every page, but under the verdict on the
-              overview, which says first whether to go (decision 0012; the
-              UI audit's C6, 2026-11-17). */}
+              overview, which says first whether to go (decision 0012). */}
           {tab === null && !printing && Overview ? <Overview onOpen={openPage} notice={notice} /> : notice}
           <SectionsOpen.Provider value>
             <GoToTab.Provider value={goTo}>

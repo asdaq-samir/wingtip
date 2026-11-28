@@ -206,8 +206,7 @@ export function altitudesOf(value: string | null | undefined): Record<string, nu
 
 /** The key a point's own altitude is kept by in the address: its ident,
  *  or at a point the route is at more than once, its `visit`'s, counted
- *  from 1 ("VPBNG@2"), so a second visit's is not the first's (the web
- *  audit's WEB-2). */
+ *  from 1 ("VPBNG@2"), so a second visit's is not the first's. */
 export const visitKey = (ident: string, visit?: number) => (visit === undefined ? ident : `${ident}@${visit}`);
 
 /** The point a key of altitudesOf is for: "VPBNG@2" is VPBNG's. */

@@ -23,7 +23,7 @@ const radioLabel = (radio: { to: string; ctaf: boolean }) => (radio.ctaf ? "CTAF
  *  a bare "04:17" on the Depart row read as Z or local (WEB-9). In the
  *  field's own zone (the planner's `time_zone`), as FPL's timeline gives
  *  each point's: Denver's arrival "19:59 MST" there read "19:59 CST" here,
- *  the same digits an hour apart (the HIG audit of 2026-11-23, H1); this
+ *  the same digits an hour apart; this
  *  device's zone until the field's card is in. */
 function time(iso: string | null, timeZone: string | null | undefined) {
   const there = iso ? clockIn(new Date(iso), timeZone) : null;
@@ -67,7 +67,7 @@ function Figures({ children, note }: { children?: ReactNode; note?: ReactNode })
 /** A part's name and the field it is at, bold, with the field's category
  *  and the part's mark where it has something to fix or look at: the row
  *  itself plain, its red or amber in the mark and the figures that make it
- *  alone, the verdict the one wash (the design review, 2026-10-28). Its
+ *  alone, the verdict the one wash. Its
  *  value (`at`: a time, what is left to do) at the line's end, in the
  *  title rather than the row's value, so the figures under it have the
  *  row's whole width, as the mockup's En Route has (option A). */
@@ -114,8 +114,7 @@ export function BeforeRow({ before, airplane, onOpen }: { before?: BriefGlance["
             {/* The fuel over what the flight needs and its reserve (14 CFR
                 91.151(a), 91.167(a): enough fuel to fly to the destination
                 and on for the reserve), named for the reserve it is beyond:
-                "Fuel spare" was no pilot's term (the Brief audit of
-                2026-11-21, finding 10). */}
+                "Fuel spare" was no pilot's term. */}
             <Stat
               label="Beyond Reserve"
               value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH}
@@ -202,7 +201,7 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
   // "None", no ceiling, only where the forecast along the route was read and
   // gave none (its visibility is in): with no forecast yet, or none to read,
   // it is a dash, as the visibility is -- "None" there read as clear skies
-  // nothing had said (the aviation audit, 2026-11-21).
+  // nothing had said.
   const ceiling = enroute?.ceilingFt != null ? `${grouped(enroute.ceilingFt)} ft` : enroute?.visibilitySm != null ? "None" : DASH;
   return (
     <ListRow

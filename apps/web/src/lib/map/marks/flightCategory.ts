@@ -62,8 +62,7 @@ export function inkOf(category: string | null | undefined): string {
  *  (WCAG 1.4.11): at night the FAA's deep blue and red stand off the
  *  night's navy (2.3 to 3.2:1 on it alone) and no report's grey off the
  *  night's glass (2.78:1); by day LIFR's #a371f7 off Chart ink's and
- *  Sunlight's muted fills (2.75 and 2.89:1), 3.35:1 against the ring (the
- *  round-4 themes audit). On a white surface the ring is unseen. */
+ *  Sunlight's muted fills (2.75 and 2.89:1), 3.35:1 against the ring. On a white surface the ring is unseen. */
 export const DOT_RING = "ring-1 ring-(--chart-casing)";
 
 /** A chip's colour for what is known of a field's weather: its category

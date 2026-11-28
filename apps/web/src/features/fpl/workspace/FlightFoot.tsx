@@ -165,8 +165,7 @@ function useTabsWidth() {
  * "make the figures strip very thin when fpl is half or full") over the
  * tabs. The tabs are kept laid out while folded, not built again at each
  * rest: React built the bar afresh (its toolbar, its menu, its two panes
- * of glass) each time the sheet reached or left the pill (the motion
- * review of 2026-11-22). The figures go while the route's field is open
+ * of glass) each time the sheet reached or left the pill. The figures go while the route's field is open
  * (figuresAway). One size knob (--strip-full, lib/text's PIN_FIGURE), set
  * once a size. While the tab bar's Routes is pressed the suggested routes'
  * chips take the figures' place, at the pill too (the owner, 2026-11-23:
@@ -200,8 +199,7 @@ function GroundFoot({
           // centred, as the sheet's own face did, one row of all that fit
           // (TripFigures' `pill`); the room its least, so a larger text
           // size grows the bar rather than spilling over the map, and the
-          // bar's measured height, the map's room, follows (the r6 UI
-          // audit's H1). From half up a thin line just over the tabs.
+          // bar's measured height, the map's room, follows. From half up a thin line just over the tabs.
           // From half up as wide as the tab bar's capsule under it, the
           // figures spread over it, the first over Brief and the last over
           // More (the owner, 2026-11-26: "for small size, span the width
@@ -215,7 +213,7 @@ function GroundFoot({
             // Only the chips take touches (RouteLine's `grouped`): the rest
             // of the row passes them to the sheet as the bar's ground does
             // (sheet/FootBar), so at the pill a tap or an upward drag there
-            // still opens the sheet (the r10 audit's W-L1).
+            // still opens the sheet.
             <section aria-label="Suggested routes" className="pointer-events-none" data-testid="route-group">
               <Suspense fallback={<div className="h-7" />}>
                 <RouteLine line={line} grouped />

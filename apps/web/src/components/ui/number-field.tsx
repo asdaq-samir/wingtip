@@ -43,7 +43,7 @@ function Typed({ onTyped }: { onTyped: (value: number | null) => void }) {
  * and a test's fill reach it. `unit` is said inside the box, at its end,
  * `lead` at its start ("FL"), both at the figure's own size under a
  * finger (Body, 17), as an iOS field writes its unit: at 14 they were off
- * the type scale (the HIG review's "gal", 2026-11-21).
+ * the type scale.
  *
  * The locale is the browser's: the app sets no I18nProvider, so React
  * Aria reads navigator.language, and a pilot whose phone writes 12,5 has
@@ -61,8 +61,7 @@ function NumberField({
   lead,
   onTyped,
   // Done unless a field names its own: the figure is taken as Enter
-  // leaves it, and iOS's return key says so (the iOS audit's P19, the
-  // holding and lost-communications practice pages).
+  // leaves it, and iOS's return key says so.
   enterKeyHint = "done",
   className,
   inputClassName,

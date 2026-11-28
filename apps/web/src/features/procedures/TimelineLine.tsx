@@ -269,10 +269,10 @@ export function TimelineLine({
                   type="button"
                   data-testid="timeline-toggle"
                   aria-label={`${point.ident}: runways and procedures`}
-                  // Greyed under a finger as iOS's rows are, under the line's words
-                  // (the grouped box's audit, 2026-11-20), and under a mouse's
+                  // Greyed under a finger as iOS's rows are, under the line's words,
+                  // and under a mouse's
                   // press, lighter as it points, as every other row answers a
-                  // pointer (the design review of 2026-11-23, M5).
+                  // pointer.
                   className="absolute inset-0 rounded-lg outline-none hover:bg-muted/50 aria-expanded:bg-transparent dark:hover:bg-muted/50 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
                 />
               }

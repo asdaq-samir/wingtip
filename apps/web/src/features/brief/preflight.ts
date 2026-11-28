@@ -19,8 +19,8 @@ const NONE: Record<string, boolean> = {};
  * What the pilot has ticked, for one flight: another route or departure
  * time starts the list again -- it is about this flight, where the risk
  * assessment's IMSAFE is about the pilot today (lib/frat). Kept on this
- * device with the flight it is for, so a reload does not lose the ticks
- * (the web audit's WEB-15); localStorage a convenience, as the
+ * device with the flight it is for, so a reload does not lose the ticks;
+ * localStorage a convenience, as the
  * preferences' is.
  */
 export const usePreflight = create<{

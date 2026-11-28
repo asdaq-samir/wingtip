@@ -49,8 +49,9 @@ export function classNow(surface: AirportPlace["surface_airspace"], hours: Surfa
 
 /** The Airspace fact's note: the day's next change at the field's own
  *  clock, said so as the NOTAMs' times are, "G after 22:00 local" or "D
- *  from 06:00 local" (UI audit C12, 2026-11-17: a bare time read as the
- *  device's or UTC); "Part-time" where it is not known today; none for a
+ *  from 06:00 local" (a bare time read as the
+ *  device's or UTC);
+ *  "Part-time" where it is not known today; none for a
  *  full-time class or a part-time one in effect all day. */
 export function changeNote(surface: AirportPlace["surface_airspace"], hours: SurfaceHours | null): string | null {
   if (!surface?.part_time) return null;

@@ -178,8 +178,8 @@ export default function AltitudeGroup({
         // Its after the field's own 44-point band, centred as the field's
         // is (PILL_FIELD's), no further: so a tap just above or below "FL-" is the
         // field's, as a tap on it is (the addon focuses the field), where
-        // the three figures' field alone was 31 wide, the head round it
-        // (the iOS audit's P1, "altitude-input" 31×44); over the head under
+        // the three figures' field alone was 31 wide, the head round it;
+        // over the head under
         // it (z-10), as the field is, where the band's foot reaches it.
         <InputGroupAddon
           className={cn(
@@ -229,8 +229,7 @@ export default function AltitudeGroup({
           }
         }}
         // Its figures taken whole as it is tapped, as iOS selects a field
-        // whose value is replaced, so three figures typed replace them (the
-        // FPL audit's A6, 2026-11-08). After the tap's own caret, a frame
+        // whose value is replaced, so three figures typed replace them. After the tap's own caret, a frame
         // on, which would put it back.
         onFocus={(e) => {
           const input = e.currentTarget;

@@ -24,8 +24,7 @@ const OPACITIES: Partial<Record<LayerSpecification["type"], string[]>> = {
  *  by feature it would only switch. An opacity the Dimmer reaches (mapDim)
  *  eases to its share now as a plain figure, and is tied to the Dimmer's
  *  global state once in, the same value, so nothing is seen to change: the
- *  fade never rides on the global state's own reading (the round-4 themes
- *  audit found the fade-ins switching once the dim came in). */
+ *  fade never rides on the global state's own reading. */
 export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
   const { map } = useGlMap();
   const spec = useRef(layers);

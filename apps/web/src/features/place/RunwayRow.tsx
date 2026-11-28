@@ -67,7 +67,7 @@ export function RunwayRow({
   const wind = runway.wind;
   // Judged unrounded where the planner sends it (crosswind_exact_kt, the
   // engine's runway_with_winds): 10.4 kt rounded to 10 never passed a 10 kt
-  // minimum (the aviation audit's AV-10).
+  // minimum.
   const over = !!wind && most != null && (wind.crosswind_exact_kt ?? runwayCrosswindKt(wind)) > most;
   const heading = (runway.runway_ends ?? []).find((e) => e.heading_true_deg != null)?.heading_true_deg ?? null;
   return (

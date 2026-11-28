@@ -57,8 +57,7 @@ export default function RouteEditor({
     // fuel stops' pill before it 8 apart as there, so a whole route's
     // pair sits in one place on both faces (FuelPill).
     // The row itself takes no tap: the box's last line under it is the
-    // field's, a tap there putting the caret at the route's end (the r6
-    // audit's M8); only its two controls take theirs.
+    // field's, a tap there putting the caret at the route's end; only its two controls take theirs.
     <div className="pointer-events-none relative z-10 -mt-11 flex h-11 items-center justify-end gap-2 pr-4 *:pointer-events-auto">
       {wholeRoute && !vm.flight.flying && !vm.flight.dryRunning && <FuelPill vm={vm} />}
       <TypeRouteButton

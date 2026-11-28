@@ -8,8 +8,7 @@ import { GOOGLE } from "./imagery";
  * Google: the key is restricted to this site's address in Google Cloud
  * (docs/GOOGLE-MAPS.md), which Google checks against the Referer, and the
  * page's own policy (no-referrer, SecurityConfig) would send none -- so a
- * restricted key was refused and only an open one worked (the security
- * audit's M4, 2026-11-10). Every other request keeps sending none.
+ * restricted key was refused and only an open one worked. Every other request keeps sending none.
  */
 export const GOOGLE_REFERRER_POLICY: ReferrerPolicy = "strict-origin";
 

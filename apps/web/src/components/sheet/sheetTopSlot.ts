@@ -110,7 +110,7 @@ function surfaceOf(slot: HTMLElement): Surface | null {
   if (!popup || !at || !SIZES.includes(at)) return null;
   // And where a glide still under way has them now: a second hand-over
   // inside the Drawer's time glides on from there, where they snapped to
-  // where they would have rested (the apple-design audit of 2026-11-23, N4).
+  // where they would have rested.
   const gliding =
     slot.getAnimations().length > 0 && typeof DOMMatrixReadOnly !== "undefined"
       ? new DOMMatrixReadOnly(getComputedStyle(slot).transform).m42
@@ -129,8 +129,7 @@ function surfaceOf(slot: HTMLElement): Surface | null {
  *  (shownPx), and the drag the one they left was under: both popups stand
  *  on the same viewport's foot. It was read off the slot they left, which
  *  was at times a popup drawn anew and hidden, measured at the screen's
- *  top, and the buttons swept down from off the screen as a card closed
- *  (the flicker audit, 2026-11-14, FL-2). */
+ *  top, and the buttons swept down from off the screen as a card closed. */
 function glideFrom(node: HTMLElement, was: Surface | null) {
   const popup = node.parentElement;
   const now = surfaceOf(node);

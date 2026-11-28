@@ -254,7 +254,8 @@ export type North = "T" | "M";
  *  "240°T 12G20 kt", "VRB 4 kt" with no direction, "Calm" (isCalm), "Not
  *  reported" with no speed. A field's report, the Brief's, the airport
  *  card's and the nav log's winds aloft were written four ways ("210° 3
- *  kt", "210°/3", "200°T 9 kt", "198°/26 kt"; the UI audit's A7), and a
+ *  kt", "210°/3", "200°T 9 kt", "198°/26 kt"),
+ *  and a
  *  true wind unmarked reads as the magnetic one a tower gives. */
 export function windText(
   dirDeg: number | null | undefined,

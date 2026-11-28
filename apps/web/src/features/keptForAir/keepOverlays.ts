@@ -7,7 +7,7 @@ import { overlayTilesQuery } from "../../lib/queryClient";
  * kept for the air. They are one PMTiles archive a cycle, read in byte
  * ranges (lib/map/sources/overlayTiles), and the Cache API keeps no
  * partial answer (206), so with no connection the layers went, and with
- * them tapping a field and its weather halo (the offline audit's gap 4).
+ * them tapping a field and its weather halo.
  *
  * Kept here whole, one plain download of the archive, into the cache the
  * service worker answers its ranges from (vite.config.ts,

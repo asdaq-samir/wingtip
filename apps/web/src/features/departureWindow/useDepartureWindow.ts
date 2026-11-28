@@ -86,7 +86,7 @@ export function useDepartureWindow() {
     staleTime: KEPT_MS,
     // The hours before kept, dimmed, while the same route is asked again
     // for another airplane or minimums: the strip went back to its
-    // skeleton and the Brief under it moved (the flicker audit's E).
+    // skeleton and the Brief under it moved.
     placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === route ? previous : undefined),
     meta: { silent: true },
   });

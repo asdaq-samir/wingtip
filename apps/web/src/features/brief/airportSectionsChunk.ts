@@ -4,8 +4,7 @@ import { fromChunk } from "../../lib/fromChunk";
 // part of the Brief that draws an airport card's rows (place/lazy's
 // frequencies, runways and publications), and drawn with the Brief they
 // brought the whole airport card's chunk with every route opened, though
-// a route draws no airport card until one is tapped (the speed audit of
-// 2026-11-21, finding 2). Fetched as the Brief's card comes up
+// a route draws no airport card until one is tapped. Fetched as the Brief's card comes up
 // (BriefCard), and drawn straight from the chunk once it is in (fromChunk).
 // Apart from AirportSectionsPart, which may export its component alone
 // (fast refresh).

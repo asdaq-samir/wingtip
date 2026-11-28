@@ -13,7 +13,7 @@ import { useOwnAircraft } from "./useOwnAircraft";
  * the engine's sample pilot and full usable tanks (gonogo_default_load).
  * Editing the sample changes this screen's copy alone; only Use This Load
  * saves it, so a pilot's weight typed in never files the POH's sample
- * airplane as theirs (r7 audit W-M5). A saved load is edited in place.
+ * airplane as theirs. A saved load is edited in place.
  */
 export function useLoadEditor(aircraft: AircraftProfile | null | undefined, tripFuelGal: number | null) {
   const { key, loading, saved, setLoad } = useLoad(aircraft, tripFuelGal);

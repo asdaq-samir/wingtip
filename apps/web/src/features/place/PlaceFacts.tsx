@@ -26,7 +26,7 @@ import { airspaceWords, distanceWords, patternWords } from "./factWords";
  *  - Dist.: from the pilot, else from the route's departure, the
  *    engine's great circle, its figure alone ("12 nm"); short as Elev. is,
  *    so the five keep one row at the owner's larger text on an iPhone,
- *    where "Distance" went to a second (the HIG audit of 2026-11-23, L1).
+ *    where "Distance" went to a second.
  */
 export function PlaceFacts({
   place,

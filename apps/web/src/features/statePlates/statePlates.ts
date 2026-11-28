@@ -8,7 +8,7 @@ import { keptStatesStore, useStateDownloads, type KeptState } from "./keptStates
 /**
  * The FAA's plates kept a state at a time (Settings → Plates), as the
  * phones' Downloads keep the charts' regions and as ForeFlight and Garmin
- * Pilot download plates (the market-gap audit's 3): the planner lists a
+ * Pilot download plates: the planner lists a
  * state's open fields and their charts of the d-TPP cycle in force
  * (wingtip.plate_sets), and each chart is kept as the card's Charts tab
  * shows it (lib/kept/keepChart), in the service worker's "faa-plates"

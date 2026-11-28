@@ -71,8 +71,7 @@ export function routeThrough(
 ): { nm: number; relation: "below" | "in" | "above" | null } | null {
   // Every leg's length and course, and every mile's point along it, each
   // in one call to the engine: a call a mile was some 300 crossings into
-  // the .wasm for each area's card at each draw (the speed audit of
-  // 2026-11-27).
+  // the .wasm for each area's card at each draw.
   const points = line.map(([lat, lon]) => ({ lat, lon }));
   const legs = geo.legs(points);
   const steps: (LatLon & { bearing: number; nm: number; weight: number })[] = [];

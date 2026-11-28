@@ -31,7 +31,7 @@ declare module "@tanstack/react-query" {
  *
  * Asked with no connection too ("offlineFirst"), so the service worker's
  * kept answers reach the page in the air; TanStack's "online" paused them
- * unasked (the offline audit's gap 1). What it did not keep fails at once,
+ * unasked. What it did not keep fails at once,
  * "No connection" in place (QueryState); a mutation, into its alert.
  */
 export const queryClient = new QueryClient({

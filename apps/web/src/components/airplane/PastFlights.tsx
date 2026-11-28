@@ -83,7 +83,7 @@ export default function PastFlights({
         rows={[
           // Coming: three rows in a flight's shape, the first few the
           // section shows, where a grey line stood and then the rows
-          // jumped in (the feel audit, 2026-11-27).
+          // jumped in.
           ...((!data || looking) && !isError
             ? skeletonRows({ rows: 3, lines: 2, fetching: data ? "Fetching earlier flights…" : "Fetching its flights…" })
             : []),

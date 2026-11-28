@@ -74,8 +74,7 @@ export function endedRoute(parts: RouteParts, role: "Departure" | "Destination",
  *  for each, and before it answers, any ident too long for an airport. An
  *  airway (V100) is flown through too, fix by fix, unless the course says
  *  the stop is an airport whose identifier has an airway's form. The one
- *  reading the route's box and the card's Add Stop share (the r7 audit's
- *  W-L2). */
+ *  reading the route's box and the card's Add Stop share. */
 export function waypointStopsOf(stops: string[], course: PlanCourse | null): Set<string> {
   return new Set(
     stops.filter(

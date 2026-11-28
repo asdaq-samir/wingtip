@@ -7,7 +7,7 @@ import { useMapCredit } from "../gl/creditStore";
  * The airport weather marks' age, said in the map's small print when they
  * are old: a METAR is issued every hour (AC 00-45H), and the marks kept
  * from before a lost connection were drawn as if current, their age only
- * in the Map menu (the offline audit's gap 7). Once the engine says a METAR
+ * in the Map menu. Once the engine says a METAR
  * fetched then is no longer in force (weather_in_force: its hour, the
  * routine report's interval, AIM 7-1-28) the map says "Field weather 1h 5m
  * old" until a fresh answer comes: a warning on the

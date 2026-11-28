@@ -66,8 +66,7 @@ export function stationLines(w: PinWeather): string {
  *  demonstrated crosswind (null with none picked or no figure: the barb
  *  then never red, nothing assumed), in the order given. The engine is
  *  asked once for them all (wind_marks), where each field was two calls
- *  into the .wasm at every rebuild of the map's hundreds of METAR fields
- *  (the speed audit of 2026-11-27). */
+ *  into the .wasm at every rebuild of the map's hundreds of METAR fields. */
 export function weatherMarksOfAll(ws: readonly PinWeather[], demonstratedKt: number | null): WeatherMarks[] {
   if (ws.length === 0) return [];
   const fields = ws.map((w) => ({

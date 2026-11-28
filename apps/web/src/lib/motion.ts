@@ -19,8 +19,7 @@ export function prefersReducedMotion(): boolean {
 
 /** A Web Animations timing from the tokens' motion (design/tokens.json):
  *  the sheet's or the drawer's duration and its easing curve, built in
- *  one place rather than at each animate() (the code audit of 2026-11-23,
- *  R5-10). */
+ *  one place rather than at each animate(). */
 export function timing(kind: "sheet" | "drawer"): { duration: number; easing: string } {
   const ease = kind === "sheet" ? MOTION.sheetEase : MOTION.drawerEase;
   return { duration: MOTION[kind] * 1000, easing: `cubic-bezier(${ease.join(",")})` };

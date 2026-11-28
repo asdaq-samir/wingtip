@@ -60,8 +60,7 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
         name={flight ? legOf(flight) : "Flight"}
         nameTestId="past-flight-name"
         // Its day, times and how it ended the line under its name, in sight
-        // at the pill too (the card rule's 10; the selection audit,
-        // 2026-11-18: it scrolled away with the body).
+        // at the pill too (the card rule's 10; it scrolled away with the body).
         sub={flight ? `${dayOf(off)} · ${clockTime(off)}–${clockTime(when(flight.on))} · ${statusOf(flight)}` : dayOf(off)}
         onClose={onClose}
         closeTestId="past-flight-close"

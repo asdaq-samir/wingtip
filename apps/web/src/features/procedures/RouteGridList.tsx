@@ -22,8 +22,8 @@ export interface RouteGridProps {
 
 /**
  * FPL's route list (ProceduresRoute), React Aria's GridList with its own
- * drag and drop, as Favorites' rows are (components/SortableRows; the stock
- * audit's W3, the owner 2026-11-11): a typed point's grip (PointGrip)
+ * drag and drop, as Favorites' rows are (components/SortableRows; the owner 2026-11-11):
+ * a typed point's grip (PointGrip)
  * dragged by a mouse or a finger, the stock drop line between the rows
  * showing where it goes (the owner's pick of the line over the ring round
  * a row); a keyboard picks it up with Enter on the grip, moves with the

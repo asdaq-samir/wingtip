@@ -31,8 +31,8 @@ let zoneFormat: Intl.DateTimeFormat | null = null;
 const zones = new Map<number, string>();
 /** This device's time zone as a clock time is read in it, "CST" (or
  *  "GMT-6" where the browser has no short name): said beside a clock
- *  time, which was a bare "03:58" where flight plans and reports use Z
- *  (the FPL audit's A19). One formatter, made the first time, and one
+ *  time, which was a bare "03:58" where flight plans and reports use Z.
+ * One formatter, made the first time, and one
  *  answer kept per offset from UTC (see above for what they cost). */
 export function zoneName(at: Date = new Date()): string {
   const offset = at.getTimezoneOffset();

@@ -24,7 +24,7 @@ export function useAlternate({ dest, eta, tasKt }: AlternateWhere) {
     staleTime: 5 * 60_000,
     // The check before kept while the same destination and alternate are
     // checked again for another arrival time (another airplane, another
-    // altitude): its section emptied and came back (the flicker audit's E).
+    // altitude): its section emptied and came back.
     placeholderData: (previous, previousQuery) =>
       previousQuery?.queryKey[1] === dest && previousQuery.queryKey[4] === filed ? previous : undefined,
     // Said in its own section, where it was asked for.

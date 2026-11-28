@@ -58,7 +58,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
   const shown = new Set<ProcedureAirport>();
   // Routes, over the route's fields (RouteLine), four points clear of the
   // first field's toggle under it, whose 44-point hit area came 3 up into
-  // the Routes row's (the iOS audit's P1, CI on 4d7da5f0).
+  // the Routes row's.
   const lineRow = routeLine ? <RouteLine line={routeLine} /> : null;
   // Each a row of the list (RouteGrid); a typed point's by its place among them, which moves.
   const fieldStep = (a: ProcedureAirport, row: NavLogRow | undefined, last: boolean, leads: boolean): RouteItem => ({
@@ -70,8 +70,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
   // A fix flown twice (out and back over VPBNG) is two rows and two typed
   // points: each visit is matched to its own place among the typed points
   // by how many times the fix came before it, so its menu's Move, Add a
-  // Stop After and Change work on that visit, not the first (the audit's
-  // WEB-2).
+  // Stop After and Change work on that visit, not the first.
   const visits = new Map<string, number>();
   // A hold is flown once, on the leg the planner put it on (heldAs); until
   // the plan says which, after the first visit. Its row is keyed by that

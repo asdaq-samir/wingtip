@@ -19,8 +19,9 @@ export function chartTileMissed(e: { sourceId?: string; tile?: unknown }, online
  * so (lib/problems' line beside the map's buttons) rather than leaving a
  * blank square with nothing to tell it from a chart that has nothing
  * there: Keep for the Air keeps a route's tiles, and a pan off it in the
- * air reaches tiles never kept (the offline audit of 2026-11-21; owner
- * recs, item 48). Cleared as the connection comes back or a chart tile
+ * air reaches tiles never kept (owner
+ * recs, item 48).
+ * Cleared as the connection comes back or a chart tile
  * is drawn again.
  */
 export function useChartMissed(map: MlMap) {

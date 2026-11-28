@@ -129,7 +129,7 @@ export default function MapPanel(props: Props) {
   const fplBar = footBar && !flying && !!props.pages?.floats;
   // In sight on FPL's page alone, as its foot was (SheetPages), and not
   // under a card; FPL's put away while the keyboard is up, as iOS puts a tab
-  // bar away, so the field typed in keeps the screen (the r6 UI audit's M1).
+  // bar away, so the field typed in keeps the screen.
   const keyboard = useKeyboardUp();
   const footBarUp = fplBar && footShown && props.pages?.at === 1 && !keyboard;
   // A card or a page open is the whole sheet (one card rule, 2026-11-10); closed, the search is back.
@@ -296,8 +296,8 @@ export default function MapPanel(props: Props) {
   // The inspector's column, the window's height inside its float as the
   // side panel is, at the right inside the safe area: the cards' host,
   // drawn as a panel only while one is in it, its ground fading in and out
-  // with its card (the apple-design audit of 2026-11-23, H1) on a control's
-  // fade, where the Drawer's 450 ms lagged the card's going (feel audit, 11-27).
+  // with its card on a control's
+  // fade, where the Drawer's 450 ms lagged the card's going.
   const inspectorColumn = inspector && (
     <div
       data-slot="map-inspector"

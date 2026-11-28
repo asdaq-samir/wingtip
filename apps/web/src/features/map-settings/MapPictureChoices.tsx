@@ -36,7 +36,7 @@ export default function MapPictureChoices({
   return (
     <section className="flex flex-col">
       {/* Set as a list group's title is (GroupedList), at the card's one
-          sixteen-point edge (the sheet audit's F-B3). */}
+          sixteen-point edge. */}
       <div className="pb-1.5">
         <SectionTitle>{title}</SectionTitle>
       </div>

@@ -165,7 +165,7 @@ function SourcesPage() {
   const ages = useLayerAges();
   // Whose traffic the map draws, as the map credits it (TrafficGl's
   // trafficCredit: adsb.lol's or ADS-B Exchange's), where it
-  // always said adsb.lol (the commonality audit's MAP-6, CODE-31);
+  // always said adsb.lol;
   // adsb.lol's, the planner's first, before the map has asked.
   // The row's own title says Traffic: the credit without it.
   const trafficSource = (useCredits((c) => c.credits.traffic) ?? trafficCredit(undefined)).replace(/^Traffic /, "");

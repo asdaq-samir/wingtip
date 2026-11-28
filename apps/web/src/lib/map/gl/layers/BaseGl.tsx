@@ -80,8 +80,7 @@ function PlainGround() {
 function LandWater() {
   useTiles("land-water", "base", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/{z}/{y}/{x}", 9);
   // Dimmed as the chart beside it is (the Dimmer, useChartBrightness): its white
-  // land round the charts' edges was the brightest thing on a dark map
-  // (UI audit B10, 2026-11-17).
+  // land round the charts' edges was the brightest thing on a dark map.
   useGlPaint(["land-water"], { "raster-brightness-max": useChartBrightness() });
   return null;
 }
@@ -134,7 +133,7 @@ function Usgs({ opacity }: { opacity: number }) {
   useTiles("overlay-usgs", "imagery", USGS_URL, USGS_MAX_ZOOM);
   // At the chart's brightness, the Dimmer's: an aerial over the dimmed
   // chart at full light was two to three times as bright as the chart's
-  // paper in a dark cockpit (AIM 8-1-6; the round-4 themes audit).
+  // paper in a dark cockpit (AIM 8-1-6).
   useGlPaint(["overlay-usgs"], { "raster-opacity": opacity, "raster-brightness-max": useChartBrightness() });
   useImageryShown("usgs", opacity);
   useMapCredit("imagery", USGS_CREDIT);

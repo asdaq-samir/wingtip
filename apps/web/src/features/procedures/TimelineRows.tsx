@@ -21,18 +21,17 @@ export const TIMELINE_THREAD = "absolute top-10 -bottom-3 left-1/2 -translate-x-
 
 /** FPL's timeline's card, iOS's inset grouped list: never wider than the
  *  sheet, a row laid out past it clipped, not a sideways scroll of the
- *  panel (the iOS audit's rule). The app's grouped lists' box
+ *  panel. The app's grouped lists' box
  *  (GroupedList's GROUP: the card's corner, its edge) and 16 points in at
  *  the leading side, none at the trailing, so a row's hairline runs to the
- *  card's edge as iOS's does; each row keeps its own 16 there (the grouped
- *  box's audit, 2026-11-20). */
+ *  card's edge as iOS's does; each row keeps its own 16 there. */
 export const TIMELINE_CARD = "overflow-x-clip rounded-(--radius-card) border border-border bg-card pl-4";
 /** A row's words' room at the trailing side, inside its hairline. */
 export const TIMELINE_END = "pr-4";
 /** The marks' column to the words, 16: a point's mark's area runs 6 past
  *  its 32 and a name's from 10 before it (PointMenu's `bare`,
  *  TimelineLine's ident), so a three-letter name's 44-point square, centred
- *  on it, ends where the mark's begins (the iOS audit's P1; at 12 the two
+ *  on it, ends where the mark's begins (at 12 the two
  *  crossed). */
 export const TIMELINE_GAP = "gap-4";
 
@@ -41,7 +40,7 @@ export const TIMELINE_GAP = "gap-4";
  *  Apple Maps' Add Stop: a filled button's --primary and its own
  *  foreground, as a picked runway's chip is (GLASS_PICKED), the same as the
  *  tint by day; at night the tint is a light blue a white + read 2.49:1 on
- *  (the HIG review, 2026-11-21; WCAG 1.4.11 asks 3:1). */
+ *  (WCAG 1.4.11 asks 3:1). */
 export function RowMark({ glyph, filled }: { glyph: ReactNode; filled: boolean }) {
   return (
     <span
@@ -57,7 +56,7 @@ export function RowMark({ glyph, filled }: { glyph: ReactNode; filled: boolean }
 
 /**
  * A row of the timeline that does one thing at a tap: the stock Button a
- * whole row wide and 44 points tall (the audit's WEB-18), its mark in the
+ * whole row wide and 44 points tall, its mark in the
  * marks' column, the route's magenta, one solid line, from under it
  * into the next row where one follows (`line`), as a point's line draws
  * it, and its words after the hairline (none on the card's first row).
@@ -65,8 +64,9 @@ export function RowMark({ glyph, filled }: { glyph: ReactNode; filled: boolean }
  * the row's line where both fit and on a 44-point line of their own under
  * them, at the row's end, where they do not: held over the words at a
  * fixed room, Add a Stop's keyboard and Add Fuel Stops wrote over "Add a
- * Stop" at the owner's 19.65 px (the HIG review, 2026-11-21: "Add a
- * [keyboard]top"). The hairline is the row's then, from the words' start
+ * Stop" at the owner's 19.65 px ("Add a
+ * [keyboard]top").
+ * The hairline is the row's then, from the words' start
  * to the card's edge, over both.
  */
 export function TimelineAction({
@@ -98,7 +98,7 @@ export function TimelineAction({
       <Button
         variant="ghost"
         {...button}
-        // Greyed under a finger as iOS's rows are (the grouped box's audit),
+        // Greyed under a finger as iOS's rows are,
         // and under a mouse's press too, a lighter grey as it points (hover
         // is a fine pointer's alone, index.css).
         // As wide as its words at the least, the controls after it going

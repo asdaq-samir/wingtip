@@ -163,7 +163,7 @@ const WHOLE_ROUTE = ["==", ["get", "part"], "route"] as ExpressionSpecification;
  *  course), a shade deeper at night so it does not glare off the dimmed
  *  chart. Never see-through of its own: at night the Dimmer takes it
  *  down with the chart (mapDim, by colour), where its 0.9 at night was
- *  dimmed a second time (the round-4 themes audit). */
+ *  dimmed a second time. */
 export function routeCasingPaint(night: boolean): Record<string, unknown> {
   return { "line-color": night ? CHART.routeGreenNight : CHART.routeGreen, "line-opacity": 1, "line-width": CASING_WIDTH };
 }

@@ -78,8 +78,7 @@ export function useFlyingTo(run: DryRun | null, rows: NavLogRow[], line: CourseL
 /** The last fix asked about, with its rows, line and answer: the store's
  *  selector runs at every change to own ship (its follow, its trail, the
  *  page drawn again), and asked the engine's in_flight each time, where a
- *  new answer comes only with a new fix, rows or line (the speed audit of
- *  2026-11-27). By identity: each fix is a new object. */
+ *  new answer comes only with a new fix, rows or line. By identity: each fix is a new object. */
 let asked: { rows: NavLogRow[]; line: CourseLine; fix: Fix; key: string | null } | null = null;
 function gpsNextKey(rows: NavLogRow[], line: CourseLine, fix: Fix): string | null {
   if (asked?.rows === rows && asked.line === line && asked.fix === fix) return asked.key;

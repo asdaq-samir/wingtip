@@ -102,8 +102,7 @@ export const CARD_FOOT_ROOM = "max(1rem, env(safe-area-inset-bottom))";
  *  eased under Reduce Motion too (index.css), as iOS keeps a sheet's slide
  *  there -- a move along one axis that the pilot made, not the zoom or
  *  parallax the setting is for -- where it jumped between its sizes and
- *  the pilot lost where it went (the apple-design audit of 2026-11-23, M5;
- *  the owner took the recommendation). */
+ *  the pilot lost where it went (the owner took the recommendation). */
 export const SHEET_SLIDE = "sheet-slide";
 
 type Snaps = { at: Readonly<Record<PanelState, Drawer.Root.SnapPoint>>; points: Drawer.Root.SnapPoint[] };
@@ -156,8 +155,7 @@ export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint, pillPx
  * Drawer tells it (onSnapPointChange): the size of the snap point it
  * picked, one of ours, asked for. With no `close` (the main sheet), let
  * go past the pill (no snap point) the Drawer reads a close, refused here
- * before it starts one, so it never begins to fade out (the flicker audit,
- * 2026-11-14, FL-3), and the sheet goes to `park`. With a `close` (a card
+ * before it starts one, so it never begins to fade out, and the sheet goes to `park`. With a `close` (a card
  * at half), a swipe down closes it, the Drawer's own close carrying it,
  * and so does one down to a lower size.
  */
@@ -168,8 +166,7 @@ export function letGo(
 ) {
   // A light tick as a swipe lands the sheet or a card at another size, as
   // iOS's sheet gives one (lib/haptics: Chrome on Android; Safari has
-  // none): from the pilot's own drag alone, not as the app raises it (the
-  // r5-ui audit's L8).
+  // none): from the pilot's own drag alone, not as the app raises it.
   if (point === null) {
     if (s.close) return;
     details.cancel();
@@ -194,7 +191,7 @@ export function letGo(
  * than the popup here, MapPanel's height). Worked out from the size the
  * page holds, not read off a popup: Base UI writes its offset as 0 until it
  * has measured, which read as the whole card in sight for a frame as one
- * opened (the flicker audit, 2026-11-14, FL-4).
+ * opened.
  */
 export function shownPx(size: PanelState, fromBottom: boolean, popupHeight: number, rem = rootRem(), pillPx = 0) {
   const point = snapsOf(fromBottom, pillPx).at[size];
@@ -227,7 +224,7 @@ export const FLOAT_PX = 16;
  * corner its head (`cover`, its height at rest) rests in. The width was
  * the token's by the pointer, 384 for a touch screen, while the CSS drew
  * the wide 448 from 1024 on every screen: on a 13-inch iPad the map was
- * fitted 64 px under the panel (the iPad audit, 2026-11-21). And `right`,
+ * fitted 64 px under the panel. And `right`,
  * the inspector's column at the map's right while a card is in it
  * (MapPanel) and its float at the window's edge: the room ends at its
  * edge as it begins at the side panel's (ipad-layout.spec measures both),
@@ -236,7 +233,7 @@ export const FLOAT_PX = 16;
  * The screen's top under a sheet from the bottom is the status bar's and
  * the Dynamic Island's (`safeTop`, env(safe-area-inset-top)): kept out of
  * the map's room, as HIG's layout keeps content inside the safe area,
- * where a fit put KOSH at y = 38 under it (the FPL audit's A11). A sheet
+ * where a fit put KOSH at y = 38 under it. A sheet
  * from the top covers it.
  */
 /** What the inspector's column, `column` wide, covers at the map's right:

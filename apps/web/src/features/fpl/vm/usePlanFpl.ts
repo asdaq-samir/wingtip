@@ -51,8 +51,7 @@ export function usePlanFpl(
   }, [setViewPick, openProfileCard]);
   const profileReady = routed && !!course && !s.local;
   // The Profile's side view's chunk once there is a route to draw it for,
-  // at idle: its card opened on a fetch and a suspended first draw (the
-  // speed audit of 2026-11-21).
+  // at idle: its card opened on a fetch and a suspended first draw.
   useEffect(() => {
     if (!profileReady) return;
     const idle = window.requestIdleCallback ?? ((go: () => void) => window.setTimeout(go, 1000));
