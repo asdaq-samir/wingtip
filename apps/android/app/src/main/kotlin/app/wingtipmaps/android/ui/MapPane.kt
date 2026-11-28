@@ -98,8 +98,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val overlaysSettled by charts.overlaysSettled.collectAsStateWithLifecycle()
     val chartProblem by charts.problem.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
-    // The route's points, where its line is cut into legs, and the leg
-    // whose sheet is open (RouteLegModel), cased in green.
+    // The route's points, where its line is cut into legs, and the leg whose sheet is open (RouteLegModel), cased in green.
     val routePoints = remember(state.course) { RoutePoints.of(state.course) }
     val selectedLeg by hiltViewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
     // The field whose card is open, ringed on the map.
@@ -128,7 +127,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val flight: FlightModel = hiltViewModel()
     val traffic = flight.traffic
     val trafficOn by traffic.on.collectAsStateWithLifecycle()
-    val tracked by flight.tracked.collectAsStateWithLifecycle()
+    val tracked by flight.tracking.onMap.collectAsStateWithLifecycle()
     // The airplanes to draw, read only in ChartMap's lambda, as the fix is:
     // read here, each answer (every 5 s, each second with a receiver) drew
     // the whole pane again, its field actions, bars and emergency line.
@@ -235,7 +234,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             terminal = terminal,
             weather = weather,
             traffic = { if (trafficOn) targets.value else emptyList() },
-            tracked = tracked,
+            tracked = tracked.hex,
+            sight = tracked.sight,
             // The dark screen, and the Map card's Dimmer and Contrast on the chart (ChartLook).
             night = LocalShade.current.dark,
             look = LocalShade.current.let { shade -> { shade.look } },

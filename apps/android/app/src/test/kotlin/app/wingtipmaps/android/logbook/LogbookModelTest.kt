@@ -36,7 +36,7 @@ class LogbookModelTest {
         override suspend fun draft(ask: LogbookDraftAsk): LogbookDraft = error("not asked")
         override suspend fun add(entry: LogbookEntryRequest): LogbookEntryDto = error("not asked")
         override suspend fun entries() = list.filterNot { it.id in deleted }
-        override suspend fun currency() = CurrencyDto(
+        override suspend fun currency(toFly: AirplaneKind?) = CurrencyDto(
             approachesInWindow = 1, crossCountryHours = 1.4, flights = 2, holdingInWindow = false, landings = 2,
             nightHours = 0.0, totalHours = 2.8, trackingInWindow = true,
         )

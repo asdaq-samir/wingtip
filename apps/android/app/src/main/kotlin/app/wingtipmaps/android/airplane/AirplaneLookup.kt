@@ -14,6 +14,8 @@ import app.wingtipmaps.android.api.generated.PastFlightSummary
 import app.wingtipmaps.android.api.generated.TrafficFound
 import app.wingtipmaps.android.api.pastFlights
 import app.wingtipmaps.android.api.registered
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.registeredProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -71,6 +73,10 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
         val flightsProblem: String? = null,
         /** Its ICAO address, the registry's or the find's, for its flights. */
         val hex: String? = null,
+        /** The planner's book for its registered type (the engine's
+         *  registered_profile, the web's profileOfRegistered); none for a
+         *  type it has none for, none assumed. */
+        val stock: String? = null,
     )
 
     private val _state = MutableStateFlow(State())
@@ -91,7 +97,8 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
         _state.value = State(tail = tail)
         jobs += viewModelScope.launch {
             val record = quietly { Planner.registered(tail) }
-            _state.update { it.copy(record = record, recordAsked = true) }
+            val stock = record?.let { Engine.registeredProfile(it.manufacturer, it.model, it.year?.toDouble()).getOrNull() }
+            _state.update { it.copy(record = record, recordAsked = true, stock = stock) }
             record?.modeSHex?.let(::flightsOf)
         }
         jobs += viewModelScope.launch {

@@ -6,6 +6,7 @@ import app.wingtipmaps.android.api.generated.LogbookDraftAsk
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
+import app.wingtipmaps.android.logbook.AirplaneKind
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 
@@ -26,8 +27,11 @@ suspend fun Gateway.logbook(): List<LogbookEntryDto>? = api.logbookList().readOr
 suspend fun Gateway.addLogbook(entry: LogbookEntryRequest): LogbookEntryDto =
     writes.logbookAdd(entry).accepted()
 
-/** What the logbook says of the pilot's currency; null signed out. */
-suspend fun Gateway.currency(): CurrencyDto? = api.currency().readOrNone()
+/** What the logbook says of the pilot's currency, passengers judged for
+ *  the airplane to be flown where its category, class and gear are known
+ *  (14 CFR 61.57(a)(1)), else for the newest flight's; null signed out. */
+suspend fun Gateway.currency(toFly: AirplaneKind? = null): CurrencyDto? =
+    api.currency(category = toFly?.category, aircraftClass = toFly?.aircraftClass, tailwheel = toFly?.tailwheel).readOrNone()
 
 /** An entry changed in its row (PUT /api/logbook/{id}): the gateway's copy. */
 suspend fun Gateway.updateLogbook(id: Long, entry: LogbookEntryRequest): LogbookEntryDto =

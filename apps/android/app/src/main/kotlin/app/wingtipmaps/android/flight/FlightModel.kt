@@ -47,9 +47,6 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
     /** The alerts ahead said aloud, turned on and off from Settings. */
     val spoken: SpokenAlerts get() = session.spoken
 
-    /** The airplane tracked, by its hex. */
-    val tracked: StateFlow<String?> get() = session.tracking.hex
-
     /** The path this phone flew. */
     val trail: StateFlow<List<PathPoint>> get() = session.trail.points
 

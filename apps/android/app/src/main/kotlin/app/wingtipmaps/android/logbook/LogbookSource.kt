@@ -25,7 +25,8 @@ interface LogbookSource {
     suspend fun draft(ask: LogbookDraftAsk): LogbookDraft
     suspend fun add(entry: LogbookEntryRequest): LogbookEntryDto
     suspend fun entries(): List<LogbookEntryDto>?
-    suspend fun currency(): CurrencyDto?
+    /** The pilot's currency, passengers judged for `toFly` where known. */
+    suspend fun currency(toFly: AirplaneKind? = null): CurrencyDto?
 
     /** The pilot's saved flights, the logged flight's track's home; none
      *  where a source keeps none, and then no track is linked. */
@@ -39,7 +40,7 @@ object ServerLogbook : LogbookSource {
     override suspend fun draft(ask: LogbookDraftAsk) = Planner.logbookDraft(ask)
     override suspend fun add(entry: LogbookEntryRequest) = Gateway.addLogbook(entry)
     override suspend fun entries() = Gateway.logbook()
-    override suspend fun currency() = Gateway.currency()
+    override suspend fun currency(toFly: AirplaneKind?) = Gateway.currency(toFly)
     override suspend fun flights() = Gateway.api.flightList().readOrNone().orEmpty()
     override suspend fun saveTrack(flight: Long, track: SavedTrack) = Gateway.saveTrack(flight, track)
 }
@@ -67,15 +68,26 @@ object LogbookChanged {
 
 /** What the gateway's currency says, a line each, the dates as it gives
  *  them: the rules (14 CFR 61.56(c), 61.57(a)-(c)) are the gateway's and
- *  the engine's; only the words are here. */
+ *  the engine's; only the words are here. Passenger currency the logbook
+ *  cannot judge, where the pilot would be current if what it doesn't say
+ *  were so, says "Can't tell" with what isn't known, the engine's own
+ *  words (61.57(a)(1)), never "not current" nor current. */
 object CurrencyWords {
     fun lines(c: CurrencyDto): List<String> = listOfNotNull(
         "${DraftEntry.tenths(c.totalHours)} h logged, ${DraftEntry.tenths(c.nightHours)} at night",
         // Each "until" date as the gateway gives it, which may be past: a
         // lapsed currency reads as one, never as none logged.
         c.flightReviewUntil?.let { "Flight review: until $it" },
-        c.dayPassengersUntil?.let { "Passengers by day: until $it" } ?: "Passengers by day: not current by the logbook",
-        c.nightPassengersUntil?.let { "Passengers at night: until $it" } ?: "Passengers at night: not current by the logbook",
+        passengers("Passengers by day", c.dayPassengersUntil, c.dayPassengersUnknown),
+        passengers("Passengers at night", c.nightPassengersUntil, c.nightPassengersUnknown),
+        // The category and class they were judged in: the airplane to be flown's, else the newest flight's.
+        c.passengerClass?.let { "Passengers judged in $it" },
         c.instrumentCurrentUntil?.let { "Instrument currency: until $it" },
     )
+
+    private fun passengers(what: String, until: String?, unknown: String?): String = when {
+        until != null -> "$what: until $until"
+        unknown != null -> "$what: $unknown"
+        else -> "$what: not current by the logbook"
+    }
 }

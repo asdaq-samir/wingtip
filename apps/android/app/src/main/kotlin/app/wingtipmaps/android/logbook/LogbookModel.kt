@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.logbook
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
@@ -10,7 +11,9 @@ import app.wingtipmaps.android.api.generated.client.apis.GatewayApi
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
 import app.wingtipmaps.android.di.Writes
+import app.wingtipmaps.android.plan.FlightChoices
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,10 +37,13 @@ class LogbookModel(
     private val source: LogbookSource = ServerLogbook,
     private val edits: LogbookEdits = ServerLogbookEdits,
     private val adds: suspend (LogbookEntryRequest) -> LogbookEntryDto = { Gateway.addLogbook(it) },
+    /** The N-number of the airplane to be flown, the plan's; none where none is given. */
+    private val toFly: () -> String? = { null },
 ) : ViewModel() {
-    /** Hilt's: the gateway's logbook, and an entry added by its POST /api/logbook. */
+    /** Hilt's: the gateway's logbook, an entry added by its POST /api/logbook, and the plan's N-number. */
     @Inject
-    constructor(source: LogbookSource, edits: LogbookEdits, @Writes gateway: GatewayApi) : this(source, edits, { gateway.logbookAdd(it).accepted() })
+    constructor(source: LogbookSource, edits: LogbookEdits, @Writes gateway: GatewayApi, @ApplicationContext context: Context) :
+        this(source, edits, { gateway.logbookAdd(it).accepted() }, { FlightChoices.of(context).tail.value })
     /** An entry taken out of the list and where it was, for its Undo. */
     data class Removed(val entry: LogbookEntryDto, val index: Int)
 
@@ -71,7 +77,8 @@ class LogbookModel(
         _state.update { it.copy(loading = true, problem = null) }
         try {
             val entries = source.entries().orEmpty().sortedByDescending { it.flownOn }
-            val currency = source.currency()?.let(CurrencyWords::lines).orEmpty()
+            // Passengers judged for the airplane to be flown, where the logbook has said its category, class and gear (61.57(a)(1)).
+            val currency = source.currency(AirplaneKind.of(entries, toFly()))?.let(CurrencyWords::lines).orEmpty()
             // An entry waiting on its Undo stays out of the list.
             _state.update { s -> s.copy(entries = entries.filterNot { it.id == s.removed?.entry?.id }, currency = currency, loading = false) }
         } catch (e: CancellationException) {
@@ -95,7 +102,7 @@ class LogbookModel(
     fun save(form: LogbookForm) {
         val s = _state.value
         val was = s.entries.firstOrNull { it.id == s.editing } ?: return
-        val asked = form.request(was).getOrElse { why ->
+        val asked = form.request(was, AirplaneKind.of(s.entries, form.airplane)).getOrElse { why ->
             _state.update { it.copy(editProblem = why.message) }
             return
         }
@@ -129,7 +136,7 @@ class LogbookModel(
     /** Add Flight's Save: the new entry sent, put in its place in the
      *  list and the sheet closed; the currency read again from it. */
     fun add(form: LogbookForm) {
-        val asked = form.request(LogbookForm.BLANK).getOrElse { why ->
+        val asked = form.request(LogbookForm.BLANK, AirplaneKind.of(_state.value.entries, form.airplane)).getOrElse { why ->
             _state.update { it.copy(addProblem = why.message) }
             return
         }

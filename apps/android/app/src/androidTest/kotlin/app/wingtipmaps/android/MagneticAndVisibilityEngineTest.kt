@@ -53,6 +53,8 @@ class MagneticAndVisibilityEngineTest {
         assertEquals("10 sm", Format.visibility(10.0))
         assertEquals("0 sm", Format.visibility(0.0))
         assertEquals("10+ sm", Format.visibility(10.0, plus = true))
+        // M1/4SM, a report's "less than" (FMH-1 chapter 6): never the figure alone.
+        assertEquals("less than ¼ sm", Format.visibility(0.25, plus = false, minus = true))
         assertEquals("2 sm BR", StationLines.visibility(2.0, "BR"))
         assertEquals("10 sm", StationLines.visibility(10.0, null))
         assertEquals("1,200 ft · 3 sm", Format.ceilingAndVisibility(1200.0, 3.0))

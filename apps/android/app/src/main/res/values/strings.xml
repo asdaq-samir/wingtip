@@ -172,8 +172,6 @@
     <string name="receiver_brief">From Your Receiver</string>
     <string name="receiver_unnamed">the receiver</string>
     <string name="traffic_gone">No longer heard.</string>
-    <string name="track">Track</string>
-    <string name="stop_tracking">Stop Tracking</string>
     <string name="fact_floor">Floor</string>
     <string name="fact_ceiling">Ceiling</string>
     <string name="fact_hours">Hours</string>
@@ -507,10 +505,12 @@
     <string name="saved_flights_none">No saved flights yet. A flight saved on the web or the iPhone with this account is kept here.</string>
     <string name="replay_play">Play</string>
     <string name="replay_pause">Pause</string>
+    <!-- A replay's height the planner carried at the last good one (alt_held): said, so it is not read as sent. -->
+    <string name="replay_height_held">%1$s held</string>
     <string name="airplane_tab_flights">Flights</string>
     <string name="airplane_tab_info">Info</string>
-    <string name="airplane_follow">Follow</string>
-    <string name="airplane_unfollow">Following</string>
+    <!-- Fly This on the airplane flown already, greyed (the web's AirplaneCard). -->
+    <string name="flying_this">Flying This</string>
     <string name="airplane_photo_by">Photo: %1$s, Planespotters.net</string>
     <string name="said_replay_flight">Replay %1$s</string>
     <string name="share_airplane">Share the Airplane</string>

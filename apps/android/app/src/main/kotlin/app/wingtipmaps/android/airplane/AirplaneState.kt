@@ -25,15 +25,16 @@ object NotNow {
 
 /** Where the airplane's profile is open, and at which figure (null:
  *  closed): by its N-number, or by a type of the planner's with none (the
- *  one search's Airplanes). */
+ *  one search's Airplanes); `figures` on its Figures page (a traffic
+ *  card's Figures). */
 object ProfileOpen {
-    data class At(val tail: String?, val focus: String? = null, val type: String? = null)
+    data class At(val tail: String?, val focus: String? = null, val type: String? = null, val figures: Boolean = false)
 
     private val _at = MutableStateFlow<At?>(null)
     val at: StateFlow<At?> = _at.asStateFlow()
 
-    fun open(tail: String?, focus: String? = null, type: String? = null) {
-        _at.value = At(tail?.trim()?.uppercase()?.ifEmpty { null }, focus, type?.trim()?.ifEmpty { null })
+    fun open(tail: String?, focus: String? = null, type: String? = null, figures: Boolean = false) {
+        _at.value = At(tail?.trim()?.uppercase()?.ifEmpty { null }, focus, type?.trim()?.ifEmpty { null }, figures)
     }
 
     fun close() {
