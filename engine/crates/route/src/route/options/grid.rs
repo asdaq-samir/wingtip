@@ -26,7 +26,7 @@ pub const REACH_MAX_NM: f64 = 180.0;
 /// Where the cells are round a route from `start` to `end` and the
 /// pilot's own points `via`: the straight line's reach every way, round
 /// every point -- a point outside the grid was clamped to its edge, and
-/// the route read against cells it never flew (the audit of 2026-10-24).
+/// the route read against cells it never flew.
 /// The box is core's corridor_bbox round all of them, so the reach east
 /// and west is measured at the box's poleward edge, a via point's too,
 /// not at the mean of the ends' latitudes.

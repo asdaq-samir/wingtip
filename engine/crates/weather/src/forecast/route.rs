@@ -328,7 +328,7 @@ pub fn gairmets_along_route(advisories: &[Value], path: &[(f64, f64)], start: f6
 /// (lat, lon) points each with its longitude beside the one before, the
 /// first beside `reference` (geo::lon_near): a path or an area drawn across
 /// the antimeridian read as one shape the short way round, on the plane of
-/// degrees path_meets_polygon tests on (the edge-places audit's S10). Points
+/// degrees path_meets_polygon tests on. Points
 /// nowhere near 180 are as they were.
 fn beside(mut points: Vec<(f64, f64)>, reference: f64) -> Vec<(f64, f64)> {
     let mut before = reference;

@@ -32,8 +32,7 @@ pub type Ends = Vec<(Option<String>, Option<f64>)>;
 /// on (None for a variable wind, which favours none) and the knots,
 /// steady or gust, whichever is more, unrounded: the map's arrow turns red
 /// on it against the demonstrated crosswind, and a 10.4 kt crosswind
-/// rounded to 10 would never pass a 10 kt figure (the aviation audit's
-/// AV-10, as the Go/No-Go judges it, runway_crosswind_judged_kt).
+/// rounded to 10 would never pass a 10 kt figure (as the Go/No-Go judges it, runway_crosswind_judged_kt).
 #[derive(Clone, Debug, PartialEq)]
 pub struct LeastCrosswind {
     pub end: Option<String>,
@@ -225,8 +224,7 @@ mod tests {
     #[test]
     fn a_crosswind_just_past_the_demonstrated_turns_the_arrow_red() {
         // 270 at 10.4 straight across 18/36: 10.4 kt, which whole knots
-        // would read 10 and never past a 10 kt demonstrated crosswind
-        // (the aviation audit's AV-10).
+        // would read 10 and never past a 10 kt demonstrated crosswind.
         let l = least_crosswind(&[rwy("18", 180.0, "36", 360.0)], &wind(Some(270.0), 10.4, None), 0.0).unwrap();
         assert!((l.crosswind_kt - 10.4).abs() < 1e-9);
         assert_eq!(wind_arrow(Some(10.4), None, Some(l.crosswind_kt), Some(10.0)), (true, true));

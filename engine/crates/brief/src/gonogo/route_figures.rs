@@ -2,8 +2,7 @@
 //! are put together from, out of the nav log's totals and the TFRs the
 //! briefing lists: one copy, where the web (useFlightBriefing) and the
 //! planner (app.gonogo.flight) each worked them out before asking for the
-//! verdict, two copies of rules that must agree (the aviation audit's
-//! AV-12).
+//! verdict, two copies of rules that must agree.
 //!
 //! - The least fuel margin over the flights: the whole route's and each
 //!   flight's between fuel stops, the least of them, as the tightest leg

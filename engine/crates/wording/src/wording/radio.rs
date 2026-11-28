@@ -100,8 +100,7 @@ pub fn frequency_line(kind: Option<&str>, description: Option<&str>) -> (String,
 /// be a UNICOM, MULTICOM, FSS, or tower frequency", and where a tower is
 /// "temporarily closed, or operated on a part-time basis ... use the CTAF
 /// to self-announce" -- so at a towered field it is the tower's, flown to
-/// the tower while it is open; KOSH's 118.5 said "CTAF" alone (the UI
-/// audit's C13). Any other line as frequency_line has it.
+/// the tower while it is open; KOSH's 118.5 said "CTAF" alone. Any other line as frequency_line has it.
 pub fn frequency_line_at(
     kind: Option<&str>, description: Option<&str>, mhz: Option<f64>, field: &[Frequency],
 ) -> (String, &'static str, Option<String>) {

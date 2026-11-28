@@ -55,7 +55,7 @@ pub struct Procedure<'a> {
 /// back (route::points). Filed with its strokes, the point read as
 /// something else: in item 15 an oblique stroke brings in "the next speed
 /// and altitude" or a delay ("/DHH+MM"). The point the weather-avoiding
-/// ways turn at is one (the UI audit's A8). Anything else is as it was.
+/// ways turn at is one. Anything else is as it was.
 fn filed_point(point: &str) -> String {
     let parts: Vec<&str> = point.split('/').collect();
     let [base, course, nm] = parts[..] else { return point.to_owned() };

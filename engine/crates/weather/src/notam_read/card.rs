@@ -136,7 +136,7 @@ fn sentence_of(what: &str, permanent: bool) -> Option<String> {
     let rest = &what[at + 1 + c.len()..];
     // A second condition after it ("Taxiway A unusable between taxiway B
     // and the ramp closed") makes no one sentence: none, so the card shows
-    // the NOTAM's own words (the round 7 audit, E-L2).
+    // the NOTAM's own words.
     if CONDITIONS.iter().any(|c| rest.contains(&[" ", c].concat())) {
         return None;
     }
@@ -171,7 +171,7 @@ pub fn card_with_end(text: &str, idents: &[String], known_end: bool) -> Card {
     let shut = if flown.is_some() { closure(&parts) } else { None };
     let field_wide = flown.is_none() || shut.is_some();
     // Permanent by its end (PERM) or in its words (PERMANENTLY CLSD), one
-    // answer for every path below (the round 7 audit, E-L1).
+    // answer for every path below.
     let permanent = r.permanent || shut.as_ref().is_some_and(|(_, perm)| *perm);
     let until_charts = until_charts(permanent, r.estimated, known_end || r.ends.is_some());
     let takes: Vec<Taken> = parts.iter().filter_map(|s| taken_by(s)).collect();

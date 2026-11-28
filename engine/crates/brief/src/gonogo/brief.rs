@@ -42,7 +42,7 @@ pub fn assemble(items: Vec<Item>, alternate: Option<(&str, &str)>, fields: Optio
 /// pressurised. With none picked, neither is known: the safer side. A
 /// caution, not a stop: the pilot may carry portable oxygen the planner
 /// cannot see (the owner, 2026-10-23: a warning, never a limit). FL-145
-/// for 13 hours said nothing of it (the UI audit's A2). None at or under
+/// for 13 hours said nothing of it. None at or under
 /// 12,500 ft unpressurised, or before the nav log.
 pub fn oxygen_item(altitude: Option<&Value>) -> Option<Item> {
     let altitude = altitude?;

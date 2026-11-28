@@ -4,8 +4,7 @@
 //! little to spare or not checked, each field once and in the route's
 //! order -- `gonogo_brief`'s `runways`. One copy for the web
 //! (features/brief/verdictInput) and the planner (app.gonogo.flight),
-//! which each sorted the checks with the same predicates before
-//! (the simplicity re-audit, 2026-11-27).
+//! which each sorted the checks with the same predicates before.
 //!
 //! The predicates are the checks' own flags (gonogo_runway_checks, from
 //! runways.rs): a distance over the runway's length (14 CFR 91.103(b), the

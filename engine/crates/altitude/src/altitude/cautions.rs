@@ -207,8 +207,7 @@ pub fn own_altitude(selection: &Value, legs: &[Value], profile: Option<&Value>) 
             // the legal altitudes either side of the one set, not once per
             // leg with each leg's own height of the rule: six amber lines
             // "Westbound above 3,670 / 3,662 / 3,817 ... ft" pushed the
-            // Profile's graph under the fold (the FPL audit's A8,
-            // 2026-11-08). The words name the rule's own height, 3,000 ft
+            // Profile's graph under the fold. The words name the rule's own height, 3,000 ft
             // above the ground, which each leg's figure is.
             if let (Some(rule_from), Some(east)) = (num(segment, "hemispheric_rule_from_ft"), east) {
                 let base = if east { 1500.0 } else { 500.0 };
@@ -293,8 +292,8 @@ mod tests {
     /// 91.159(a)(2): "On a magnetic course of 180 degrees through 359
     /// degrees, any even thousand foot MSL altitude + 500 feet (such as
     /// 4,500, 6,500, or 8,500)", more than 3,000 ft above the surface.
-    /// Legs whose own height of the rule differs (the FPL audit's six
-    /// lines) give one line, naming 4,500 and 6,500 for 5,500 set.
+    /// Legs whose own height of the rule differs
+    /// give one line, naming 4,500 and 6,500 for 5,500 set.
     #[test]
     fn the_hemispheric_rule_is_one_line_naming_the_legal_altitudes() {
         let selection = |east: bool| {

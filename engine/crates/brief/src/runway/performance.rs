@@ -318,7 +318,7 @@ pub fn end_fit(
     };
     let headwind = along(wind.and_then(|w| w.speed_kt));
     // Judged unrounded against the demonstrated crosswind, rounded for the
-    // page only (wind::crosswind_shown; the aviation audit's AV-10).
+    // page only (wind::crosswind_shown).
     let judged = steady_or_gust_kt(across(wind.and_then(|w| w.speed_kt)), Some(across(wind.and_then(|w| w.gust_kt))));
     let crosswind = super::wind::crosswind_shown(judged, js_round(judged), demonstrated_kt);
     let length_ft = available_ft(runway, landing_end);

@@ -3,7 +3,7 @@
 //! destination and the alternate filed, each it reaches, and whether it
 //! takes away a procedure that role flies (the red chip) or is only the
 //! field's (the neutral one). The apps each kept this rule, and they came
-//! to disagree (the r8 audit's S-M1): it is read here from the card's own
+//! to disagree: it is read here from the card's own
 //! parts (notam_card), never from its English.
 //!
 //! A procedure taken away reaches only the roles that fly it. A departure
@@ -68,7 +68,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         v.get("idents").and_then(Value::as_array).unwrap_or(&[]).iter().filter_map(Value::as_str).map(str::to_owned).collect();
     // The roles are refused whole where any is wrong: missing, or a member
     // that is not one of the role names, a number among them as much as an
-    // unknown word, so one mistake has one failure (the r9 audit).
+    // unknown word, so one mistake has one failure.
     let asked = v.get("roles").and_then(Value::as_array).ok_or("notam_affects: \"roles\" is missing")?;
     let roles = asked
         .iter()

@@ -1,5 +1,4 @@
-//! Which of the phones' pack regions lie ahead of the airplane (the iPhone
-//! audit's IOS-20): the regions a shell reads for what is ahead, in the
+//! Which of the phones' pack regions lie ahead of the airplane: the regions a shell reads for what is ahead, in the
 //! order the airplane reaches them. Before this the iPhone read the
 //! regions within a fixed 0.3 degrees of itself, which at 48 N is 12 nm
 //! east and west, short of five minutes at 200 kt (17 nm), so near a

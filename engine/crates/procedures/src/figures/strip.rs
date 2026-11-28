@@ -26,8 +26,7 @@ pub struct Hop {
 /// (None for a route with no stops), its idents as sent ("C81 → KMSN", ""
 /// with no stops), and by how much. An app names the hop's two ends from
 /// `hop` with its own point names, as a pilot's own point is "@lat,lon"
-/// in the idents and named only on the device (the 2026-11-14 audit's
-/// CODE-13).
+/// in the idents and named only on the device.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Short {
     pub hop: Option<usize>,
@@ -138,8 +137,7 @@ pub struct TankAt {
 /// night's 45 minutes. A flight with no reserve given (None, or past the
 /// list's end) is held to the strictest of those given, the safer answer;
 /// with none given at all no point can be judged low, so every point is
-/// None, not known, rather than held to no reserve (the aviation audit of
-/// 2026-11-23, L2: 0 was the least safe answer).
+/// None, not known, rather than held to no reserve (0 was the least safe answer).
 /// The departure is low where what is on board, less the start and taxi,
 /// is under its flight's reserve: no flight from there lands with it. The
 /// route's last point, its destination, is held to `alternate_gal` more,

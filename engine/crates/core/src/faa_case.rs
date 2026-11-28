@@ -1,8 +1,7 @@
 //! The FAA's own capitalised text in sentence case with its codes kept
 //! (CLAUDE.md's rule; the web's lib/advisories `faaWords`): here in core,
 //! below the weather crate as well as the wording crate, so a TFR's
-//! purpose is cased by the same one copy as the rest (the aviation
-//! audit's AV-18). The wording crate re-exports it.
+//! purpose is cased by the same one copy as the rest. The wording crate re-exports it.
 //!
 //! The web wrote it with JavaScript's regular expressions, whose `\b`,
 //! `\w` and `[a-z]` are ASCII only and whose `\s` is its own set of

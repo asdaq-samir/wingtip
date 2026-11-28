@@ -2,8 +2,8 @@
 //! fields round the airplane when the planner cannot be reached (Nearest,
 //! the emergency assistant, the on-device Ask), one rule for both phones,
 //! which read different boxes before (the iPhone a fixed half degree, and
-//! Android widening to two degrees and sorting the fields itself; round
-//! 4's engine audit). The fields read are then ranked by `best_fields`.
+//! Android widening to two degrees and sorting the fields itself).
+//! The fields read are then ranked by `best_fields`.
 //!
 //! The phone asks with no box first and is given the first, half a degree
 //! of latitude each way (about 30 nm, past a light single's still-air

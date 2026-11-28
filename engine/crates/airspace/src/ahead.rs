@@ -115,8 +115,8 @@ impl Track {
     }
 
     /// [west, south, east, north] round the track, `pad_nm` wider: core's
-    /// box_over its points, read the short way round 180, so its west may
-    /// be under -180 or its east over 180 (the edge-places audit's S10).
+    /// box_over its points, read the short way over 180, so its west may
+    /// be under -180 or its east over 180.
     fn bbox(&self, pad_nm: f64) -> [f64; 4] {
         let points: Vec<(f64, f64)> = self.lats.iter().copied().zip(self.lons.iter().copied()).collect();
         let (s, w, n, e) = geo::box_over(&points, pad_nm).unwrap_or((self.lats[0], self.lons[0], self.lats[0], self.lons[0]));

@@ -3,7 +3,7 @@
 //! runway chips (runway_end_fit) and the Brief's runway check at each field
 //! (gonogo_runway_checks, the glance's rows and the Go / No-Go's item) both
 //! answer with it, so the same end is never amber in one and fine in the
-//! other (the rules audit, 2026-11-27).
+//! other.
 //!
 //! The order, worst first:
 //!

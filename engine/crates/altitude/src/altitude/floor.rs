@@ -209,8 +209,8 @@ pub fn published(mea_ft: Option<f64>, gnss_mea_ft: Option<f64>) -> Option<f64> {
 /// piece of the path at its cruising altitude until it comes down, so the
 /// ground under all of it must be cleared: 91.119's clearances under VFR,
 /// 91.177(a)(2)'s under IFR. A published procedure's own altitudes
-/// (91.177(a)(1), Part 97) can be lower, so this errs high, the safer side
-/// (the aviation audit's AV-2, 2026-11-14). Returns the index of the
+/// (91.177(a)(1), Part 97) can be lower, so this errs high, the safer side.
+/// Returns the index of the
 /// bounding floor and that lowest ground; None for no floors.
 pub fn along_path(floors: &[(f64, Option<f64>)]) -> Option<(usize, Option<f64>)> {
     let first = floors.first()?;

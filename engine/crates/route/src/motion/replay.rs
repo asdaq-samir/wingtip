@@ -27,7 +27,7 @@
 //!   (FAA-H-8083-15B, Ch. 5, the vertical speed indicator: "trend" then
 //!   "rate" after 6 to 9 s). A VSI lags; it never leads: N722BD read -550
 //!   fpm 79 s before its last report while still climbing, from a slope
-//!   that looked 15 s ahead (the Studio's audit, 2026-11-27).
+//!   that looked 15 s ahead.
 //! - A held pressure altitude: readsb can repeat a stale one, N722BD's
 //!   8,750 ft for its last 9.7 s while its GNSS height fell from 9,475 to
 //!   325 ft. A report is held where it says so (`alt_held`), or where its

@@ -2,8 +2,7 @@
 //! the nav log and the loading -- gonogo_brief's weather, airspace,
 //! altitude, fuel, runways and balance, in its words -- one copy for the
 //! web (features/brief/verdictInput) and the planner (app.gonogo.flight),
-//! which each built the same sections from the same answers (round 4's
-//! engine audit). The figures are other rules' (gonogo_route_figures'
+//! which each built the same sections from the same answers. The figures are other rules' (gonogo_route_figures'
 //! fuel and TFRs, gonogo_runway_findings' fields, the minimums', the
 //! icing's); here they are only put in their places, with what each
 //! section waits on and the words a row says.

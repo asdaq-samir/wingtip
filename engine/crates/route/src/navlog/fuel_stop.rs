@@ -62,8 +62,8 @@ pub fn worst_burn_per_nm(legs: &[(f64, Option<f64>)], over_nm: f64) -> Option<f6
 /// 91.167(a)(3)'s already, and the last stretch keeps the fuel on to the
 /// alternate too (91.167(a)(2): the totals' `alternate_gal`, the last
 /// flight's alternate leg's fuel), which the fuel check counts: without it
-/// a flight short only by its alternate was short with no stop offered
-/// (the aviation audit of 2026-11-21, F7.1). Each IFR stop is itself a
+/// a flight short only by its alternate was short with no stop offered.
+/// Each IFR stop is itself a
 /// first point of intended landing (91.167(a)(1)); its own alternate is
 /// not counted (route options' Figures says why).
 pub struct Need {
@@ -94,7 +94,7 @@ pub fn fuel_stop_need(totals: &Obj, legs: &[(f64, Option<f64>)], start: (f64, f6
     let taxi = totals.opt("taxi_gal")?.unwrap_or(0.0);
     // No reserve sent: the most the rules ask, 45 minutes (night VFR,
     // 14 CFR 91.151(a)(2); IFR, 91.167(a)(3)) at the flight's own burn,
-    // never none (the aviation audit of 2026-11-23, L2).
+    // never none.
     let given = totals.opt("reserve_gal")?;
     let mut reserve = match given {
         Some(r) => r,

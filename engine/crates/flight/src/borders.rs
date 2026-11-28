@@ -40,7 +40,7 @@ pub(crate) fn outlines() -> Result<&'static Outlines, &'static str> {
 /// The outlines read whole, or why not: asked first by each call that
 /// reads them (jurisdiction_call, adiz_call), so a bad borders.bin fails
 /// that call alone, never with a panic that in WebAssembly takes the whole
-/// engine down (the round 7 audit, E-L4).
+/// engine down.
 pub fn outlines_read() -> Result<(), String> {
     outlines().map(|_| ()).map_err(str::to_owned)
 }

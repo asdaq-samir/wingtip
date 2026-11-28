@@ -267,7 +267,7 @@ pub const PATTERN_AGL_FT: f64 = 1000.0;
 /// even). Where none is published, to the nearest hundred feet
 /// (pattern_altitude_flown): AC 90-66C's 1,000 ft is a height to fly, not
 /// a surveyed one, and 1,808 ft beside an 809 ft field said a precision
-/// no rule gives (the UI audit's A6).
+/// no rule gives.
 pub fn pattern_altitude(elevation_ft: Option<f64>, published_agl_ft: Option<f64>) -> (f64, Option<f64>, bool) {
     let agl = published_agl_ft.unwrap_or(PATTERN_AGL_FT);
     let altitude = match published_agl_ft {

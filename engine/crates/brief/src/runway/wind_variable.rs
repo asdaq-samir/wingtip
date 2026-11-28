@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn a_wind_down_the_runway_on_its_mean_is_judged_across_at_its_bound() {
         // 27015G25KT 230V310 on runway 27 (270 true): 0 kt across on the
-        // mean, 25 sin 40 = 16.07 kt in the gusts at 310 (round 6's audit).
+        // mean, 25 sin 40 = 16.07 kt in the gusts at 310.
         assert!(worst_crosswind_kt(270.0, None, 25.0, 270.0).abs() < 1e-9);
         let gust = worst_crosswind_kt(270.0, Some((230.0, 310.0)), 25.0, 270.0);
         assert!((gust.abs() - 25.0 * 40f64.to_radians().sin()).abs() < 1e-9, "{gust}");

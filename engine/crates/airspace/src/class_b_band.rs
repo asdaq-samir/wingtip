@@ -1,8 +1,7 @@
 //! Which Class B band along a route's profile holds an altitude: the
 //! Profile card's "Through CHICAGO CLASS B: clearance needed" (the web's
 //! ProfileNotes), where the view compared the altitude itself and took a
-//! band with no ceiling to top out at 10,000 ft (the aviation audit's
-//! AV-9). Class B tops run from 7,000 ft (New Orleans) to 12,500 ft
+//! band with no ceiling to top out at 10,000 ft. Class B tops run from 7,000 ft (New Orleans) to 12,500 ft
 //! (Denver), so no one figure stands in for a missing ceiling.
 //!
 //! 14 CFR 91.131(a)(1): no one may operate an aircraft within a Class B

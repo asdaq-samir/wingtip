@@ -60,9 +60,8 @@ pub const CAUTION_BAND_FT: f64 = 1000.0;
 /// few feet does not colour the map again at every fix (as the pilot's
 /// view's 50 ft). Rounded down, never to the nearest: a height read up to
 /// 49 ft low starts the red band a little early, where the nearest read it
-/// up to 25 ft high and started it late (the phones' re-audit,
-/// 2026-11-27); down errs on the side of the warning. One step for every
-/// app, which each rounded on its own before (round 4's engine audit).
+/// up to 25 ft high and started it late; down errs on the side of the warning. One step for every
+/// app, which each rounded on its own before.
 pub const GPS_STEP_FT: f64 = 50.0;
 
 /// The map's setting: never, always, or by itself in flight.

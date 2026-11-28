@@ -3,8 +3,7 @@
 //! aeronautical information that might influence the pilot to alter or
 //! cancel the proposed flight" (AIM 7-1-5(b)(1)), as 1-800-WX-BRIEF and
 //! ForeFlight open on it. Under the Brief's findings, at most three rows,
-//! drawn only when there is any (the Brief audit's option 2, the owner
-//! 2026-11-21).
+//! drawn only when there is any (the owner 2026-11-21).
 //!
 //! What counts, met on the route while the airplane is there (the
 //! planner's OnRoute `when`, "during"; one with no valid times, a pilot

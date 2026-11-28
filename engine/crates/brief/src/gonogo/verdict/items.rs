@@ -21,7 +21,7 @@ pub fn verdict_items(v: &Input) -> Vec<Item> {
 /// What the findings come to, in a line over them: (finding, words). The
 /// labels are named inside the sentence, so in its case, the FAA's codes
 /// kept: "Look again at runways, risk", "No-go as planned: TFRs & special
-/// use" (the Brief audit's finding 2, the owner 2026-11-21), as the fold's
+/// use" (the owner 2026-11-21), as the fold's
 /// rows already read them.
 pub fn verdict_line(items: &[Item]) -> (&'static str, String) {
     let findings: Vec<&str> = items.iter().map(|i| i.finding.as_str()).collect();

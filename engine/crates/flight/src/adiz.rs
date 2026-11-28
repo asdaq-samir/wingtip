@@ -94,7 +94,7 @@ const HAWAII_INNER: &[Point] = &[
     (22.5, -157.0), (22.5, -160.0), (22.0, -161.0), (21.0, -161.0),
     (20.0, -160.0), (20.0, -156.5), (21.0, -155.5),
 ];
-/// 99.47(b): a circle of 250 nm round 13°32′41″ N, 144°50′30″ E.
+/// 99.47(b): a circle of 250 nm about 13°32′41″ N, 144°50′30″ E.
 const GUAM_CENTRE: Point = (13.54472, 144.84167);
 const GUAM_RADIUS_NM: f64 = 250.0;
 /// 99.47(a): the inner boundary, the 50 nm arc of the NIMITZ VORTAC

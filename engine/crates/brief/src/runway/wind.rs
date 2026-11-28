@@ -84,7 +84,7 @@ pub fn runway_crosswind_kt(wind: &RunwayWind) -> f64 {
 /// The crosswind a limit is judged against: the unrounded one where the
 /// wind carries it, else the rounded. A 10.4 kt crosswind rounded to 10
 /// would never pass a 10 kt demonstrated crosswind (POH section 4,
-/// "maximum demonstrated crosswind velocity"; the aviation audit's AV-10).
+/// "maximum demonstrated crosswind velocity").
 pub fn runway_crosswind_judged_kt(wind: &RunwayWind) -> f64 {
     wind.crosswind_exact_kt.unwrap_or_else(|| runway_crosswind_kt(wind))
 }

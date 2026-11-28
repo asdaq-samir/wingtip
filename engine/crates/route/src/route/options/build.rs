@@ -115,7 +115,7 @@ pub(super) fn make_way(
 /// route is picked", 2026-10-24). Each hop between the fields the pilot
 /// lands at (`landed`) is a flight of its own, refuelled there: a landing
 /// already made was taken as flown over, and its own field offered as the
-/// stop to add (the audit of 2026-10-24). Where no chain of fields
+/// stop to add. Where no chain of fields
 /// reaches a hop, the route is offered as it is with that said.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn own(

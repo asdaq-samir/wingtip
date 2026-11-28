@@ -33,7 +33,7 @@
 //! 6 nm and the 12 nm is measured from the thinned line, so a point some 6
 //! to 12 nm off such a coast, still under 91.1(b), can read "other": it is
 //! then warned of as outside the US rules, the safe side (warn, never
-//! limit), and is left so (the aviation audit of 2026-11-23, L5). Were it
+//! limit), and is left so. Were it
 //! to matter on real routes (the Gulf coast, the Keys), measure the buffer
 //! from an unthinned coastline rather than widen it, which would take in
 //! sea outside 91.1(b). An island too small for the 1:50m outlines

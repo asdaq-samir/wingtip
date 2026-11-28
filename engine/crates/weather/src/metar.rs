@@ -242,10 +242,10 @@ pub fn sky_ceiling(layers: &[Layer]) -> (Option<f64>, bool) {
 /// category_bounds), where either may not be known:
 /// - a ceiling of no height reported ("OVC///", `ceiling_unknown`) could
 ///   be at any height, so only a visibility under a mile -- LIFR whatever
-///   the ceiling -- says it (the audit, 2026-11-06);
+///   the ceiling -- says it;
 /// - with no visibility only a ceiling under 500 ft settles it, LIFR
 ///   whatever the visibility is; over that the visibility could still make
-///   it worse (the audit, 2026-11-08: the METAR reader once took a missing
+///   it worse (the METAR reader once took a missing
 ///   visibility as unlimited and called a 5,000 ft ceiling VFR, while the
 ///   forecast said none);
 /// - `ceiling_ft` None with the ceiling known is no ceiling, no limit.

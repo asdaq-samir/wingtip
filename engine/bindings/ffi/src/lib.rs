@@ -47,7 +47,7 @@ pub fn call(name: &str, input: &str) -> Result<String, EngineError> {
 /// What `f` answers, or, where the engine panicked (a rule's bug, an index
 /// past a slice's end), the panic as the call's refusal, so the app shows
 /// what it shows for any refused rule and goes on rather than dying with
-/// it (old audit N7, IOS-12). UniFFI's scaffolding catches a panic too,
+/// it. UniFFI's scaffolding catches a panic too,
 /// but hands it to Swift as UniffiInternalError, which the generated
 /// Swift of a function that cannot fail meets with `try!`: a crash. This
 /// needs the unwinding the release profile keeps (engine/Cargo.toml); a

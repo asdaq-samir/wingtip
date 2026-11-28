@@ -108,7 +108,7 @@ pub fn band(floor: Option<(f64, &str)>, ceiling: Option<(f64, &str)>) -> Option<
 /// ceilings) are given some AGL and some MSL, which is lowest (highest)
 /// depends on the ground under each (crate::tfr's mixed_heights), so the
 /// one figure is not the whole TFR's and the pilot is told to read each
-/// area's (14 CFR 91.103: all available information; round 7's N17).
+/// area's (14 CFR 91.103: all available information).
 fn varies(band: String, floor: bool, ceiling: bool) -> String {
     match (floor, ceiling) {
         (true, true) => band + " (floors and ceilings differ by area, some AGL, some MSL: see each area)",

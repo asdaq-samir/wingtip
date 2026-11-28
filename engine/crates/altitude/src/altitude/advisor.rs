@@ -34,8 +34,7 @@ pub struct Row {
 
 /// What a row outside the legal altitudes means, once over the rows: the
 /// rules that made the legal ones, and that it is flown anyway. On each
-/// row it was cut to "...flown as..." and said a dozen times over (the UI
-/// audit's C1); each row now says where it is (outside).
+/// row it was cut to "...flown as..." and said a dozen times over; each row now says where it is (outside).
 pub const NOTE: &str = "Altitudes outside this route's legal ones (14 CFR 91.119, 91.159 or 91.179, airspace, clouds or the airplane's ceiling) are flown as your own, with their cautions.";
 
 /// The short words on a row outside the legal altitudes: under the lowest
