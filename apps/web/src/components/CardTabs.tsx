@@ -50,11 +50,15 @@ export function CardTabPages<T extends string>({
 
 /** A tab's content in a card: the space under the bar, and between its
  *  groups, every card's. Built at its first visit and kept once opened, as
- *  the route's pages are (PanelTabs): a page not up is skipped by Base UI's
- *  data-hidden (index.css's tab-page), its layout kept, inert by Base UI's
- *  own, and told it is out of sight (lib/shown) so its polls and clocks
- *  stop. Unmounted at each switch, Info's pictures carousel, its NOTAM
- *  marks and the Flights list were built and asked again at every return. */
+ *  the route's pages are (PanelTabs): a page not up is out of the layout
+ *  (display: none by Base UI's data-hidden), inert by Base UI's own, and
+ *  told it is out of sight (lib/shown) so its polls and clocks stop.
+ *  Skipped with its layout kept alone (index.css's tab-page), as the route's
+ *  pages are, it still took room over the page up: 59 px of the airplane
+ *  card's Info over Flights in WebKit, 147 in Chromium, a gap under the
+ *  facts strip (the owner's iPhone, 2026-11-27, N400FJ). Unmounted at each
+ *  switch, Info's pictures carousel, its NOTAM marks and the Flights list
+ *  were built and asked again at every return. */
 export function CardTabPanel({ value, className, children }: { value: string; className?: string; children: ReactNode }) {
   const up = useContext(TabUp) === value;
   const shown = useShown() && up;
@@ -62,7 +66,7 @@ export function CardTabPanel({ value, className, children }: { value: string; cl
   if (up && !seen) setSeen(true);
   if (!seen) return null;
   return (
-    <TabsContent value={value} keepMounted hidden={false} className={cn("tab-page space-y-5 pt-4 data-hidden:pt-0", className)}>
+    <TabsContent value={value} keepMounted hidden={false} className={cn("tab-page space-y-5 pt-4 data-hidden:hidden", className)}>
       <Shown.Provider value={shown}>{children}</Shown.Provider>
     </TabsContent>
   );
