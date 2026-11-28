@@ -103,7 +103,9 @@ struct RepeatedWorkTests {
         take(feet: 3_020, kt: 0, at: 1)
         #expect(ownShip.hasFix)
         let parked = try #require(ownShip.hazardFix)
-        #expect(parked.gpsFt == 3_000 && !parked.underway)
+        // The height is kept as read (the engine is sent it); only HazardFix's
+        // == compares by TerrainHazard's 50 ft step.
+        #expect(TerrainHazard.step(parked.gpsFt) == 60 && !parked.underway)
         // Ten feet of wander and a knot of taxi leave it alone: not even
         // set again (its speed is still the parked fix's), so nothing
         // observing it is told.
@@ -114,7 +116,7 @@ struct RepeatedWorkTests {
         take(feet: 3_030, kt: 100, at: 3)
         #expect(ownShip.hazardFix?.underway == true && ownShip.hazardFix?.speedKt ?? 0 > 99)
         take(feet: 3_075, kt: 101, at: 4)
-        #expect(ownShip.hazardFix?.gpsFt == 3_050)
+        #expect(TerrainHazard.step(ownShip.hazardFix?.gpsFt) == 61)
     }
 
     // MARK: The airport card's distance (item 8)
