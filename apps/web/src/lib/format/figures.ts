@@ -117,9 +117,17 @@ export function feetRange(alts: number[]): string {
  *  visibility_plus): it printed a bare "6 sm" (the commonality audit's
  *  FIG-3, CODE-12). To the hundredth, down: a visibility read from
  *  metres (4000 m is 2.4854... sm) printed every figure of its float,
- *  and rounding it up would show more than was seen. */
-export function miles(sm: number | null | undefined, plus = false): string {
-  return sm === null || sm === undefined ? "—" : `${Math.floor(sm * 100 + 1e-9) / 100}${plus ? "+" : ""} sm`;
+ *  and rounding it up would show more than was seen. A report's "less
+ *  than" ("M1/4SM", FMH-1 chapter 6; the engine's visibility_minus) is
+ *  said as such, "less than 1/4 sm", in the report's own fraction: it
+ *  printed "0.25 sm", more than was seen (round 7's N13). */
+export function miles(sm: number | null | undefined, plus = false, minus = false): string {
+  if (sm === null || sm === undefined) return "—";
+  if (minus) {
+    const [whole, fraction] = reportedVisibility(sm);
+    return `less than ${fraction ? (whole ? `${whole} ${fraction}` : fraction) : whole} sm`;
+  }
+  return `${Math.floor(sm * 100 + 1e-9) / 100}${plus ? "+" : ""} sm`;
 }
 
 /**

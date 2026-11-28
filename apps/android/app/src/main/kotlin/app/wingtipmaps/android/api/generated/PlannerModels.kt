@@ -687,6 +687,9 @@ data class Metar (
     @SerialName("temp_c")
     val tempC: Double? = null,
 
+    @SerialName("visibility_minus")
+    val visibilityMinus: Boolean? = null,
+
     @SerialName("visibility_plus")
     val visibilityPlus: Boolean? = null,
 
@@ -700,7 +703,10 @@ data class Metar (
     val windGustKt: Double? = null,
 
     @SerialName("wind_speed_kt")
-    val windSpeedKt: Double? = null
+    val windSpeedKt: Double? = null,
+
+    @SerialName("wind_variable_deg")
+    val windVariableDeg: List<Double>? = null
 )
 
 /**
@@ -2187,6 +2193,12 @@ data class CoachAsk (
     val debriefs: List<CoachDebrief>? = null,
     val entries: List<CoachLogbookEntry>,
     val flightReviewOn: String? = null,
+
+    /**
+     * The airplane to be flown (14 CFR 61.57(a)(1)(ii)); none judges the newest flight's.
+     */
+    val flying: Flying? = null,
+
     val held: List<CoachEndorsement>? = null,
 
     /**
@@ -2279,6 +2291,11 @@ data class CoachProfilePoint (
 @Serializable
 data class CoachLogbookEntry (
     val approaches: Int? = null,
+    val category: String? = null,
+
+    @SerialName("class")
+    val airspaceClass: String? = null,
+
     val crossCountryHours: Double? = null,
 
     /**
@@ -2288,6 +2305,7 @@ data class CoachLogbookEntry (
 
     val dualHours: Double? = null,
     val flownOn: String,
+    val fullStopLandings: Int? = null,
     val holding: Boolean? = null,
     val instrumentHours: Double? = null,
     val nightHours: Double? = null,
@@ -2298,8 +2316,30 @@ data class CoachLogbookEntry (
     val nightLandings: Int? = null,
 
     val soloHours: Double? = null,
+    val tailwheel: Boolean? = null,
     val totalHours: Double? = null,
     val tracking: Boolean? = null
+)
+
+/**
+ * The airplane to be flown, which 14 CFR 61.57(a)(1)(ii) judges
+ * passenger currency for: its category and class, and whether it has a
+ * tailwheel (null: not said, judged as one, the stricter).
+ */
+@Serializable
+data class Flying (
+    /**
+     * 14 CFR 61.5 category, "Airplane".
+     */
+    val category: String? = null,
+
+    /**
+     * 14 CFR 61.5 class, "Single-engine land".
+     */
+    @SerialName("class")
+    val airspaceClass: String? = null,
+
+    val tailwheel: Boolean? = null
 )
 
 /**
@@ -2528,7 +2568,14 @@ data class Currency (
     val crossCountryHours: Double,
 
     /**
-     * 90 days after the third most recent landing (14 CFR 61.57(a)).
+     * What the logbook doesn't say, where the pilot would be current by day if it were so:
+     * "Can't tell: ...".
+     */
+    val dayPassengersUnknown: String? = null,
+
+    /**
+     * 90 days after the third most recent landing the logbook proves counts for the airplane
+     * judged (14 CFR 61.57(a)(1)).
      */
     val dayPassengersUntil: String? = null,
 
@@ -2571,21 +2618,37 @@ data class Currency (
     val nightHours: Double,
 
     /**
-     * 90 days after the third most recent night full-stop landing (61.57(b)).
+     * The same at night (61.57(b)(1)).
+     */
+    val nightPassengersUnknown: String? = null,
+
+    /**
+     * 90 days after the third most recent night full-stop landing the logbook proves counts
+     * (61.57(b)(1)).
      */
     val nightPassengersUntil: String? = null,
 
     /**
-     * The category and class the passenger currency was judged in, the newest flight's
+     * The category and class judged: the airplane to be flown's, else the newest flight's
      * (61.57(a)(1)).
      */
     val passengerClass: String? = null,
 
     /**
-     * The newest flight says no category and class, so every landing was counted: the logbook
-     * can't tell.
+     * Neither the airplane to be flown nor the newest flight says the class.
      */
     val passengerClassUnknown: Boolean? = null,
+
+    /**
+     * Whether the airplane judged has a tailwheel; null not said, judged as one.
+     */
+    val passengerTailwheel: Boolean? = null,
+
+    /**
+     * A tailwheel's own, for a pilot judged in a tricycle who has flown one in the class
+     * (61.57(a)(1)(ii)).
+     */
+    val tailwheelPassengersUntil: String? = null,
 
     val totalHours: Double,
     val trackingInWindow: Boolean
@@ -2617,13 +2680,19 @@ data class PaperworkDue (
 )
 
 /**
- * The logbook, the dates the pilot gives and the day it is asked for
- * (the pilot's own calendar's).
+ * The logbook, the dates the pilot gives, the airplane to be flown
+ * where known, and the day it is asked for (the pilot's own calendar's).
  */
 @Serializable
 data class CurrencyAsk (
     val entries: List<LogbookEntry>,
     val flightReviewOn: String? = null,
+
+    /**
+     * The airplane to be flown (61.57(a)(1)(ii)); none judges the newest flight's.
+     */
+    val flying: Flying? = null,
+
     val ipcOn: String? = null,
     val medicalExpiresOn: String? = null,
     val today: String
@@ -2675,7 +2744,12 @@ data class LogbookEntry (
     val nightLandings: Int? = null,
 
     val soloHours: Double? = null,
+
+    /**
+     * A tailwheel airplane (61.57(a)(1)(ii)); null where not said.
+     */
     val tailwheel: Boolean? = null,
+
     val totalHours: Double? = null,
     val toweredLandings: Int? = null,
     val tracking: Boolean? = null
@@ -6530,6 +6604,9 @@ data class TfrFacts (
     @SerialName("ceiling_ref")
     val ceilingRef: String? = null,
 
+    @SerialName("ceiling_varies")
+    val ceilingVaries: Boolean? = null,
+
     val contact: TfrContact? = null,
     val edge: TfrPoint? = null,
     val facility: TfrContact? = null,
@@ -6540,6 +6617,9 @@ data class TfrFacts (
 
     @SerialName("floor_ref")
     val floorRef: String? = null,
+
+    @SerialName("floor_varies")
+    val floorVaries: Boolean? = null,
 
     val instructions: List<String>? = null,
     val kind: String? = null,
@@ -6777,6 +6857,12 @@ data class PastFlightPoint (
     @SerialName("alt_ft")
     val altFt: Double? = null,
 
+    @SerialName("alt_held")
+    val altHeld: Boolean? = null,
+
+    val gap: Boolean? = null,
+    val ground: Boolean? = null,
+
     @SerialName("gs_kt")
     val gsKt: Double? = null,
 
@@ -6788,7 +6874,10 @@ data class PastFlightPoint (
     val trackDeg: Double? = null,
 
     @SerialName("vrate_fpm")
-    val vrateFpm: Double? = null
+    val vrateFpm: Double? = null,
+
+    @SerialName("vs_fpm")
+    val vsFpm: Double? = null
 )
 
 /**

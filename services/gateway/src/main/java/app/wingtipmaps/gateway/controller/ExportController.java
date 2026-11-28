@@ -163,7 +163,7 @@ public class ExportController {
                 planes,
                 saved,
                 body(logbook.list(pilot), List.of()),
-                worked(() -> body(logbook.currency(pilot), null)),
+                worked(() -> body(logbook.currency(pilot, null, null, null), null)),
                 worked(() -> body(training.get(pilot), null)),
                 worked(() -> body(instructing.get(pilot), null)),
                 worked(() -> notes.mine(pilot)),

@@ -31,7 +31,7 @@ pub(crate) fn strings(out: &mut String, items: &[String]) {
 impl Atis {
     /// The reading as the rule `read_atis` answers it: `{information,
     /// time_z, wind: {from_deg, kt, gust_kt, variable}|null,
-    /// visibility_sm, sky: [{cover, base_ft}], temp_c, dewpoint_c,
+    /// visibility_sm, visibility_minus, sky: [{cover, base_ft}], temp_c, dewpoint_c,
     /// altimeter_inhg, approach, runways: {landing, departing}, remarks,
     /// raw}`, a figure not heard null.
     pub fn to_json(&self) -> String {
@@ -57,6 +57,7 @@ impl Atis {
             Some(v) => figure(&mut o, v),
             None => o.push_str("null"),
         }
+        o.push_str(&format!(",\"visibility_minus\":{}", self.visibility_minus));
         o.push_str(",\"sky\":[");
         for (k, l) in self.sky.iter().enumerate() {
             if k > 0 {

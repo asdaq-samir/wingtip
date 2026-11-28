@@ -115,7 +115,7 @@ class LogbookControllerTest {
     void currency_returns200_asComputed() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
         given(logbook.list(any())).willReturn(List.of());
-        given(planner.currency(any(), any(), any(), any(), any()))
+        given(planner.currency(any(), any(), any(), any(), any(), any()))
                 .willReturn(new CurrencyDto(
                         LocalDate.of(2026, 12, 19),
                         null,
@@ -133,7 +133,12 @@ class LogbookControllerTest {
                         LocalDate.of(2027, 9, 30),
                         6,
                         true,
-                        true));
+                        true,
+                        "airplane/single-engine land",
+                        false,
+                        null,
+                        null,
+                        null));
 
         mockMvc.perform(get("/api/logbook/currency").with(oidcLogin()))
                 .andExpect(status().isOk())

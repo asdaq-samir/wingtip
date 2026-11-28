@@ -9,20 +9,7 @@
 //! time zone enters here. A logbook is only as good as what is in it:
 //! none of this is anyone's sign-off, and the pages say so.
 //!
-//! Passenger currency, 61.57(a)(1): the landings "in an aircraft of the
-//! same category, class, and type (if a type rating is required)", and in
-//! a tailwheel airplane "to a full stop". Where the entries carry their
-//! `category` and `class` (and `tailwheel`), only the landings in the
-//! category and class of the newest flight are counted, and a tailwheel's
-//! only to a full stop (`fullStopLandings`, else its night landings, which
-//! the logbook keeps as full stops); entries that say neither are then
-//! left out. Where the newest flight does not say, the logbook cannot
-//! tell, every landing is counted, and `passengerClassUnknown` says so,
-//! so no page claims the class was checked. A type rating's own type is
-//! not told apart. The night landings counted are the logbook's night
-//! full-stop ones (61.57(b) "to a full stop during the period beginning 1
-//! hour after sunset and ending 1 hour before sunrise"), as the pilot
-//! logged them.
+//! Passenger currency, 61.57(a)(1) and (b)(1): passengers.rs.
 
 use super::js;
 use crate::json::{self, Value};
@@ -107,13 +94,14 @@ pub struct Entry {
     /// 61.57(a)(1)'s category and class, "airplane/single-engine land",
     /// None where the entry does not say both.
     pub class: Option<String>,
-    pub tailwheel: bool,
+    /// Whether it was a tailwheel airplane; None where the entry does not say.
+    pub tailwheel: Option<bool>,
     /// Landings to a full stop, day and night, where logged.
     pub full_stops: Option<f64>,
 }
 
 impl Entry {
-    fn landings(&self) -> f64 {
+    pub(crate) fn landings(&self) -> f64 {
         self.day_landings + self.night_landings
     }
 }
@@ -154,7 +142,10 @@ pub fn entries(name: &str, items: &[Value]) -> Result<Vec<Entry>, String> {
                     (Some(c), Some(k)) if !c.is_empty() && !k.is_empty() => Some(format!("{}/{}", c.to_lowercase(), k.to_lowercase())),
                     _ => None,
                 },
-                tailwheel: flag("tailwheel"),
+                tailwheel: match e.get("tailwheel") {
+                    Some(Value::Bool(b)) => Some(*b),
+                    _ => None,
+                },
                 full_stops: match e.get("fullStopLandings") {
                     None | Some(Value::Null) => None,
                     _ => Some(num("fullStopLandings")?),
@@ -167,44 +158,6 @@ pub fn entries(name: &str, items: &[Value]) -> Result<Vec<Entry>, String> {
 /// Hours to the tenth, as the logbook keeps them.
 fn tenth(hours: f64) -> f64 {
     js::round(hours * 10.0) / 10.0
-}
-
-/// The category and class passenger currency is judged in (61.57(a)(1)):
-/// the newest flight's, and whether it was a tailwheel; None where that
-/// flight does not say, and every landing counts.
-pub(crate) fn passenger_class(entries: &[Entry]) -> Option<(String, bool)> {
-    let newest = entries.iter().max_by_key(|e| e.day)?;
-    newest.class.clone().map(|c| (c, newest.tailwheel))
-}
-
-/// The landings an entry gives toward 61.57(a)(1) in `class`: none in
-/// another category and class, or in one not said; in a tailwheel, only
-/// those to a full stop; with no class to judge, every one (`landings`).
-pub(crate) fn class_landings(e: &Entry, class: &Option<(String, bool)>, landings: &dyn Fn(&Entry) -> f64) -> f64 {
-    match class {
-        None => landings(e),
-        Some((c, _)) if e.class.as_ref() != Some(c) => 0.0,
-        Some((_, true)) if !e.tailwheel => 0.0,
-        Some((_, true)) => landings(e).min(e.full_stops.unwrap_or(e.night_landings)),
-        Some(_) => landings(e),
-    }
-}
-
-/// 61.57(a), (b): 90 days after the day the third most recent landing was
-/// made on -- a flight on that day still has the landing within its
-/// preceding 90 days; None with fewer than three logged.
-fn passengers_until(entries: &[Entry], landings: &dyn Fn(&Entry) -> f64) -> Option<String> {
-    let mut newest: Vec<&Entry> = entries.iter().collect();
-    // Newest first; flights of one day kept in the order given.
-    crate::sort::StableSort::stable_sort_by_key(&mut newest[..], |e| std::cmp::Reverse(e.day));
-    let mut counted = 0.0;
-    for e in newest {
-        counted += landings(e);
-        if counted >= PASSENGER_LANDINGS {
-            return Some(iso_of_days(e.day + PASSENGER_DAYS));
-        }
-    }
-    None
 }
 
 /// The entries flown in the 6 calendar months preceding `month`
@@ -287,4 +240,6 @@ fn instrument_from(entries: &[Entry], ipc: Option<i64>, until: Option<i64>, mont
 }
 
 mod dates;
+mod passengers;
 pub use dates::*;
+pub use passengers::{flying, Judged};

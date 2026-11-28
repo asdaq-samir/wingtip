@@ -199,6 +199,7 @@ pub fn endorsed(name: &str, v: &Value) -> Result<String, String> {
                 medical_expires_on: day("medical_expires_on")?,
                 ipc_on: day("ipc_on")?,
                 today: ask.str("today")?,
+                flying: currency::flying(name, v.get("flying"))?,
             };
             return currency::currency_json(name, &entries, &dates);
         }

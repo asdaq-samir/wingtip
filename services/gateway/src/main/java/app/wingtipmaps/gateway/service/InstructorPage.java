@@ -172,10 +172,12 @@ class InstructorPage {
     private ReviewRow reviewOf(CrossCountryReview r, Map<Long, Records> records, RecordsAsks asks) {
         Long studentId = r.getStudent().getId();
         Records theirs = recordsOf(studentId, records);
+        // 61.93(d)(4), (5): in the make and model the review names.
         int checks = asks.endorsements(
-                List.of("checks", studentId, r.getFlightOn()),
+                List.of("checks", studentId, r.getFlightOn(), r.getMakeModel()),
                 () -> EndorsementRecords.held(theirs.paper(), theirs.signed()),
-                r.getFlightOn());
+                r.getFlightOn(),
+                r.getMakeModel());
         SignedEndorsement e = r.getEndorsement();
         int until = e == null ? -1 : asks.untilOf(List.of("until", e.getId()), List.of(e));
         return new ReviewRow(EndorsementRecords.dto(r, List.of(), x -> EndorsementRecords.dto(x, null)), checks, until);
@@ -190,7 +192,10 @@ class InstructorPage {
         int experience = asks.experience(
                 student.getId(), () -> logbook.findByPilotIdOrderByFlownOnDescIdDesc(student.getId()), today);
         int solo = asks.endorsements(
-                List.of("solo", student.getId()), () -> EndorsementRecords.held(theirs.paper(), theirs.signed()), null);
+                List.of("solo", student.getId()),
+                () -> EndorsementRecords.held(theirs.paper(), theirs.signed()),
+                null,
+                null);
         return new StudentRow(
                 new StudentDto(
                         l.getId(),

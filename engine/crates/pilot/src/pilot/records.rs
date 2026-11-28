@@ -351,13 +351,22 @@ mod tests {
 
     #[test]
     fn a_vor_check_holds_to_its_limits_and_its_thirty_days() {
-        // 14 CFR 91.171(a): "within the preceding 30 days"; (b)(1) a VOT
-        // within 4 degrees, (c) an airborne check within 6.
+        // 14 CFR 91.171(a)(2): "within the preceding 30 days"; (b)(1), (b)(2)
+        // a test signal or surface checkpoint "plus or minus 4 degrees",
+        // (b)(3) an airborne checkpoint "plus or minus 6 degrees", (b)(4) a
+        // radial along an airway "6 degrees", (c) dual systems "4 degrees"
+        // (eCFR as mirrored by Cornell LII, read 2026-11-27). Each limit on
+        // its line and a tenth past it.
         let vor = |kind: &str, error: f64| {
             ask("inspections_due", &format!(r#"{{"vor_check":{{"on":"2026-11-01","kind":"{kind}","error_deg":{error}}}}}"#))
         };
-        assert!(vor("VOT", 4.0).contains(r#""within":true"#) && vor("VOT", -4.1).contains(r#""within":false"#));
-        assert!(vor("AIRBORNE", -6.0).contains(r#""within":true"#) && vor("AIRBORNE", 6.5).contains(r#""within":false"#));
+        for (kind, limit) in [("VOT", 4.0), ("GROUND", 4.0), ("DUAL", 4.0), ("AIRBORNE", 6.0), ("RADIAL", 6.0)] {
+            assert!(vor(kind, limit).contains(r#""within":true"#) && vor(kind, -limit).contains(r#""within":true"#), "{kind}");
+            assert!(
+                vor(kind, limit + 0.1).contains(r#""within":false"#) && vor(kind, -limit - 0.1).contains(r#""within":false"#),
+                "{kind}"
+            );
+        }
         // Done 1 Nov, good through 1 Dec (day 30), not 2 Dec (day 31).
         assert!(vor("VOT", 0.0).contains(r#""until":"2026-12-01""#));
     }

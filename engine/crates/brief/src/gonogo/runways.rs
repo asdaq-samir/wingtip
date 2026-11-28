@@ -128,6 +128,9 @@ impl Check {
             tailwind_kt: (-self.headwind_kt).max(0.0),
             close: self.distances.iter().any(|d| d.close),
             beyond: self.distances.iter().any(|d| d.beyond),
+            // As runway_findings' standard_day: distances worked out on a
+            // standard day's temperature, none reported.
+            standard_day: self.temp_assumed && !self.distances.is_empty(),
             unknown: self.unchecked.is_some() || self.distances.is_empty() || self.distances.iter().any(|d| d.unknown),
         }
     }

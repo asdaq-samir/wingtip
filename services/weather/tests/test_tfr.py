@@ -35,6 +35,9 @@ def test_a_notams_detail_is_its_times_rule_purpose_and_altitudes():
         "floor_ref": "MSL",
         "ceiling_ft": 10000.0,
         "ceiling_ref": "MSL",
+        # One area, so its heights are not some AGL and some MSL.
+        "floor_varies": False,
+        "ceiling_varies": False,
         "instructions": [],
         "text": None,
         "facility": None,
@@ -122,6 +125,8 @@ def test_the_list_is_one_tfr_per_notam_with_its_detail_and_stored(monkeypatch):
     tfr.fetch()
     assert len([u for u, _ in asked if "detail_" in u]) == 1
     assert weather_store.read("tfrs").data[0]["expires"] == "2026-10-15T02:00:00Z"
+    # And its floors' and ceilings' mixed references with it (round 7's N17).
+    assert {"floor_varies", "ceiling_varies"} <= weather_store.read("tfrs").data[0].keys()
     # A changed one is.
     for f in features:
         f["properties"]["LAST_MODIFICATION_DATETIME"] = "2"

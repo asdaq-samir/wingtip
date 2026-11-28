@@ -116,6 +116,7 @@ from .flights import (
     past_flight,
 )
 from .alerts import LANDED_UNHEARD_S, status
+from .replay import ready as replay_ready
 from .bases import BASED_TTL_S, BASED_WORKERS, based, based_judged
 
 __all__ = [
@@ -208,6 +209,7 @@ __all__ = [
     "past_flight",
     "radar_wanted",
     "registered",
+    "replay_ready",
     "require_share_key",
     "route",
     "status",

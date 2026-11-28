@@ -89,12 +89,21 @@ pub fn due(
     let currency = json::parse(&currency_json(name, entries, dates)?)?;
     let at = |key: &str| date_of(name, &currency, key);
     let mut out = Vec::new();
-    let mut push = |key, label, rule, until: Option<i64>, from: Option<i64>, detail: &dyn Fn(Status) -> String| {
+    // `unknown`: what isn't known, where it alone stands between the pilot
+    // and currency, so the row is "Can't tell" and says it.
+    let mut push = |key, label, rule, until: Option<i64>, from: Option<i64>, unknown: Option<String>, detail: &dyn Fn(Status) -> String| {
         let (mut status, days_left) = status_of(until, today, remind_days);
         if from.is_some_and(|f| f > today) {
             status = Status::Pending;
         }
-        out.push(Due { key, label, rule, until, from, days_left, status, detail: detail(status), check: false });
+        let detail = match unknown {
+            Some(words) => {
+                status = Status::Unknown;
+                words
+            }
+            None => detail(status),
+        };
+        out.push(Due { key, label, rule, until, from, days_left, status, detail, check: false });
     };
 
     if standing.student {
@@ -103,13 +112,13 @@ pub fn due(
         // (p)(4): it "remains current for solo flight privileges, provided an
         // authorized instructor updates the student's logbook every 90 days
         // thereafter". (p)'s other items are the instructor's own limits.
-        push("solo", "Solo Endorsement", "14 CFR 61.87(n), (p)(4)", solo_until(held), None, &|s| match s {
+        push("solo", "Solo Endorsement", "14 CFR 61.87(n), (p)(4)", solo_until(held), None, None, &|s| match s {
             Status::Unknown => "No solo endorsement on record".to_owned(),
             Status::Lapsed => "Lapsed: solo again only after an instructor's new endorsement (61.87(p)(4))".to_owned(),
             _ => "Good for 90 days from the instructor's endorsement (61.87(n), (p)(4))".to_owned(),
         });
     } else {
-        push("flight_review", "Flight Review", "14 CFR 61.56(c)", at("flightReviewUntil")?, None, &|s| {
+        push("flight_review", "Flight Review", "14 CFR 61.56(c)", at("flightReviewUntil")?, None, None, &|s| {
             match s {
             Status::Unknown => "No flight review on record: one is needed to act as pilot in command (61.56(c))".to_owned(),
             Status::Lapsed => "Lapsed: no acting as pilot in command until a flight review, at least an hour of ground and an hour of flight training (61.56(a))".to_owned(),
@@ -117,23 +126,41 @@ pub fn due(
         }
         });
     }
-    // 61.57(a)(1) counts landings in the same category and class: where
-    // the logbook does not say them, every landing was counted, and the
-    // words say so rather than claim the class was checked.
-    let unsaid = matches!(currency.get("passengerClassUnknown"), Some(Value::Bool(true)));
-    let class_note = if unsaid { "; your logbook doesn't say each flight's category and class, so every landing is counted" } else { "" };
-    push("day_passengers", "Passengers by Day", "14 CFR 61.57(a)", at("dayPassengersUntil")?, None, &|s| match s {
-        Status::Current | Status::DueSoon => format!("90 days from the third most recent landing (61.57(a)){class_note}"),
-        _ => "Three takeoffs and three landings, as sole manipulator of the controls, before carrying passengers (61.57(a))".to_owned(),
+    // 61.57(a)(1), (b)(1): the dates are what the logbook proves for the
+    // airplane judged (passengers.rs). Where only what it doesn't say
+    // stands between the pilot and currency, the row is "Can't tell" and
+    // says what isn't known, never "Current" on a guess.
+    let words = |key: &str| currency.get(key).and_then(Value::as_str).map(str::to_owned);
+    let class = words("passengerClass");
+    let tailwheel = matches!(currency.get("passengerTailwheel"), Some(Value::Bool(true)));
+    let what = match (&class, tailwheel) {
+        (Some(c), true) => format!(" in a tailwheel {c}"),
+        (Some(c), false) => format!(" in {c}"),
+        (None, _) => String::new(),
+    };
+    let (day_unknown, night_unknown) = (words("dayPassengersUnknown"), words("nightPassengersUnknown"));
+    push("day_passengers", "Passengers by Day", "14 CFR 61.57(a)", at("dayPassengersUntil")?, None, day_unknown, &|s| match s {
+        Status::Current | Status::DueSoon => format!("90 days from the third most recent landing{what} (61.57(a))"),
+        _ => format!("Three takeoffs and three landings{what}, as sole manipulator of the controls, before carrying passengers (61.57(a))"),
     });
-    push("night_passengers", "Passengers at Night", "14 CFR 61.57(b)", at("nightPassengersUntil")?, None, &|s| {
+    push("night_passengers", "Passengers at Night", "14 CFR 61.57(b)", at("nightPassengersUntil")?, None, night_unknown, &|s| {
         match s {
-        Status::Current | Status::DueSoon => "90 days from the third most recent night full-stop landing (61.57(b))".to_owned(),
-        _ => "Three takeoffs and three landings to a full stop, from 1 hour after sunset to 1 hour before sunrise, before carrying passengers then (61.57(b))".to_owned(),
+        Status::Current | Status::DueSoon => format!("90 days from the third most recent night full-stop landing{what} (61.57(b))"),
+        _ => format!("Three takeoffs and three landings to a full stop{what}, from 1 hour after sunset to 1 hour before sunrise, before carrying passengers then (61.57(b))"),
     }
     });
+    // 61.57(a)(1)(ii): a pilot judged in a tricycle whose logbook shows a
+    // tailwheel in the same class has its currency on a line of its own.
+    if let Some(until) = at("tailwheelPassengersUntil")? {
+        push("tailwheel_passengers", "Passengers in a Tailwheel", "14 CFR 61.57(a)(1)(ii)", Some(until), None, None, &|s| {
+            match s {
+            Status::Current | Status::DueSoon => "90 days from the third most recent full-stop landing in a tailwheel (61.57(a)(1)(ii))".to_owned(),
+            _ => "Three takeoffs and three landings to a full stop in a tailwheel airplane before carrying passengers in one (61.57(a)(1)(ii))".to_owned(),
+        }
+        });
+    }
     if let Some(medical) = at("medicalExpiresOn")? {
-        push("medical", "Medical Certificate", "14 CFR 61.23", Some(medical), None, &|s| match s {
+        push("medical", "Medical Certificate", "14 CFR 61.23", Some(medical), None, None, &|s| match s {
             Status::Lapsed => "Expired, as you gave it (61.23)".to_owned(),
             _ => "As you gave it: its length depends on its class and your age (61.23(d))".to_owned(),
         });
@@ -144,7 +171,7 @@ pub fn due(
         let ipc_after = at("ipcNeededAfter")?;
         let past_grace = ipc_after.is_none_or(|a| today > a);
         let from = at("instrumentCurrentFrom")?;
-        push("instrument", "Instrument Currency", "14 CFR 61.57(c)", at("instrumentCurrentUntil")?, from, &|s| {
+        push("instrument", "Instrument Currency", "14 CFR 61.57(c)", at("instrumentCurrentUntil")?, from, None, &|s| {
             match s {
             Status::Pending => format!("Current from {}: tasks flown this month count from the first of next (61.57(c)(1))", from.map(said).unwrap_or_default()),
             Status::Lapsed | Status::Unknown if past_grace => "Only an instrument proficiency check restores it now (61.57(d))".to_owned(),

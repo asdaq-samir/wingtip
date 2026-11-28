@@ -677,6 +677,10 @@
             "format" : "double",
             "type" : "number"
           },
+          "dayPassengersUnknown" : {
+            "description" : "What the logbook doesn't say, where the pilot would be current by day if it were so, \"Can't tell: ...\" (61.57(a)(1)); null where nothing unsaid matters",
+            "type" : [ "string", "null" ]
+          },
           "dayPassengersUntil" : {
             "format" : "date",
             "type" : [ "string", "null" ]
@@ -729,7 +733,24 @@
             "format" : "double",
             "type" : "number"
           },
+          "nightPassengersUnknown" : {
+            "description" : "The same at night (61.57(b)(1))",
+            "type" : [ "string", "null" ]
+          },
           "nightPassengersUntil" : {
+            "format" : "date",
+            "type" : [ "string", "null" ]
+          },
+          "passengerClass" : {
+            "description" : "The category and class passenger currency was judged in, \"airplane/single-engine land\": the airplane to be flown's, else the newest flight's (14 CFR 61.57(a)(1)); null where neither says",
+            "type" : [ "string", "null" ]
+          },
+          "passengerTailwheel" : {
+            "description" : "Whether the airplane judged has a tailwheel; null where not said, judged as one (61.57(a)(1)(ii))",
+            "type" : [ "boolean", "null" ]
+          },
+          "tailwheelPassengersUntil" : {
+            "description" : "A tailwheel's own passenger currency, for a pilot judged in a tricycle who has flown a tailwheel in the class (61.57(a)(1)(ii))",
             "format" : "date",
             "type" : [ "string", "null" ]
           },
@@ -742,7 +763,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "approachesInWindow", "crossCountryHours", "dayPassengersUntil", "flightReviewOn", "flightReviewUntil", "flights", "holdingInWindow", "instrumentCurrentFrom", "instrumentCurrentUntil", "ipcNeededAfter", "ipcOn", "landings", "medicalExpiresOn", "nightHours", "nightPassengersUntil", "totalHours", "trackingInWindow" ],
+        "required" : [ "approachesInWindow", "crossCountryHours", "dayPassengersUnknown", "dayPassengersUntil", "flightReviewOn", "flightReviewUntil", "flights", "holdingInWindow", "instrumentCurrentFrom", "instrumentCurrentUntil", "ipcNeededAfter", "ipcOn", "landings", "medicalExpiresOn", "nightHours", "nightPassengersUnknown", "nightPassengersUntil", "passengerClass", "passengerTailwheel", "tailwheelPassengersUntil", "totalHours", "trackingInWindow" ],
         "type" : "object"
       },
       "DeclineRequest" : {
@@ -984,12 +1005,15 @@
             "format" : "date",
             "type" : "string"
           },
+          "makeModel" : {
+            "type" : [ "string", "null" ]
+          },
           "until" : {
             "format" : "date",
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "code", "endorsedOn", "until" ],
+        "required" : [ "code", "endorsedOn", "makeModel", "until" ],
         "type" : "object"
       },
       "EndorsementFieldDto" : {
@@ -1042,9 +1066,14 @@
           "endorsedOn" : {
             "format" : "date",
             "type" : "string"
+          },
+          "makeModel" : {
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "endorsedOn" ],
+        "required" : [ "endorsedOn", "makeModel" ],
         "type" : "object"
       },
       "ExperienceItemDto" : {
@@ -1903,12 +1932,18 @@
           "aircraft" : {
             "type" : [ "string", "null" ]
           },
+          "aircraftClass" : {
+            "type" : [ "string", "null" ]
+          },
           "aircraftType" : {
             "type" : [ "string", "null" ]
           },
           "approaches" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "category" : {
+            "type" : [ "string", "null" ]
           },
           "crossCountryHours" : {
             "format" : "double",
@@ -1936,6 +1971,10 @@
           },
           "fromTrack" : {
             "type" : "boolean"
+          },
+          "fullStopLandings" : {
+            "format" : "int32",
+            "type" : [ "integer", "null" ]
           },
           "holding" : {
             "type" : "boolean"
@@ -1970,6 +2009,9 @@
             "format" : "double",
             "type" : "number"
           },
+          "tailwheel" : {
+            "type" : [ "boolean", "null" ]
+          },
           "totalHours" : {
             "format" : "double",
             "type" : "number"
@@ -1986,7 +2028,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "airHours", "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flightId", "flownOn", "fromTrack", "holding", "id", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "touchAndGoes", "toweredLandings", "tracking" ],
+        "required" : [ "airHours", "aircraft", "aircraftClass", "aircraftType", "approaches", "category", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flightId", "flownOn", "fromTrack", "fullStopLandings", "holding", "id", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "tailwheel", "totalHours", "touchAndGoes", "toweredLandings", "tracking" ],
         "type" : "object"
       },
       "LogbookEntryRequest" : {
@@ -2001,6 +2043,12 @@
             "minLength" : 0,
             "type" : [ "string", "null" ]
           },
+          "aircraftClass" : {
+            "description" : "14 CFR 61.5 class, \"Single-engine land\"; none where not said (61.57(a)(1))",
+            "maxLength" : 24,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
           "aircraftType" : {
             "maxLength" : 16,
             "minLength" : 0,
@@ -2010,6 +2058,12 @@
             "format" : "int32",
             "minimum" : 0,
             "type" : "integer"
+          },
+          "category" : {
+            "description" : "14 CFR 61.5 category, \"Airplane\"; none where not said (61.57(a)(1))",
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
           },
           "crossCountryHours" : {
             "format" : "double",
@@ -2041,6 +2095,12 @@
           },
           "fromTrack" : {
             "type" : "boolean"
+          },
+          "fullStopLandings" : {
+            "description" : "Landings to a full stop, day and night; none where not said (61.57(a)(1)(ii))",
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : [ "integer", "null" ]
           },
           "holding" : {
             "type" : "boolean"
@@ -2080,6 +2140,10 @@
             "minimum" : 0,
             "type" : "number"
           },
+          "tailwheel" : {
+            "description" : "A tailwheel airplane (61.57(a)(1)(ii)); none where not said",
+            "type" : [ "boolean", "null" ]
+          },
           "totalHours" : {
             "format" : "double",
             "maximum" : 24,
@@ -2100,7 +2164,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "airHours", "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flightId", "flownOn", "fromTrack", "holding", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "touchAndGoes", "toweredLandings", "tracking" ],
+        "required" : [ "airHours", "aircraft", "aircraftClass", "aircraftType", "approaches", "category", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flightId", "flownOn", "fromTrack", "fullStopLandings", "holding", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "tailwheel", "totalHours", "touchAndGoes", "toweredLandings", "tracking" ],
         "type" : "object"
       },
       "LogbookImportRequest" : {
@@ -4695,6 +4759,28 @@
     "/api/logbook/currency" : {
       "get" : {
         "operationId" : "currency",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "category",
+          "required" : false,
+          "schema" : {
+            "type" : [ "string", "null" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "aircraftClass",
+          "required" : false,
+          "schema" : {
+            "type" : [ "string", "null" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "tailwheel",
+          "required" : false,
+          "schema" : {
+            "type" : [ "boolean", "null" ]
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {

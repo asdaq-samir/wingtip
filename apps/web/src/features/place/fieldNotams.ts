@@ -90,6 +90,10 @@ export function readTfr(n: FieldNotam): TfrReading {
     floor_ref: t?.floor_ref,
     ceiling_ft: t?.ceiling_ft,
     ceiling_ref: t?.ceiling_ref,
+    // Areas some AGL, some MSL: the band says its one figure isn't the
+    // whole TFR's (round 7's N17).
+    floor_varies: t?.floor_varies ?? false,
+    ceiling_varies: t?.ceiling_varies ?? false,
     over_field: t?.over_field,
     field: t?.field,
     edge: t?.edge,

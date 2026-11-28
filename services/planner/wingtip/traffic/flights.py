@@ -25,6 +25,14 @@ TRAIL_POINTS = 600
 DEPARTED_WITHIN_NM = 3.0
 #: readsb's trace flag for a point that starts a new leg.
 _NEW_LEG = 2
+#: readsb's trace flag: the point's vertical rate is the GNSS one, not the
+#: barometric (readsb's globe history; tar1090's trace format).
+_GEOM_RATE = 4
+#: What a past flight's point carries for its replay (the engine's
+#: replay_track tells a held pressure altitude by the GNSS height and the
+#: rates; round 7's R7-1).
+_SHOWN = ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")
+PAST_KEYS = _SHOWN + ("alt_baro_ft", "alt_geom_ft", "baro_rate_fpm", "geom_rate_fpm", "ground")
 
 
 def _altitude_ft(point: list) -> float | None:
@@ -179,7 +187,11 @@ def _day_trace(hex_id: str, day) -> dict | None | _Unread:
 
 def _points(trace: dict | None) -> list[dict]:
     """A trace's points as {"t" (s since 1970), "lat", "lon", "alt_ft" (None
-    on the ground), "gs_kt", "track_deg", "vrate_fpm", "new_leg"}."""
+    on the ground), "gs_kt", "track_deg", "vrate_fpm", "new_leg", and
+    for the replay "alt_baro_ft" (the pressure altitude as sent),
+    "alt_geom_ft" (readsb's GNSS height), "baro_rate_fpm"
+    and "geom_rate_fpm" (the rate sent, by the flag that says which, and
+    readsb's own geom_rate) and "ground"}."""
     if not trace:
         return []
     base = _number(trace.get("timestamp")) or 0.0
@@ -187,6 +199,8 @@ def _points(trace: dict | None) -> list[dict]:
     for p in trace.get("trace") or []:
         if not isinstance(p, list) or len(p) < 7 or _number(p[1]) is None or _number(p[2]) is None:
             continue
+        rate = _number(p[7]) if len(p) > 7 else None
+        geometric_rate = isinstance(p[6], int) and bool(p[6] & _GEOM_RATE)
         out.append(
             {
                 "t": round(base + float(p[0]), 1),
@@ -195,8 +209,13 @@ def _points(trace: dict | None) -> list[dict]:
                 "alt_ft": _altitude_ft(p),
                 "gs_kt": _number(p[4]),
                 "track_deg": _number(p[5]),
-                "vrate_fpm": _number(p[7]) if len(p) > 7 else None,
+                "vrate_fpm": rate,
                 "new_leg": isinstance(p[6], int) and bool(p[6] & _NEW_LEG),
+                "alt_baro_ft": None if p[3] == "ground" else _number(p[3]),
+                "alt_geom_ft": _number(p[10]) if len(p) > 10 else None,
+                "baro_rate_fpm": None if geometric_rate else rate,
+                "geom_rate_fpm": rate if geometric_rate else (_number(p[11]) if len(p) > 11 else None),
+                "ground": p[3] == "ground",
             }
         )
     return out
@@ -339,8 +358,7 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
 
 def past_flight(hex_id: str, flight_id: int, today=None) -> dict | None:
     """One of `history`'s flights, its points for a track log and a replay:
-    {"id", "points" ([{"t", "lat", "lon", "alt_ft", "gs_kt", "track_deg",
-    "vrate_fpm"}], at most PAST_POINTS, evenly)}; None where it is not one
+    {"id", "points" ([{PAST_KEYS}], at most PAST_POINTS, evenly)}; None where it is not one
     of the archive's days' flights."""
     import datetime as dt
 
@@ -361,10 +379,7 @@ def past_flight(hex_id: str, flight_id: int, today=None) -> dict | None:
             continue
         step = max(1, math.ceil(len(leg) / PAST_POINTS))
         kept = leg[::step] + ([leg[-1]] if (len(leg) - 1) % step else [])
-        return {
-            "id": flight_id,
-            "points": [{k: p[k] for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")} for p in kept],
-        }
+        return {"id": flight_id, "points": [{k: p.get(k) for k in PAST_KEYS} for p in kept]}
     # One OpenSky has (`history` lists those too): its path from there.
     path = opensky.track(hex_id, flight_id, time.time())
     if path:
@@ -375,8 +390,5 @@ def past_flight(hex_id: str, flight_id: int, today=None) -> dict | None:
         if int(leg[0]["t"]) == flight_id:
             step = max(1, math.ceil(len(leg) / PAST_POINTS))
             kept = leg[::step] + ([leg[-1]] if (len(leg) - 1) % step else [])
-            return {
-                "id": flight_id,
-                "points": [{k: p.get(k) for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")} for p in kept],
-            }
+            return {"id": flight_id, "points": [{k: p.get(k) for k in PAST_KEYS} for p in kept]}
     return None

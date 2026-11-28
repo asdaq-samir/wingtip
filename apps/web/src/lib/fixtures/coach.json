@@ -9,11 +9,11 @@
         "flight_review_on": "2024-11-20",
         "medical_expires_on": "2027-06-30",
         "entries": [
-          { "flownOn": "2026-10-25", "totalHours": 1.4, "dayLandings": 2, "instrumentHours": 1.0, "approaches": 2, "holding": true },
-          { "flownOn": "2026-10-12", "totalHours": 1.1, "crossCountryHours": 1.1, "dayLandings": 1 },
-          { "flownOn": "2026-09-30", "totalHours": 1.2, "dayLandings": 1, "instrumentHours": 0.8, "approaches": 2, "tracking": true },
-          { "flownOn": "2026-08-20", "totalHours": 1.2, "nightHours": 1.2, "nightLandings": 3 },
-          { "flownOn": "2026-06-10", "totalHours": 1.5, "dayLandings": 1, "instrumentHours": 1.2, "approaches": 3 }
+          { "flownOn": "2026-10-25", "totalHours": 1.4, "dayLandings": 2, "instrumentHours": 1.0, "approaches": 2, "holding": true, "category": "Airplane", "class": "Single-engine land", "tailwheel": false },
+          { "flownOn": "2026-10-12", "totalHours": 1.1, "crossCountryHours": 1.1, "dayLandings": 1, "category": "Airplane", "class": "Single-engine land", "tailwheel": false },
+          { "flownOn": "2026-09-30", "totalHours": 1.2, "dayLandings": 1, "instrumentHours": 0.8, "approaches": 2, "tracking": true, "category": "Airplane", "class": "Single-engine land", "tailwheel": false },
+          { "flownOn": "2026-08-20", "totalHours": 1.2, "nightHours": 1.2, "nightLandings": 3, "category": "Airplane", "class": "Single-engine land", "tailwheel": false },
+          { "flownOn": "2026-06-10", "totalHours": 1.5, "dayLandings": 1, "instrumentHours": 1.2, "approaches": 3, "category": "Airplane", "class": "Single-engine land", "tailwheel": false }
         ],
         "debriefs": [
           {
@@ -77,8 +77,8 @@
         "ratings": ["private"],
         "flight_review_on": "2025-06-01",
         "entries": [
-          { "flownOn": "2026-10-30", "totalHours": 1.0, "dayLandings": 3 },
-          { "flownOn": "2026-07-01", "totalHours": 1.3, "nightHours": 1.3, "nightLandings": 3 }
+          { "flownOn": "2026-10-30", "totalHours": 1.0, "dayLandings": 3, "category": "Airplane", "class": "Single-engine land", "tailwheel": false },
+          { "flownOn": "2026-07-01", "totalHours": 1.3, "nightHours": 1.3, "nightLandings": 3, "category": "Airplane", "class": "Single-engine land", "tailwheel": false }
         ],
         "places": [
           { "ident": "3CK", "name": "Lake In The Hills", "distance_nm": 0, "lighted": false },
@@ -102,7 +102,7 @@
         "today": "2026-11-09",
         "ratings": ["student"],
         "held": [ { "code": "solo-first", "on": "2026-07-01" }, { "code": "solo-90", "on": "2026-09-01" } ],
-        "entries": [ { "flownOn": "2026-11-01", "totalHours": 1.0, "soloHours": 1.0, "dayLandings": 3 } ]
+        "entries": [ { "flownOn": "2026-11-01", "totalHours": 1.0, "soloHours": 1.0, "dayLandings": 3, "category": "Airplane", "class": "Single-engine land", "tailwheel": false } ]
       },
       "expected": {
         "due": {

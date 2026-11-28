@@ -11,7 +11,10 @@
      "nightHours": 0,
      "crossCountryHours": 0,
      "dayLandings": 1,
-     "nightLandings": 0
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
     },
     {
      "flownOn": "2026-09-01",
@@ -19,7 +22,10 @@
      "nightHours": 0,
      "crossCountryHours": 0,
      "dayLandings": 1,
-     "nightLandings": 0
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
     },
     {
      "flownOn": "2026-08-10",
@@ -27,7 +33,10 @@
      "nightHours": 0,
      "crossCountryHours": 0,
      "dayLandings": 2,
-     "nightLandings": 0
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
     },
     {
      "flownOn": "2026-06-01",
@@ -35,7 +44,10 @@
      "nightHours": 0,
      "crossCountryHours": 0,
      "dayLandings": 5,
-     "nightLandings": 0
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
     }
    ],
    "expected": {
@@ -67,7 +79,10 @@
      "nightHours": 1.0,
      "crossCountryHours": 0,
      "dayLandings": 5,
-     "nightLandings": 2
+     "nightLandings": 2,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
     },
     {
      "flownOn": "2026-09-01",
@@ -75,7 +90,10 @@
      "nightHours": 1.0,
      "crossCountryHours": 0,
      "dayLandings": 0,
-     "nightLandings": 1
+     "nightLandings": 1,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
     }
    ],
    "expected": {
@@ -93,7 +111,10 @@
      "nightHours": 0,
      "crossCountryHours": 0,
      "dayLandings": 2,
-     "nightLandings": 0
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
     }
    ],
    "expected": {
@@ -560,7 +581,7 @@
    }
   },
   {
-   "name": "A logbook that doesn't say the category and class counts every landing and says it couldn't tell",
+   "name": "A logbook that doesn't say the category and class proves no passenger currency, and says what it can't tell rather than calling the pilot current (61.57(a)(1))",
    "today": "2026-10-11",
    "entries": [
     {
@@ -573,9 +594,180 @@
     }
    ],
    "expected": {
-    "dayPassengersUntil": "2026-12-30",
+    "dayPassengersUntil": null,
     "passengerClass": null,
-    "passengerClassUnknown": true
+    "passengerClassUnknown": true,
+    "dayPassengersUnknown": "Can't tell: your newest flight doesn't say the category and class, so no landing can be counted for the airplane you'll fly (61.57(a)(1))"
+   }
+  },
+  {
+   "name": "Judged for the airplane to be flown: a tailwheel counts only full stops in a tailwheel, though the newest flight was a tricycle (61.57(a)(1)(ii): \"if the aircraft to be flown is an airplane with a tailwheel\")",
+   "today": "2026-10-11",
+   "flying": {
+    "category": "Airplane",
+    "class": "Single-engine land",
+    "tailwheel": true
+   },
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
+    },
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 4,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": true,
+     "fullStopLandings": 2
+    },
+    {
+     "flownOn": "2026-08-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": true,
+     "fullStopLandings": 1
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-10-30",
+    "passengerClass": "airplane/single-engine land",
+    "passengerTailwheel": true,
+    "tailwheelPassengersUntil": null,
+    "dayPassengersUnknown": null
+   }
+  },
+  {
+   "name": "With no airplane to be flown, the newest flight's tricycle is judged and the tailwheel's own currency is given on its own (61.57(a)(1)(ii))",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
+    },
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 4,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": true,
+     "fullStopLandings": 2
+    },
+    {
+     "flownOn": "2026-08-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": true,
+     "fullStopLandings": 1
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-12-30",
+    "passengerTailwheel": false,
+    "tailwheelPassengersUntil": "2026-10-30"
+   }
+  },
+  {
+   "name": "A tailwheel to be flown whose flights don't say their gear is Can't tell, not current (61.57(a)(1)(ii))",
+   "today": "2026-10-11",
+   "flying": {
+    "category": "Airplane",
+    "class": "Single-engine land",
+    "tailwheel": true
+   },
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land"
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": null,
+    "dayPassengersUnknown": "Can't tell: 1 flight in the last 90 days doesn't say the airplane's gear, tailwheel or tricycle (61.57(a)(1))"
+   }
+  },
+  {
+   "name": "An airplane to be flown not said to be a tricycle is judged as a tailwheel, the stricter (61.57(a)(1)(ii))",
+   "today": "2026-10-11",
+   "flying": {
+    "category": "Airplane",
+    "class": "Single-engine land"
+   },
+   "entries": [
+    {
+     "flownOn": "2026-10-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": null,
+    "passengerTailwheel": null,
+    "dayPassengersUnknown": "Can't tell: it isn't said whether the airplane you'll fly has a tailwheel, so it is judged as one (61.57(a)(1))"
+   }
+  },
+  {
+   "name": "Passengers on day 90 after the third most recent landing, and not on day 91 (61.57(a)(1): \"within the preceding 90 days\")",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-07-13",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "category": "Airplane",
+     "class": "Single-engine land",
+     "tailwheel": false
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-10-11"
    }
   }
  ],

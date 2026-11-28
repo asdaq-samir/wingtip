@@ -37,6 +37,36 @@
         "today": {
           "type": "string",
           "description": "YYYY-MM-DD."
+        },
+        "flying": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The airplane to be flown, for passenger currency (14 CFR 61.57(a)(1)(ii): \"if the aircraft to be flown is an airplane with a tailwheel\"): its category and class, and whether it has a tailwheel (null: not said, judged as one). Null: the newest flight's.",
+          "properties": {
+            "category": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "14 CFR 61.5 category, \"Airplane\"."
+            },
+            "class": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "14 CFR 61.5 class, \"Single-engine land\"."
+            },
+            "tailwheel": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
         }
       },
       "required": [
@@ -53,25 +83,53 @@
             "string",
             "null"
           ],
-          "description": "90 days after the third most recent landing (61.57(a)); null with fewer than three."
+          "description": "90 days after the third most recent landing the logbook proves counts for the airplane judged (61.57(a)(1)): in its category and class, and in a tailwheel to a full stop; null with fewer than three. Never a guess: see dayPassengersUnknown."
         },
         "nightPassengersUntil": {
           "type": [
             "string",
             "null"
           ],
-          "description": "90 days after the third most recent night full-stop landing (61.57(b))."
+          "description": "90 days after the third most recent night full-stop landing the logbook proves counts for the airplane judged (61.57(b)(1))."
         },
         "passengerClass": {
           "type": [
             "string",
             "null"
           ],
-          "description": "The category and class the passenger currency was judged in, \"airplane/single-engine land\": the newest flight's (61.57(a)(1)); null where it does not say."
+          "description": "The category and class passenger currency was judged in, \"airplane/single-engine land\": the airplane to be flown's (flying), else the newest flight's (61.57(a)(1)); null where neither says."
         },
         "passengerClassUnknown": {
           "type": "boolean",
-          "description": "The newest flight says no category and class, so every landing was counted: the logbook can't tell (61.57(a)(1))."
+          "description": "No category and class to judge in: neither the airplane to be flown nor the newest flight says it, so no landing is counted (61.57(a)(1))."
+        },
+        "passengerTailwheel": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the airplane judged has a tailwheel; null where the airplane to be flown doesn't say, judged as one, the stricter (61.57(a)(1)(ii))."
+        },
+        "tailwheelPassengersUntil": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "For a pilot judged in a tricycle whose logbook shows a tailwheel in the same class: the tailwheel's own, 90 days after the third most recent full-stop landing in one (61.57(a)(1)(ii)); else null."
+        },
+        "dayPassengersUnknown": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "What the logbook doesn't say, where the pilot would be current by day (61.57(a)(1)) if it were so, in a sentence beginning \"Can't tell\"; null where nothing unsaid matters."
+        },
+        "nightPassengersUnknown": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The same at night (61.57(b)(1))."
         },
         "flightReviewOn": {
           "type": [
@@ -165,6 +223,10 @@
         "nightPassengersUntil",
         "passengerClass",
         "passengerClassUnknown",
+        "passengerTailwheel",
+        "tailwheelPassengersUntil",
+        "dayPassengersUnknown",
+        "nightPassengersUnknown",
         "flightReviewOn",
         "flightReviewUntil",
         "medicalExpiresOn",

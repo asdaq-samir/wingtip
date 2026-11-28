@@ -80,7 +80,7 @@ public class TrainingController {
         if (!training.isEndorsement(code)) {
             return ResponseEntity.badRequest().build();
         }
-        training.endorse(pilot, code, request.endorsedOn());
+        training.endorse(pilot, code, request.endorsedOn(), request.makeModel());
         return ResponseEntity.ok(trainingOf(pilot));
     }
 

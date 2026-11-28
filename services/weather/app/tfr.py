@@ -68,6 +68,11 @@ DETAIL_KEYS = (
     "floor_ref",
     "ceiling_ft",
     "ceiling_ref",
+    # An area's floor or ceiling given AGL beside another's MSL, so which
+    # is lowest (highest) depends on the ground under it (tfr_detail_read;
+    # round 7's N17): lost on the next fetch when left out of here.
+    "floor_varies",
+    "ceiling_varies",
     "instructions",
     "text",
     "facility",
@@ -169,12 +174,12 @@ def tfrs(features: list) -> list:
 def _keep_stored_details() -> None:
     """The details the stored list already holds, by NOTAM and
     modification, taken as read: a restart asks tfr.faa.gov again only for
-    what has changed since. One stored before the instructions were kept
-    is read again, once."""
+    what has changed since. One stored before the instructions, or the
+    floors and ceilings that vary by area, were kept is read again, once."""
     record = weather_store.read("tfrs")
     for t in record.data if record else []:
         key = (t.get("notam_id"), t.get("modified"))
-        if key[0] and key[1] is not None and key not in _DETAILS and "instructions" in t:
+        if key[0] and key[1] is not None and key not in _DETAILS and "instructions" in t and "floor_varies" in t:
             _DETAILS[key] = {k: t[k] for k in DETAIL_KEYS if k in t}
 
 

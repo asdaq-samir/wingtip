@@ -17,6 +17,7 @@ const fit = (over: Partial<EndFit>): EndFit => ({
   close: false,
   unknown: true,
   beyond: false,
+  temp_assumed: false,
   tailwind_kt: 0,
   finding: "unknown",
   fit: null,
@@ -61,6 +62,12 @@ describe("a runway end's note in its menu", () => {
     expect([close.fit, close.note, close.ring]).toEqual(["close", "Little to spare", "ring-2 ring-caution"]);
     const beyond = endChoice(runway, end, "05", () => fit({ beyond: true, crosswind_kt: 0, finding: "caution", fit: "beyond" }));
     expect([beyond.fit, beyond.note, beyond.ring]).toEqual(["beyond", "Past the POH's tables", "ring-2 ring-caution"]);
+    // No temperature reported: a standard day's distances, said (round 7's N6).
+    const assumed = endChoice(runway, end, "05", () =>
+      fit({ temp_assumed: true, unknown: false, crosswind_kt: 0, finding: "caution", fit: "standard_day" }),
+    );
+    expect([assumed.fit, assumed.note, assumed.ring]).toEqual(["standard_day", "Assumes a standard day", "ring-2 ring-caution"]);
+    expect(assumed.detail).toBe(", distances assume a standard day, no temperature reported");
     // Its words say all that holds, after its number.
     expect(short.words).toBe(`Runway 14${short.detail}`);
     expect(short.detail).toContain("tailwind 10 knots");

@@ -199,6 +199,10 @@
           "type": "boolean",
           "description": "The distance was read past the POH's table (higher, hotter, heavier or more tailwind than it goes): its edge's figures."
         },
+        "temp_assumed": {
+          "type": "boolean",
+          "description": "The distance was worked out on a standard day's temperature at the field, none being reported: a hot day's is longer (FAA-H-8083-25C ch. 11; 14 CFR 91.103(b)(1)), so the fit is a caution, never \"within\" alone. False where no distance was worked out."
+        },
         "tailwind_kt": {
           "type": "number",
           "description": "The tailwind on the end, its gusts' where they are more, whole knots, 0 for none (AIM 4-3-6: into the wind where it can be; the POH's distances grow with it)."
@@ -224,9 +228,10 @@
             "tailwind",
             "close",
             "beyond",
+            "standard_day",
             null
           ],
-          "description": "The finding's reason, the worst first; null for unknown and ok."
+          "description": "The finding's reason, the worst first; null for unknown and ok; standard_day where the distance assumed a standard day's temperature."
         }
       },
       "required": [
@@ -238,6 +243,7 @@
         "close",
         "unknown",
         "beyond",
+        "temp_assumed",
         "tailwind_kt",
         "finding",
         "fit"

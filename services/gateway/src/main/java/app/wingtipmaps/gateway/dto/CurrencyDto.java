@@ -10,7 +10,9 @@ import org.jspecify.annotations.Nullable;
  * whose answer has these members): the last day they may carry passengers
  * by day and at night, the last day of their flight review's 24
  * calendar months and of their medical -- each null where it cannot be
- * had -- the logbook's totals, and their instrument currency.
+ * had -- the logbook's totals, their instrument currency, and what the
+ * logbook can't tell of passenger currency's category, class and
+ * tailwheel (61.57(a)(1)): the passenger dates are only what it proves.
  */
 public record CurrencyDto(
         @Nullable LocalDate dayPassengersUntil,
@@ -50,4 +52,29 @@ public record CurrencyDto(
         @Schema(description = "Holding logged in them") boolean holdingInWindow,
 
         @Schema(description = "Intercepting and tracking courses logged in them")
-        boolean trackingInWindow) {}
+        boolean trackingInWindow,
+
+        @Schema(
+                description = "The category and class passenger currency was judged in, \"airplane/single-engine land\": "
+                        + "the airplane to be flown's, else the newest flight's (14 CFR 61.57(a)(1)); null where neither says")
+        @Nullable
+        String passengerClass,
+
+        @Schema(description = "Whether the airplane judged has a tailwheel; null where not said, judged as one (61.57(a)(1)(ii))")
+        @Nullable
+        Boolean passengerTailwheel,
+
+        @Schema(
+                description = "A tailwheel's own passenger currency, for a pilot judged in a tricycle who has flown a tailwheel "
+                        + "in the class (61.57(a)(1)(ii))")
+        @Nullable
+        LocalDate tailwheelPassengersUntil,
+
+        @Schema(
+                description = "What the logbook doesn't say, where the pilot would be current by day if it were so, "
+                        + "\"Can't tell: ...\" (61.57(a)(1)); null where nothing unsaid matters")
+        @Nullable
+        String dayPassengersUnknown,
+
+        @Schema(description = "The same at night (61.57(b)(1))") @Nullable
+        String nightPassengersUnknown) {}

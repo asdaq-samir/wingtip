@@ -146,7 +146,10 @@ export function useFieldWinds({ airports, rows, depart }: { airports: ProcedureA
     if (forecast) return { dirTrueDeg: forecast.dir_true_deg, speedKt: forecast.speed_kt, gustKt: forecast.gust_kt };
     const card = cards[i]?.data;
     const m = card?.metar ?? card?.nearby_metar?.metar;
-    return m ? { dirTrueDeg: m.wind_dir_true_deg, speedKt: m.wind_speed_kt, gustKt: m.wind_gust_kt } : null;
+    // The report's variable arc, which the forecast has none of.
+    return m
+      ? { dirTrueDeg: m.wind_dir_true_deg, speedKt: m.wind_speed_kt, gustKt: m.wind_gust_kt, variableDeg: m.wind_variable_deg ?? null }
+      : null;
   };
   return { cards, forecastFor, forecasts, startMs, landedAt, windOf, reportedOf, fitWindOf };
 }

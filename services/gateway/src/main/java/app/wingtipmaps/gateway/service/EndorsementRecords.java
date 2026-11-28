@@ -38,7 +38,10 @@ final class EndorsementRecords {
      *  held, as the engine reads them. */
     static List<PlannerHeldEndorsement> held(List<Endorsement> recorded, List<SignedEndorsement> signed) {
         return Stream.concat(
-                        recorded.stream().map(e -> PlannerAsks.held(e.getKey().code(), e.getEndorsedOn(), null)),
+                        // A paper endorsement's make and model, where the
+                        // pilot recorded it (61.87(n), 61.93(c)(2)).
+                        recorded.stream()
+                                .map(e -> PlannerAsks.held(e.getKey().code(), e.getEndorsedOn(), e.getMakeModel())),
                         signed.stream()
                                 // The engine's verdicts kept: voided, or its instructor
                                 // not borne out by the FAA registry, it is not held.

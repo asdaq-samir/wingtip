@@ -310,11 +310,12 @@ export function windAloft(dirTrueDeg: number, speedKt: number): string {
 
 /** Ceiling and visibility the way a briefer says them, a report's "more
  *  than" visibility as such ("6+ sm", P6SM: FAA JO 7900.5; lib/format's
- *  miles, the code audit's CODE-12). */
+ *  miles, the code audit's CODE-12), and its "less than" ("M1/4SM"). */
 export function ceilingAndVisibility(
   ceilingFt: number | null | undefined,
   visibilitySm: number | null | undefined,
   visibilityPlus = false,
+  visibilityMinus = false,
 ): string {
-  return `${ceilingFt == null ? "no ceiling" : feet(ceilingFt)} · ${miles(visibilitySm, visibilityPlus)}`;
+  return `${ceilingFt == null ? "no ceiling" : feet(ceilingFt)} · ${miles(visibilitySm, visibilityPlus, visibilityMinus)}`;
 }

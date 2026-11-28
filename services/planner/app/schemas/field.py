@@ -19,9 +19,16 @@ class Metar(BaseModel):
     ceiling_unknown: bool = False
     visibility_sm: float | None = None
     visibility_plus: bool = False  # at least visibility_sm: P6SM, the AWC's "10+" (awc_metars_read)
+    #: Less than visibility_sm: "M1/4SM" (FMH-1 chapter 6), said "less
+    #: than 1/4 sm", never 1/4 (awc_metars_read).
+    visibility_minus: bool = False
     wind_dir_true_deg: float | None = None
     wind_speed_kt: float | None = None
     wind_gust_kt: float | None = None
+    #: A variable direction, "230V310" (FMH-1 chapter 12; AIM 7-1-28): its
+    #: two bounds, true, clockwise from the first, which a runway's
+    #: crosswind is judged at the worst of (runway_end_fit's variable_deg).
+    wind_variable_deg: tuple[float, float] | None = None
     altimeter_in_hg: float | None = None
     temp_c: float | None = None
     dewpoint_c: float | None = None

@@ -24,6 +24,9 @@ const NOTES: Record<Fit, (f: EndFit) => string> = {
   tailwind: (f) => `Tailwind ${f.tailwind_kt} kt`,
   close: () => "Little to spare",
   beyond: () => "Past the POH's tables",
+  // No temperature reported: the distances are a standard day's, and a
+  // hot day's are longer (FAA-H-8083-25C, chapter 11; round 7's N6).
+  standard_day: () => "Assumes a standard day",
 };
 
 /** One runway end as a choice: its number, the wind's mark on the end the
@@ -44,7 +47,9 @@ export function endChoice(runway: Runway, end: RunwayEnd, into: string | null, f
       ? ", little to spare in length"
       : fitted?.beyond
         ? ", past the POH's tables"
-        : "";
+        : fitted?.temp_assumed
+          ? ", distances assume a standard day, no temperature reported"
+          : "";
   // The crosswind said as a figure, grey, where nothing else is said of
   // the end and there is one: an airplane with no demonstrated crosswind
   // to judge it by still hears of 25 knots across (the owner, 2026-11-26).

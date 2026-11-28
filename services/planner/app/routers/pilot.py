@@ -68,6 +68,7 @@ def currency(ask: CurrencyAsk) -> Currency:
             flight_review_on=ask.flightReviewOn,
             medical_expires_on=ask.medicalExpiresOn,
             ipc_on=ask.ipcOn,
+            flying=ask.flying.model_dump(by_alias=True) if ask.flying else None,
         )
     )
 
