@@ -6,7 +6,7 @@ and the pilot's id from a checked token. The pilot's token goes nowhere
 but back to the gateway that issued it, as an introspection (RFC 7662)
 would: on each call (connection_live) and on each flight write, where
 the gateway checks for itself that it was granted wingtip:flights
-(InternalRecordsController.changing, the round 4 review). The MCP
+(InternalRecordsController.changing). The MCP
 authorization spec forbids passing it on to any other service ("MCP
 servers MUST NOT accept or transit any other tokens")."""
 
@@ -105,7 +105,7 @@ async def connection_live(pilot_id: str, client_id: str, token: str) -> bool:
     """Whether this access token still stands: issued to the pilot through
     this client, not revoked, its connection not removed, the account not
     deleted. The gateway's JWTs are checked here by signature alone and last
-    15 minutes, which would outlive all of these (the security audit's L4);
+    15 minutes, which would outlive all of these;
     so every call asks, on the internal port, a 204 or a 404. The token
     itself goes back to the gateway that issued it, as an introspection
     (RFC 7662) would: asking only whether the pilot had any live connection

@@ -7,7 +7,7 @@ takes away), what it addresses on the field's card (notam_subject: JO
 frequencies, as badges) and which roles in a plan it reaches
 (notam_affects, asked for every role). The NOTAM reader is some 40 KB of the web's
 WebAssembly, asked only after the planner has sent the NOTAMs, so the
-planner sends it with them (round 6, the wasm budget) and the web reads
+planner sends it with them and the web reads
 what comes.
 
 The card's lists are the ones /api/airport/{ident} sends, in its order, so
@@ -59,7 +59,7 @@ _ROLES = ["departure", "stop", "arrival", "alternate"]
 
 #: Each NOTAM's reading kept, by what it is read from (its text and ends, the field's names, whether a TFR, and the
 #: card's lists: the engine's answers are a function of exactly these): the four engine calls of a NOTAM are
-#: asked once, not on every open of a busy field's card (KORD's or KDEN's 100 to 200 NOTAMs; round 7's audit, C7).
+#: asked once, not on every open of a busy field's card (KORD's or KDEN's 100 to 200 NOTAMs).
 #: A new NOTAM or a changed card is a new key; the least recently used go past _KEEP.
 _KEEP = 2048
 _READINGS: OrderedDict[str, dict] = OrderedDict()

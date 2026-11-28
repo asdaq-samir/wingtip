@@ -1,5 +1,4 @@
-"""Search boxes in degrees that hold across the antimeridian (the
-edge-places audit's S10, 2026-11-21).
+"""Search boxes in degrees that hold across the antimeridian.
 
 A box of (south, west, north, east) is how the planner cuts the FAA's
 obstacles, airspace, TFRs, fixes and the weather's stations down to a

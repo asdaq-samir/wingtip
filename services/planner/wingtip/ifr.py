@@ -150,7 +150,7 @@ def floor_profile(fixes: list, faa_cache_dir=DEFAULT_FAA_CACHE_DIR) -> list[dict
     # A degree of longitude is cos(latitude) of a degree of latitude: twice
     # the reach fell short of 91.177(a)(2)'s 4 nm above about 66 N (the
     # aviation check, 2026-10-27), so corridor_bbox scales it at the box's
-    # poleward edge; the short way round 180 (geo_boxes).
+    # poleward edge; the short way over 180 (geo_boxes).
     bbox = geo_boxes.box_over(lats, lons, OBSTACLE_RADIUS_NM + 1)
     obstacles = faa_data.load_obstacles(faa_data.ensure_nasr_file("DOF.DAT", faa_cache_dir), bbox, min_agl_ft=0)
     obstacle_lat = obstacles["lat"].to_numpy(dtype=float)

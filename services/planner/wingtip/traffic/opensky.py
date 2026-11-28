@@ -231,7 +231,7 @@ def track(hex_id: str, flight_id: int, now: float) -> list[dict] | None:
     cannot be had within TRACK_TIMEOUT_S. One being asked ahead (`warm`) is
     waited for, not asked twice; one still queued behind other cards' is
     taken out of the queue and asked now, as the pilot's tap waited up to
-    TRACK_TIMEOUT_S on a request that had not started (round 4's audit)."""
+    TRACK_TIMEOUT_S on a request that had not started."""
     if now - flight_id > TRACK_DAYS * 86400 or not on():
         return None
     with _ASKING_LOCK:

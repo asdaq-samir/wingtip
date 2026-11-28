@@ -56,7 +56,7 @@ NAME_TIMEOUT_S = CARD_TIMEOUT_S / 2
 #: After a source fails, it is not asked for this long, s, and cards show
 #: what they have without it: while the USGS or Wikipedia was down every
 #: open waited up to 20 s or 2 x 10 s, and the shared session's retries on
-#: top (round 6's audit, N6). Asked one at a time per field, too: opens of
+#: top. Asked one at a time per field, too: opens of
 #: one field at once each fetched the same file.
 HOLD_S = 300.0
 _USGS = ratelimit.Gate()

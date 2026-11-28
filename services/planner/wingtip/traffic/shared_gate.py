@@ -5,8 +5,7 @@ The planner asks adsb.lol for the map's regions, a pilot's searches and an
 open card's airplane; ingest asks it for the followed airplanes every
 FOLLOW_EVERY_S. Each paced itself against a ratelimit.Gate in its own
 memory, so "never two requests closer together than MIN_GAP_S" held per
-process only, and a refusal one saw did not hold the other (round 6's
-audit, N3). SharedGate has the Gate's `last`, `until`, `held`, `hold`,
+process only, and a refusal one saw did not hold the other. SharedGate has the Gate's `last`, `until`, `held`, `hold`,
 `asked` and `take`, each read from or written to the row in one short
 transaction: a turn taken by one process is never taken by the other.
 

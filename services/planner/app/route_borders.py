@@ -2,7 +2,8 @@
 Zones it meets, worked out once with the course (/api/course) so the web
 app's module no longer carries the countries' outlines (the engine's
 route_jurisdiction and route_adiz, Natural Earth's 1:50m countries and
-14 CFR 99.41-99.49's zones; round 5's WebAssembly cuts). The rules are
+14 CFR 99.41-99.49's zones).
+The rules are
 the engine's; here they are asked of the route's own points, departure,
 stops and destination, each leg between two checked every 2 nm, and the
 answers set on the course: each point's warning and the warning of the leg

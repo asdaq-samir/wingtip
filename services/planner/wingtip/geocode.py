@@ -68,7 +68,7 @@ GEOCODER_TIMEOUT_S = 3
 #: After the geocoder fails or does not answer in time it is not asked for
 #: this long, s, and searches answer with towns and airports alone: during a
 #: Census outage every keystroke of every pilot's search waited its whole
-#: timeout on a worker thread (round 6's audit, N4).
+#: timeout on a worker thread.
 GEOCODER_HOLD_S = 60
 _GEOCODER = ratelimit.Gate()
 

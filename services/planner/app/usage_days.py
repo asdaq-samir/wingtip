@@ -2,7 +2,7 @@
 disk: the totals the owner reads the growth of the app by (routes planned a
 day, ForeFlight packs downloaded, kneeboards printed), where
 app.route_metrics' figures live in memory and go with every restart or Spot
-replacement (the product audit of 2026-11-23, H2; the owner took its
+replacement (the owner took its
 recommendation: totals only).
 
 A day's row is (UTC day, route template, method, status, calls): the same
@@ -82,8 +82,7 @@ def flush(path: Path | None = None) -> int:
             db.close()
     except Exception:
         # The write failed whole (the transaction rolled back): the counts
-        # go back to wait for the next flush rather than being lost (the
-        # safety audit of 2026-11-23, L9).
+        # go back to wait for the next flush rather than being lost.
         with _LOCK:
             for key, calls in pending.items():
                 _PENDING[key] += calls

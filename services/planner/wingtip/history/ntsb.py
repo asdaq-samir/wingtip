@@ -309,7 +309,7 @@ def _shaped(path: Path) -> sqlite3.Connection | None:
     """A read-only connection to the store where it is there and of
     SCHEMA's shape, else None: one of an older shape reads as none until
     ingest makes it again (ingest.ntsb.due), where it was asked for columns
-    it lacks, a 500 on every airplane card (round 5's audit)."""
+    it lacks, a 500 on every airplane card."""
     if not path.exists():
         return None
     db = stores.read_only(path)

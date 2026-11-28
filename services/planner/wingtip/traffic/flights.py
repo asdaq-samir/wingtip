@@ -30,7 +30,7 @@ _NEW_LEG = 2
 _GEOM_RATE = 4
 #: What a past flight's point carries for its replay (the engine's
 #: replay_track tells a held pressure altitude by the GNSS height and the
-#: rates; round 7's R7-1).
+#: rates).
 _SHOWN = ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")
 PAST_KEYS = _SHOWN + ("alt_baro_ft", "alt_geom_ft", "baro_rate_fpm", "geom_rate_fpm", "ground")
 
@@ -58,7 +58,7 @@ def flight(hex_id: str, pilot: str | None = None) -> dict:
     # Its card open by a pilot: followed from now on, its flights recorded
     # from the FAA's radar card open or not (heard_elsewhere). Not on any
     # anonymous ask: one walking the addresses 000000, 000001 and on put
-    # them all in the round adsb.lol is asked (security round 4, M5).
+    # them all in the round adsb.lol is asked.
     if pilot:
         follow(hex_id, pilot)
     trace = _trace(hex_id) or {}

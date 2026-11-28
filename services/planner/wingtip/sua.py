@@ -306,7 +306,7 @@ def along_route(route_start: tuple, route_end: tuple, fixes: list | None = None)
     cross it. One entry per named area, however many polygons it is drawn
     as."""
     path = list(fixes) if fixes and len(fixes) >= 2 else [route_start, route_end]
-    # The short way round 180, the line cut there (geo_boxes: Adak to Shemya).
+    # The short way over 180, the line cut there (geo_boxes: Adak to Shemya).
     bbox = geo_boxes.path_box(path, buffer_nm=2.0)
     line = geo_boxes.line_across(path)
     legs = [geo_boxes.line_across([a, b]) for a, b in zip(path, path[1:])]

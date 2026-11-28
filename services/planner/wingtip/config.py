@@ -60,7 +60,7 @@ def user_agent(purpose: str | None = None, browser: bool = False) -> str:
     ("wingtip-maps/0.1 (VFR flight planner; terrain floor)"), or in a
     browser's form where a site turns a bare client away ("Mozilla/5.0
     (compatible; wingtip-maps/0.1; terrain floor)"). Seven modules wrote
-    their own, under two names (round-3 audit, 2026-11-27). The registry's
+    their own, under two names. The registry's
     host alone wants a whole browser's (REGISTRY_HEADERS)."""
     if browser:
         return f"Mozilla/5.0 (compatible; {AGENT}{'; ' + purpose if purpose else ''})"
@@ -91,7 +91,7 @@ MIN_LABELED_ROWS = 30
 # wingtip.chart_render draws the map's tiles from them -- the chart exactly as printed, served by
 # this app, with no hosted map service in between. (Two came and went
 # before this: the FAA's own ArcGIS tile cache, which went behind a
-# login around 2026-09-03, then Texas A&M's public mirror of the same
+# login about 2026-09-03, then Texas A&M's public mirror of the same
 # data, which had no tile cache and no chart west of Duluth.)
 #
 # Each sheet's zip is under its cycle's date; the cycle is the one the

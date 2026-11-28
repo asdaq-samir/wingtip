@@ -95,12 +95,12 @@ def approach_path(drawing: dict) -> dict | None:
     # A transition that is its fix alone -- a procedure turn at a VOR on
     # the final, Duluth's VOR RWY 3 via DLH -- is flown from that fix, its
     # reversal round it: not from the final's first fix, out past the VOR
-    # and back in a hairpin (the audit of 2026-10-21).
+    # and back in a hairpin.
     if path and not _of(drawing, "transition") and drawing.get("transition"):
         path = _direct(path, {**drawing, "direct": drawing["transition"]})
     # On from a missed approach point short of the runway to its threshold,
     # where the airplane lands -- a VOR's or a LOC's MAP a mile out, where
-    # the dry run touched down (the audit of 2026-10-21). `map_at` keeps
+    # the dry run touched down. `map_at` keeps
     # where the missed approach is flown from.
     if path:
         path["map_at"] = len(path["points"]) - 1
@@ -274,9 +274,9 @@ def with_reversals(path: list, ft: list, holds: list) -> tuple[list, list]:
         turn = geo.angle_between(cout, cin)
         # The chart's own reversal at the fix, flown from its far side --
         # at the procedure's first fix as well, where a hold in lieu of a
-        # procedure turn at an RNAV approach's IAF was never flown (the
-        # audit of 2026-10-21: Rockford's ILS 01 via KENNY, and nine in ten
-        # of the RNAV approaches checked); else, past its first fix, a
+        # procedure turn at an RNAV approach's IAF was never flown (Rockford's ILS 01 via KENNY, and nine in ten
+        # of the RNAV approaches checked);
+        # else, past its first fix, a
         # teardrop where the path doubles back.
         # How far the path must turn for either is the engine's
         # (procedure_reversal: AIM 5-4-9, 14 CFR 91.175(j)).
@@ -370,7 +370,7 @@ def flown(
     # On to the leg's end where no approach brings it down: a departure out
     # onto the route, and an arrival on to its field from where it ends --
     # most end in vectors (FM, VM), Rockford's ALEXS1 29 miles out, where the
-    # dry run came down to the field's elevation (the audit of 2026-10-21).
+    # dry run came down to the field's elevation.
     if not app and not circuit_in and geo.distance_nm(*raw[-1], *end) >= SAME_PLACE_NM:
         raw.append(tuple(end))
         raw_ft.append(None)

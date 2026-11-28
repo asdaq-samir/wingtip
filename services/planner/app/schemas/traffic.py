@@ -192,8 +192,8 @@ class PastFlightPoint(BaseModel):
     gs_kt: float | None = None
     track_deg: float | None = None
     vrate_fpm: float | None = None
-    #: As the engine's replay_track made it ready (wingtip.traffic.replay;
-    #: round 7's R7-1): the climb read as a VSI reads it, ft/min; a report
+    #: As the engine's replay_track made it ready (wingtip.traffic.replay):
+    #: the climb read as a VSI reads it, ft/min; a report
     #: after a hole of none (nothing known since the last); on the ground;
     #: and its height held, the last good one carried where readsb's
     #: pressure altitude went stale or an airborne report sent none.

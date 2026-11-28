@@ -17,8 +17,7 @@ of it (urllib3 2.8.0), on one pool of kept-alive connections per host.
 A source a card's request waits on opts out too (`once_get`, one try on
 a session of its own): the card's timeout is the most it waits, and the
 caller holds the source after a failure (wingtip.ratelimit) where the
-shared session would ask again up to 30 s inside the request (round 6's
-audit, N5 and N6: Planespotters.net, the USGS's aerials, Wikimedia).
+shared session would ask again up to 30 s inside the request (Planespotters.net, the USGS's aerials, Wikimedia).
 
 Live traffic opts out (`live_get`, one kept-alive session that does not
 retry): a position a few seconds late is a wrong one. Calls to our own services

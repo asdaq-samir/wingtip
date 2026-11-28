@@ -161,12 +161,13 @@ def _asked(text: str) -> tuple[list[dict], dict]:
     """adsb.lol's answer to a search, and its credit: by address, callsign
     or registration, as the text reads, the next way where one finds none
     -- in the same turn, as the next turn is a gap off, further than a
-    search waits, so the second way was never asked (round 4's audit: a
+    search waits, so the second way was never asked (a
     foreign registration typed without its dash, whose callsign search
-    finds nothing, was never found). TrafficUnavailable where a way cannot
+    finds nothing, was never found).
+    TrafficUnavailable where a way cannot
     be asked or is not answered: ADS-B Exchange was asked first
     (`_looked_up`), and the next way is never sent in a turn the first did
-    not take (round 5's audit: ten pilots' refused first ways each sent a
+    not take (ten pilots' refused first ways each sent a
     second inside the gap)."""
     if _HEX.fullmatch(text.lower()):
         tries = [("hex", text.lower()), ("callsign", text)]

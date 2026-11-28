@@ -4,8 +4,8 @@ OpenSky Network): a gap between asks, a hold after a refusal (its own
 wait where it names one, held to a most), and what the source itself
 says is left of the day's budget.
 
-Each was a dict of its own in its own module, written three ways
-(the audit of 2026-11-27); the weather service's paced sources take a
+Each was a dict of its own in its own module, written three ways;
+the weather service's paced sources take a
 turn from one too (`turn`). The times are the caller's clock, passed in,
 so a test's stand-in clock is the one used; the gate keeps no clock and
 asks nothing itself.

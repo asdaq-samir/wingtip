@@ -47,7 +47,7 @@ def ready(db_path: Path) -> bool:
     user_version read once a file. One of an older shape reads as none
     until ingest builds it again (wingtip.registry.refresh), where it was
     asked for columns it lacks, a 500 on every card and an error on each
-    radar track's LADD check (round 5's audit): how a deploy heals."""
+    radar track's LADD check: how a deploy heals."""
     file = _file(db_path)
     if file is None:
         return False

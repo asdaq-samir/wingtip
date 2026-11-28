@@ -5,7 +5,7 @@ approach -- or by a traffic pattern, and the ground those paths fly over.
 The plan's legs are flown along these paths (wingtip.flight_plan's
 with_procedures), so the floor each leg's altitude is chosen over reads the
 ground under them too, where it read only the leg's own line from fix to
-fix (the aviation audit's AV-2, 2026-11-14): an arrival flown out to its
+fix: an arrival flown out to its
 first fix and round to the runway can be a hundred miles more than the leg
 (C81 to O'Hare by BENKY6, 2026-10-19), over ground the leg never crossed.
 """

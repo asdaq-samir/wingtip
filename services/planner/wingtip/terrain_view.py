@@ -56,7 +56,7 @@ def tile_png(z: int, x: int, y: int) -> bytes:
     if not _charted(z, x, y):
         # Past the charts the map draws no relief worth a fetch: every new
         # tile elsewhere was fetched from AWS and kept twice, for anyone
-        # who asked (security round 4, M2).
+        # who asked.
         return _sea_level_png()
     folder = _cleaned_dir()
     path = folder / str(z) / str(x) / f"{y}.png" if folder else None

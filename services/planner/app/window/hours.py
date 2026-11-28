@@ -65,7 +65,7 @@ class Plans:
         """The plan for `key`, worked out once: two hours wanting the same
         plan wait for it (one_at_a_time on this window's key), hours with
         different keys plan at once. One lock across every plan made the
-        four workers plan one hour at a time (round 6's audit, N2)."""
+        four workers plan one hour at a time."""
         with self.lock:
             if key in self.kept:
                 return self.kept[key]

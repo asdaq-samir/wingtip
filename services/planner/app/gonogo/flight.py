@@ -215,7 +215,7 @@ def findings_for(
         else []
     )
     # The route's own figures, the engine's one copy the web's Brief asks
-    # too (gonogo_route_figures; the aviation audit's AV-12): the fuel's,
+    # too (gonogo_route_figures): the fuel's,
     # the TFRs crossed while in force as the flight passes them (14 CFR
     # 91.137-91.145), VFR not recommended's reasons -- none under IFR,
     # whose check is 91.169's -- and the hazards the risk counts.

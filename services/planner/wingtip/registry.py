@@ -71,7 +71,7 @@ def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, 
     row takes of them, as tuples: ACFTREF's ninety thousand models as
     dicts were a hundred megabytes of the planner's. Each table's rows go
     in as they are read (executemany over a generator), never held whole
-    beside the look-up (round 4's audit: the 94,241 models were held twice)."""
+    beside the look-up (the 94,241 models were held twice)."""
     db.execute(_MODELS)
     db.execute(_ENGINES)
     models, engines = {}, {}

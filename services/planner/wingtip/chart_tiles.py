@@ -44,8 +44,7 @@ class TileUnavailable(RuntimeError):
     published archive could not be read just now. The server does not draw
     the tile itself instead: on its two cores, a CDN or S3 outage turned
     every tile the map asked for into a sheet fetched and drawn, and the
-    routes, nav logs and Briefs every pilot was waiting on starved (the ops
-    audit, 2026-11-21). The map leaves the tile blank and asks again."""
+    routes, nav logs and Briefs every pilot was waiting on starved. The map leaves the tile blank and asks again."""
 
 
 def rasters_covering(kind: ChartKind, bbox: Box, cycle: str | None = None) -> tuple[list, bool]:

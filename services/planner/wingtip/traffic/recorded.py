@@ -27,13 +27,11 @@ RECORD_KEEP_S = 30 * 86400.0
 #: what the privacy policy promises (docs/privacy-inventory.md, 30 days).
 FOLLOW_KEEP_S = 30 * 86400.0
 #: The most airplanes followed at once: each is asked of adsb.lol in the
-#: background, so made-up addresses must not crowd out pilots' own (the
-#: security review of 2026-11-23, M5). Past it, the card opened longest ago
+#: background, so made-up addresses must not crowd out pilots' own. Past it, the card opened longest ago
 #: goes.
 FOLLOW_MOST = 500
 #: The most one pilot follows at once, their share of FOLLOW_MOST: past it
-#: their own card opened longest ago goes, never another pilot's (the
-#: safety audit of 2026-11-23, M5: one account's 500 card opens had pushed
+#: their own card opened longest ago goes, never another pilot's (one account's 500 card opens had pushed
 #: every other pilot's followed airplanes out).
 FOLLOW_EACH = 20
 #: A followed airplane no source has heard from in this long, s, followed
@@ -97,8 +95,7 @@ def _share_key() -> bytes:
     """FOLLOW_SHARE_KEY, else the development stack's FOLLOW_SHARE_KEY_FILE;
     neither is an error, never a key of the store's own. The key is kept
     apart from the shares it hashes: one kept in the live store beside
-    them let whoever read the store test guessed ids (the round 7 audit,
-    P-M1)."""
+    them let whoever read the store test guessed ids."""
     settings = get_settings()
     if settings.follow_share_key:
         return settings.follow_share_key.encode()
@@ -121,8 +118,7 @@ def share_of(pilot: str) -> str:
     their id (HMAC-SHA-256 with a server secret): the store counts a
     pilot's follows without naming them, and without the key no one can
     tell whose share is whose by hashing ids they guess, an email or a
-    number in order among them (docs/privacy-inventory.md; the round 6
-    audit, P1)."""
+    number in order among them (docs/privacy-inventory.md)."""
     return hmac.new(_share_key(), pilot.encode(), hashlib.sha256).hexdigest()[:12] if pilot else ""
 
 

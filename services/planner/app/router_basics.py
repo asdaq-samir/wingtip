@@ -55,7 +55,7 @@ def points(text: str, on_bad: str | None = None, off_globe: str | None = None) -
     globe one saying `off_globe` (else `on_bad`): each route words its
     own. Lenient (no `on_bad`), such a piece is left out, a point off the
     globe too: "nan,nan" and "inf,1" parse as floats, and are never passed
-    on as a place (the round 6 audit, P2)."""
+    on as a place."""
     found = []
     for piece in text.split(";"):
         if not piece.strip():

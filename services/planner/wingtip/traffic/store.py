@@ -40,7 +40,7 @@ only when ingest or a request happens to write.
 The outside sources' answers about one airplane or flight number (its
 photo, its route) are a table of the same file, wingtip.kept_answers'.
 The key the shares are hashed with is never kept here, beside them
-(FOLLOW_SHARE_KEY, recorded._share_key; the round 7 audit, P-M1).
+(FOLLOW_SHARE_KEY, recorded._share_key).
 """
 
 from __future__ import annotations
@@ -202,11 +202,11 @@ def follow(hex_id: str, who: str, at: float, each: int, most: int) -> None:
     """An airplane followed from now on, or still, in `who`'s share: `since`
     is when its card was last opened, which its expiry counts from. At most
     `each` in one share, its own card opened longest ago going, so one
-    account opening cards cannot push every other pilot's airplanes out
-    (the safety audit of 2026-11-23, M5). Past `most` in all, the follows
+    account opening cards cannot push every other pilot's airplanes out.
+    Past `most` in all, the follows
     go from the largest share first, its card opened longest ago, so
     accounts filling the store between them lose their own before a pilot
-    who follows fewer loses any (the round 6 audit, P1). One transaction,
+    who follows fewer loses any. One transaction,
     as both processes write."""
     with _LOCK:
         db = _connection()

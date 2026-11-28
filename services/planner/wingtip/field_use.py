@@ -78,8 +78,7 @@ def _records_of(path: str, _mtime: float) -> dict:
     table = df.reindex(columns=columns).astype(object).fillna("")
     # A blank ARPT_STATUS in a file that has the column is a code, "", which
     # the engine's field_status rules closed (decision 0043: any code but O);
-    # only a file without the column (a test's few) leaves it None, unjudged
-    # (the aviation audit of 2026-11-23, L1).
+    # only a file without the column (a test's few) leaves it None, unjudged.
     has_status = "ARPT_STATUS" in df.columns
     # NASR's capitals as every app writes them, the FAA's codes kept (the
     # engine's airport_names: "Sierra Vista Muni-Libby AAF"), in one call.

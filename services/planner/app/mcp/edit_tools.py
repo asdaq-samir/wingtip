@@ -165,7 +165,7 @@ def register(apps: Apps) -> None:
         # make: an own type's record may give only its speed and burn, and
         # the planner offers no stop where the usable fuel is not known
         # (wingtip.flight_legs.fuel_stops_of), a stop filling the tanks to
-        # it. Never "none needed" then (the mcp audit of 2026-11-23, H1).
+        # it. Never "none needed" then.
         # A route that lands on the way has a check for each flight
         # (flight_view.fuel_checks); its own totals carry none.
         checks = [c for _, c in flight_view.fuel_checks(totals)]

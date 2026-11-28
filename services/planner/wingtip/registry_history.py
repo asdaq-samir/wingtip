@@ -99,7 +99,7 @@ def build(archive, db: sqlite3.Connection, rows: Rows) -> dict[str, int]:
     names = set(archive.namelist())
     counts = {}
     # Each file's rows go in as they are read (executemany over a generator),
-    # never held whole: RESERVED's 126,157 were one list (round 4's audit).
+    # never held whole: RESERVED's 126,157 were one list.
     if "DEREG.txt" in names:
         insert = f"INSERT INTO deregistered VALUES ({','.join('?' * 20)})"
         counts["deregistered"] = db.executemany(insert, (_deregistered(r) for r in rows(archive, "DEREG.txt"))).rowcount

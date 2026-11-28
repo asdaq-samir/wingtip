@@ -1,7 +1,7 @@
 """Reading the FAA's SWIM messages (STDDS, TFMS, ITWS, SFDPS): an
 element's name without its namespace, the first element of a name
 wherever it sits, its text, and a number read from text. Each module
-that reads a message wrote its own copies (round-3 audit, 2026-11-27)."""
+that reads a message wrote its own copies."""
 
 from __future__ import annotations
 

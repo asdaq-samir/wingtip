@@ -152,7 +152,7 @@ class CountCalls:
     template; a call that raised before answering is counted a 500, as
     FastAPI answers it, and let through. Plain ASGI, as RequestIds is:
     Starlette's BaseHTTPMiddleware cost every call, each tile among them,
-    some 40 us and a task of its own (react-perf round 4, L2)."""
+    some 40 us and a task of its own."""
 
     def __init__(self, app, metrics: RouteMetrics = METRICS):
         self.app = app

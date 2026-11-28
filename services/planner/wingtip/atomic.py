@@ -4,10 +4,11 @@ on its base image (ingest, weather, jobs) put a file in place.
 The planner and the jobs write into the same data folder, often the same
 file, so the half-written copy needs a name no other writer will pick:
 a fixed `x.tmp` let one process's rename move the other's half-written
-bytes into place (the stock audit of 2026-11-12). The stdlib does it in
+bytes into place. The stdlib does it in
 four steps -- mkstemp beside the target, fsync, os.replace, unlink on
-failure -- which is all a library would add (the audit turned down
-`safer`, one maintainer, and `atomicwrites`, unmaintained)."""
+failure -- which is all a library would add (`safer`, one maintainer, and
+`atomicwrites`, unmaintained, were turned down).
+"""
 
 from __future__ import annotations
 

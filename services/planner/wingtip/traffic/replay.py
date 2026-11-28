@@ -7,7 +7,7 @@ In time order, a hole of no report said as a gap, the height smoothed
 through the 25 ft steps, the climb the rate sent or the heights' trend (a
 VSI's lag, never a lead), and a held pressure altitude -- readsb repeating
 a stale one while the GNSS height or the rate sent moved, N722BD's 8,750 ft
-as it descended -- carried at the last good height (round 7's R7-1). Where
+as it descended -- carried at the last good height. Where
 an airborne report has no height at all, the last good one is carried and
 marked held as well, so no app draws the airplane at 0 ft; on the ground
 the height stays none."""

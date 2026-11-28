@@ -57,15 +57,14 @@ TIMEOUT_S = 5.0
 SOURCE = "Planespotters.net"
 #: The registration is asked too where the address has not answered in this
 #: long, s (a hedged ask): one after the other a cold card waited up to
-#: 2 x TIMEOUT_S where the address had none (round 4's audit), and both at
-#: once doubled every card's requests to Planespotters.net (round 5's).
+#: 2 x TIMEOUT_S where the address had none, and both at
+#: once doubled every card's requests to Planespotters.net.
 HEDGE_S = 1.0
 #: After a refusal, a 5xx or no answer in time, Planespotters.net is not
 #: asked for this long, s (its Retry-After where longer, held to an hour):
 #: while it failed every card's open asked it again, both ways, and the
 #: shared session asked each up to three times more on a 429 or 5xx,
-#: honouring Retry-After up to 30 s inside the card's request (round 6's
-#: audit, N5). Its terms limit the requests a server may send.
+#: honouring Retry-After up to 30 s inside the card's request. Its terms limit the requests a server may send.
 HOLD_S = 60.0
 _SOURCE = ratelimit.Gate(hold_most_s=3600.0)
 _ASKING = ThreadPoolExecutor(max_workers=4, thread_name_prefix="planespotters")

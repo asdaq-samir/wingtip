@@ -43,7 +43,7 @@ class Flight(BaseModel):
     )
     # As many fields as a route has (its two ends and its stops): the
     # model hands the flight back, and an unbounded map was a /api/plan
-    # query of any length (the security review of 2026-11-22, L3).
+    # query of any length.
     fuel_on_board: dict[Point, float] = Field(
         default={},
         max_length=MAX_STOPS + 2,
@@ -111,8 +111,8 @@ def address_of(flight: Flight) -> dict[str, str]:
         "procs": flight.procedures,
         "tanks": tanks_text(flight),
         # The rules flown, which the web's address reads (lib/address
-        # PICK_KEYS), so an IFR plan opens as IFR, not the app's own setting
-        # (the mcp audit, L8); VFR is the default and not written.
+        # PICK_KEYS), so an IFR plan opens as IFR, not the app's own setting;
+        # VFR is the default and not written.
         "rules": "ifr" if flight.rules == "ifr" else "",
     }
     return {k: v for k, v in keys.items() if v}
@@ -157,7 +157,7 @@ def picks_of(flight: Flight) -> str | None:
     SaveFlightRequest.picks, the address's PICK_KEYS): the altitude asked,
     the procedures, the fuel stops (`fuel`), the fuel on board (`tanks`)
     and IFR (`rules`; VFR is the default and not written), so a flight
-    opened again plans as it was saved (mcp audit 2026-11-23, M5)."""
+    opened again plans as it was saved."""
     picks = {
         "altitude_ft": flight.cruise_altitude_ft,
         "procs": flight.procedures,

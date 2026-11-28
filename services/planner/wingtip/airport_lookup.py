@@ -72,7 +72,7 @@ def get_airport(ident: str, cache_path: Path = DEFAULT_CACHE_PATH) -> dict:
         at = at if at is not None and _country(table.iloc[at]) == "US" else None
     if at is None:
         # The pilot's words, which the route box shows on the ident's own
-        # pill (the FPL audit's A2): what it is, not which file it is not in.
+        # pill: what it is, not which file it is not in.
         raise ValueError(f"No airport goes by {ident!r}.")
     row = table.iloc[at]
     # NASR's position, elevation and name for a field it lists; OurAirports'

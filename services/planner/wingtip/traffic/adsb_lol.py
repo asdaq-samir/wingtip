@@ -45,7 +45,7 @@ SEARCH_WAIT_S = 1.0
 #: Turned away or not answered, nothing is asked for this long (a 429's Retry-After where longer).
 BACKOFF_S = 15.0
 #: Searches not answered in their time this many times in a row: adsb.lol is hanging, not refusing, and the next
-#: searches are not sent for SEARCH_HOLD_S, where each spent its whole timeout every turn (round 5's audit). The
+#: searches are not sent for SEARCH_HOLD_S, where each spent its whole timeout every turn. The
 #: regions' turns are not held by it: a region waits out its own longer timeout and keeps its last answer meanwhile.
 SEARCH_TIMEOUTS_HELD = 2
 SEARCH_HOLD_S = 15.0

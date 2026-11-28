@@ -49,7 +49,7 @@ def _base_of(flights: list[dict]) -> dict:
 def _find_base(hex_id: str) -> None:
     try:
         # What is kept and recorded alone: a map of airplanes asked about
-        # spent OpenSky's day of credits on bases (the audit of 2026-11-27).
+        # spent OpenSky's day of credits on bases.
         judged = _base_of(history(hex_id, ask=False)["flights"])
     except Exception:  # noqa: BLE001 -- asked again next time, not kept
         with _LOCK:

@@ -137,7 +137,7 @@ def line_points(start: tuple, end: tuple) -> tuple[np.ndarray, np.ndarray, np.nd
     cell it crosses holds one -- a third of a cell apart -- and how far
     along each is, nm: (lats, lons, along_nm)."""
     total = float(geo.distance_nm(start[0], start[1], end[0], end[1]))
-    # The short way round 180 (geo_boxes): its longitudes, not 350 degrees.
+    # The short way over 180 (geo_boxes): its longitudes, not 350 degrees.
     span = max(abs(end[0] - start[0]), abs(geo_boxes.lon_near(end[1], start[1]) - start[1]))
     n = max(2, int(math.ceil(span * PER_DEG * 3)) + 1)
     # Along the great circle, not the straight line on the chart: the
@@ -219,7 +219,7 @@ def fill_holes(high: np.ndarray, low: np.ndarray) -> int:
     in from the edge of a hole; how many. One such cell made ground_ft give
     up on the whole leg, whose floor then took 6 to 12 s of tiles fetched
     point by point (59 of them in the 2026-11-02 grid, KMSN-KTUS's floor
-    11.8 s: the speed audit of 2026-11-23, M1). The neighbours' highest is
+    11.8 s). The neighbours' highest is
     the conservative guess for a floor: it is the most a terrain clearance
     is measured from round the hole, and RESAMPLED_MARGIN_FT stands on it
     as on every cell; the lowest likewise keeps 91.159's surface low."""

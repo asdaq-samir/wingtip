@@ -41,8 +41,7 @@ def recent() -> list[dict]:
 class RecordFailures:
     """Records each answer of 500 or more -- a weather outage's 502, a
     computation's 504 -- and each exception that reached no handler (then
-    let through, for FastAPI's own 500). Plain ASGI, as RequestIds is (the
-    react-perf audit's round 4, L2): a Request is made only for a failure."""
+    let through, for FastAPI's own 500). Plain ASGI, as RequestIds is: a Request is made only for a failure."""
 
     def __init__(self, app):
         self.app = app

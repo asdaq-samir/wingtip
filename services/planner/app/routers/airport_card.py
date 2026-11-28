@@ -159,7 +159,7 @@ def airport_place(ident: str) -> AirportPlace:
         ),
         "chart_supplement_url": publications.chart_supplement_url(place["ident"]),
         "procedures": publications.terminal_charts(place["ident"]),
-        # An FAA outage said as one, and a kept edition named (the data-cycles audit's 13).
+        # An FAA outage said as one, and a kept edition named.
         "publications": publications.editions(),
     }
 

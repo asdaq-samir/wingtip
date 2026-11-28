@@ -9,7 +9,7 @@ OurAirports, community data, stays only for a field NASR does not list.
 OurAirports' local codes have been reused for other fields: its 32TX is
 Hinson Airport at Kenney, TX, 365 ft, with a 1,866 ft runway 12/30, where
 NASR's 32TX is Rockpile Ranch 300 nm west, 5,386 ft, one turf runway 05/23
-of 3,931 ft (the aviation audit's AV-1, 2026-11-14). An OurAirports row more
+of 3,931 ft. An OurAirports row more
 than MATCH_NM from NASR's ARP for the same ident is another field: it lends
 the field nothing -- no elevation, runways, frequencies or photo.
 
@@ -201,7 +201,7 @@ def _runways_of(rwy: str, _rwy_mtime: float, ends: str, _ends_mtime: float, rema
         # from runway end", and LNDG_DIST_AVBL, the landing distance
         # available (LDA) in feet, as APT_RWY_END files them; None where NASR
         # gives none. A landing is checked against these, not the runway's
-        # whole length (the web audit's WEB-1; wingtip.pattern puts them on
+        # whole length (wingtip.pattern puts them on
         # each runway end).
         distances = {
             n: {"displaced_threshold_ft": _feet(e.get("DISPLACED_THR_LEN")), "lda_ft": _feet(e.get("LNDG_DIST_AVBL"))}

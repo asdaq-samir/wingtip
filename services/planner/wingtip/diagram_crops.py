@@ -1,7 +1,7 @@
 """Where an airport diagram's crop to its runways is kept, and whether it is
 already known not to be had: the airport card asks for the crop
 (/api/airport-diagram/{cycle}/runways/{ident}.png) only where it can be,
-as KDLH's card logged a 404 at every opening (the web audit's WEB-41).
+as KDLH's card logged a 404 at every opening.
 The crop itself is drawn by wingtip.publications."""
 
 from datetime import date

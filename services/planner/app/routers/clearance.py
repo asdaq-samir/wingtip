@@ -34,7 +34,7 @@ def _corridor(near: tuple) -> list[tuple[float, float, float, float]]:
     its ends, and a box round both ends is most of the country."""
     boxes = []
     for (lat1, lon1), (lat2, lon2) in zip(near, near[1:] or near):
-        # The short way round 180 (geo_boxes): Adak to Shemya is 378 nm, not
+        # The short way over 180 (geo_boxes): Adak to Shemya is 378 nm, not
         # 350 degrees of boxes; fixes.within and places_in read one past it.
         lon2 = geo_boxes.lon_near(lon2, lon1)
         steps = max(1, int(max(abs(lat2 - lat1), abs(lon2 - lon1))))

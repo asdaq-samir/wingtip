@@ -13,7 +13,7 @@ one Linux disk.
 A store's shape is its PRAGMA user_version, which its builder sets: a
 file of another shape reads as none until it is built again (`version`,
 `older`), the one check the registry, the NTSB's store, the NOTAMs' and
-ingest's turns each wrote their own way (round 6's common-code audit, 4).
+ingest's turns each wrote their own way.
 
 A store first opened at a new path takes the one kept at its old path
 (adopt): the NOTAMs heard since 19 Oct 2026 are the briefing's whole

@@ -138,7 +138,7 @@ def prune_behind_served() -> list[str]:
     a corridor's sheets as routes need them, some 6 GB for the whole
     country a cycle, and only the refresh pruned them, which runs in its
     own task with its own disk: the server's data disk kept every cycle's
-    until it filled (the ops audit, 2026-11-21). Locally the refresh
+    until it filled. Locally the refresh
     prunes, and this does nothing."""
     if not config.CHART_TILES_URL:
         return []

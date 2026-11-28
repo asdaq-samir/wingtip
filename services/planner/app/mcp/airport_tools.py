@@ -51,8 +51,7 @@ def register(server: MCPServer) -> None:
         pilot()
         # The search the app's own box runs (/api/airports/search's), asked
         # for one more than this page: that endpoint answers its first 8,
-        # which made `total` and `has_more` say 8 was all (mcp audit
-        # 2026-11-23, M2). The total is said only once the last page is
+        # which made `total` and `has_more` say 8 was all. The total is said only once the last page is
         # in sight; before it, there are more.
         rows = await anyio.to_thread.run_sync(lambda: airports.search_airports(query, limit=offset + limit + 1))
         # Each in the endpoint's own shape (its response model), closed
@@ -62,12 +61,11 @@ def register(server: MCPServer) -> None:
         if page["has_more"]:
             page["total"] = None
         # The search pages no further than SEARCH_REACH: past it the last
-        # page says so, never a next_offset the tool would refuse (the
-        # round 6 audit, P4; MCP's pagination, a null next page at the end).
+        # page says so, never a next_offset the tool would refuse (MCP's pagination, a null next page at the end).
         # Its total is then the number that matched, counted once on this
-        # rare page, never null beside a has_more of false (the round 7
-        # audit, P-L2) nor only the matches paged, which read as the full
-        # count (the round 8 audit's nit).
+        # rare page, never null beside a has_more of false
+        # nor only the matches paged, which read as the full
+        # count.
         if page["next_offset"] is not None and page["next_offset"] > SEARCH_REACH:
             reach = page["next_offset"]
             total = await anyio.to_thread.run_sync(lambda: airports.count_airports(query))

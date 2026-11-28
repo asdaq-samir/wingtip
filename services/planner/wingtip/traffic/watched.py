@@ -75,7 +75,7 @@ FOLLOW_QUIET_EVERY_S = 120.0
 _FOLLOW_ASKED: dict[str, float] = {}
 #: A round asks adsb.lol's API for this many followed airplanes at most, half
 #: the turns a round's FOLLOW_EVERY_S holds at adsb.lol's gap, so the map's
-#: regions and a pilot's searches keep the rest (round 7's audit, C4).
+#: regions and a pilot's searches keep the rest.
 FOLLOW_ASKS_MAX = 3
 #: Turns lost to adsb.lol (not free, or no answer) in a row before ADS-B
 #: Exchange's paid month is asked in their place for a watched airplane (C1).
@@ -146,7 +146,7 @@ def follow_round() -> int:
     heard = asks = 0
     _prune()
     # The card opened latest first, so a round adsb.lol cuts short has
-    # asked for the airplanes pilots are looking at (security round 4, M5).
+    # asked for the airplanes pilots are looking at.
     for hex_id in followed():
         if _heard_elsewhere_now(hex_id) is not None or not _follow_due(hex_id):
             continue
@@ -215,7 +215,7 @@ def _watch(hex_id: str) -> None:
     # ADS-B Exchange's paid month is for an airplane adsb.lol answered
     # without (it hears none such), or after turns lost in a row: not for one
     # it hears on the ground (its answer is empty, `_aircraft` drops those)
-    # nor for a turn that was not free (round 7's audit, C1: 180 calls an hour
+    # nor for a turn that was not free (180 calls an hour
     # for a card open on a parked airplane).
     if not planes and not heard and (answered or missed >= LOL_MISSED_MAX):
         try:
@@ -240,7 +240,7 @@ def watch_round() -> int:
     poll only reads what this records (`_watched_near`): it asked for every
     watched airplane anywhere in the country itself, each behind adsb.lol's
     turn, so a pilot over Chicago waited 10 to 15 s for another's open card
-    over Florida (round 6's audit, N1). How many were asked about."""
+    over Florida. How many were asked about."""
     _prune()
     with _LOCK:
         watched = [h for h, at in _WATCHED.items() if _clock() - at < WATCH_FOR_S]
@@ -263,7 +263,7 @@ def _prune() -> None:
     answer past WATCH_FOR_S, a quiet ask past FOLLOW_QUIET_EVERY_S, and a
     report on the ground a day old. Nothing deleted them before, so every
     card opened since the start stayed, and each poll walked them all under
-    the package's lock (round 6's audit, N9)."""
+    the package's lock."""
     now, wall = _clock(), _wall()
     with _LOCK:
         for kept, older in (

@@ -25,7 +25,7 @@ def taf_reach(path: list[tuple[float, float]]) -> float | None:
     the end of its last period as the AWC's cache file gives it (`timeTo`)
     -- or None where none is near: past it, an hour's weather is not
     known."""
-    # The short way round 180 (geo_boxes: Adak to Shemya).
+    # The short way over 180 (geo_boxes: Adak to Shemya).
     box = corridor_box(path[0], path[-1], TAF_CORRIDOR_NM)
     ends = [
         f.get("timeTo")

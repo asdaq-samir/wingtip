@@ -13,8 +13,7 @@ def course_line(start: tuple, end: tuple, step_nm: float = 5.0) -> list:
 
     On the geodesic itself (geo.great_circle_points), in one vectorised
     ask of the engine: stepping with the bearing worked out again at every
-    point took two engine calls a step, some 120 for a 300 nm leg (the
-    reuse audit of 2026-11-23, M8). Holding the first bearing instead
+    point took two engine calls a step, some 120 for a 300 nm leg. Holding the first bearing instead
     would trace a rhumb-like path a couple of miles off true course
     mid-leg, and checkpoints placed by great-circle cross-track distance
     would show off a line drawn so.
