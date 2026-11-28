@@ -37,17 +37,23 @@ export function useCopilot(): { message: CopilotMessage | null; dismiss: () => v
   const { data: currency } = useCurrency({ enabled: on, silent: true });
 
   // Where to ask the planner from: rounded, so the question changes as
-  // the airplane gets somewhere new, not at every fix.
+  // the airplane gets somewhere new, not at every fix. The rest of the
+  // route starts from that same rounded place: from the fix itself, to
+  // restOfRoute's few hundred metres, the question changed every 0.3 nm,
+  // a fifth of a second at the dry run's 50 times, each ask overtaken
+  // before its answer came, and with no answer ever kept
+  // (keepPreviousData keeps only one shown) the copilot said nothing for
+  // the whole flight (copilot.spec on CI's runner, four runs of PR #591).
   const ask = useOwnShip((s) => {
     const fix = s.enabled ? s.fix : null;
     if (!on || !fix || !flight) return null;
     const along = alongLine(fix, flight.line);
+    const at = { lat: Math.round(fix.lat * 10) / 10, lon: Math.round(fix.lon * 10) / 10 };
     return JSON.stringify({
-      lat: Math.round(fix.lat * 10) / 10,
-      lon: Math.round(fix.lon * 10) / 10,
+      ...at,
       dest: flight.dest,
       ...(flight.alternate ? { alternate: flight.alternate } : {}),
-      path: restOfRoute(fix, flight.line, along?.leg ?? 0),
+      path: restOfRoute(at, flight.line, along?.leg ?? 0),
     });
   });
   const { data: around } = useQuery({
