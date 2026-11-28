@@ -1,6 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { showPage } from "./oneSearch";
 import {
+  cardHost,
   slow,
   sideDrawer,
   sheetFoot,
@@ -16,9 +17,11 @@ import { closeBrief } from "./routeHelpers";
 import { watchFor } from "./pacing";
 
 /** FPL's Brief, a card over the route (BriefCard), from the chips' Brief:
- *  its pages -- Preflight, Depart, En route and Arrive -- are its. */
+ *  its pages -- Preflight, Depart, En route and Arrive -- are its. A card,
+ *  it opens in the card's host: the inspector's column on an iPad on its
+ *  side, the panel everywhere else (cardHost). */
 export async function openBrief(page: Page) {
-  const card = sideDrawer(page).getByTestId("brief-card");
+  const card = cardHost(page).getByTestId("brief-card");
   if (await card.isVisible().catch(() => false)) return;
   await openPanel(page);
   await sheetFoot(page)
@@ -31,7 +34,7 @@ export async function openBrief(page: Page) {
  *  2026-11-21: More keeps Route Options, Share link and Open in ForeFlight). */
 export async function openBriefMenu(page: Page) {
   await openBrief(page);
-  await sideDrawer(page).getByTestId("card-share").click();
+  await cardHost(page).getByTestId("card-share").click();
 }
 
 /** The panel all the way out, as a finger takes it: a drag on its
@@ -123,15 +126,15 @@ export async function closeNavLog(page: Page) {
   await expect(navLogSheet(page)).toBeHidden();
 }
 
-/** The planning panel's own tabs. */
-export const panelTabs = (page: Page) => sideDrawer(page).getByTestId("panel-tabs");
+/** The Brief's own tabs, in the card's host (cardHost). */
+export const panelTabs = (page: Page) => cardHost(page).getByTestId("panel-tabs");
 
 const PAGE_OF: Record<PhaseTab, string> = { Preflight: "preflight", Depart: "depart", "En Route": "enroute", Arrive: "arrive" };
 
 /** The Brief open on its cards (BriefGlance, the owner's D′), one of its
  *  pages opened by its card; the tabs are over a page once one is open. */
 export async function briefPage(page: Page, phase: PhaseTab) {
-  const glance = sideDrawer(page).getByTestId("brief-glance");
+  const glance = cardHost(page).getByTestId("brief-glance");
   await expect(glance.or(panelTabs(page))).toBeVisible();
   if (await glance.isVisible()) await glance.getByTestId(`brief-glance-${PAGE_OF[phase]}`).click();
   await expect(panelTabs(page)).toBeVisible();
@@ -154,7 +157,7 @@ export async function openSection(page: Page, title: string) {
   }
   await openBrief(page);
   await panelFull(page); // its page cards are past the half card's foot, as in openTab
-  const here = panel.locator(`[role="tabpanel"]:not([inert]) [data-title="${title}"]`).first();
+  const here = cardHost(page).locator(`[role="tabpanel"]:not([inert]) [data-title="${title}"]`).first();
   if (!(await here.isVisible().catch(() => false))) {
     await briefPage(page, "Preflight");
     // Round the phases again until it is on one: a section drawn once the

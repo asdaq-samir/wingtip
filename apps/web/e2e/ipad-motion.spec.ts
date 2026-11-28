@@ -57,7 +57,8 @@ test("on an iPad on its side a card in the inspector comes in from its edge and 
   await page.evaluate(() => ((window as unknown as { motion: string[] }).motion.length = 0));
   await card.focus();
   await page.keyboard.press("Escape");
-  await expect.poll(() => motion(page)).toEqual(expect.arrayContaining(["card:opacity:0.45s"]));
+  // Put away on a page's time, shorter than its coming (cardMotion's AWAY, --motion-page).
+  await expect.poll(() => motion(page)).toEqual(expect.arrayContaining(["card:opacity:0.25s"]));
   await expect(page.locator('[data-slot="map-inspector"] [data-sheet-card]')).toHaveCount(0);
 });
 

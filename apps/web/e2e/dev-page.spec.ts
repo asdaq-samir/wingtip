@@ -8,6 +8,7 @@ import {
   openConsole,
   grabberTo,
   settle,
+  sheetFoot,
   showTabs,
   sideDrawer,
   slow,
@@ -37,7 +38,7 @@ test(
     // Its figures half way; down again, the pill.
     if ((page.viewportSize()?.width ?? 0) < 660) {
       await grabberTo(page, "half");
-      await expect(sideDrawer(page).getByTestId("train-figures")).toBeVisible();
+      await expect(sheetFoot(page).getByTestId("train-figures")).toBeVisible();
     }
     await grabberTo(page, "peek");
     await expectDrawerClosed(page);
@@ -106,7 +107,7 @@ test("dev page: the waypoint drawer is a worklist -- every candidate in flight o
   // test fail about one run in ten, on mobile, where the drawer is a
   // Sheet and everything happens a little later.
   await steady(() => rows.count(), { gap: 1200, timeout: slow(40000) });
-  await expect(drawer.getByTestId("train-figures")).toBeVisible();
+  await expect(sheetFoot(page).getByTestId("train-figures")).toBeVisible();
   await expect(rows.first()).toContainText("C81");
 
   // A click selects the row and puts its point in the rating card under

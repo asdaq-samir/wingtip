@@ -235,9 +235,10 @@ export const SCREENS: Screen[] = [
       );
       await page.goto("/app/plan?flight=a89c1e");
       await settle(page);
-      // Half way, as it opens on Info (the owner, 2026-11-27): its facts under the actions.
+      // Half way, as it opens on Info (the owner, 2026-11-27): its action row, always drawn
+      // (its facts are not where CI has no FAA registry and the flight only an operator).
       // In the card's host, the inspector on an iPad on its side (cardHost), not the side panel.
-      await expect(cardHost(page).getByTestId("airplane-facts")).toBeAttached({ timeout: slow(30000) });
+      await expect(cardHost(page).getByTestId("airplane-actions")).toBeVisible({ timeout: slow(30000) });
       if (part === "Alert menu") {
         await cardHost(page).getByTestId("airplane-alerts").click();
         await expect(page.getByTestId("flight-alert-menu")).toBeVisible();
