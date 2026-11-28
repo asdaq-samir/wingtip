@@ -304,24 +304,24 @@ struct ChartMap: UIViewRepresentable {
             guard shade != self.shade || night != self.night else { return }
             let turned = night != self.night
             (self.shade, self.night) = (shade, night)
-            tiles?.shade = shade
+            tiles?.shade = shade // once a drag: the Dimmer comes as its slider lifts (ChartLookRows)
             let brightness = MarkDim.alpha(shade: shade, night: night)
-            MarkDim.apply(brightness, on: map)
             settling?.cancel()
             guard turned else {
-                // A Dimmer step: the lines recoloured once the slider stands
-                // still (the web's useSettledMapDim), not every line drawn
-                // again at each step of the drag.
+                // A step (VoiceOver's, a key's): the words and lines recoloured
+                // once it stands still (the web's useSettledMapDim).
                 settling = Task { [weak self, weak map] in
                     try? await Task.sleep(for: CourseRenderers.settle)
                     guard !Task.isCancelled, let self, let map else { return }
+                    MarkDim.apply(brightness, on: map)
                     overlayDim.set(brightness, on: map)
                 }
                 return
             }
+            MarkDim.apply(brightness, on: map)
             overlayDim.set(brightness, on: map)
-            if let edge = courseEdge, let renderer = map.renderer(for: edge) as? MKOverlayPathRenderer {
-                overlayDim.recolour(renderer, stroke: NightPalette.routeEdge(night: night))
+            if let edge = courseEdge, let renderer = map.renderer(for: edge) as? CourseEdgeRenderer {
+                renderer.turn(night: night, dim: overlayDim)
             }
         }
 

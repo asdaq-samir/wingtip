@@ -57,38 +57,50 @@ struct ChartLookRows: View {
     @AppStorage(ChartLook.Keys.dimLight) private var dimLight = 0.0
     @AppStorage(ChartLook.Keys.dimDark) private var dimDark = ChartLook.nightDim
     @AppStorage(ChartLook.Keys.contrast) private var contrast = 0.0
-    /// Contrast while its slider is held: each change draws the whole chart
-    /// again from its tiles (ChartTileOverlay), so the map takes it as the
-    /// finger lifts; a step by VoiceOver or the keyboard at once.
-    @State private var held: Double?
+    /// A slider's value while it is held: each change of either draws the
+    /// whole chart again from its tiles (ChartTileOverlay) and letters the
+    /// map's words again, so the map takes it, and the device keeps it,
+    /// once as the finger lifts, as the web's chartLookPreview commits; a
+    /// step by VoiceOver or the keyboard at once.
+    @State private var heldDim: Double?
+    @State private var heldContrast: Double?
 
     var body: some View {
-        let dim = scheme == .dark ? $dimDark : $dimLight
+        let dim = held(scheme == .dark ? $dimDark : $dimLight, $heldDim)
         Slider(value: dim, in: 0...ChartLook.dimMax, step: ChartLook.step) {
             Text("Dimmer")
         } minimumValueLabel: {
             Image(systemName: "sun.max").accessibilityLabel("Bright")
         } maximumValueLabel: {
             Image(systemName: "sun.min").accessibilityLabel("Dim")
-        }
-        .accessibilityValue(Text("\(Int((dim.wrappedValue * 100).rounded())) percent dimmed"))
-        .accessibilityIdentifier("chart-dimmer")
-        let shown = Binding(get: { held ?? contrast }, set: { if held != nil { held = $0 } else { contrast = $0 } })
+        } onEditingChanged: { lift(scheme == .dark ? $dimDark : $dimLight, $heldDim, editing: $0) }
+            .accessibilityValue(Text("\(Int((dim.wrappedValue * 100).rounded())) percent dimmed"))
+            .accessibilityIdentifier("chart-dimmer")
+        let shown = held($contrast, $heldContrast)
         Slider(value: shown, in: ChartLook.contrastMin...ChartLook.contrastMax, step: ChartLook.step) {
             Text("Contrast")
         } minimumValueLabel: {
             Image(systemName: "circle").accessibilityLabel("Flatter")
         } maximumValueLabel: {
             Image(systemName: "circle.lefthalf.filled").accessibilityLabel("Harder")
-        } onEditingChanged: { editing in
-            if editing {
-                held = contrast
-            } else if let kept = held {
-                held = nil
-                contrast = kept
-            }
+        } onEditingChanged: { lift($contrast, $heldContrast, editing: $0) }
+            .accessibilityValue(Text("\(Int((shown.wrappedValue * 100).rounded())) percent"))
+            .accessibilityIdentifier("chart-contrast")
+    }
+
+    /// The slider's value: the held one while the finger is on it, else the kept one.
+    private func held(_ kept: Binding<Double>, _ held: Binding<Double?>) -> Binding<Double> {
+        Binding(get: { held.wrappedValue ?? kept.wrappedValue },
+                set: { if held.wrappedValue != nil { held.wrappedValue = $0 } else { kept.wrappedValue = $0 } })
+    }
+
+    /// Held as the finger comes down; kept, once, as it lifts.
+    private func lift(_ kept: Binding<Double>, _ held: Binding<Double?>, editing: Bool) {
+        if editing {
+            held.wrappedValue = kept.wrappedValue
+        } else if let value = held.wrappedValue {
+            held.wrappedValue = nil
+            kept.wrappedValue = value
         }
-        .accessibilityValue(Text("\(Int((shown.wrappedValue * 100).rounded())) percent"))
-        .accessibilityIdentifier("chart-contrast")
     }
 }

@@ -170,7 +170,8 @@ final class Emergency {
     /// diversion drill's "diversion"), the airplane's figures as the
     /// planner sent them (none: the glide is not guessed). The planner's
     /// members are the engine's, in its snake case.
-    static func bestFields(_ answer: APIEmergencyFields, fix: OwnShip.Fix, variationDeg: Double?, mode: String = "glide") throws -> Ranked {
+    static func bestFields(_ answer: APIEmergencyFields, fix: OwnShip.Fix, variationDeg: Double?, mode: String = "glide",
+                           drill: Bool? = nil) throws -> Ranked {
         let snake = Planner.snakeEncoder
         return try Engine.bestFields(
             mode: mode,
@@ -179,7 +180,7 @@ final class Emergency {
             wind: try answer.wind.map { try Engine.recoded($0, encoder: snake) },
             variationDeg: variationDeg,
             airplane: try answer.airplane.map { try Engine.recoded($0, encoder: snake) },
-            fields: try answer.fields.map { try Engine.recoded($0, encoder: snake) })
+            fields: try answer.fields.map { try Engine.recoded($0, encoder: snake) }, drill: drill)
     }
 
     /// The section of the emergency checklist asked, "Engine failure in

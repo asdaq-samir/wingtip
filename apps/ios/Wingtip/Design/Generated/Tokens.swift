@@ -1235,6 +1235,9 @@ nonisolated enum WingtipChartLook {
     static let step: Double = 0.05
     static let plateOpacity: Double = 0.85
     static let plateLeastOpacity: Double = 0.1
+    static let routeEdgeNight: Double = 0.9
+    static let routeEdgeDay: Double = 0.55
+    static let routeEdgeSunlight: Double = 0.9
 }
 
 /// The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group).

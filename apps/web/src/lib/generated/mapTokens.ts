@@ -111,6 +111,9 @@ export const CHART_LOOK = {
   step: 0.05,
   plateOpacity: 0.85,
   plateLeastOpacity: 0.1,
+  routeEdgeNight: 0.9,
+  routeEdgeDay: 0.55,
+  routeEdgeSunlight: 0.9,
 } as const;
 
 /** The Dimmer's policy over what is drawn on the chart at night (design/tokens.json's map-dim group). */

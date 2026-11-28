@@ -1,3 +1,4 @@
+import SwiftUI
 import UIKit
 
 /// How one of the FAA's pages is drawn at night: white on black unless the
@@ -18,6 +19,16 @@ nonisolated struct PageLook: Equatable, Sendable {
 
     /// The ground round a page: black under an inverted one, else the paper's white.
     var paper: UIColor { inverted ? .black : .white }
+
+    /// The paper as the pilot sees it, its shade laid on: the margins
+    /// round a page whose shade is drawn over the page alone (the
+    /// diagram's PDFView), so a page kept white at night has no undimmed
+    /// white bars beside it on an iPad (AIM 8-1-6).
+    var shadedPaper: UIColor {
+        guard shade > 0 else { return paper }
+        // Mixed in the device's sRGB, as the shade is laid over the page.
+        return UIColor(Color(uiColor: paper).mix(with: Color(uiColor: NightPalette.ground), by: Double(min(1, shade)), in: .device))
+    }
 
     /// White on black for a kept pick (nil: none) under an appearance: the
     /// pilot's own pick, else the dark appearance.

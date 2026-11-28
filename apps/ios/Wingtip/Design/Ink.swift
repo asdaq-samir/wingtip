@@ -85,3 +85,12 @@ nonisolated enum WingtipInk {
     /// The look Setup picked, for the colours resolved after it.
     static func keep(look: String) { kept.withLock { $0 = look } }
 }
+
+/// The look picked, as a trait of the window (WindowTint): a change of it
+/// changes the colours' appearance, so UIKit resolves every dynamic colour
+/// again, the sheet's and the states' among them, as the look changes.
+nonisolated struct LookTrait: UITraitDefinition {
+    static let defaultValue = ""
+    static let affectsColorAppearance = true
+    static let name = "WingtipLook"
+}

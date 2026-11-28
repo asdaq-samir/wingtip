@@ -70,13 +70,11 @@ final class DiversionDrillModel {
         }
     }
 
-    /// The fields to divert to, at most six, best first: a field under the
-    /// point (within 2 nm) is where the airplane is, not a diversion.
+    /// The fields to divert to, best first, as the engine's drill gives
+    /// them (best_fields' `drill`: a field within 2 nm of the point is where
+    /// the airplane is, not a diversion, and six offered; ACS PA.VI.C).
     static func ranked(_ near: APIEmergencyFields, fix: OwnShip.Fix) throws -> [Emergency.Field] {
-        var away = near
-        away.fields = near.fields.filter { $0.distanceNm >= 2 }
-        let ranked = try Emergency.bestFields(away, fix: fix, variationDeg: Emergency.variation(at: fix.coordinate), mode: "diversion")
-        return Array(ranked.fields.prefix(6))
+        try Emergency.bestFields(near, fix: fix, variationDeg: Emergency.variation(at: fix.coordinate), mode: "diversion", drill: true).fields
     }
 
     /// A row's runway and weather: "3,200 ft runway · VFR".

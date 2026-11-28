@@ -110,13 +110,23 @@ import Testing
                                  runways: [Runway(closed: false, ends: "04L/22R", lengthFt: 7500, lighted: true),
                                            Runway(closed: false, ends: "10L/28R", lengthFt: 13000, lighted: true)],
                                  towered: true)
-        let closed = notam("!ORD 11/439 ORD RWY 04L/22R CLSD 2611100600-2611301200")
-        let marks = FieldNotamWords.marks([closed], idents: try FieldNotamWords.idents("KORD"), place: place)
+        // Read as the planner reads it for the card (app.notam_reading's
+        // notam_subject with the card's runways), sent as its `subject`.
+        func read(_ raw: String, id: String = "ORD 11/439", inForce: Bool = true) throws -> APIRankedNotam {
+            var one = notam(raw, id: id, inForce: inForce)
+            one.subject = try Engine.recoded(Engine.notamSubject(text: raw, idents: try FieldNotamWords.idents("KORD"),
+                                                                 runways: place.runways.map { $0.ends ?? "" }))
+            return one
+        }
+        let closed = try read("!ORD 11/439 ORD RWY 04L/22R CLSD 2611100600-2611301200")
+        let marks = FieldNotamWords.marks([closed], place: place)
         #expect(marks.runway[0]?.unusable == true)
         #expect(marks.runway[0]?.notams.map(\.id) == ["ORD 11/439"])
         #expect(marks.runway[1] == nil)
-        let later = notam("!ORD 11/440 ORD RWY 04L/22R CLSD 2612100600-2612301200", id: "ORD 11/440", inForce: false)
-        #expect(FieldNotamWords.marks([later], idents: try FieldNotamWords.idents("KORD"), place: place).runway.isEmpty)
+        let later = try read("!ORD 11/440 ORD RWY 04L/22R CLSD 2612100600-2612301200", id: "ORD 11/440", inForce: false)
+        #expect(FieldNotamWords.marks([later], place: place).runway.isEmpty)
+        // Sent unread, it marks nothing: the phone reads no NOTAM itself.
+        #expect(FieldNotamWords.marks([notam(closed.raw)], place: place).runway.isEmpty)
     }
 
     /// The web's notamCoverage cases (decision 0059): from when, and that the
