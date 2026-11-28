@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, grabberTo, mapStill, settle, slow } from "./helpers";
+import { closeCard, grabberTo, mapLayersOn, mapStill, settle, slow } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
@@ -37,6 +37,10 @@ test(
 test("a right-click on the chart asks what is there, and Close puts the card away", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
+  // Once the right-click's listener is on the map (PickedGl): the page
+  // settled long before it on CI's runner, the chart's tiles slow, and
+  // the right-click went to a canvas with nothing to hear it (PR #591).
+  await mapLayersOn(page);
   const map = page.locator(".maplibregl-map");
   const box = (await map.boundingBox())!;
   await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.3, { button: "right" });

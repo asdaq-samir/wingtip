@@ -65,4 +65,4 @@ export {
   stripShows,
   airportSearch,
 } from "./planHelpers";
-export { mapStill, tapTheChart, tapNear, airportMarks, waypointMarks, airportMark, drawn, chartZoom } from "./mapHelpers";
+export { mapStill, mapLayersOn, tapTheChart, tapNear, airportMarks, waypointMarks, airportMark, drawn, chartZoom } from "./mapHelpers";
