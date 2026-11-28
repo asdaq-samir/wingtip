@@ -7,6 +7,13 @@ import { steady } from "./pacing";
 /** Airports as places, as Maps has them: a tap on one on the chart opens its card in the panel -- its name, what kind of field it is, the
  *  weather there as pilots read it -- with Fly Here, Weather and Frequencies; the card is the address's (?place=) and puts itself away. */
 
+// cardWeather's handler asks the planner for the card's real answer before it changes the weather; a card still asking as the test
+// ends found the page closed and failed the job with no red test (route.fetch: Test ended, KDLH, PR #591's shard 9): the handlers
+// taken off, their errors let go, as each test ends, as ifr.spec does.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 test("the departure's own card says no distance from itself while the pilot's position is not known", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=C81");
   await settle(page);
