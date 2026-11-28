@@ -1,8 +1,7 @@
 import { blend, clampRgb, parse, type Color } from "culori";
 
 /**
- * The theme's colours read for WCAG 2's contrast ratio, as the iOS
- * audit's P15 measures it on the page: a test reads index.css's tokens
+ * The theme's colours read for WCAG 2's contrast ratio, as the page's measure takes it: a test reads index.css's tokens
  * through this and holds every pair of words and surface to 4.5:1 (WCAG
  * 1.4.3) with culori's `wcagContrast`, so a retuned token that drops
  * below it fails a test, not a pilot at night. The colour itself is

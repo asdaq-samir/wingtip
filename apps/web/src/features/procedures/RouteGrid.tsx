@@ -10,8 +10,7 @@ export type { RouteGridProps, RouteItem } from "./RouteGridList";
 // The list with its drag and drop (RouteGridList: React Aria's GridList,
 // useDragAndDrop and the selection and drop code under them, about 245 KB)
 // on a chunk of its own: a route link drew none of it, but fetched it with
-// the route's panel, 25 KB over its budget (route-load.spec, the re-audit
-// of 2026-11-22). Asked for at the first touch of the list or a moment
+// the route's panel, 25 KB over its budget (route-load.spec). Asked for at the first touch of the list or a moment
 // after the route has drawn (lib/routeDrawn), whichever comes first.
 type List = ComponentType<RouteGridProps>;
 let loaded: List | null = null;

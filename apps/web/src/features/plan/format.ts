@@ -150,7 +150,7 @@ export { clockTime };
 
 /** How the Altitude Advisor's reasoning says the economical plan: none
  *  where the airplane has no climb fuel flow, as the engine then leaves it
- *  out rather than assume one (navlog_plans, the aviation audit's AV-8). */
+ *  out rather than assume one (navlog_plans). */
 export const economicalWords = (plans: { kind: string }[]) =>
   plans.some((o) => o.kind === "economical")
     ? "economical for the least fuel, every climb counted"
@@ -311,7 +311,7 @@ export function windAloft(dirTrueDeg: number, speedKt: number): string {
 
 /** Ceiling and visibility the way a briefer says them, a report's "more
  *  than" visibility as such ("6+ sm", P6SM: FAA JO 7900.5; lib/format's
- *  miles, the code audit's CODE-12), and its "less than" ("M1/4SM"). */
+ *  miles), and its "less than" ("M1/4SM"). */
 export function ceilingAndVisibility(
   ceilingFt: number | null | undefined,
   visibilitySm: number | null | undefined,

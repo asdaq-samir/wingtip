@@ -41,7 +41,7 @@ export default function Explain({
       className,
     ),
     // 44 across too where the word is narrower ("MH" is 21 to 25 points,
-    // and 4 either side made 29 to 33: the HIG audit of 2026-11-23, L3), a
+    // and 4 either side made 29 to 33), a
     // wider word's 4 kept; and 44 tall whatever its line.
     style: { "--hit-x": "min(-4px, calc((100% - 44px) / 2))", "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties,
     "aria-label": `${spoken ?? children ?? term}: what it means`,

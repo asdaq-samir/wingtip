@@ -161,7 +161,7 @@ export function SuggestedPill(p: {
  *  no glyph, in a pill of the approaches' indigo (the owner, 2026-11-23:
  *  "just make it a pill of a different color"), as the map draws it
  *  (ProceduresGl), whole: pieces wrap whole (RouteToken), so its title is
- *  never cut ("RNAV (GPS) Y RWY 2…", the r7 audit's W-L1); only one wider
+ *  never cut ("RNAV (GPS) Y RWY 2…"); only one wider
  *  than the box itself is, at the box's width. */
 export function ProcedureChip({ procedure, onOpen }: { procedure: RouteProcedure; onOpen?: () => void }) {
   return (

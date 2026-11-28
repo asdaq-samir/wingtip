@@ -120,8 +120,7 @@ struct SplitLayout<Map: View>: View {
                 inspector
                     // The cards' rows on a solid ground, not the map
                     // through glass: glass is for controls (HIG
-                    // Materials; docs/design/ios.md §0), and the audit
-                    // found the Brief's words faint over the chart.
+                    // Materials; docs/design/ios.md §0), and the Brief's words were faint over the chart.
                     .background(Color(.systemGroupedBackground))
                     .inspectorColumnWidth(min: 320, ideal: SplitRoom.inspector, max: 440)
             }

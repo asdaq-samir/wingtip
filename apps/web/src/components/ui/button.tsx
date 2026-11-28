@@ -43,8 +43,7 @@ const buttonVariants = cva(
         plain: "justify-start text-inherit hover:bg-transparent aria-expanded:bg-muted dark:hover:bg-muted/50 native:text-foreground",
         link: "text-tint underline-offset-4 hover:underline",
         // The app's own: a pane of the grey glass over the map and on the
-        // sheet, as Maps' round buttons are on iOS 26 (GLASS_BUTTON, the
-        // style audit of 2026-10-26) -- the text's colour at 8%, 12% under
+        // sheet, as Maps' round buttons are on iOS 26 (GLASS_BUTTON) -- the text's colour at 8%, 12% under
         // a pointer or with its menu out, flat, its glyph in the text's
         // colour. Only theme tokens, so each look changes it there.
         glass: GLASS_BUTTON,

@@ -63,8 +63,7 @@ function synthetic(event: TouchEvent, viewport: HTMLElement) {
  * found (a web search, 2026-11-10); one is to be filed at
  * github.com/mui/base-ui/issues (drafted for the owner, with a mouse or
  * trackpad drag on content, which the Drawer ignores, so a narrow iPad
- * window with a trackpad moves the sheet by its grabber alone: the r5-ui
- * audit's M11, wingtip-audits/2026-11-23/base-ui-issues.md, 1 and 2), and
+ * window with a trackpad moves the sheet by its grabber alone), and
  * this goes once the Drawer takes them. Touches only: a pointer drag on
  * content the Drawer does not take, so handing it one would do nothing. It reads nothing of React's own: it
  * stood on the element's internal props key (__reactProps$…), which a

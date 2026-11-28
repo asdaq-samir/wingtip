@@ -247,7 +247,7 @@ fun OneSearch(
                 }
             },
             // The bar's own trailing slot, as Google Maps' search bar has it
-            // (the owner's decision, 2026-11-10, on the audit's S-2): the
+            // (the owner's decision, 2026-11-10): the
             // mic, then the account's avatar, in that order; open and typed
             // into, the stock clear.
             trailingIcon = {

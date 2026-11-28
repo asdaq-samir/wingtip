@@ -30,8 +30,7 @@ export const UNDER_INDICATOR =
  * visible at its start, so it never cuts the fade. On the card's own time
  * and curve, not the demo's 300 ms: the two ran on two clocks, and as a
  * card went away the search was back whole while the card was still a
- * third in sight (the apple-design and gestures audits of 2026-11-23, N5
- * and N6). Back in on the card's shorter time going (cardMotion's AWAY).
+ * third in sight. Back in on the card's shorter time going (cardMotion's AWAY).
  * Its fade kept under Reduce Motion (index.css's give-way), as iOS keeps a
  * fade where it drops a move.
  */

@@ -97,8 +97,7 @@ const KIND_WORDS: Record<AltitudeKind, string> = { elev: "field elevation", crui
 
 /** What can be done at a point of the route, each there only where the
  *  point has it: the same items in FPL's "⋯" (PointMenu) and the route
- *  box's pill (RoutePill), in the same words and order, at the audit's
- *  finding (two menus for one point, in different words). First the
+ *  box's pill (RoutePill), in the same words and order (two menus for one point had different words). First the
  *  owner's set after ForeFlight's route editor (2026-11-23): Info, Insert
  *  Before, Insert After, Show on Map, Procedures, then the rest, Remove
  *  last. */

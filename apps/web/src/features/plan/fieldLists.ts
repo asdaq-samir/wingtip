@@ -9,7 +9,7 @@
  * reader, and the route's changes kept different ones: a field taken off
  * the route kept its runway and approach in the address, and came back
  * with them on old wind, and a field that became the departure kept an
- * approach that locked its takeoff runway (the 19 and 20 Oct audits).
+ * approach that locked its takeoff runway.
  */
 import type { Address } from "../../lib/address";
 import { altitudesOf, altitudesParam, groundOf, pointOfKey } from "../../lib/identSchema";

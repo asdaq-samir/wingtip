@@ -87,7 +87,7 @@ export default function SignInModal({
   const emailId = useId();
   // On a phone a sheet from the navigation bar's edge, the bottom unless
   // the pilot moved it, as iOS asks to sign in, in the floating sheet's
-  // look, at the owner's pick of the sheets audit (D3, 2026-10-17); wider,
+  // look, at the owner's pick (2026-10-17); wider,
   // the dialog in the middle (SheetDialog).
   return (
     <SheetDialog

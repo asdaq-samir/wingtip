@@ -122,7 +122,7 @@ export function navLogColumns({
       // than pushing the figures off the drawer's edge: with a
       // departure time's ETA as a sixth column, "Subdivision" alone was
       // wider than the room left. At a syllable where the browser can
-      // hyphenate; where it cannot (no dictionary: CI's audit found the
+      // hyphenate; where it cannot (no dictionary: CI found the
       // log seven points past an iPhone 16 Pro's panel for "Meadowbrook"
       // at 10,500 ft), broken at the column's edge as a last resort. The
       // column is never narrower than 5.5 rem, its mark and some ten

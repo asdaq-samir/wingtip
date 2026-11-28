@@ -6,8 +6,7 @@ import { prefersReducedMotion, timing } from "../lib/motion";
  * drawn at its new width at once and uncovered from the side that stays
  * put, by a clip that eases open on the sheet's time and curve. Its width
  * was eased through a grid column once, which laid the glass out again
- * and blurred a backdrop of a new size every frame of the 300 ms (the
- * animation audit of 2026-11-23, M3); a clip is drawn by the compositor.
+ * and blurred a backdrop of a new size every frame of the 300 ms a clip is drawn by the compositor.
  * It grows to the left, the mic at its right staying where it was, so
  * its new part is uncovered from the right. Nothing under Reduce Motion:
  * the capsule is simply wider.

@@ -1,8 +1,7 @@
 /**
  * The camera owner's rules (camera.ts), apart from any map so a unit test
  * can hold them: which intent wins the camera, how long a follow's ease
- * runs, and how a pick travels. The flicker audit of 2026-11-14 (cause D)
- * found eight movers each calling the camera with only partial checks of
+ * runs, and how a pick travels. Eight movers were found each calling the camera with only partial checks of
  * the others, so a follow cut a flight short (FL-7), a route's fit was
  * overridden 2 ms after own ship's ease (FL-22) and the dry run restarted
  * its ease at every fix (FL-13).

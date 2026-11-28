@@ -42,7 +42,7 @@ function InstructorNote() {
  * The Brief as it opens, at the owner's rule (2026-11-03, "a pilot
  * doesn't want to spend too much time in studying the briefs so make it
  * simpler for them to just look and go"), his pick of option A
- * (2026-11-19) and of the Brief audit's option 2 (2026-11-21). Whether to
+ * (2026-11-19) and of option 2 (2026-11-21). Whether to
  * go is over it, under the Brief's name (VerdictPill). Straight under it
  * the findings a pilot acts on, at most three one-sentence lines (the
  * engine's gonogo_glance_lines), each unfolding to why it matters and the

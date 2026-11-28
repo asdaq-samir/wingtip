@@ -65,7 +65,7 @@ export default defineConfig({
     themeColor,
     react(),
     // The React Compiler, memoising each component and hook as it builds
-    // them, at the owner's pick of the audit's recommendation: only its
+    // them, at the owner's pick: only its
     // lint rule had been installed, and every nav-log stream message
     // drew the whole panel again (MapPanel, TabBar, the route box).
     // Not the stock shadcn wrappers (components/ui), which hand their

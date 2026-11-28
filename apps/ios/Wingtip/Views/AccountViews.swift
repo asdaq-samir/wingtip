@@ -3,7 +3,7 @@ import SwiftUI
 extension Plan {
     /// The airplane the pilot flew and its figures, forgotten as they sign
     /// out: the next person on the device had them (the web app's
-    /// forgetPilot, the audit's finding).
+    /// forgetPilot).
     func forgetPilot() {
         forgetHistory()
         tail = nil

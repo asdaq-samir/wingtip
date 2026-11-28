@@ -62,8 +62,7 @@ enum Gateway {
     }
 
     /// A nonce for one Sign in with Apple attempt, issued to this session
-    /// and spent by it (AppleNativeSignInController, the security audit's
-    /// L5): its SHA-256 goes into Apple's request, so a leaked identity
+    /// and spent by it (AppleNativeSignInController): its SHA-256 goes into Apple's request, so a leaked identity
     /// token cannot be replayed on another session.
     static func appleNonce() async throws -> String {
         try await call { try await $0.nonce().ok.body.json.nonce }
@@ -76,7 +75,7 @@ enum Gateway {
     }
 
     /// Whose account a sign-in link is for, before the pilot says yes
-    /// (MagicLinkAccountController, the security audit's M1): the address
+    /// (MagicLinkAccountController): the address
     /// masked ("a•••@icloud.com"), nothing spent. 404 is a used, expired or
     /// unknown link alike; 429 the hour's asks used up.
     enum LinkAccount: Equatable, Sendable {

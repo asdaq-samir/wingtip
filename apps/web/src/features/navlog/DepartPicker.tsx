@@ -125,8 +125,7 @@ export default function DepartPicker({
                 {leaveWhen(date)}
                 {zone ? <span className={cn("ml-1 font-normal text-foreground", TEXT.caption)}>{zone}</span> : null}
               </span>
-            ) : // Each line at its own size's leading (TEXT.detail's), as
-            // the iOS audit's P3 asks: tightened, "Now" sat on 18.8.
+            ) : // Each line at its own size's leading (TEXT.detail's), as iOS asks: tightened, "Now" sat on 18.8.
             clock ? (
               <span className="flex flex-col items-end">
                 Now

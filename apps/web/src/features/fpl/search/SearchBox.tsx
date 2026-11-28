@@ -108,8 +108,7 @@ export default function SearchBox({
           words cleared through the root's onValueChange, the focus kept.
           Its 44-point area (12 round its 20) stays clear of the mic's (its
           own 44) rather than overlapping it: 16 apart, where the row's gap of
-          8 let a tap just right of the ✕ start the mic (the HIG audit of
-          2026-11-23, L4). */}
+          8 let a tap just right of the ✕ start the mic */}
       <CommandClear aria-label="Clear the search" data-testid="search-clear" className="mr-2" />
       {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
       {/* The microphone, the field's trailing button: on-device speech

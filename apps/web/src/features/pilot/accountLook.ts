@@ -5,8 +5,7 @@ import { TEXT } from "../../lib/text";
  *  beside its search field and the page toggle before it (the owner,
  *  2026-11-20: "make all buttons like Apple Maps size and style") -- signed out
  *  the app's grey with the glyph in the tint, signed in the initials on
- *  the tint (owner decision 2026-11-10 (decisions page), the sheet audit's
- *  F-H1: it was a 44-point solid blue disc either way). The initials' disc
+ *  the tint (owner decision 2026-11-10 (decisions page): it was a 44-point solid blue disc either way). The initials' disc
  *  is the look's primary with its own foreground, the stock Button's pair,
  *  which reads 4.5:1 in every look: white on the dark look's light tint
  *  (#57a8ff) read 2.49:1. */

@@ -235,6 +235,6 @@ export function figuresLine(input: TripInput, noAirplane = false): string {
   const said = figures.map((f) => (f.unit ? `${f.value} ${f.unit}` : f.value));
   // With no airplane the time and the fuel are none of the planner's (the
   // owner, 2026-11-09: "don't assume"): said why, not two dashes ("1,334
-  // nm · — · —", the UI audit's C4).
+  // nm · — · —").
   return (noAirplane && figures.slice(1).every((f) => f.value === "—") ? [said[0], "no airplane picked"] : said).join(" · ");
 }

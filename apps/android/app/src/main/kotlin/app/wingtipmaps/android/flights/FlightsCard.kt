@@ -50,7 +50,7 @@ fun interface SavedFlights {
 }
 
 /**
- * Saved Flights' view model (the Android audit's AND-6, the owner's (b):
+ * Saved Flights' view model (the owner's (b):
  * Flights now, Sunlight later): the pilot's saved flights, newest first as
  * the gateway gives them, fetched as the card opens, a failure said where
  * the list would be.

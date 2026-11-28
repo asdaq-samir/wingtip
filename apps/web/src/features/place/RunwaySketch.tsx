@@ -187,7 +187,7 @@ export function RunwaySketch({
           never on an open one. Each X square to its runway and just wider
           than it, in the red of the Runways tab's Closed badge (the FAA
           paints them yellow, Figure A-27; faded alone a closed runway
-          read as open, UI audit A5, 2026-11-17). */}
+          read as open). */}
       {drawn?.strips.flatMap((s) =>
         s.closure.marks.map(([x, y], k) => {
           const m = markHalf(s.width);

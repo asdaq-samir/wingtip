@@ -37,8 +37,7 @@ export function forgetWhereTheyFlew(): void {
  *  everything that was theirs (their airplanes, their flights)
  *  dropped from the cache, so the consoles read signed-out at once, and
  *  what this device kept of theirs forgotten (forgetPilot, their
- *  airplanes' checklists, and the service worker's pilot-own cache), at
- *  the owner's pick of the audit's recommendation. */
+ *  airplanes' checklists, and the service worker's pilot-own cache), at the owner's pick. */
 /** The queries that are the pilot's own records, by their first key. */
 const PILOT_RECORDS = ["aircraft", "flights", "logbook", "currency", "training", "paperwork", "reminders", "instructor"] as const;
 

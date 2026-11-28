@@ -10,8 +10,7 @@ and the stops those plans suggest put in too, until no flight is short or
 ROUNDS plans have been made; each suggestion then carries every stop its
 flight needs, in order, and whether the flights through them pass.
 
-The web asked for each round from the browser (useSuggestedStops'
-FUEL_ROUNDS, the simplicity audit of 2026-11-21, finding 3); here it is one
+The web asked for each round from the browser (useSuggestedStops' FUEL_ROUNDS); here it is one
 request for every app. The plans are the caller's (`replan`, the route's
 address stops in, its totals out, None where it could not be planned):
 wingtip knows nothing of the service's routes."""

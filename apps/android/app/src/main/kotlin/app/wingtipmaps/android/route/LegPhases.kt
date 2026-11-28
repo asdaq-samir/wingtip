@@ -64,7 +64,7 @@ fun LegTops(leg: Leg, plan: Plan) {
     }
     // Where the airplane gave no climb fuel flow, the climb's fuel is not
     // counted: said as missing and asked for in place (the engine's
-    // climb_fuel_unknown, the aviation audit's AV-8; nothing assumed, the
+    // climb_fuel_unknown; nothing assumed, the
     // owner, 2026-11-09).
     if (leg.climbFuelUnknown == true) {
         Text(

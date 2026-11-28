@@ -133,7 +133,7 @@ def procedure_path(drawing: dict, toward: tuple | None = None, runway: str | Non
     none picked, the field (KPWK's GOPAC3, all runway transitions, drew none). wingtip.procedures draws every runway transition of either:
     a departure leaves by the one for the `runway` the pilot leaves from
     (St. Louis's BERYY6 flew its runway 11 transition off runway 30R, out
-    the wrong way -- the audit of 2026-10-21), the first coded where none
+    the wrong way), the first coded where none
     is known. None where nothing is drawn."""
     runways = _of(drawing, "runway")
     if drawing["kind"] == "departure":

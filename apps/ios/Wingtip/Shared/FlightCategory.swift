@@ -4,7 +4,7 @@ import UIKit
 /// A flight category's colours, the one set the app and its widgets draw
 /// (design/tokens.json color.category, the web's lib/map/flightCategory.ts):
 /// VFR green, MVFR blue, IFR red, LIFR magenta, grey with no report. The
-/// UI audit of 2026-11-09 (item 6) found three sets across the apps and the
+/// Three sets across the apps and the
 /// LIFR chip's white words at 3.35:1 on the map's lighter magenta; words
 /// on or in a category's colour take `words`, whose LIFR is the deeper
 /// #7E3FB8 (6.38:1 with white, WCAG 2.2 AA 1.4.3), while a mark with no

@@ -15,7 +15,7 @@ const TEN_MIN_MS = 10 * 60_000;
 
 /**
  * Each of the route's fields' wind for FPL's route list (useProceduresRoute,
- * split from it for the audit's WEB-19): its card's report, else the
+ * split from it): its card's report, else the
  * nearest one's, or, where the airplane is there more than an hour from
  * now, the TAF's forecast for then; the runway into it (windPick) and the
  * wind as the field's line says it (reportedOf).
@@ -121,7 +121,7 @@ export function useFieldWinds({ airports, rows, depart }: { airports: ProcedureA
   // The wind a field reports, else the nearest report's, as the METAR
   // gives it: from true north (FAA Order JO 7900.5), marked "T" beside the
   // runways' magnetic numbers, where a tower's and an ATIS's winds are
-  // magnetic (AIM 4-1-13) -- the audit's finding.
+  // magnetic (AIM 4-1-13).
   const reportedOf = (ident: string): ReportedWind | null => {
     const i = airports.findIndex((a) => sameField(a.ident, ident));
     // The forecast's, where the runway is picked into it (windOf).

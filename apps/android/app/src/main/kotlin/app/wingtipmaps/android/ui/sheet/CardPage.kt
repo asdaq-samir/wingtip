@@ -78,7 +78,7 @@ fun CardPage(
 ) {
     // At half the small bar, its title and actions on one row, so the card
     // keeps its room; at full the large flexible bar, folding as it scrolls
-    // (the owner's decision, 2026-11-10, on the audit's H-1).
+    // (the owner's decision, 2026-11-10).
     val full = LocalSheetFull.current
     val collapsing = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val pinned = TopAppBarDefaults.pinnedScrollBehavior()

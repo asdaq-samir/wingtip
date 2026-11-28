@@ -8,8 +8,7 @@ import { TEXT } from "../../lib/text";
  * owner's "Make the N and FL pills a bit smaller", 2026-11-20), the route box's
  * fill, round -- and its words the row's, never larger than at the owner's
  * 17.88 px text (19 px), where at 19.65 the row's buttons wrapped onto a
- * line of their own (the FPL audit's A3; the owner's route-box-buttons
- * rule, 2026-10-24). The airplane's gives way first in a row too narrow
+ * line of their own (the owner's route-box-buttons rule, 2026-10-24). The airplane's gives way first in a row too narrow
  * for everything; the altitude's (shrink-0) keeps its figures (the owner's
  * list, 2026-11-17). Its words in the regular weight, a step under the
  * row's 17 on a phone: 16, the least an input takes before iOS zooms the
@@ -53,8 +52,7 @@ export const PREFIXED_FIELD = "pl-0!";
  *  (z-20), the addon itself no layer of its own, so the glyph's area still
  *  reaches over the next pill's empty start: with no plan yet the Profile's glyph
  *  is greyed and takes no tap, and a tap just past the figures above or
- *  below the pill went to the head round it (the iOS audit's P1,
- *  "altitude-input" 31×44 on FPL with no route). */
+ *  below the pill went to the head round it ("altitude-input" 31×44 on FPL with no route). */
 export const PILL_END_ADDON = cn(
   "relative py-0 pr-0 has-[>button]:mr-0",
   "after:absolute after:inset-x-0 after:top-1/2 after:z-10 after:h-11 after:-translate-y-1/2 after:content-['']",
@@ -65,7 +63,7 @@ export const PILL_END_ADDON = cn(
  * N-number's ⓘ (the airplane's card) and the altitude's Profile (the owner,
  * 2026-11-20: "can N number show an info button and can FL show profile
  * button rather than in the tab bar?"). The app's one icon button, 36 round
- * a 20 glyph (the iOS audit's P18, the owner's "make all buttons same size
+ * a 20 glyph (the owner's "make all buttons same size
  * as Apple Maps", 2026-11-20), where it was 20 by 24 round a 16: its box
  * seen by nothing (no fill, no edge, its corner under half its side so it
  * is not the round 44), 32 wide and 36 tall, laid in the pill (-ml-2,

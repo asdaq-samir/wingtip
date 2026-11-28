@@ -45,9 +45,7 @@ export function useInkLook(): boolean {
 /** The one writer of the pilot's look on <html> (data-brand) and of its
  *  typeface, started by main.tsx before React draws and following every
  *  change of the look from then on. The first frame is already in the kept
- *  look, put there by first-frame.js (lib/prefs/firstFrame) before the body paints (the
- *  themes audits, 2026-11-27: Chart ink and Glass Cockpit flashed Wingtip's
- *  blue on every load); this starts Chart ink's Barlow Condensed at once,
+ *  look, put there by first-frame.js (lib/prefs/firstFrame) before the body paints (else Chart ink and Glass Cockpit flashed Wingtip's blue on every load); this starts Chart ink's Barlow Condensed at once,
  *  not after the first render's effects. Returns the unsubscribe. */
 export function followKeptBrand(): () => void {
   const apply = (brand: Brand) => {

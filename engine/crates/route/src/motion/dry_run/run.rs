@@ -14,7 +14,7 @@ pub fn dry_run(rows: &[Row], start_s: f64, line: Option<&[LatLon]>, missed: bool
     let mut last_final: Option<(f64, f64)> = None;
     // Go missed is the last approach's, the one whose final the run's button
     // is on (DryRunControls): a stop's approach before it is flown to its
-    // runway -- the audit's finding, every approach went missed.
+    // runway -- every approach went missed.
     fn procedure_of<'a>(row: &Row<'a>) -> Option<&'a Value> {
         row.leg.and_then(|l| l.get("procedure")).filter(|p| !matches!(p, Value::Null))
     }

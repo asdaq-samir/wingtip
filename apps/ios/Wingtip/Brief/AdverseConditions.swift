@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The Brief's Adverse Conditions (the web's adverse.ts and AdverseRows,
-/// the owner's pick of the Brief audit's option 2, 2026-11-21): the
+/// the owner's pick, 2026-11-21): the
 /// standard briefing's first element (AIM 7-1-5(b)(1)), what the flight
 /// meets on the route while it is there. The briefing's SIGMETs,
 /// G-AIRMETs, TFRs and pilot reports are handed to the engine as one list

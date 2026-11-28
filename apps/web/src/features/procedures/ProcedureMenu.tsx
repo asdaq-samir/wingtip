@@ -90,8 +90,7 @@ export default function ProcedureMenu({
   // in the component: the field's line draws its pull-downs anew as its
   // runways come in, open, and as the runway picked into the wind folds it,
   // a second or more later on a slow connection, and a menu opened before
-  // that closed under the pilot's finger (procedures.spec and the iOS
-  // audit, CI 2026-10-28).
+  // that closed under the pilot's finger (procedures.spec, CI 2026-10-28).
   const menuKey = `${ident}:${kind}:${look}`;
   const me = useId();
   const open = useOpenMenu((s) => s.key === menuKey && s.owner === me);

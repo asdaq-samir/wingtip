@@ -64,7 +64,7 @@ export interface RouteBoxProps extends RouteParts {
   /** A point the planner does not know (usePlan's `unknownPlace`): its
    *  pill in red, a tap on it the search to change it, and a line under
    *  the box saying so with Remove -- where it happened, not the map's
-   *  problem line (CLAUDE.md, the FPL audit's A2). Its ident null where
+   *  problem line (CLAUDE.md). Its ident null where
    *  the planner's answer named none; `outside` a real field abroad. */
   unknownPoint?: UnknownPlace | null;
   /** The planner could not be reached (usePlan's `unreachable`): said

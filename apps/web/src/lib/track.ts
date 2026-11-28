@@ -66,7 +66,7 @@ export function keepTrack(flightId: number, track: KeptTrack): boolean {
 /** Every flight's track kept in this browser forgotten, as the pilot whose
  *  flights they were signs out (useLogout): each is a line of positions
  *  under one of their flights, which the next person on the device has no
- *  business reading (docs/privacy-inventory.md, the prelaunch audit). */
+ *  business reading (docs/privacy-inventory.md). */
 export function forgetKeptTracks(): void {
   const prefix = KEY(0).slice(0, -1);
   const ids: number[] = [];

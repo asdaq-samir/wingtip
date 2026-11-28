@@ -84,7 +84,7 @@ export default memo(function TrailSketch({
               textAnchor={right ? "start" : "end"}
               fontSize={11}
               fontWeight={600}
-              // iOS's Caption 2, 11 on 13, as the audit's P3 has every size on its leading.
+              // iOS's Caption 2, 11 on 13, as every size is set on its leading.
               style={{ lineHeight: 13 / 11 }}
               fill="var(--foreground)"
               stroke="var(--background)"

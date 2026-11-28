@@ -172,7 +172,7 @@ private fun TotalsRows(totals: NavLogTotals, airplane: AirplaneNow) {
     val fuel = FlightModel.stripFuelOf(totals)
     val warn = fuel.map { it.short.isNotEmpty() }.getOrDefault(true)
     // Each short flight named by its two ends, found by its index in the
-    // hops (strip_fuel's `hop`, the code audit's CODE-13), not the engine's
+    // hops (strip_fuel's `hop`), not the engine's
     // raw idents; a route with no stops has no flight to name.
     val shortOn = fuel.getOrNull()?.short.orEmpty().mapNotNull { s -> s.hop?.let { totals.hops?.getOrNull(it) }?.let { "${it.departure} → ${it.destination}" } }
     Row(Modifier.fillMaxWidth()) {

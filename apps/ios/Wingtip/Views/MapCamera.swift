@@ -2,7 +2,7 @@ import MapKit
 import SwiftUI
 
 /// How the map's camera moves for what is on it, as the web's one camera
-/// owner (lib/map/gl/camera, the flicker audit's cause D, 2026-11-14) has
+/// owner (lib/map/gl/camera) has
 /// its rules:
 /// - A tap on a mark never flies the map. Its card comes up at half
 ///   height; only where the card would hide the mark does the map ease,

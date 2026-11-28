@@ -53,8 +53,7 @@ extension FactCell where Value == Text {
 
 /// The card's pictures, large rounded tiles in a row that pages sideways
 /// as Maps' photos do, a flick coming to rest on a tile. One height
-/// whatever it holds, so nothing under it moves as a picture arrives (the
-/// web's CardPictures, the flicker audit).
+/// whatever it holds, so nothing under it moves as a picture arrives (the web's CardPictures).
 struct PictureStrip<Content: View>: View {
     @ViewBuilder let content: Content
 

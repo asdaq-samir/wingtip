@@ -120,7 +120,7 @@ export function PatternChips({
     // gliding in from there they ran the panel sideways past its edge for
     // the glide's 300 ms -- the nav log 434 px wide in a 385 px drawer as
     // the runway picked into the wind folded the line (checkpoints.spec,
-    // CI 2026-10-28), the iOS audit's "no sideways scroll in a panel".
+    // CI 2026-10-28): no sideways scroll in a panel.
     const room = Math.max(0, base.getBoundingClientRect().width - box.getBoundingClientRect().width - x);
     const from = Math.min(was.x - x, room);
     if (Math.abs(from) < 1) return;

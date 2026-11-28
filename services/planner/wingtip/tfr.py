@@ -186,7 +186,7 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
         point = geometry.representative_point()
         # Measured, not buffered in degrees: a buffer sized at the route's
         # middle latitude reached 4.1 of 5 nm east and west at 49 N on a
-        # route from 25 N (cos 49 / cos 37, the stock audit's bug 2).
+        # route from 25 N (cos 49 / cos 37).
         apart = shape_distance_nm(nearby, geometry, (point.y, point.x))
         if apart > near_nm or not in_force(tfr, start, end):
             continue

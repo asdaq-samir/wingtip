@@ -14,7 +14,7 @@ import java.util.Locale
 
 /**
  * A field's TAF's own times under it, and whether it speaks for now, as
- * the web's airport card says them since the offline audit (2026-11-21):
+ * the web's airport card says them:
  * "TAF issued 11 1130Z, valid to 12 1200Z", and once its period has ended
  * "TAF expired 12 1200Z: no forecast in force" in the caution ink, so a
  * TAF kept from before the signal was lost is never read as today's

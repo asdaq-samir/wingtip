@@ -262,8 +262,7 @@ pub fn box_around(lat: f64, lon: f64, radius_nm: f64) -> (f64, f64, f64, f64) {
 /// A (south, west, north, east) box as the one or two boxes it is between
 /// -180 and 180: one past the antimeridian (a box from lon_near's
 /// longitudes) is cut there into its two halves, and one a whole turn
-/// wide is every longitude (wingtip.geo_boxes.split_box). The edge-places
-/// audit's S10: a box past 180 met nothing across the line, so Shemya's
+/// wide is every longitude (wingtip.geo_boxes.split_box). A box past 180 met nothing across the line, so Shemya's
 /// obstacles, airspace and fields were missed from Adak.
 pub fn split_box(b: (f64, f64, f64, f64)) -> Vec<(f64, f64, f64, f64)> {
     let (s, w, n, e) = b;

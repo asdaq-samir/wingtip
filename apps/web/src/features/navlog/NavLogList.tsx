@@ -332,7 +332,7 @@ export function NavLogList({
                           </span>
                           {/* A separator only between cells that say something: with
                               no airplane there is no time, and the row read "334° ·
-                              6.0 nm · · 2,500 ft" (the audit's WEB-39). */}
+                              6.0 nm · · 2,500 ft". */}
                           {airplane && <span aria-hidden="true"> · </span>}
                           <span role="cell">
                             {!airplane ? null : leg ? leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min` : <FigureWait />}
