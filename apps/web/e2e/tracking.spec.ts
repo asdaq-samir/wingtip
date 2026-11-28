@@ -198,10 +198,17 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   // The owner's ask: "I also like the idea of having the actual airframe
   // photo", as Planespotters' terms have it shown.
   await sky(page);
+  // Its photo answered once its sketch is in the row, so it is the picture
+  // that comes later and goes after the one in view (FL-23): answered at once,
+  // it raced the flight's trail, and where it won it was drawn first, in view
+  // from the start, the swipe below then taking it off (PR #591's run: 0.40 of it on screen).
+  let sketched = () => {};
+  const sketch = new Promise<void>((resolve) => (sketched = resolve));
   await page.route(
     (url) => url.hostname === "api.planespotters.net",
-    (route) =>
-      route.fulfill({
+    async (route) => {
+      await sketch;
+      await route.fulfill({
         json: {
           photos: [
             {
@@ -212,7 +219,8 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
             },
           ],
         },
-      }),
+      });
+    },
   );
   await page.route(
     (url) => url.hostname === "t.plnspttrs.net",
@@ -243,6 +251,8 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await expect(card).toContainText("C-FSES");
   // In capitals as drawn (the strip's uppercase), the address as heard.
   await expect(card.getByTestId("airplane-facts-address")).toContainText("A0B7D8", { useInnerText: true });
+  await expect(card.getByTestId("airplane-pictures").getByTestId("flight-trail")).toBeAttached();
+  sketched();
   const photo = card.getByTestId("flight-photo");
   await expect(photo).toBeVisible({ timeout: slow(15_000) });
   await expect(card.getByTestId("flight-photo-credit")).toHaveText("© Jane Spotter · Planespotters");
@@ -251,9 +261,9 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await expect(link).toHaveAttribute("href", "https://www.planespotters.net/photo/1773250/n14511");
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).not.toHaveAttribute("rel", /nofollow/);
-  // Info's pictures, as the airport card's (C1): its photo, then the
-  // sketch, a picture that arrives later never going in front of the one in
-  // view (CardPictures, FL-23); its flight now is the Flights tab's (the
+  // Info's pictures, as the airport card's (C1): the sketch, then the photo
+  // that came after it, a picture that arrives later never going in front of
+  // the one in view (CardPictures, FL-23); its flight now is the Flights tab's (the
   // owner, 2026-11-27). At half a card's body does not scroll (index.css,
   // the one scrolling rule): pulled up to it, as a finger would (inSheet).
   await inSheet(page, photo);
