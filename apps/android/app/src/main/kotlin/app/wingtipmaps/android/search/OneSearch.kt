@@ -115,7 +115,9 @@ fun OneSearch(
     val planState by plan.state.collectAsStateWithLifecycle()
     // Whether there is a fix, told only as that changes: the bar is not
     // drawn again with each fix (the fix itself is read where asked).
-    val hasFix by remember(ownShip) { ownShip.fix.map { it != null }.distinctUntilChanged() }.collectAsStateWithLifecycle(ownShip.fix.value != null)
+    // Whether there was a fix read once, as the flow is made, not at each drawing.
+    val fixedFirst = remember(ownShip) { ownShip.fix.value != null }
+    val hasFix by remember(ownShip) { ownShip.fix.map { it != null }.distinctUntilChanged() }.collectAsStateWithLifecycle(fixedFirst)
     val reach = rememberGlideReach(state.nearest)
     val memory = remember(context) { SearchMemory.of(context) }
     val favorites by memory.favorites.collectAsStateWithLifecycle()

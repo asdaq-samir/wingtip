@@ -51,7 +51,7 @@ The owner, 2026-11-09, standing:
 | Python | 3.15.2 | every service and job image (`python:3.15-slim`), CI's setup-python, the dev container |
 | Rust | 1.100.0, edition 2024 | `engine/rust-toolchain.toml`, every engine crate, the WebAssembly build |
 | Node | 26 | `apps/web/.nvmrc`, the web build (`node:26-slim`), CI |
-| Gradle | 9.9.2 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
+| Gradle | 9.9.3 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
 | Maven | 4.0.0-rc-7 | the gateway: its build image (`maven:4.0.0-rc-7-eclipse-temurin-25-resolute`) and `./mvnw`, the Maven Wrapper CI and a Mac without Docker run (`services/gateway/.mvn/wrapper`, checked by its sha256) |
 | Xcode | 27.2 (the iOS 27.2 SDK) | `scripts/ci/select-xcode.sh`, CI's `xcode-27` runner and the Mac mini |
 | Debian | trixie | every Debian-based image (`postgres:18-trixie`; a `-slim` tag is trixie) |

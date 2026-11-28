@@ -118,7 +118,9 @@ private fun Card(
             // Where the airplane is to a mile or so (the clearance's
             // points round it), not each fix: the page is not drawn again,
             // nor its points sent again, each second.
-            val near by remember(ownShip) { ownShip.byTheMile }.collectAsStateWithLifecycle(ownShip.fix.value)
+            // The first fix read once, as the flow is made, not at each drawing.
+            val nearFirst = remember(ownShip) { ownShip.fix.value }
+            val near by remember(ownShip) { ownShip.byTheMile }.collectAsStateWithLifecycle(nearFirst)
             ClearancePage(plan, near, exit, onEntered = showPlan)
         }
         SheetPage.YourAirplanes -> YourAirplanesPage(exit)

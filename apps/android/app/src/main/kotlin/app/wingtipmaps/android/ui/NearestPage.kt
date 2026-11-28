@@ -57,7 +57,9 @@ private const val NEAREST = 10
 fun NearestPage(ownShip: OwnShip, plan: Plan, exit: CardExit, onOpen: (String) -> Unit) {
     // Whether there is a fix, not each fix: the page is not drawn again
     // each second (the glide rows have their own step, rememberGlideReach).
-    val hasFix by remember(ownShip) { ownShip.fix.map { it != null }.distinctUntilChanged() }.collectAsStateWithLifecycle(ownShip.fix.value != null)
+    // Whether there was a fix read once, as the flow is made, not at each drawing.
+    val fixedFirst = remember(ownShip) { ownShip.fix.value != null }
+    val hasFix by remember(ownShip) { ownShip.fix.map { it != null }.distinctUntilChanged() }.collectAsStateWithLifecycle(fixedFirst)
     var fields by remember { mutableStateOf<List<NearestAirport>?>(null) }
     var problem by remember { mutableStateOf<String?>(null) }
     var onPhone by remember { mutableStateOf(false) }

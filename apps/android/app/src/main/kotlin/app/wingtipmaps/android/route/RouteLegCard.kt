@@ -76,9 +76,11 @@ fun RouteLegCard(index: Int, plan: Plan, ownShipOn: Boolean, exit: CardExit, fli
     val fix = flight.ownShip.fix.collectAsStateWithLifecycle()
     // The point flying mode flies to, the engine's next waypoint on the
     // route, drawn again only as it changes, not at each fix.
+    // The first point read once, as the flow is made, not at each drawing.
+    val flyingToFirst = remember(flight, ownShipOn) { flyingToOf(flight.state.value, ownShipOn) }
     val flyingTo by remember(flight, ownShipOn) {
         flight.state.map { flyingToOf(it, ownShipOn) }.distinctUntilChanged()
-    }.collectAsStateWithLifecycle(flyingToOf(flight.state.value, ownShipOn))
+    }.collectAsStateWithLifecycle(flyingToFirst)
     val leg = RouteLegModel.view(index, state, flyingTo)
     val haptics = rememberHaptics()
     if (leg == null) {
