@@ -1,8 +1,8 @@
 package app.wingtipmaps.android.airplane
 
 import app.wingtipmaps.android.api.generated.gateway.AircraftDto
-import app.wingtipmaps.android.api.generated.gateway.AirplaneKind
 import app.wingtipmaps.android.api.generated.gateway.AircraftRequest
+import app.wingtipmaps.android.api.generated.gateway.AirplaneKind
 import app.wingtipmaps.android.api.generated.gateway.InspectionsDto
 import app.wingtipmaps.android.api.generated.gateway.OwnFigures
 import kotlinx.coroutines.test.runTest

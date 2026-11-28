@@ -3,8 +3,8 @@ package app.wingtipmaps.android.aircraft
 import app.wingtipmaps.android.MainRule
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.gateway.AircraftDto
-import app.wingtipmaps.android.api.generated.gateway.AirplaneKind
 import app.wingtipmaps.android.api.generated.gateway.AircraftRequest
+import app.wingtipmaps.android.api.generated.gateway.AirplaneKind
 import app.wingtipmaps.android.api.generated.gateway.InspectionsDto
 import app.wingtipmaps.android.api.generated.gateway.OwnFigures
 import app.wingtipmaps.android.engine.generated.EngineContract
