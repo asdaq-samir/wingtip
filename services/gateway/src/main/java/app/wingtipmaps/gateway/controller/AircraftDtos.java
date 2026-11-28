@@ -3,6 +3,7 @@ package app.wingtipmaps.gateway.controller;
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.AircraftDueItem;
 import app.wingtipmaps.gateway.dto.AircraftDto;
+import app.wingtipmaps.gateway.dto.AirplaneKind;
 import app.wingtipmaps.gateway.dto.SquawkDto;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.service.AircraftService;
@@ -93,6 +94,7 @@ final class AircraftDtos {
                 a.getColour(),
                 kept.stream().map(DueItemService::toDto).toList(),
                 AircraftService.handbookOf(a),
-                AircraftService.figuresOf(a));
+                AircraftService.figuresOf(a),
+                new AirplaneKind(a.getCategory(), a.getAircraftClass(), a.getTailwheel()));
     }
 }

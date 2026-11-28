@@ -164,6 +164,10 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AircraftDto/inspections`.
             public var inspections: Components.Schemas.InspectionsDto
+            /// Its category, class and gear as its owner gave them; each null where not said
+            ///
+            /// - Remark: Generated from `#/components/schemas/AircraftDto/kind`.
+            public var kind: Components.Schemas.AirplaneKind
             /// Its squawks not yet fixed, newest first
             ///
             /// - Remark: Generated from `#/components/schemas/AircraftDto/openSquawks`.
@@ -200,6 +204,7 @@ extension Components {
             ///   - handbook: Its handbook figures as its pilot confirmed them from a photographed page: the engine contract's HandbookFigures, in the app's units; null until then
             ///   - id:
             ///   - inspections: Its inspections and tests, as recorded, each with the last day it is good for
+            ///   - kind: Its category, class and gear as its owner gave them; each null where not said
             ///   - openSquawks: Its squawks not yet fixed, newest first
             ///   - surveillance: Its flight plan's item 10b, its surveillance equipment (AIM Appendix 4, TBL 4-3)
             ///   - tailNumber:
@@ -222,6 +227,7 @@ extension Components {
                 handbook: Components.Schemas.HandbookFigures? = nil,
                 id: Swift.Int,
                 inspections: Components.Schemas.InspectionsDto,
+                kind: Components.Schemas.AirplaneKind,
                 openSquawks: [Components.Schemas.SquawkDto],
                 surveillance: Swift.String? = nil,
                 tailNumber: Swift.String,
@@ -244,6 +250,7 @@ extension Components {
                 self.handbook = handbook
                 self.id = id
                 self.inspections = inspections
+                self.kind = kind
                 self.openSquawks = openSquawks
                 self.surveillance = surveillance
                 self.tailNumber = tailNumber
@@ -267,6 +274,7 @@ extension Components {
                 case handbook
                 case id
                 case inspections
+                case kind
                 case openSquawks
                 case surveillance
                 case tailNumber
@@ -299,6 +307,10 @@ extension Components {
             public var figures: Components.Schemas.OwnFigures?
             /// - Remark: Generated from `#/components/schemas/AircraftRequest/fuelBurnGph`.
             public var fuelBurnGph: Swift.Double
+            /// Its category, class and gear, all at once; left out, they stay as they were
+            ///
+            /// - Remark: Generated from `#/components/schemas/AircraftRequest/kind`.
+            public var kind: Components.Schemas.AirplaneKind?
             /// - Remark: Generated from `#/components/schemas/AircraftRequest/surveillance`.
             public var surveillance: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AircraftRequest/tailNumber`.
@@ -320,6 +332,7 @@ extension Components {
             ///   - equipment:
             ///   - figures: Its own handbook figures, all at once (null in it clears one); left out, they stay as they were
             ///   - fuelBurnGph:
+            ///   - kind: Its category, class and gear, all at once; left out, they stay as they were
             ///   - surveillance:
             ///   - tailNumber:
             ///   - typeDesignator:
@@ -335,6 +348,7 @@ extension Components {
                 equipment: Swift.String? = nil,
                 figures: Components.Schemas.OwnFigures? = nil,
                 fuelBurnGph: Swift.Double,
+                kind: Components.Schemas.AirplaneKind? = nil,
                 surveillance: Swift.String? = nil,
                 tailNumber: Swift.String,
                 typeDesignator: Swift.String,
@@ -350,6 +364,7 @@ extension Components {
                 self.equipment = equipment
                 self.figures = figures
                 self.fuelBurnGph = fuelBurnGph
+                self.kind = kind
                 self.surveillance = surveillance
                 self.tailNumber = tailNumber
                 self.typeDesignator = typeDesignator
@@ -366,10 +381,48 @@ extension Components {
                 case equipment
                 case figures
                 case fuelBurnGph
+                case kind
                 case surveillance
                 case tailNumber
                 case typeDesignator
                 case usableFuelGal
+            }
+        }
+        /// Its category, class and gear (14 CFR 61.5(b), 61.57(a)(1)(ii)); each null where not said
+        ///
+        /// - Remark: Generated from `#/components/schemas/AirplaneKind`.
+        public struct AirplaneKind: Codable, Hashable, Sendable {
+            /// 14 CFR 61.5(b)(2) class, "Single-engine land"
+            ///
+            /// - Remark: Generated from `#/components/schemas/AirplaneKind/aircraftClass`.
+            public var aircraftClass: Swift.String?
+            /// 14 CFR 61.5(b)(1) category, "Airplane"
+            ///
+            /// - Remark: Generated from `#/components/schemas/AirplaneKind/category`.
+            public var category: Swift.String?
+            /// A tailwheel airplane; null where not said, judged as one (61.57(a)(1)(ii))
+            ///
+            /// - Remark: Generated from `#/components/schemas/AirplaneKind/tailwheel`.
+            public var tailwheel: Swift.Bool?
+            /// Creates a new `AirplaneKind`.
+            ///
+            /// - Parameters:
+            ///   - aircraftClass: 14 CFR 61.5(b)(2) class, "Single-engine land"
+            ///   - category: 14 CFR 61.5(b)(1) category, "Airplane"
+            ///   - tailwheel: A tailwheel airplane; null where not said, judged as one (61.57(a)(1)(ii))
+            public init(
+                aircraftClass: Swift.String? = nil,
+                category: Swift.String? = nil,
+                tailwheel: Swift.Bool? = nil
+            ) {
+                self.aircraftClass = aircraftClass
+                self.category = category
+                self.tailwheel = tailwheel
+            }
+            public enum CodingKeys: String, CodingKey {
+                case aircraftClass
+                case category
+                case tailwheel
             }
         }
         /// - Remark: Generated from `#/components/schemas/AppVersionsDto`.

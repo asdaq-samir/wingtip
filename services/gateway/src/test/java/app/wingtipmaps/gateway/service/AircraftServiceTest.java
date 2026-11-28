@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.dto.AirplaneKind;
 import app.wingtipmaps.gateway.dto.OwnFigures;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import java.util.Optional;
@@ -49,7 +50,8 @@ class AircraftServiceTest {
         given(aircraftRepository.findByIdAndPilotId(1L, stranger.getId())).willReturn(Optional.empty());
 
         Optional<Aircraft> result = aircraftService.update(
-                stranger, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null, null, null, null, null);
+                stranger, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null, null, null, null, null,
+                null);
 
         assertThat(result).isEmpty();
         verify(aircraftRepository, never()).save(any());
@@ -77,7 +79,8 @@ class AircraftServiceTest {
                 " sdfgry ",
                 "b1",
                 "  White   blue stripes ",
-                new OwnFigures(13000.0, 650.0, 1.1, 8.5, 1500.0, 57000.0));
+                new OwnFigures(13000.0, 650.0, 1.1, 8.5, 1500.0, 57000.0),
+                new AirplaneKind("Airplane", " Single-engine land ", true));
 
         assertThat(result).isPresent();
         assertThat(result.get().getTailNumber()).isEqualTo("N54321");
@@ -91,6 +94,53 @@ class AircraftServiceTest {
         assertThat(result.get().getColour()).isEqualTo("White blue stripes");
         assertThat(result.get().getServiceCeilingFt()).isEqualTo(13000.0);
         assertThat(result.get().getEmptyMomentLbIn()).isEqualTo(57000.0);
+        // Its category, class and gear (14 CFR 61.5(b), 61.57(a)(1)(ii)),
+        // the class's words without the spaces typed round them.
+        assertThat(result.get().getCategory()).isEqualTo("Airplane");
+        assertThat(result.get().getAircraftClass()).isEqualTo("Single-engine land");
+        assertThat(result.get().getTailwheel()).isTrue();
+    }
+
+    /** Its category, class and gear left out, as a client from before them
+     *  sends (the phones' forms), stay as they were; a blank word is none. */
+    @Test
+    void anUpdateWithNoKindKeepsItsClassAndABlankOneIsNone() {
+        Aircraft existing = new Aircraft(owner, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null)
+                .kind("Airplane", "Single-engine land", false);
+        given(aircraftRepository.findByIdAndPilotId(1L, owner.getId())).willReturn(Optional.of(existing));
+        given(aircraftRepository.save(existing)).willReturn(existing);
+
+        Aircraft kept = aircraftService
+                .update(
+                        owner, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null, null, null, null,
+                        null, null)
+                .orElseThrow();
+        assertThat(kept.getAircraftClass()).isEqualTo("Single-engine land");
+        assertThat(kept.getTailwheel()).isFalse();
+
+        Aircraft cleared = aircraftService
+                .update(
+                        owner,
+                        1L,
+                        "N12345",
+                        "C172",
+                        110.0,
+                        8.5,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new AirplaneKind(" ", null, null))
+                .orElseThrow();
+        assertThat(cleared.getCategory()).isNull();
+        assertThat(cleared.getAircraftClass()).isNull();
+        assertThat(cleared.getTailwheel()).isNull();
     }
 
     /** Figures left out of the form, as a client from before them sends,
@@ -105,7 +155,7 @@ class AircraftServiceTest {
         Aircraft saved = aircraftService
                 .update(
                         owner, 1L, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null, null, null, null, null, null,
-                        null)
+                        null, null)
                 .orElseThrow();
 
         assertThat(saved.getServiceCeilingFt()).isEqualTo(12000.0);
@@ -150,7 +200,7 @@ class AircraftServiceTest {
         Aircraft saved = aircraftService
                 .update(
                         owner, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null, " ", "", null,
-                        null)
+                        null, null)
                 .orElseThrow();
 
         assertThat(saved.getEquipment()).isNull();

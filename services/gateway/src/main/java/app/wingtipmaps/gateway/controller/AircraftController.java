@@ -89,7 +89,8 @@ public class AircraftController {
                 request.equipment(),
                 request.surveillance(),
                 request.colour(),
-                request.figures())));
+                request.figures(),
+                request.kind())));
     }
 
     @PutMapping("/{id}")
@@ -113,7 +114,8 @@ public class AircraftController {
                         request.equipment(),
                         request.surveillance(),
                         request.colour(),
-                        request.figures())
+                        request.figures(),
+                        request.kind())
                 .map(this::toDto));
     }
 

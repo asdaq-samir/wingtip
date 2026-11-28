@@ -131,6 +131,11 @@ data class AircraftDto (
     val inspections: InspectionsDto,
 
     /**
+     * Its category, class and gear as its owner gave them; each null where not said
+     */
+    val kind: AirplaneKind,
+
+    /**
      * Its squawks not yet fixed, newest first
      */
     val openSquawks: List<SquawkDto>,
@@ -346,6 +351,29 @@ data class InspectionsDto (
     val staticCheckOn: String? = null,
     val transponderCheckGoodThrough: String? = null,
     val transponderCheckOn: String? = null
+)
+
+/**
+ * Its category, class and gear as its owner gave them; each null where not said
+ *
+ * Its category, class and gear (14 CFR 61.5(b), 61.57(a)(1)(ii)); each null where not said
+ */
+@Serializable
+data class AirplaneKind (
+    /**
+     * 14 CFR 61.5(b)(2) class, "Single-engine land"
+     */
+    val aircraftClass: String? = null,
+
+    /**
+     * 14 CFR 61.5(b)(1) category, "Airplane"
+     */
+    val category: String? = null,
+
+    /**
+     * A tailwheel airplane; null where not said, judged as one (61.57(a)(1)(ii))
+     */
+    val tailwheel: Boolean? = null
 )
 
 @Serializable
@@ -838,6 +866,12 @@ data class AircraftRequest (
     val figures: OwnFigures? = null,
 
     val fuelBurnGph: Double,
+
+    /**
+     * Its category, class and gear, all at once; left out, they stay as they were
+     */
+    val kind: AirplaneKind? = null,
+
     val surveillance: String? = null,
     val tailNumber: String,
     val typeDesignator: String,

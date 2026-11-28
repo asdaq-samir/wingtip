@@ -3,6 +3,7 @@ package app.wingtipmaps.gateway.service;
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.VorCheck;
+import app.wingtipmaps.gateway.dto.AirplaneKind;
 import app.wingtipmaps.gateway.dto.HandbookFigures;
 import app.wingtipmaps.gateway.dto.InspectionsRequest;
 import app.wingtipmaps.gateway.dto.OwnFigures;
@@ -47,22 +48,26 @@ public class AircraftService {
             String equipment,
             String surveillance,
             String colour,
-            OwnFigures figures) {
-        return aircraft.save(keep(
-                new Aircraft(
-                                pilot,
-                                tailNumber,
-                                typeDesignator,
-                                cruiseTasKt,
-                                fuelBurnGph,
-                                cruisePowerPct,
-                                climbTasKt,
-                                climbFuelBurnGph,
-                                descentIasKt,
-                                descentFuelBurnGph,
-                                usableFuelGal)
-                        .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
-                figures));
+            OwnFigures figures,
+            AirplaneKind kind) {
+        return aircraft.save(keepKind(
+                keep(
+                        new Aircraft(
+                                        pilot,
+                                        tailNumber,
+                                        typeDesignator,
+                                        cruiseTasKt,
+                                        fuelBurnGph,
+                                        cruisePowerPct,
+                                        climbTasKt,
+                                        climbFuelBurnGph,
+                                        descentIasKt,
+                                        descentFuelBurnGph,
+                                        usableFuelGal)
+                                .describeForFlightPlan(
+                                        Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
+                        figures),
+                kind));
     }
 
     /** Empty when no such aircraft exists for this pilot -- not
@@ -84,23 +89,26 @@ public class AircraftService {
             String equipment,
             String surveillance,
             String colour,
-            OwnFigures figures) {
+            OwnFigures figures,
+            AirplaneKind kind) {
         return get(pilot, id)
-                .map(a -> aircraft.save(keep(
-                        a.update(
-                                        tailNumber,
-                                        typeDesignator,
-                                        cruiseTasKt,
-                                        fuelBurnGph,
-                                        cruisePowerPct,
-                                        climbTasKt,
-                                        climbFuelBurnGph,
-                                        descentIasKt,
-                                        descentFuelBurnGph,
-                                        usableFuelGal)
-                                .describeForFlightPlan(
-                                        Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
-                        figures)));
+                .map(a -> aircraft.save(keepKind(
+                        keep(
+                                a.update(
+                                                tailNumber,
+                                                typeDesignator,
+                                                cruiseTasKt,
+                                                fuelBurnGph,
+                                                cruisePowerPct,
+                                                climbTasKt,
+                                                climbFuelBurnGph,
+                                                descentIasKt,
+                                                descentFuelBurnGph,
+                                                usableFuelGal)
+                                        .describeForFlightPlan(
+                                                Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
+                                figures),
+                        kind)));
     }
 
     /** The figures given added to its own, the rest as they were: what an
@@ -118,6 +126,14 @@ public class AircraftService {
                 a.getGlideRatio(),
                 a.getEmptyWeightLb(),
                 a.getEmptyMomentLbIn());
+    }
+
+    /** `a` with its category, class and gear as `kind` says, blank words
+     *  none; null `kind`, as a client from before them sends, keeps them. */
+    private static Aircraft keepKind(Aircraft a, AirplaneKind kind) {
+        return kind == null
+                ? a
+                : a.kind(Typed.text(kind.category()), Typed.text(kind.aircraftClass()), kind.tailwheel());
     }
 
     /** `a` with `figures` kept, all six; null figures, as a client from

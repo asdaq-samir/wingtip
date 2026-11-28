@@ -64,7 +64,10 @@ public record AircraftDto(
         HandbookFigures handbook,
 
         @Schema(description = "Its own handbook figures as its pilot gave them; each null where not given")
-        OwnFigures figures) {
+        OwnFigures figures,
+
+        @Schema(description = "Its category, class and gear as its owner gave them; each null where not said")
+        AirplaneKind kind) {
 
     @Schema(description = "A VOR check for IFR (14 CFR 91.171)")
     public record VorCheckDto(
