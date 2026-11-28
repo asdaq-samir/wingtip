@@ -133,8 +133,8 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await expect(menu.getByTestId("procedure-menu-direct")).toContainText("As Charted");
   await menu.getByTestId("procedure-menu-direct").click();
   // The procedure's own fixes, the missed approach's and the runway's not.
-  await expect(menu.getByTestId("procedure-menu-direct-fix")).toHaveText(["As Charted", "DLH", "OFOFO", "FAKER"]);
-  await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "FAKER" }).click();
+  await expect(page.getByTestId("procedure-menu-direct-fix")).toHaveText(["As Charted", "DLH", "OFOFO", "FAKER"]);
+  await page.getByTestId("procedure-menu-direct-fix").filter({ hasText: "FAKER" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:)FAKER(&|$)/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
@@ -144,7 +144,7 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   // Back as charted, from its pill.
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   await menu.getByTestId("procedure-menu-direct").click();
-  await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "As Charted" }).click();
+  await page.getByTestId("procedure-menu-direct-fix").filter({ hasText: "As Charted" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
 });
 
@@ -178,11 +178,11 @@ test("a procedure picked has its fixes on the route's line before its field's, a
   await expect(kdlh.locator("[data-testid=procedure-rows]")).toHaveCount(0);
   await unfoldProcedure(kdlh, "approach");
   const box = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
-  await expect(box.getByTestId("procedure-name")).toHaveText("ILS RWY 09");
-  // Unfolded: its kind over its name, a section of KDLH's group under
+  await expect(box.getByTestId("procedure-name").locator(":scope > span").first()).toHaveText("ILS");
+  // Unfolded: its name, its kind's chip at the pill's end, a section of KDLH's group under
   // the field's line (the owner, 2026-11-24: "that airport should be the
   // heading"), then a row a fix; no branch of FixBranch's on the timeline.
-  await expect(box).toContainText("Approach");
+  await expect(box.locator("[data-testid=procedure-kind][data-kind=approach]")).toHaveText("APCH");
   const head = (await kdlh.getByTestId("timeline-line").boundingBox())!;
   expect((await box.boundingBox())!.y).toBeGreaterThan(head.y);
   await expect(box.getByTestId("fix-branch-row").first()).toBeVisible();
