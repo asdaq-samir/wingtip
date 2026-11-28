@@ -88,7 +88,7 @@ def test_hours_that_share_a_gfs_step_download_its_aloft_files_once(monkeypatch):
 
     monkeypatch.setattr(flow_aloft, "column_body", column)
     monkeypatch.setattr(flow_aloft, "world_body", world)
-    monkeypatch.setattr(flow_aloft, "at_levels_half", lambda body, levels, from_ft: half)
+    monkeypatch.setattr(flow_aloft, "at_levels_half", lambda *_: half)
 
     def step(valid):
         return flow_aloft.nearest_step(flow_nomads.tries(valid, NOW)["gfs"][0][1])

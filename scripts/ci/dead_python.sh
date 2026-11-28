@@ -11,7 +11,16 @@ cd "$(dirname "$0")/../.."
 VULTURE=vulture==2.16
 args=(services ml scripts scripts/ci/vulture_allow.py --min-confidence 80
   --exclude '*/generated/*,*/node_modules/*,*/target/*,*/.venv/*')
-if command -v uvx >/dev/null; then
-  exec uvx -q "$VULTURE" "${args[@]}"
-fi
-exec pipx run --spec "$VULTURE" vulture "${args[@]}"
+# vulture exits 3 on dead code, the code guards.sh reads as a tool
+# missing and skips: turned to 1 here, so a finding fails the guard.
+run() {
+  if command -v uvx >/dev/null; then
+    uvx -q "$VULTURE" "${args[@]}"
+  else
+    pipx run --spec "$VULTURE" vulture "${args[@]}"
+  fi
+}
+rc=0
+run || rc=$?
+[ "$rc" -eq 3 ] && exit 1
+exit "$rc"

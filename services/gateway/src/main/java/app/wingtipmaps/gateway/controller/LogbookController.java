@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Pilot-scoped as the aircraft are: 401 signed out.
  */
 @RestController
-@RequestMapping("/api/logbook")
+@org.springframework.web.bind.annotation.RequestMapping("/api/logbook")
 public class LogbookController {
 
     private final LogbookService logbook;

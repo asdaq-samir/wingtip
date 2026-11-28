@@ -468,43 +468,28 @@ jobs:
                 - apps/ios/Wingtip/Engine/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
                 - engine/licences/**
-                - design/tokens.json
                 - scripts/build/design-tokens.sh
                 - scripts/build/design_tokens*.py
                 - scripts/build/emit.py
-                - apps/web/src/styles/tokens.css
-                - apps/web/src/lib/tokens.ts
-                - apps/web/src/lib/generated/mapTokens.ts
-                - apps/web/src/lib/fixtures/formats.json
                 - apps/ios/Wingtip/Design/Generated/Tokens.swift
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/Tokens.kt
                 - services/jobs/charts/map_zoom.py
                 - engine/crates/core/src/map_dim_figures.rs
-                - design/map-style.json
                 - scripts/build/map-style.sh
                 - scripts/build/map_style*.py
-                - scripts/build/design_tokens_colour.py
-                - apps/web/src/lib/generated/overlayLayers.ts
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/generated/OverlayStyle.kt
-                - design/screens.json
                 - scripts/build/screens.*
-                - apps/web/src/lib/navigation/generated/screens.ts
-                - apps/web/src/lib/navigation/generated/manifest-shortcuts.json
                 - apps/ios/Wingtip/Navigation/Generated/Screens.swift
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/Screens.kt
                 - apps/android/app/src/main/res/xml/shortcuts.xml
                 - apps/android/app/src/main/res/values/screens_strings.xml
                 - docs/navigation.md
-                - design/wording.json
                 - scripts/build/wording.*
-                - apps/web/src/lib/wording/generated/wording.ts
                 - apps/ios/Wingtip/Design/Generated/Wording.swift
                 - apps/android/app/src/main/res/values/wording_strings.xml
                 - docs/design/rules.md
-                - design/card-actions.json
                 - scripts/build/card-actions.sh
                 - scripts/build/card_actions.py
-                - apps/web/src/lib/generated/cardActions.ts
                 - apps/ios/Wingtip/Design/Generated/CardActions.swift
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/CardActions.kt
                 - docs/design/icons.md
@@ -611,17 +596,13 @@ jobs:
                 - '**/*.swift'
                 - '**/*.kt'
                 - '**/*.java'
-                - scripts/ci/file_sizes.py
                 - scripts/ci/file_sizes_allow.txt
-                - scripts/ci/brand_guard.py
                 - scripts/ci/brand_guard_allow.txt
                 - design/tokens.json
-                - scripts/ci/shared_parts_guard.py
                 - scripts/ci/shared_parts_guard_allow.txt
                 - apps/web/src/*.css
                 - apps/web/src/**/*.css
                 - scripts/ci/dead_python.sh
-                - scripts/ci/vulture_allow.py
                 - .tool-versions
                 - rust-toolchain.toml
                 - engine/rust-toolchain.toml
@@ -707,10 +688,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: python3 scripts/ci/browser_specs.py
 
-  # The browser suite (apps/web/e2e) against the stack built from this commit (infra/docker-compose.ci.yml). What runs
-  # where is browser_specs.py's (docs/CI.md, "The tiers"): a pull request's reached specs, which "CI passed" waits for
-  # (decision 0048); main's push the smoke set; a wave and the night the wave's set dealt by time, the night with the
-  # iOS audit on shards of its own. Each shard starts each service as soon as its image is pulled, not after e2e-images.
+  # The browser suite (apps/web/e2e) on the stack built from this commit (infra/docker-compose.ci.yml), the specs the
+  # `specs` job picks (above); each shard starts each service as soon as its image is pulled, not after e2e-images.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
     needs: [changes, specs]
@@ -718,9 +697,7 @@ jobs:
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
-    # packages: read -- the images are private, like the registry cache a
-    # pull request's shards build from; actions: read, to ask after the
-    # job that pushes them (below).
+    # packages: read -- the images are private, as is the registry cache a pull request's shards build from.
     permissions:
       contents: read
       packages: read
@@ -877,10 +854,8 @@ jobs:
             sh -c "timeout 600 npm ci --no-audit --no-fund 2>&1 | tail -20 | tee /out/npm.log"
       - name: Browser tests
         id: tests
-        # CI=1 doubles playwright.config.ts's waits. At night, by hand and in
-        # a wave's validation (the owner, 2026-11-27: "Add it";
-        # browser_specs.py deals it its own shards there too) the whole iOS
-        # audit (WebKit, every device), on shards of its own.
+        # CI=1 doubles playwright.config.ts's waits. At night, by hand and in a wave's validation (the owner,
+        # 2026-11-27: "Add it"), the whole iOS audit (WebKit, every device), on shards of its own.
         env:
           IOS_AUDIT: ${{ (inputs.wave || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '1' || '' }}
           SCREENSHOTS: /out/screens
@@ -1003,13 +978,10 @@ jobs:
             data/raw/chart_tiles.nosync
           key: ${{ steps.cycle.outputs.key }}
 
-  # The browser suite's images (.github/ci-images.hcl: gateway, planner,
-  # weather), the page, and the slim Playwright copy, each built once per key
-  # (.github/e2e-keys.sh) and pushed as `e2e-<key>` and `e2e`; never `latest`.
-  # Most commits change no key, so this is a checkout and a few lookups. No
-  # job holding packages: write runs the branch's npm code on its machine
-  # (security review 2026-11-23, H2): BuildKit builds the images in its own
-  # sandbox, and the page is built by e2e-page, read-only, and pushed by e2e-page-push.
+  # The browser suite's images (.github/ci-images.hcl: gateway, planner, weather), the page and the slim Playwright
+  # copy, each built once per key (.github/e2e-keys.sh), pushed as `e2e-<key>` and `e2e`, never `latest`; most commits
+  # change no key. No job holding packages: write runs the branch's npm code (security review 2026-11-23, H2): BuildKit
+  # builds the images in its own sandbox; the page is built read-only by e2e-page and pushed by e2e-page-push.
   e2e-page:
     name: page (e2e)
     runs-on: ubuntu-26.04

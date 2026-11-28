@@ -116,7 +116,11 @@ def filters(data):
         out[name] = list(paths)
     for spec in data["areas"].values():
         joined = out.setdefault(spec["ci"], [])
-        joined.extend(p for p in spec["paths"] if p not in joined)
+        for p in spec["paths"]:
+            # A file a glob already listed covers adds nothing to the filter.
+            if p in joined or ("*" not in p and "?" not in p and any(glob_regex(q).match(p) for q in joined)):
+                continue
+            joined.append(p)
     return out
 
 
