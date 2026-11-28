@@ -60,7 +60,7 @@ enum CourseRenderers {
 /// amber at 0.6 over the white chart, as the web draws it; at night solid
 /// and dimmed by colour, but only as far as it stays 3:1 off the dimmed
 /// paper (NightPalette.dimmed), where the see-through amber dimmed with
-/// the chart was 1.34:1 (themes round 7, R7-6). Unchecked: MKOverlayRenderer
+/// the chart was 1.34:1. Unchecked: MKOverlayRenderer
 /// is not Sendable; it is coloured on the main actor alone, by OverlayDim.
 final nonisolated class HazardLegRenderer: MKPolylineRenderer, NightDimmed, @unchecked Sendable {
     override init(polyline: MKPolyline) {

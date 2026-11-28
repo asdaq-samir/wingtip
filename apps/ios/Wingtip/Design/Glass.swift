@@ -56,6 +56,5 @@ struct GlassRow<Content: View>: View {
     }
 }
 
-/// The floating cards' one shape over the map (the UI audit's "one
-/// floating-card shape per app"): design/tokens.json's card corner.
+/// The floating cards' one shape over the map: design/tokens.json's card corner.
 let floatingCard = RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous)

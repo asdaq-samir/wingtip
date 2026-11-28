@@ -147,8 +147,7 @@ struct PlanView: View {
         .sheet(item: $setting) { fuel in FuelSetSheet(ask: fuel).presentationDetents([.medium]) }
         // An approach on the line briefed or flown dry (ApproachMenuItems).
         .sheet(item: Bindable(flightUI).lesson) { ask in ApproachLessonSheet(ask: ask).presentationDetents([.medium, .large]) }
-        // Leaving the page puts the keyboard away (the web's sheet audit,
-        // 2026-11-12: focus left on a page put away kept the keyboard up).
+        // Leaving the page puts the keyboard away (focus left on a page put away kept the keyboard up).
         .onChange(of: nav.sheetPage) { _, _ in focused = nil }
     }
 }

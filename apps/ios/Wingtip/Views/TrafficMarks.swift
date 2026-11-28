@@ -81,7 +81,7 @@ final class TrafficMarkView: MKAnnotationView, NightWords {
     /// At night the chevron is dimmed by its colour, its dark edge kept
     /// whole (the obstacles' option A): the near amber about 3.2:1 on the
     /// edge at the default Dimmer, where faded by its alpha with the edge
-    /// it was about 1.3 to 1.8:1 on the paper (themes round 7, N5).
+    /// it was about 1.3 to 1.8:1 on the paper.
     func dim(_ brightness: CGFloat) {
         self.brightness = brightness
         paint()

@@ -110,9 +110,8 @@ enum DryRunClock {
 }
 
 /// How many times faster than flown, the dry run's and a flown track's
-/// replay alike: one control for both, a menu of the same speeds (the UI
-/// audit of 2026-11-09 found a menu on one and a segmented control on the
-/// other); a menu, as a discrete setting is (docs/decisions/0017), and
+/// replay alike: one control for both, a menu of the same speeds (one had a menu and the other a segmented control);
+/// a menu, as a discrete setting is (docs/decisions/0017), and
 /// small enough for the dry run's capsule over the map.
 struct SpeedPicker: View {
     let name: String

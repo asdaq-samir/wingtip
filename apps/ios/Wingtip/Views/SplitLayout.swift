@@ -218,7 +218,7 @@ struct SplitLayout<Map: View>: View {
             // map's bar is up, clear over the chart, for the system's
             // Show Sidebar: hidden for good, it left a pilot who hid
             // the sidebar no way back to the plan and the search but
-            // the menu bar (the iPad audit, 2026-11-21).
+            // the menu bar.
             .toolbar(columns == .detailOnly ? .visible : .hidden, for: .navigationBar)
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
     }
@@ -229,8 +229,7 @@ struct SplitLayout<Map: View>: View {
     /// so the map keeps a phone's width between them, and brought back
     /// once it goes; the pilot's own Show Sidebar still brings it at any
     /// time. Without it the 744-point iPad mini upright had 375 points of
-    /// sidebar and 375 of card, and no map between (the iPad audit,
-    /// 2026-11-21).
+    /// sidebar and 375 of card, and no map between.
     ///
     ///
     /// The split view is built only once the inspector's column, if it

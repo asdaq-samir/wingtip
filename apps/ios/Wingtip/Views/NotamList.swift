@@ -69,7 +69,7 @@ struct NotamListView: View {
             let model = ready
             await model.fetchNotams(force: force)
             // Read once: the model may fetch again across the await, and the
-            // rows must be the ones untilCharts was read for (the r9 audit).
+            // rows must be the ones untilCharts was read for.
             let fresh = model.notams
             untilCharts = await FieldNotamWords.untilCharts(fresh?.notams ?? [])
             ranked = fresh
@@ -148,10 +148,10 @@ enum NotamRows {
     /// "permanent", never the EST date (the owner, 2026-11-23: "For a
     /// permanent, just say permanent"), as on the field's list. Where the
     /// card could not be read (nil, an engine error), no end is said at
-    /// all, never a firm date that may only be the estimate (the r8 audit's
-    /// I-M1) nor "estimated", which the owner ruled out: "In effect now" or
-    /// "From …" (the r9 audit), and one not in force with no start "Not in
-    /// effect", never a blank line (the r10 audit). `untilCharts` has no
+    /// all, never a firm date that may only be the estimate
+    /// nor "estimated", which the owner ruled out: "In effect now" or
+    /// "From …", and one not in force with no start "Not in
+    /// effect", never a blank line. `untilCharts` has no
     /// default, so a new caller cannot drop every end by leaving it out.
     static func when(_ notam: APIRankedNotam, untilCharts: Bool?, now: Date = .now) -> String {
         let (s, e) = (notam.starts.flatMap(date), notam.ends.flatMap(date))

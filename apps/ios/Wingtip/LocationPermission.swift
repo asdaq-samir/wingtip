@@ -7,8 +7,7 @@ import Observation
 /// CLLocationUpdate.liveUpdates (OwnShip), which has no status of its own
 /// until it runs, and running it asks; so this one manager is kept only to
 /// read the status and ask, where Ready to Fly and the permission pages
-/// made a CLLocationManager each time they wanted to know (the stock
-/// audit, 2026-11-21). Its callback is iOS 14's
+/// made a CLLocationManager each time they wanted to know. Its callback is iOS 14's
 /// locationManagerDidChangeAuthorization, not the deprecated one.
 @MainActor
 @Observable

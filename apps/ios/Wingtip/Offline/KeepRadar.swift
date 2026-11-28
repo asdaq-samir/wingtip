@@ -4,8 +4,7 @@ import MapKit
 
 /// The radar's newest frame kept along the route for the air: its tiles
 /// over a corridor round the course, at the zooms the loop is looked at
-/// from a cockpit, so a kept loop is not a blank list of frames (the
-/// offline audit's gap 6). The radar only, not the satellite, and only
+/// from a cockpit, so a kept loop is not a blank list of frames. The radar only, not the satellite, and only
 /// the newest frame: the loop's older ones are minutes apart and the same
 /// picture to a pilot with no signal. Capped, so a long route keeps no
 /// more than a few megabytes of it. Read back by LoopTileOverlay where

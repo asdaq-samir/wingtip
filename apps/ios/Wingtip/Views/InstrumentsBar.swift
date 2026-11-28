@@ -62,8 +62,7 @@ struct InstrumentsBar: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
-                    // A flying control's 60-point area (the in-flight
-                    // audit's Q3), the button its own size.
+                    // A flying control's 60-point area, the button its own size.
                     .hitArea(WingtipSize.flyingTarget)
                     .accessibilityHint("The nearest fields, with Divert")
                     // Flying mode's way to the emergency assistant, the

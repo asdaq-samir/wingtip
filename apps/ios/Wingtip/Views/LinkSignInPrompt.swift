@@ -2,8 +2,7 @@ import SwiftUI
 
 /// The emailed sign-in link's question, over whatever is on the screen:
 /// opening the link signs nobody in until the pilot says so, and a pilot
-/// already signed in is told whose session the link would replace (the
-/// security audit of 2026-11-10, M1; the web's LinkSignIn asks the same).
+/// already signed in is told whose session the link would replace (the web's LinkSignIn asks the same).
 /// The link's account is named in the question, masked as the gateway
 /// gives it (POST /api/auth/magic-link/account, before the token is
 /// spent); a used or expired link offers no Sign In. Once in, who the link

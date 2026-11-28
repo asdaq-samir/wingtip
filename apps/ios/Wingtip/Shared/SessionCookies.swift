@@ -6,7 +6,7 @@ import Valet
 /// Keychain through Valet, readable after the phone's first unlock and
 /// never leaving it (afterFirstUnlockThisDeviceOnly: no backup, no other
 /// device), where they were a file in the App Group's container with the
-/// default Data Protection (the security audit of 2026-11-10, L9). The
+/// default Data Protection. The
 /// app and its widgets each hold them in memory (`jar`), read from the
 /// Keychain item they share through the App Group's access group, and
 /// write them back after each answer that changed them (`keep`). Nonisolated: the

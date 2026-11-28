@@ -2,8 +2,8 @@ import SwiftUI
 
 /// The route box's first row: From → To, the radio's clearance and Plan.
 /// The fields are plain text in the row's own ground, as Settings' fields
-/// are, not bordered boxes, which drew solid black on the glass at night
-/// (the iOS sheet audit, 2026-11-10). At the accessibility sizes the row
+/// are, not bordered boxes, which drew solid black on the glass at night.
+/// At the accessibility sizes the row
 /// stacks, From over To each the full width and Plan under them
 /// (docs/design/ios.md, "Large text sizes": side-by-side items stack, and
 /// an ident is never cut short), where side by side the fields had 76

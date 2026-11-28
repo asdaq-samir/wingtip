@@ -7,7 +7,7 @@ import SwiftUI
 /// Nearest. The same sections under the focused search
 /// (SearchSuggestions) and in the plan before there is a route (PlanView),
 /// where the medium detent otherwise showed From and To over some 300
-/// points of empty glass (the iOS sheet audit, 2026-11-10).
+/// points of empty glass.
 struct BrowseSections: View {
     let nearest: [NearestAirport]
     let pick: (SearchPick) -> Void

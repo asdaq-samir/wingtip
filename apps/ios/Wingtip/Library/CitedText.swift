@@ -47,7 +47,7 @@ struct CitedText: View {
 /// why) as one of the row's actions, "Open 14 CFR 91.155": a link inside a
 /// combined element is read but cannot be followed, so the row keeps its
 /// one spoken label and the Actions rotor opens each cite at its paragraph
-/// (items 103 and 104 of the round-3 queue; the web's links are reached by
+/// (the web's links are reached by
 /// Tab). Only cites the shelf holds, as CitedText links them.
 private struct CiteActions: ViewModifier {
     let texts: [String]

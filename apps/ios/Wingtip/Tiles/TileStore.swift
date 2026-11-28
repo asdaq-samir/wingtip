@@ -5,8 +5,7 @@ import Foundation
 /// service worker keeps (vite.config's chart-tiles cache). Two places:
 /// the tiles Keep for the Air fetched along a route (`kept`), in
 /// Application Support and left out of backups, which iOS never clears
-/// under storage pressure, as it may Caches mid-trip (the offline audit's
-/// gap 9); and the tiles the map fetched as it went (`seen`), under
+/// under storage pressure, as it may Caches mid-trip; and the tiles the map fetched as it went (`seen`), under
 /// Caches, which iOS may clear and the next look fetches again. The disk
 /// holds the pyramid's own tiles as fetched; the map decodes them
 /// (ChartTileRenderer) and keeps the decoded ones in memory (TileCache).

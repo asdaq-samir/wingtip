@@ -1,9 +1,10 @@
 import MapKit
 
 /// The Dimmer over the map's marks, not the chart's tiles alone, as the
-/// web's mapDim (the round-4 phones audit, 2026-11-27: at night the
+/// web's mapDim (at night the
 /// Dimmer darkened the chart while the fields, their weather and the
-/// traffic stayed at full light). At night every mark is drawn at the
+/// traffic stayed at full light).
+/// At night every mark is drawn at the
 /// chart's own brightness as its alpha, so nothing on the map is brighter
 /// than the chart under it and the pilot's dark adaptation is kept (AIM
 /// 8-1-6, Vision in Flight); by day it is 1. Own ship, the GPS's or the
@@ -97,9 +98,10 @@ nonisolated protocol NightDimmed: AnyObject {
 }
 
 /// The night's dim on what is drawn over the chart, as the web's mapDim
-/// (the round-5 phones audit, 2026-11-27: at night the course, the
+/// (at night the course, the
 /// airspace, the special-use areas, the weather and the obstacles stayed
-/// at full light over the dimmed chart). Lines and areas are dimmed by
+/// at full light over the dimmed chart).
+/// Lines and areas are dimmed by
 /// their colour, the colour times the chart's brightness with its alpha
 /// kept (the web's DIM_BY_COLOUR; the owner's "Dim by colour" for the
 /// warnings), so they keep their contrast with the chart where an opacity

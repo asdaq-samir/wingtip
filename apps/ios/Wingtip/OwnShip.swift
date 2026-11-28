@@ -18,8 +18,8 @@ import Observation
 /// its default on the ground, where a still phone goes stationary and
 /// gives nothing; a CLBackgroundActivitySession keeps it going with the
 /// phone locked while flying, with Apple's blue indicator. It was a
-/// CLLocationManager delegate with its own accuracy and filter switching
-/// (the stock audit, 2026-11-21). The permission is LocationPermission's.
+/// CLLocationManager delegate with its own accuracy and filter switching.
+/// The permission is LocationPermission's.
 @MainActor
 @Observable
 final class OwnShip {

@@ -4,7 +4,7 @@ import Foundation
 /// the cycle packs kept on the phone (the engine's airports_in_view),
 /// ranked by the engine's best_fields. Nearest, the emergency assistant
 /// and the on-device Ask all take their fields from here when the planner
-/// cannot be reached (the offline audit, 2026-11-10). The packs carry no
+/// cannot be reached. The packs carry no
 /// weather, elevations or runways, so a field here has none: the engine
 /// then ranks by distance, or by reach where the airplane's glide is known,
 /// and says what it could not weigh. Nothing is measured here but by the

@@ -1,8 +1,8 @@
 import Foundation
 
-/// What went wrong, in the app's words rather than the system's (the
-/// errors-and-onboarding audit, owner rec 5; the web's describeError and
-/// lib/problems' NO_CONNECTION): a lost or absent connection is "No
+/// What went wrong, in the app's words rather than the system's (the web's describeError and
+/// lib/problems' NO_CONNECTION):
+/// a lost or absent connection is "No
 /// connection" where URLSession said "The Internet connection appears to
 /// be offline.", a timeout says to try again, and an answer that is not
 /// the JSON asked for is said as garbled, not in the decoder's words. A

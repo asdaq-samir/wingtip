@@ -71,7 +71,7 @@ final class Charts {
 
     /// Asks each minute whether a kept region's cycle has taken over, so a
     /// phone offline across a changeover draws it from 0901Z with the app
-    /// open (the data-cycles audit's 14); the map is drawn again only when
+    /// open; the map is drawn again only when
     /// the answer turns.
     func watchChangeover(store: OfflineStore? = nil, now: @escaping () -> Date = { .now }) async {
         while !Task.isCancelled {

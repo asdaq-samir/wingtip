@@ -225,8 +225,7 @@ struct BriefView: View {
                 if plan.routed { ReceiverBriefSection(idents: plan.idents) }
                 // The route's NOTAMs, fetched for Ready to fly (91.103, AIM 5-1-3).
                 if plan.routed { NotamsSection() }
-                // When to go at the foot, after the flight's rows (the
-                // Brief audit's option 2, the owner, 2026-11-21).
+                // When to go at the foot, after the flight's rows (the owner, 2026-11-21).
                 if plan.routed {
                     DepartureWindowSection(model: window, signedIn: session.signedIn, airplane: plan.airplaneChosen)
                 }

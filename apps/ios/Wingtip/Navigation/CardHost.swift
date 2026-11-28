@@ -31,8 +31,7 @@ private struct CardHost: ViewModifier {
                     // A swipe down closes a settings card from half (You,
                     // Settings, the Map card), and only brings a content
                     // card down to its pill: a drag past the pill leaves it
-                    // there, as the web's sheet refuses it (the flicker
-                    // audit's FL-3, the owner's card rule 10), so a content
+                    // there, as the web's sheet refuses it (the owner's card rule 10), so a content
                     // card closes by its ✕, and Emergency by its ✕ alone.
                     .interactiveDismissDisabled(!card.page.swipeCloses)
                     // The map usable above a card up to half height; a
