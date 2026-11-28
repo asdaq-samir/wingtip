@@ -1,6 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { firstRow, frontSheet, grabberTo, openBrief, panelTabs, settle, settled, sideDrawer } from "./helpers";
-import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 import { hold } from "./pacing";
 
 /**
@@ -216,18 +215,18 @@ test("a touch on the sheet that does not move leaves it where it is", async ({ p
   await cdp.detach();
 });
 
-// The flicker audit, 2026-11-14, FL-3: an airport's card dragged from half
-// past its pill faded out and dropped off the screen's foot, then faded in
-// again at the pill: the Drawer had begun its close before the card took
-// it back. Now the close is refused where the Drawer asks (letGo), and the
-// card goes from where it was let go to the pill, in sight throughout;
-// tapped there, its title row brings it back to half, drawn once. By a
-// pointer's drag, which both engines take (card-once.spec's swipes).
+// An airport's card dragged from half past its pill once faded out, dropped
+// off the screen's foot, then faded in again at the pill (2026-11-14). A
+// swipe down from half now closes every card, its close as its ✕'s (the
+// owner, 2026-11-26; rules.md's card rule, "A swipe down from half closes
+// a card"): it goes on down from where it was let go and never comes back.
+// By a pointer's drag, which both engines take (card-once.spec's swipes).
 test.describe("by a pointer's drag", () => {
   test.use({ hasTouch: false });
-  test("an airport's card dragged past its pill goes to the pill in sight, never fading, and its pill raises it", async ({ page }) => {
+  test("an airport's card dragged down past its pill closes as its ✕ does, on down from where it was let go, never back", async ({
+    page,
+  }) => {
     test.skip(page.viewportSize()!.width >= 660, "a phone's cards");
-    await installFrameRecorder(page);
     await page.goto("/app/plan?place=KDLH");
     await settle(page);
     const card = page.locator("[data-sheet-card]").filter({ has: page.getByTestId("place-card") });
@@ -237,24 +236,28 @@ test.describe("by a pointer's drag", () => {
     const x = box.x + box.width / 2;
     await page.mouse.move(x, box.y + 6);
     await page.mouse.down();
-    // 500 down, past the pill and the screen's foot, as the audit's drag
-    // went (330 lands on the pill without the Drawer reading a close);
-    // watched from the let-go.
+    // 500 down, past the pill and the screen's foot, as the 2026-11-14 drag went.
     await page.mouse.move(x, box.y + 6 + 500, { steps: 16 });
-    await expectDrawnOnce(page, () => page.mouse.up().then(() => expect(card).toHaveAttribute("data-panel", "peek")), {
-      card: "place-card",
-      maxMoves: 0,
-    });
-    await expect(page.getByTestId("place-card")).toHaveCount(1);
-    await expectDrawnOnce(
-      page,
+    const at = (await card.boundingBox())!.y;
+    // Its top each frame from the let-go, as painted, while it is there.
+    const going = page.evaluate(
       () =>
-        card
-          .getByTestId("place-name")
-          .first()
-          .click()
-          .then(() => expect(card).toHaveAttribute("data-panel", "half")),
-      { card: "place-card", maxMoves: 0 },
+        new Promise<number[]>((done) => {
+          const out: number[] = [];
+          const end = performance.now() + 700;
+          const step = () => {
+            const c = [...document.querySelectorAll("[data-sheet-card]")].find((e) => e.querySelector("[data-testid=place-card]"));
+            if (c) out.push(c.getBoundingClientRect().top);
+            if (performance.now() < end) requestAnimationFrame(step);
+            else done(out);
+          };
+          requestAnimationFrame(step);
+        }),
     );
+    await page.mouse.up();
+    const tops = await going;
+    tops.forEach((top, i) => expect(top, `frame ${i}: never back up over where it was let go`).toBeGreaterThanOrEqual(at - 1));
+    await expect(page.getByTestId("place-card")).toHaveCount(0);
+    await expect(page).not.toHaveURL(/[?&]place=/);
   });
 });
