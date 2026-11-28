@@ -7,9 +7,33 @@ import type { OutlineRow } from "./pdfPlaces";
 import type { BodyProps } from "./readerBody";
 import { searchText, sectionAnchor, sectionFor, MOST_HITS } from "./textSearch";
 
-/** A section brought to the top of the reader. */
+// The frames a section is held at the top while those it passed are laid out.
+const MOST_FRAMES = 20;
+let holding = 0;
+
+/**
+ * A section brought to the top of the reader, and held there until it
+ * stays. Each section is laid out only near the screen (content-visibility,
+ * below), its height a guess till then; those the scroll lands among are
+ * laid out at their real height on the next frame, and the section was
+ * pushed down past the view: a cite of § 91.159 opened 950 px short of it,
+ * its heading off the screen (documents.spec on CI's runner). So it is
+ * scrolled to again on each frame it has moved since, until it is where
+ * the last scroll put it, a third of a second at most.
+ */
 function show(box: HTMLElement | null, id: string) {
-  box?.querySelector(`#${CSS.escape(sectionAnchor(id))}`)?.scrollIntoView({ block: "start" });
+  const el = box?.querySelector<HTMLElement>(`#${CSS.escape(sectionAnchor(id))}`);
+  cancelAnimationFrame(holding);
+  if (!box || !el) return;
+  const top = () => el.getBoundingClientRect().top - box.getBoundingClientRect().top;
+  const hold = (frames: number) => {
+    el.scrollIntoView({ block: "start" });
+    const put = top();
+    holding = requestAnimationFrame(() => {
+      if (Math.abs(top() - put) >= 1 && frames > 1) hold(frames - 1);
+    });
+  };
+  hold(MOST_FRAMES);
 }
 
 /**
