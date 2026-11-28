@@ -5,8 +5,9 @@ import SwiftUI
 /// ours should show this): the field's picture fading into the card's
 /// material, its ident on a tile over the fade, the name large and
 /// centred with what and where it is under it, a row of four actions --
-/// Fly Here filled, with the flight's time there when it is the plan's
-/// destination, Add Stop, Call and Favorite -- and a row of four facts. Every figure is the planner's
+/// its kind's (design/card-actions.json), Fly Here filled, with the
+/// flight's time there when it is the plan's destination -- and a row of
+/// four facts. Every figure is the planner's
 /// or the engine's, as sent; none is worked out here.
 struct AirportPlaceHead: View {
     @Environment(AirportShelf.self) private var shelf
@@ -158,17 +159,94 @@ struct AirportPlaceHead: View {
         return town.isEmpty ? kind : "\(kind) · \(town)"
     }
 
-    /// Four equal actions and no more, the first filled, as the web's
-    /// (PlaceActions; the owner, 2026-11-11: "fly here, add stop, call and
-    /// address ... no need for other buttons", Favorite in Address's place
-    /// since): Fly Here, with the time there -- the planner's where this is
-    /// the plan's destination, else the engine's estimate from the
-    /// airplane's cruise ("≈ 38m", the owner's C1, 2026-11-14) -- and Depart
-    /// From held under it as its menu; Add Stop (greyed where it can't be
-    /// one), Call (the FAA's phone for the field, greyed where it lists
-    /// none) and Favorite. A field NASR lists as closed is never offered
-    /// to land at (decision 0043): Fly Here and Add Stop are greyed.
+    /// Four equal actions and no more, the first filled, its kind's
+    /// (design/card-actions.json, the web's PlaceActions; the owner,
+    /// 2026-11-11: "fly here, add stop, call and address ... no need for
+    /// other buttons", Favorite in Address's place since): Fly Here, with
+    /// the time there -- the planner's where this is the plan's
+    /// destination, else the engine's estimate from the airplane's cruise
+    /// ("≈ 38m", the owner's C1, 2026-11-14) -- and Depart From held under
+    /// it as its menu; Add Stop, Call (the FAA's phone for the field,
+    /// greyed where it lists none) and Favorite. Where the field cannot be
+    /// a stop now (on the route already, closed), Address, the field in
+    /// Maps, is last in Add Stop's place rather than a greyed tile (the
+    /// owner, 2026-11-20). A field NASR lists as closed is never offered
+    /// to land at (decision 0043): Fly Here is greyed.
     private func actions(distance: AirportDistance?) -> some View {
+        let kind = Self.actionKind(stopOff: place.closed != nil || !plan.canAddStop(place.ident))
+        return HStack(spacing: WingtipSpace.sm) {
+            ForEach(kind.actions, id: \.self) { action in
+                tile(action, distance: distance).accessibilityIdentifier(Self.identifier(action))
+            }
+        }
+        .glassGroup(spacing: WingtipSpace.sm)
+        .padding(.horizontal, WingtipSpace.lg)
+        // Four across the phone, a glyph over a word, to the second
+        // accessibility size, where the words would no longer fit.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+    }
+
+    /// The row's kind: Address in Add Stop's place where the field cannot
+    /// be a stop now.
+    static func actionKind(stopOff: Bool) -> CardKind {
+        stopOff ? .airportStopOff : .airport
+    }
+
+    /// Each tile's name for the UI tests, the web's test id for the same tile.
+    static func identifier(_ action: CardAction) -> String {
+        switch action {
+        case .flyHere: "fly-here"
+        case .addStop: "place-add-stop"
+        case .call: "place-call"
+        case .favorite: "place-favorite"
+        case .address: "place-address-action"
+        default: action.rawValue
+        }
+    }
+
+    /// One tile's wiring: what a tap does, and whether it can be done now.
+    @ViewBuilder private func tile(_ action: CardAction, distance: AirportDistance?) -> some View {
+        switch action {
+        case .flyHere: flyHere(distance: distance)
+        case .addStop:
+            Button { plan.addStop(place.ident); done() } label: {
+                ActionFace(systemImage: action.systemImage, title: action.title)
+            }
+            .glassButton()
+            .accessibilityLabel(action.title)
+        case .call:
+            Group {
+                let face = ActionFace(systemImage: action.systemImage, title: action.title)
+                if let call = place.phone.flatMap({ URL(string: "tel:" + $0.filter { !$0.isWhitespace }) }) {
+                    Link(destination: call) { face }
+                } else {
+                    Button {} label: { face }.disabled(true)
+                }
+            }
+            .glassButton()
+            .accessibilityLabel(place.phone.map { "\(action.title) \($0)" } ?? "\(action.title): no phone listed")
+        case .favorite:
+            let kept = shelf.isFavorite(place.ident)
+            Toggle(isOn: Binding(get: { kept }, set: { _ in shelf.toggleFavorite(KeptAirport(place), undo: undoManager) })) {
+                ActionFace(systemImage: kept ? "\(action.systemImage).fill" : action.systemImage, title: action.title,
+                           symbolColour: kept ? Color(uiColor: WingtipColor.Brand.taxiwayYellow) : nil)
+            }
+            .toggleStyle(.button)
+            .glassButton()
+            .accessibilityLabel(kept ? Wording.removeFromFavorites : Wording.addToFavorites)
+        case .address:
+            Link(destination: AirportCard.mapsLink(place)) {
+                ActionFace(systemImage: action.systemImage, title: action.title)
+            }
+            .glassButton()
+            .accessibilityLabel("\(action.title) in Maps")
+        default: EmptyView()
+        }
+    }
+
+    /// Fly Here, its time there on it where one is known, Depart From
+    /// held under it.
+    private func flyHere(distance: AirportDistance?) -> some View {
         let here = plan.dest == place.ident
         let tas = plan.airplaneChosen ? plan.figures.cruiseTasKt ?? plan.altitude?.aircraft?.cruiseTasKt : nil
         let estimate = here ? nil : distance?.minutes(cruiseTasKt: tas)
@@ -176,51 +254,19 @@ struct AirportPlaceHead: View {
         let spoken = here ? ete : estimate.map { minutes in
             "about \(SpokenFigures.minutes(minutes)) at \(SpokenFigures.knots(tas ?? 0)), no wind"
         }
-        let call = place.phone.flatMap { URL(string: "tel:" + $0.filter { !$0.isWhitespace }) }
-        let kept = shelf.isFavorite(place.ident)
-        return HStack(spacing: WingtipSpace.sm) {
-            Menu {
-                Button { plan.departFrom(place.ident); done() } label: {
-                    Label(CardAction.departFrom.title, systemImage: CardAction.departFrom.systemImage)
-                }
-            } label: {
-                ActionFace(systemImage: CardAction.flyHere.systemImage, title: ete ?? CardAction.flyHere.title)
-            } primaryAction: {
-                Task { await plan.flyHere(place.ident, near: ownShip.fix); done() }
+        return Menu {
+            Button { plan.departFrom(place.ident); done() } label: {
+                Label(CardAction.departFrom.title, systemImage: CardAction.departFrom.systemImage)
             }
-            .glassProminentButton()
-            .disabled(place.closed != nil)
-            .accessibilityLabel(spoken.map { "Fly Here, \($0)" } ?? "Fly Here")
-            .accessibilityHint("Hold for Depart From")
-            .accessibilityIdentifier("fly-here")
-            Button { plan.addStop(place.ident); done() } label: {
-                ActionFace(systemImage: CardAction.addStop.systemImage, title: Wording.addStop)
-            }
-            .glassButton()
-            .disabled(place.closed != nil || !plan.canAddStop(place.ident))
-            .accessibilityLabel(plan.canAddStop(place.ident) ? CardAction.addStop.title : "\(CardAction.addStop.title): already on the route")
-            .accessibilityIdentifier("place-add-stop")
-            Group {
-                let face = ActionFace(systemImage: CardAction.call.systemImage, title: CardAction.call.title)
-                if let call { Link(destination: call) { face } } else { Button {} label: { face }.disabled(true) }
-            }
-            .glassButton()
-            .accessibilityLabel(place.phone.map { "Call \($0)" } ?? "Call: no phone listed")
-            .accessibilityIdentifier("place-call")
-            Toggle(isOn: Binding(get: { kept }, set: { _ in shelf.toggleFavorite(KeptAirport(place), undo: undoManager) })) {
-                ActionFace(systemImage: kept ? "\(WingtipIcon.favorite).fill" : WingtipIcon.favorite, title: CardAction.favorite.title,
-                           symbolColour: kept ? Color(uiColor: WingtipColor.Brand.taxiwayYellow) : nil)
-            }
-            .toggleStyle(.button)
-            .glassButton()
-            .accessibilityLabel(kept ? Wording.removeFromFavorites : Wording.addToFavorites)
-            .accessibilityIdentifier("place-favorite")
+        } label: {
+            ActionFace(systemImage: CardAction.flyHere.systemImage, title: ete ?? CardAction.flyHere.title)
+        } primaryAction: {
+            Task { await plan.flyHere(place.ident, near: ownShip.fix); done() }
         }
-        .glassGroup(spacing: WingtipSpace.sm)
-        .padding(.horizontal, WingtipSpace.lg)
-        // Four across the phone, a glyph over a word, to the second
-        // accessibility size, where the words would no longer fit.
-        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+        .glassProminentButton()
+        .disabled(place.closed != nil)
+        .accessibilityLabel(spoken.map { "\(CardAction.flyHere.title), \($0)" } ?? CardAction.flyHere.title)
+        .accessibilityHint("Hold for Depart From")
     }
 
     /// The card put away where it is a sheet, and the plan shown.

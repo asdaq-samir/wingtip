@@ -92,8 +92,9 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     Settings, Wingtip by default, from the tokens; Native is Material as
     it comes, `design/Native.kt`), `Figures` (the strip and `ProblemLine`, the one error
     style), `SectionTitle`, `WingtipIcons` (the concept table of
-    docs/design/icons.md), `CardActions` (each card kind's actions, the
-    web's lib/cardActions.ts);
+    docs/design/icons.md), `CardActions` (a card's row as a button group;
+    each kind's actions are `design/generated/CardActions.kt`, from
+    design/card-actions.json);
   - `ui/sheet/`: `MapSheet` (the panel on a phone: Material's standard
     bottom sheet, `BottomSheetScaffold`, at its peek or expanded, on the
     theme's expressive springs, since the owner on 2026-11-09 had stock

@@ -36,6 +36,28 @@
     <string name="wording_clear_route_question">Clear Route?</string>
     <!-- Flies straight to the point picked, the avionics' own name. -->
     <string name="wording_direct_to">Direct To</string>
+    <!-- A new route from the airplane to the airport shown (design/card-actions.json). -->
+    <string name="wording_fly_here">Fly Here</string>
+    <!-- The airport shown the route's departure, the rest of the route kept. -->
+    <string name="wording_depart_from">Depart From</string>
+    <!-- A hold at the point shown (AIM 5-3-8). -->
+    <string name="wording_hold_here">Hold Here</string>
+    <!-- The airport's own telephone, from the FAA's airport file. -->
+    <string name="wording_call">Call</string>
+    <!-- The airport or airplane shown in the Favorites or out, a switch in a card's row. -->
+    <string name="wording_favorite">Favorite</string>
+    <!-- The place shown in the maps app, by its street address where the FAA lists one. -->
+    <string name="wording_address">Address</string>
+    <!-- A frequency or an ident to the clipboard. -->
+    <string name="wording_copy">Copy</string>
+    <!-- The airplane card's first tile: the airplane shown the one the plan flies. -->
+    <string name="wording_fly_this">Fly This</string>
+    <!-- The airplane card's first tile while it flies: the map keeps it in sight. -->
+    <string name="wording_track">Track</string>
+    <!-- The airplane card's menu of alerts as it takes off and lands, by its ICAO address. -->
+    <string name="wording_alerts">Alerts</string>
+    <!-- The airplane card's tile that opens its book figures. -->
+    <string name="wording_figures">Figures</string>
     <!-- Puts a clearance's route into the plan. -->
     <string name="wording_enter_route">Enter Route</string>
     <!-- Starts the pilot's read back of a clearance. -->

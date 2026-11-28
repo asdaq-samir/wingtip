@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import { ACTION } from "../../lib/cardActions";
+import { ACTION } from "../../lib/generated/cardActions";
 import { useRadioActions } from "../../lib/atcRadio";
 import { usePointActions } from "../../lib/map/cards/pointActions";
 import { TEXT } from "../../lib/text";

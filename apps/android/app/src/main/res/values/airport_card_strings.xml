@@ -58,7 +58,4 @@
     <string name="fuel">Fuel</string>
     <string name="fuel_none_listed">None listed</string>
     <string name="fuel_remarks">Fuel Remarks</string>
-
-    <!-- The card's actions. -->
-    <string name="action_favorite">Favorite</string>
 </resources>

@@ -1,5 +1,5 @@
-import { useContext } from "react";
-import { ACTION } from "../../../lib/cardActions";
+import { Fragment, useContext, type ReactNode } from "react";
+import { ACTION, CARD_ACTIONS } from "../../../lib/generated/cardActions";
 import { CardCloseContext } from "../../../lib/map/cards/cardClose";
 import { CardAction, CardActionRow } from "../../CardAction";
 import { done as confirm } from "../../../lib/doneNote";
@@ -32,10 +32,9 @@ export function PointActions({
     close();
     act({ ident: point.ident, lat: point.lat, lon: point.lon });
   };
-  return (
-    // As many columns as tiles, as the airport card's row fills its width.
-    <CardActionRow columns={copy ? 3 : 2} testId="point-actions">
-      {/* The navaid card's set in its order (lib/cardActions). */}
+  // The navaid card's set in its order (design/card-actions.json): each tile's wiring here.
+  const tiles: Record<(typeof CARD_ACTIONS.navaid)[number], ReactNode> = {
+    directTo: (
       <CardAction
         icon={<ACTION.directTo.icon />}
         label={ACTION.directTo.label}
@@ -45,6 +44,8 @@ export function PointActions({
         onClick={directTo ? done(directTo) : undefined}
         testId="point-direct-to"
       />
+    ),
+    addToRoute: (
       <CardAction
         icon={<ACTION.addToRoute.icon />}
         label={ACTION.addToRoute.label}
@@ -53,22 +54,30 @@ export function PointActions({
         onClick={addToRoute ? done(addToRoute) : undefined}
         testId={addTestId}
       />
-      {copy && (
-        <CardAction
-          icon={<ACTION.copy.icon />}
-          label={copy.label}
-          spoken={`Copy ${copy.label}`}
-          onClick={() => {
-            // Called in the tap, as the clipboard asks; refused, nothing
-            // said. "Copied" by the tile tapped, which has the focus.
-            void copyText(copy.text).then(
-              () => confirm("Copied"),
-              () => {},
-            );
-          }}
-          testId="point-copy"
-        />
-      )}
+    ),
+    copy: copy && (
+      <CardAction
+        icon={<ACTION.copy.icon />}
+        label={copy.label}
+        spoken={`${ACTION.copy.label} ${copy.label}`}
+        onClick={() => {
+          // Called in the tap, as the clipboard asks; refused, nothing
+          // said. "Copied" by the tile tapped, which has the focus.
+          void copyText(copy.text).then(
+            () => confirm("Copied"),
+            () => {},
+          );
+        }}
+        testId="point-copy"
+      />
+    ),
+  };
+  return (
+    // As many columns as tiles, as the airport card's row fills its width.
+    <CardActionRow columns={copy ? 3 : 2} testId="point-actions">
+      {CARD_ACTIONS.navaid.map((name) => (
+        <Fragment key={name}>{tiles[name]}</Fragment>
+      ))}
     </CardActionRow>
   );
 }

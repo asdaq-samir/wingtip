@@ -1,7 +1,7 @@
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { cn } from "cn";
 import { CardAction } from "./CardAction";
-import { ACTION } from "../lib/cardActions";
+import { ACTION } from "../lib/generated/cardActions";
 import { FAVORITE_STAR_ON } from "../lib/mapChrome";
 
 /**

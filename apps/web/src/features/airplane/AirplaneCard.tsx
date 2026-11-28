@@ -1,11 +1,12 @@
-import { Bell, Crosshair, Gauge, History, Info } from "lucide-react";
+import { History, Info } from "lucide-react";
+import { Fragment, type ReactNode } from "react";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { cn } from "cn";
 import { SheetCard } from "../../components/SheetCard";
 import { CardAction, CardActionRow } from "../../components/CardAction";
 import { CardTitle } from "../../components/CardTitle";
 import { CardUnhad } from "../../components/CardUnhad";
-import { ACTION } from "../../lib/cardActions";
+import { ACTION, CARD_ACTIONS } from "../../lib/generated/cardActions";
 import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
 import { FavoriteTile } from "../../components/FavoriteTile";
 import { CardTabPages, CardTabPanel } from "../../components/CardTabs";
@@ -34,68 +35,69 @@ import { airplanePhotoSlide } from "./photoSlide";
 function Actions({ m }: { m: AirplaneSlices<"actions" | "head" | "hex" | "live"> }) {
   const { actions: a, live, hex } = m;
   const { title } = m.head;
-  const first = a.airborne ? (
-    <TogglePrimitive
-      key="track"
-      pressed={a.following}
-      disabled={!live.plane}
-      onPressedChange={a.follow}
-      render={
-        <CardAction
-          icon={<Crosshair />}
-          label="Track"
-          filled
-          pressed={a.following}
-          testId="airplane-track"
-          // The pressed state says whether the map keeps it in sight (WAI-ARIA APG, Button);
-          // the visible word in its name (WCAG 2.5.3).
-          spoken={`Track ${title} on the map`}
-        />
-      }
-    />
-  ) : (
-    <CardAction
-      key="fly"
-      icon={<ACTION.flyHere.icon />}
-      label={a.flying ? "Flying This" : "Fly This"}
-      spoken={a.flying ? "Flying this airplane" : "Fly this airplane"}
-      filled
-      disabled={a.flying || !a.flyable}
-      onClick={a.fly}
-      testId="fly-this-airplane"
-    />
-  );
-  // Alerts by the ICAO address: greyed for an N-number the registry gives none.
-  const alerts = hex ? (
-    <AircraftAlertMenu
-      key="alerts"
-      hex={hex}
-      name={title}
-      airborne={a.airborne}
-      from={live.fromField}
-      to={live.toField}
-      label="Alerts"
-      testId="airplane-alerts"
-    />
-  ) : (
-    <CardAction key="alerts" icon={<Bell />} label="Alerts" disabled testId="airplane-alerts" />
-  );
-  const tiles = [
-    first,
-    alerts,
-    <FavoriteTile key="favorite" on={a.starred} disabled={!a.kept} onToggle={a.toggleFavorite} testId="airplane-favorite" />,
-    <CardAction
-      key="figures"
-      icon={<Gauge />}
-      label="Figures"
-      disabled={!a.flyable}
-      onClick={a.openFigures}
-      testId="airplane-figures-open"
-    />,
-  ];
+  // The row is its state's kind (design/card-actions.json): each tile's wiring here.
+  const kind = a.airborne ? "airplaneAirborne" : "airplane";
+  const tiles: Record<(typeof CARD_ACTIONS)[typeof kind][number], ReactNode> = {
+    track: (
+      <TogglePrimitive
+        pressed={a.following}
+        disabled={!live.plane}
+        onPressedChange={a.follow}
+        render={
+          <CardAction
+            icon={<ACTION.track.icon />}
+            label={ACTION.track.label}
+            filled
+            pressed={a.following}
+            testId="airplane-track"
+            // The pressed state says whether the map keeps it in sight (WAI-ARIA APG, Button);
+            // the visible word in its name (WCAG 2.5.3).
+            spoken={`${ACTION.track.label} ${title} on the map`}
+          />
+        }
+      />
+    ),
+    flyThis: (
+      <CardAction
+        icon={<ACTION.flyThis.icon />}
+        label={a.flying ? "Flying This" : ACTION.flyThis.label}
+        spoken={a.flying ? "Flying this airplane" : "Fly this airplane"}
+        filled
+        disabled={a.flying || !a.flyable}
+        onClick={a.fly}
+        testId="fly-this-airplane"
+      />
+    ),
+    // Alerts by the ICAO address: greyed for an N-number the registry gives none.
+    alerts: hex ? (
+      <AircraftAlertMenu
+        hex={hex}
+        name={title}
+        airborne={a.airborne}
+        from={live.fromField}
+        to={live.toField}
+        label={ACTION.alerts.label}
+        testId="airplane-alerts"
+      />
+    ) : (
+      <CardAction icon={<ACTION.alerts.icon />} label={ACTION.alerts.label} disabled testId="airplane-alerts" />
+    ),
+    favorite: <FavoriteTile on={a.starred} disabled={!a.kept} onToggle={a.toggleFavorite} testId="airplane-favorite" />,
+    figures: (
+      <CardAction
+        icon={<ACTION.figures.icon />}
+        label={ACTION.figures.label}
+        disabled={!a.flyable}
+        onClick={a.openFigures}
+        testId="airplane-figures-open"
+      />
+    ),
+  };
   return (
     <CardActionRow columns={4} testId="airplane-actions">
-      {tiles}
+      {CARD_ACTIONS[kind].map((name) => (
+        <Fragment key={name}>{tiles[name]}</Fragment>
+      ))}
     </CardActionRow>
   );
 }

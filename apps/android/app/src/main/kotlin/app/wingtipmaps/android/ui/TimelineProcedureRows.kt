@@ -43,6 +43,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.ProcedureDrawing
 import app.wingtipmaps.android.api.generated.ProcedureFix
 import app.wingtipmaps.android.api.generated.ProcedureList
+import app.wingtipmaps.android.design.generated.CardAction
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format

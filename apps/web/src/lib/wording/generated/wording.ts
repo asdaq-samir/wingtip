@@ -36,6 +36,28 @@ export const WORDING = {
   clearRouteQuestion: "Clear Route?",
   /** Flies straight to the point picked, the avionics' own name. */
   directTo: "Direct To",
+  /** A new route from the airplane to the airport shown (design/card-actions.json). */
+  flyHere: "Fly Here",
+  /** The airport shown the route's departure, the rest of the route kept. */
+  departFrom: "Depart From",
+  /** A hold at the point shown (AIM 5-3-8). */
+  holdHere: "Hold Here",
+  /** The airport's own telephone, from the FAA's airport file. */
+  call: "Call",
+  /** The airport or airplane shown in the Favorites or out, a switch in a card's row. */
+  favorite: "Favorite",
+  /** The place shown in the maps app, by its street address where the FAA lists one. */
+  address: "Address",
+  /** A frequency or an ident to the clipboard. */
+  copy: "Copy",
+  /** The airplane card's first tile: the airplane shown the one the plan flies. */
+  flyThis: "Fly This",
+  /** The airplane card's first tile while it flies: the map keeps it in sight. */
+  track: "Track",
+  /** The airplane card's menu of alerts as it takes off and lands, by its ICAO address. */
+  alerts: "Alerts",
+  /** The airplane card's tile that opens its book figures. */
+  figures: "Figures",
   /** Puts a clearance's route into the plan. */
   enterRoute: "Enter Route",
   /** Starts the pilot's read back of a clearance. */

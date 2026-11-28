@@ -46,6 +46,10 @@ areas:
       - scripts/build/wording.py
       - docs/design/rules.md
       - apps/android/app/src/main/res/values/wording_strings.xml
+      # The card action tables and every app's generated copy, checked there.
+      - scripts/build/card-actions.sh
+      - scripts/build/card_actions.py
+      - docs/design/icons.md
       - apps/ios/Wingtip/Assets.xcassets/**
       # The icons and launch art, drawn from docs/brand by
       # scripts/build/app-icons.sh and checked there (--check).

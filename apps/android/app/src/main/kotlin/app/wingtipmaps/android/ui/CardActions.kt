@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.annotation.StringRes
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.RowScope
@@ -33,57 +32,14 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.core.net.toUri
-import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.CardAction
+import app.wingtipmaps.android.design.generated.CardKind
 import app.wingtipmaps.android.design.generated.WingtipSpace
 
-/**
- * A card's actions, one name and one glyph each on every card and every
- * app (the web's lib/cardActions.ts ACTION, docs/design/icons.md):
- *
- * - Fly Here: a new route from the airplane to this field.
- * - Direct To: from the airplane to the point, then on along the route.
- * - Add Stop: the field a landing on the way, as Maps' Add Stop.
- * - Add to Route: the point a turn on the way, where it bends the route
- *   least; not a landing.
- * - Hold Here: a hold at the point (AIM 5-3-8).
- * - Favorite: the field in the Favorites or out, a toggle in the row.
- * - Address: the field in the maps app, by its street address where the
- *   FAA lists one.
- *
- * Direct To, Add Stop and Add to Route are the generated wording's
- * (wording_*); the rest have no wording entry and are this app's strings.
- */
-enum class CardAction(@StringRes val label: Int, val icon: ImageVector) {
-    FLY_HERE(R.string.action_fly_here, WingtipIcons.flyHere),
-    DIRECT_TO(R.string.wording_direct_to, WingtipIcons.directTo),
-    ADD_STOP(R.string.wording_add_stop, WingtipIcons.addToRoute),
-    ADD_TO_ROUTE(R.string.wording_add_to_route, WingtipIcons.addToRoute),
-    HOLD_HERE(R.string.action_hold_here, WingtipIcons.holdHere),
-    CALL(R.string.action_call, WingtipIcons.call),
-    FAVORITE(R.string.action_favorite, WingtipIcons.favorite),
-    ADDRESS(R.string.action_address, WingtipIcons.address),
-    COPY(R.string.action_copy, WingtipIcons.copy),
-}
-
-/** Each kind of card's actions, in order (the web's CARD_ACTIONS); the
- *  first is the filled one. */
-enum class CardKind(val actions: List<CardAction>) {
-    /** Fly Here, Add Stop, Call and Favorite (the owner, 2026-11-11: "fly
-     *  here, add stop, call and address ... no need for other buttons",
-     *  then Favorite in Address's place). */
-    AIRPORT(listOf(CardAction.FLY_HERE, CardAction.ADD_STOP, CardAction.CALL, CardAction.FAVORITE)),
-
-    /** An airport's, opened while the pilot adds a stop (the one search
-     *  asked for one): Add Stop first and filled, no Fly Here, Address
-     *  last (the owner, 2026-11-18). */
-    AIRPORT_AS_STOP(listOf(CardAction.ADD_STOP, CardAction.CALL, CardAction.FAVORITE, CardAction.ADDRESS)),
-
-    /** A point on the map: the airspace card's. */
-    POINT(listOf(CardAction.DIRECT_TO, CardAction.ADD_TO_ROUTE, CardAction.HOLD_HERE)),
-
-    /** A VOR, a fix or a VFR waypoint. */
-    NAVAID(listOf(CardAction.DIRECT_TO, CardAction.ADD_TO_ROUTE, CardAction.COPY)),
-}
+// Each kind of card's actions, in order, with each one's label and glyph,
+// are design/card-actions.json's, generated into design/generated
+// (CardAction, CardKind) as into the web's CARD_ACTIONS; this file keeps
+// how a row is drawn and what leaves the app.
 
 /**
  * A card's actions in Material 3 Expressive's button group, the first

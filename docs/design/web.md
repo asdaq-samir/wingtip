@@ -774,7 +774,7 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    2026-11-11): Fly Here (filled, first), Add as Stop (where the field can
    be one; else the row holds three), Call, Favorite (the star, on or off,
    in Address's place: the address is the town link and the Info tab's
-   row; the owner, 2026-11-11) (`lib/cardActions`;
+   row; the owner, 2026-11-11) (`design/card-actions.json`;
    `docs/design/icons.md`). Where Add Stop cannot be used (the field on
    the route already, or closed), Address takes the row's end in its
    place, not a greyed tile (the owner, 2026-11-20: "If add stop is
@@ -907,7 +907,7 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
 
 **Structure, airplane card.** Head (tail, type, operator where the
 registry gives it; a picked airplane of the pilot's own shows its
-figures), the actions `lib/cardActions` gives its kind, then the figures
+figures), the actions `design/card-actions.json` gives its kind, then the figures
 the engine has for it. The airplane card (`features/airplane`'s `AirplaneCard`, its view
 model `useAirplaneCardModel`, hosted over the page by `AirplaneCardHost`)
 is one card an airplane since the owner's design of 2026-11-26, which

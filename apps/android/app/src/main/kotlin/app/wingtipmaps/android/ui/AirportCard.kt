@@ -41,6 +41,8 @@ import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.design.LoadingRow
+import app.wingtipmaps.android.design.generated.CardAction
+import app.wingtipmaps.android.design.generated.CardKind
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
@@ -238,6 +240,15 @@ private fun FactsRow(f: AirportFacts) {
     }
 }
 
+/** The airport row's kind (design/card-actions.json): opened while a stop
+ *  is asked for, Add Stop's; where Add Stop cannot be used, Address in its
+ *  place. */
+internal fun airportKind(asStop: Boolean, stopOff: Boolean): CardKind = when {
+    asStop -> CardKind.AIRPORT_AS_STOP
+    stopOff -> CardKind.AIRPORT_STOP_OFF
+    else -> CardKind.AIRPORT
+}
+
 /**
  * The actions under the card's head, in sight at half, in Material 3
  * Expressive's button group, its kind's four as the web's CARD_ACTIONS:
@@ -252,11 +263,9 @@ private fun FactsRow(f: AirportFacts) {
  */
 @Composable
 private fun ActionPills(place: AirportPlace, facts: AirportFacts?, actions: RouteActions, asStop: Boolean, onDone: () -> Unit) {
-    val kind = if (asStop) CardKind.AIRPORT_AS_STOP else CardKind.AIRPORT
-    val stopOff = !actions.canAirport(CardAction.ADD_STOP, place)
-    val shown = if (asStop || !stopOff) kind.actions else kind.actions.filter { it != CardAction.ADD_STOP } + CardAction.ADDRESS
+    val kind = airportKind(asStop, stopOff = !actions.canAirport(CardAction.ADD_STOP, place))
     val (starred, toggle) = rememberFavorite(place)
-    val items = shown.map { action ->
+    val items = kind.actions.map { action ->
         val first = action == kind.actions.first()
         when (action) {
             CardAction.FAVORITE -> GroupAction(stringResource(action.label), if (starred) Icons.Filled.Star else action.icon, checked = starred, onClick = toggle)

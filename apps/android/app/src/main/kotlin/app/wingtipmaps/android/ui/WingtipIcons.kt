@@ -142,9 +142,6 @@ object WingtipIcons {
     val runways = Icons.Filled.FlightLand
     val charts = Icons.Filled.Description
 
-    /** Fly Here, a new route to the field: the route's own glyph. */
-    val flyHere = Icons.Filled.Route
-
     /** Favorite, off: the star's outline (its toggle fills it on). */
     val favorite = Icons.Outlined.StarOutline
 

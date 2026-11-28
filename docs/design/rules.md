@@ -2044,6 +2044,17 @@ The words the three apps share, generated from `design/wording.json`:
 | `clear_route` | label | Clear Route | The menu item that clears the route. |
 | `clear_route_question` | label | Clear Route? | The question before the route is cleared. |
 | `direct_to` | label | Direct To | Flies straight to the point picked, the avionics' own name. |
+| `fly_here` | label | Fly Here | A new route from the airplane to the airport shown (design/card-actions.json). |
+| `depart_from` | label | Depart From | The airport shown the route's departure, the rest of the route kept. |
+| `hold_here` | label | Hold Here | A hold at the point shown (AIM 5-3-8). |
+| `call` | label | Call | The airport's own telephone, from the FAA's airport file. |
+| `favorite` | label | Favorite | The airport or airplane shown in the Favorites or out, a switch in a card's row. |
+| `address` | label | Address | The place shown in the maps app, by its street address where the FAA lists one. |
+| `copy` | label | Copy | A frequency or an ident to the clipboard. |
+| `fly_this` | label | Fly This | The airplane card's first tile: the airplane shown the one the plan flies. |
+| `track` | label | Track | The airplane card's first tile while it flies: the map keeps it in sight. |
+| `alerts` | label | Alerts | The airplane card's menu of alerts as it takes off and lands, by its ICAO address. |
+| `figures` | label | Figures | The airplane card's tile that opens its book figures. |
 | `enter_route` | label | Enter Route | Puts a clearance's route into the plan. |
 | `read_back` | label | Read Back | Starts the pilot's read back of a clearance. |
 | `read_back_again` | label | Read Back Again | Reads the clearance back once more. |
