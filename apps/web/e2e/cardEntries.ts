@@ -38,6 +38,13 @@ export async function sky(page: Page) {
     (url) => url.hostname === "api.planespotters.net",
     (route) => route.fulfill({ json: { photos: [] } }),
   );
+  // Nor its photo by its N-number through the planner, which asked Planespotters.net live on
+  // CI's runner: N14511's real photo came in seconds after its card, the card's pictures 205 px
+  // over its record, and traffic.spec's "opens at its size" read a layout shift of 0.057 (PR #591).
+  await page.route(
+    (url) => /\/api\/planner\/airplanes\/[^/]+\/photo$/.test(url.pathname),
+    (route) => route.fulfill({ json: null }),
+  );
 }
 
 /** Find Nearby's answer, stubbed: one field (stops-sheet.spec's shape). */
