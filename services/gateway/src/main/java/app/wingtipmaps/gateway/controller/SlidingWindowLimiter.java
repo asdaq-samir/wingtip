@@ -87,14 +87,13 @@ public final class SlidingWindowLimiter {
      * connection came from a trusted proxy ({@code
      * server.tomcat.remoteip.internal-proxies}, GATEWAY_TRUSTED_PROXIES;
      * loopback alone where unset), so a phone-mode LAN client cannot
-     * rotate the header to dodge a limit. This class walked the header by
-     * hand until round 4's reuse audit (M2).
+     * rotate the header to dodge a limit. This class once walked the header by
+     * hand.
      *
      * <p>An IPv6 caller is counted by its /64, the block one subscriber
      * line or one cloud host is given: keyed per address, one /64 held
      * 2^64 callers, and 30 asks from as many addresses -- the lockout the
-     * limits are set against -- took 30 requests (round 4's security
-     * review, M1).
+     * limits are set against -- took 30 requests.
      */
     public static String clientOf(HttpServletRequest request) {
         return keyOf(request.getRemoteAddr());
@@ -127,8 +126,7 @@ public final class SlidingWindowLimiter {
      * times that. The caller is counted first, so a caller already
      * refused spends no address's count; and a stranger spends only their
      * own share of an address, so locking its pilot out takes that many
-     * callers (the deep security review of 2026-11-21; round 4's L3 for
-     * the deletion link, which still charged the address first).
+     * callers.
      */
     public boolean allowLink(
             String address, String client, int perClient, int perAddress, int addressCallers, Instant now) {

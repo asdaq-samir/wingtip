@@ -113,8 +113,7 @@ public class DeleteAccountController {
         String address = email.trim();
         // Counted as the sign-in link is, the caller first: the address's
         // own five were charged first, for every caller, so anyone could
-        // keep a pilot from deleting their account (round 4's security
-        // review, L3).
+        // keep a pilot from deleting their account.
         if (!recent.allowLink(
                 "email:" + address.toLowerCase(Locale.ROOT),
                 SlidingWindowLimiter.clientOf(request),
@@ -126,9 +125,8 @@ public class DeleteAccountController {
         }
         // The look-up, the link's row and the mail all off the request's
         // thread: the row was written only for an address with an account,
-        // so the time the page took still told which addresses have one
-        // (round 4's L3), as the mail alone did before (the deep security
-        // review of 2026-11-21).
+        // so the time the page took still told which addresses have one,
+        // as the mail alone did before.
         String base = base(request);
         Thread.ofVirtual().name("deletion-link").start(() -> sendLinkIfAccount(address, base, now));
         return seeOther("/delete-account?sent=1");

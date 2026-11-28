@@ -52,8 +52,7 @@ public record SaveFlightRequest(
         /* The altitudes the pilot set at points of the route, as the
          *  planner's `altitudes` parameter writes them: "VPBNG:4500,KDLH:2400",
          *  ten at most; a point the route is at more than once names its
-         *  visit, "VPBNG@2:6500" (the second time there; the web audit's
-         *  WEB-2, 2026-11-14). Null or blank for none. */
+         *  visit, "VPBNG@2:6500" (the second time there). Null or blank for none. */
         @Nullable
         @Pattern(
                 regexp = "^$|" + POINT + "(?:@\\d{1,2})?:\\d{1,5}(," + POINT + "(?:@\\d{1,2})?:\\d{1,5}){0,9}",
@@ -73,8 +72,7 @@ public record SaveFlightRequest(
         String picks) {
 
     /** One pick: a key the planner's address has for a flight (web
-     *  lib/address PICK_KEYS), and its value URL-encoded. Since round 4's
-     *  connector audit (M5; the owner took the recommendation) also
+     *  lib/address PICK_KEYS), and its value URL-encoded. Also
      *  `fuel`, the stops that are fuel stops, `tanks`, the fuel on board
      *  as it leaves each field, and `rules`, VFR or IFR, which set the
      *  flight's cruising altitudes (14 CFR 91.159, 91.179) and its fuel

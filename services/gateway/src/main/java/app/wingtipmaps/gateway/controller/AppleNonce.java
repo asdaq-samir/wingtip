@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 /**
  * The nonce that ties an Apple identity token to the sign-in it was asked
- * for (the security audit's L5, 2026-11-10): without one, a token that
+ * for: without one, a token that
  * leaked -- a log, a proxy -- signs its pilot in anywhere until it expires,
  * about ten minutes on.
  *

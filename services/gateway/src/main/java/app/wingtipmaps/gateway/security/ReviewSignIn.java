@@ -30,7 +30,7 @@ public class ReviewSignIn {
     /** The shortest code accepted, in base64url's own characters: 32 of
      *  them are 192 random bits, as `openssl rand -base64 24` makes (with
      *  + and / written - and _). 20 of any character let a short word
-     *  pass (round 4's security review, L7). */
+     *  pass. */
     static final int SHORTEST_CODE = 32;
 
     private static final java.util.regex.Pattern CODE =

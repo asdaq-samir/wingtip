@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  * used: the web's sign-in dialog (LinkSignIn) and the phone apps' sheet
  * name it, so a pilot sent a link to someone else's account -- an
  * attacker's, to collect what the pilot then saves -- sees whose it is
- * and does not press Sign in (the security audit's L1 and M1, 2026-11-10).
+ * and does not press Sign in.
  *
  * <p>The address masked (its first letter and its domain), and only for a
  * link that could still sign in: a used, expired or unknown token answers

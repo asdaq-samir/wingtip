@@ -83,7 +83,7 @@ public class McpProxyController {
     public ResponseEntity<StreamingResponseBody> mcp(HttpServletRequest request) throws IOException {
         // Read up to the limit and no further, counting the bytes rather
         // than trusting Content-Length: a chunked body has none (-1), and
-        // was streamed on to the planner whole (the security audit's L6).
+        // was streamed on to the planner whole.
         byte[] body =
                 "POST".equals(request.getMethod()) ? request.getInputStream().readNBytes((int) BODY_LIMIT + 1) : null;
         if (body != null && body.length > BODY_LIMIT) {

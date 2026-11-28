@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
  * <p>The pages read their records in a short read-only transaction and ask
  * the planner after it: a Hikari connection held across the planner's
  * calls (up to 20 s each, with one retry) let about ten slow pages empty the
- * pool of ten (waste-server audit B).
+ * pool of ten.
  */
 final class RecordsAsks {
 

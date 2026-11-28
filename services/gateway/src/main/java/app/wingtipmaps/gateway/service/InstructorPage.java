@@ -70,8 +70,7 @@ class InstructorPage {
      *  reviews wait -- then every rule the page needs asked of the planner
      *  in one call after it, with no connection held (RecordsAsks). For 10
      *  students and 5 reviews that was about 70 queries and 31 planner
-     *  calls one after another inside the transaction (waste-server audit
-     *  A, B). */
+     *  calls one after another inside the transaction. */
     InstructorDto of(Pilot pilot, Instant now) {
         LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
         // As far back as 14 CFR 61.189(c) has them keep it: the engine's.

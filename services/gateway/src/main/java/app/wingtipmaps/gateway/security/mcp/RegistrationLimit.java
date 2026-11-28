@@ -20,7 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * (app.mcp.registrations-per-client-per-hour, 10), and a body no bigger than
  * a client's metadata ever is, counted on the bytes read, so a chunked body
  * is held to it too. Each registration is a row; with neither, a script
- * could fill the database (the security audit's M3, 2026-11-10). Claude and
+ * could fill the database. Claude and
  * ChatGPT register once a connection, from their own servers' addresses.
  */
 final class RegistrationLimit extends OncePerRequestFilter {

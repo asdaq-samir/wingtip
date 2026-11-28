@@ -367,8 +367,7 @@ public class SecurityConfig {
      *  deleting the account can revoke it (App Review 5.1.1(v)). Then the
      *  provider's tokens are let go of: Boot's store keeps them in memory
      *  for as long as the app runs, past the account's deletion, and
-     *  nothing here calls Google or Apple with them again (round 4's
-     *  security review, L8). */
+     *  nothing here calls Google or Apple with them again. */
     private static void keepAppleRefreshToken(
             PilotService pilots,
             Optional<OAuth2AuthorizedClientService> authorizedClients,

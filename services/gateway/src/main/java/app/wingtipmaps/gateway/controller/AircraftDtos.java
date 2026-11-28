@@ -48,7 +48,7 @@ final class AircraftDtos {
      *  inspections fall due asked of the planner in one call for them all
      *  (the engine's inspections_due: 14 CFR 91.409(a), (b), 91.207(d),
      *  91.411(a), 91.413(a), 91.171), not one an airplane: the web asks
-     *  the list again every 60 s (waste-server audit C). */
+     *  the list again every 60 s. */
     List<AircraftDto> of(List<Aircraft> all) {
         List<Long> ids =
                 all.stream().map(Aircraft::getId).filter(Objects::nonNull).toList();

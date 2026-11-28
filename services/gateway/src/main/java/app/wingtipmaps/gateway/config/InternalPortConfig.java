@@ -22,8 +22,7 @@ import org.springframework.web.util.UrlPathHelper;
  *
  * <p>The public port is what Caddy, CloudFront and, in the phone mode, the
  * whole Wi-Fi reach; a shared secret was all that kept a stranger there
- * from reading any pilot's records by counting up their id (the security
- * audit's M2, 2026-11-10). This port is published nowhere -- not by
+ * from reading any pilot's records by counting up their id. This port is published nowhere -- not by
  * docker-compose.yml, not by the production compose, where only Caddy
  * publishes ports -- so only a container on the compose network (the
  * planner) reaches it, and the secret is a second lock rather than the

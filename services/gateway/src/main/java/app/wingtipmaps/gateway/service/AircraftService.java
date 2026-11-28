@@ -169,8 +169,7 @@ public class AircraftService {
                                 r.eltInspectedOn(),
                                 r.eltBatteryDueOn())
                         // Null is "not said", as each date here: the form sends
-                        // every answer, so its "Not Set" clears a kept one (the
-                        // round 6 audit, G2), and the engine then weighs it as
+                        // every answer, so its "Not Set" clears a kept one, and the engine then weighs it as
                         // for hire, the safe side (91.409(b)).
                         .forHire(r.forHire())));
     }

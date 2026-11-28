@@ -40,8 +40,8 @@ public class FlightShareController {
      *  which every deployment that mails sets, as the emailed links are
      *  built from it; else (a machine that sends nothing) the request's
      *  own, whose host Tomcat takes from X-Forwarded-Host only from a
-     *  trusted proxy (application.yml). It followed X-Forwarded-Host from
-     *  any caller until round 4's reuse audit (M2). */
+     *  trusted proxy (application.yml). It once followed X-Forwarded-Host from
+     *  any caller. */
     static String origin(String publicBaseUrl) {
         return publicBaseUrl.isBlank()
                 ? ServletUriComponentsBuilder.fromCurrentContextPath()

@@ -176,7 +176,7 @@ public class PlannerClient {
      * /api/pilot/records-batch): each answer as {@link #experience} and
      * {@link #endorsements} give it, in the order asked. An instructor's
      * page asked two a student and two a waiting review, one after another
-     * (waste-server audit A: about 31 for 10 students); nothing is asked
+     * (about 31 for 10 students); nothing is asked
      * of nothing.
      *
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses,
@@ -354,7 +354,7 @@ public class PlannerClient {
      * engine's inspections_due an airplane): 14 CFR 91.409(a) and (b),
      * 91.207(d), 91.411(a), 91.413(a), and 91.171 for the VOR check. Each
      * ask is PaperworkClient#askOf's; nothing is asked of none. An
-     * aircraft list asked once an airplane (waste-server audit C).
+     * aircraft list asked once an airplane.
      *
      * @throws PlannerUnavailableException where the planner is out of reach, refuses, or
      *     answers more or fewer airplanes than were asked

@@ -24,7 +24,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * the planner counts them on its own disk for 90 days (app.usage_days),
  * which a replaced server loses, so each night the finished days since
  * the last one kept are read from its internal /api/usage/daily and
- * written here (round 4's product audit, H2). Counts alone, nothing of a
+ * written here. Counts alone, nothing of a
  * pilot (docs/privacy-inventory.md). A day read again replaces its counts,
  * so a run missed or repeated changes nothing. Off where
  * app.usage.rollup-cron is "-".
@@ -77,10 +77,8 @@ public class UsageRollup {
      *  transaction: the next run starts the day after max(day), so a day
      *  before it left unwritten by a failure part way would never be read
      *  again. The planner is asked before the transaction opens, so no
-     *  database connection waits on its HTTP answer (the round 6 audit,
-     *  G1). Through a TransactionTemplate, not @Transactional, which
-     *  Spring's proxy never applies to nightly()'s call on this (the safety
-     *  audit of 2026-11-23, L8). Answers how many rows were written. */
+     *  database connection waits on its HTTP answer. Through a TransactionTemplate, not @Transactional, which
+     *  Spring's proxy never applies to nightly()'s call on this. Answers how many rows were written. */
     public int rollUp() {
         LocalDate today = LocalDate.now(clock);
         LocalDate last = jdbc.queryForObject("SELECT max(day) FROM usage_days", LocalDate.class);
@@ -128,7 +126,7 @@ public class UsageRollup {
      *  start and "#" and its SHA-256's first 16 hex digits, so two routes
      *  alike for the first 300 characters stay two rows. Counted and cut
      *  in characters (code points), as Postgres's VARCHAR counts them,
-     *  never inside a surrogate pair (the round 7 audit, G-L1). */
+     *  never inside a surrogate pair. */
     static String fit(String text, int width) {
         if (text.codePointCount(0, text.length()) <= width) {
             return text;

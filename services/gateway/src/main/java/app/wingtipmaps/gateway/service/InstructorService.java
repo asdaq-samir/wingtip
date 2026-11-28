@@ -92,7 +92,7 @@ public class InstructorService {
         // The subject is fixed and the name in the body is only a name's
         // letters: the name is the student's own free text, and any
         // account could mail any address a line of its choosing, a link
-        // among it (round 4's security review, L4).
+        // among it.
         mail.send(
                 address,
                 "A pilot asks you to be their flight instructor",

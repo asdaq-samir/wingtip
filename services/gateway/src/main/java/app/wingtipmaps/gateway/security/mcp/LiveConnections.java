@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 /**
  * ConnectorGrants#live's yes for one access token, kept a short while: the planner asks before
  * every MCP tool call, dozens a chat, and each ask read the pilot's
- * connections and parsed each one's whole row (waste-server audit D).
+ * connections and parsed each one's whole row.
  *
  * <p>Only a live answer is kept, and never past {@link #KEPT} nor past the
  * moment the token runs out, so a token that
@@ -37,7 +37,7 @@ public class LiveConnections {
     /** One access token of a pilot's through one client: the pilot's id as
      *  the principal's name, the client's id, and the token's SHA-256 (the
      *  token itself is not held), so a yes for one token is never a yes
-     *  for another (the deep security review of 2026-11-21). */
+     *  for another. */
     private record Key(String principal, String clientId, String token) {
 
         static Key of(long pilotId, String clientId, String accessToken) {

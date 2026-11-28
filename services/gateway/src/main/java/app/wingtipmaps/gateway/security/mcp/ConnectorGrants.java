@@ -45,7 +45,7 @@ public class ConnectorGrants {
      * account deleted, a refresh token replayed), and itself neither
      * revoked nor run out. The planner asks on every MCP call, since its
      * JWTs are checked by signature alone and would otherwise outlive all
-     * of that by up to 15 minutes (the security audit's L4). It asked
+     * of that by up to 15 minutes. It asked
      * only whether the pilot had any live connection through the client
      * until the deep review of 2026-11-21: an access token revoked at
      * /oauth2/revoke, while its refresh token stood, or one of a second
@@ -96,7 +96,7 @@ public class ConnectorGrants {
      * again or deletes a saved flight. The planner checks the scope too
      * (app/mcp/calls.pilot), but the internal writes trusted its word
      * alone, so a planner tool that forgot to ask would write freely
-     * (round 4's security review, the old L4's defence in depth). The
+     * (defence in depth). The
      * token's own scopes, not the connection's: a connection consented to
      * before V53 renamed the scope refreshes to wingtip:read and the old
      * wingtip:write, which grants nothing now.
@@ -173,8 +173,7 @@ public class ConnectorGrants {
     }
 
     /**
-     * Ends one of the pilot's connections from Wingtip's side (the deep
-     * security review's N2): its row goes, with its access and refresh
+     * Ends one of the pilot's connections from Wingtip's side: its row goes, with its access and refresh
      * tokens and the spent ones kept against replay, so the next MCP call
      * with either token is refused (live) and no refresh is granted. The
      * consent behind it goes too once no other connection of theirs stands

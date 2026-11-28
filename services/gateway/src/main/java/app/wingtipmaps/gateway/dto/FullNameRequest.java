@@ -6,8 +6,7 @@ import jakarta.validation.constraints.Size;
 
 /** The pilot's name as their certificate gives it -- PUT /api/training/name.
  *  A name's characters alone: it goes into the mail that asks an
- *  instructor in, to an address of the student's choosing (round 4's
- *  security review, L4). */
+ *  instructor in, to an address of the student's choosing. */
 public record FullNameRequest(
         @NotBlank(message = "fullName is required")
         @Size(max = 120, message = "fullName is at most 120 characters")

@@ -192,8 +192,7 @@ public class MagicLinkController {
     public ResponseEntity<String> verify(
             @RequestParam String token, HttpServletRequest request, HttpServletResponse response) {
         // Every try counted per caller, a good link's too, so the review
-        // code and a link's token cannot be guessed at speed (round 4's
-        // security review, L7): a pilot presses a link once or twice.
+        // code and a link's token cannot be guessed at speed: a pilot presses a link once or twice.
         if (!recentRequests.allow(
                 "verify:" + SlidingWindowLimiter.clientOf(request), perClientPerHour, Instant.now())) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)

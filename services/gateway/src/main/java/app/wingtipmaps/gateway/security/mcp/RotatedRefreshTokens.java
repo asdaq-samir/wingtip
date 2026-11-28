@@ -18,8 +18,8 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
  * remembered: each is used once (ConnectorClients), and one presented
  * again was copied -- the client and whoever copied it cannot both be
  * right -- so the whole connection is revoked, every token of it, and the
- * pilot's AI app asks them to connect again (OAuth 2.1 section 4.3.1;
- * RFC 9700 section 4.14.2; the security audit's L3, 2026-11-10). Spring
+ * pilot's AI app asks them to connect again (OAuth 2.1 section 4.3.1; RFC 9700 section 4.14.2).
+ * Spring
  * only refuses the old token (invalid_grant) and leaves the new one live.
  *
  * <p>Kept as SHA-256 hashes (V42), as the magic links are: nothing here

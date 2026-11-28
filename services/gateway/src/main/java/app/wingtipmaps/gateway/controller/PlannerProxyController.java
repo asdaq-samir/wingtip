@@ -178,7 +178,7 @@ public class PlannerProxyController {
             // under a session): a write without the header is the planner's
             // single-user note, everyone's, so it is refused here. Signed
             // out, the access rules have already said whether a write may
-            // go (APP_OPEN_WRITES' one-user stack). Round 4's L9.
+            // go (APP_OPEN_WRITES' one-user stack).
             boolean signedIn = who != null && who.isAuthenticated() && !(who instanceof AnonymousAuthenticationToken);
             if (pilot.isEmpty() && signedIn && !"GET".equals(method)) {
                 throw StreamingProxy.problem(401, "sign in again to change your own notes");

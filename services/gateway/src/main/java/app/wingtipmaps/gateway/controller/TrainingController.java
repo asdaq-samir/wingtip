@@ -49,7 +49,7 @@ public class TrainingController {
 
     /** Instructors asked from one caller in a day, whichever accounts ask:
      *  the student's own five a day alone let free accounts made in a row
-     *  mail anyone (round 4's security review, L4). */
+     *  mail anyone. */
     static final int CALLER_ASKS_A_DAY = 10;
 
     private final SlidingWindowLimiter asksByCaller = new SlidingWindowLimiter(Duration.ofDays(1));
