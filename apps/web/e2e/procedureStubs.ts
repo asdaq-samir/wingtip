@@ -29,6 +29,25 @@ export const otherRunway = (page: Page) =>
 /** A runway option's number, from its name ("Runway 9, into the wind"). */
 export const runwayOf = async (option: Locator) => /^Runway (\w+)/.exec((await option.getAttribute("aria-label")) ?? "")![1]!;
 
+/** The planner's forecast wind at every field stubbed: an easterly at 14 kt,
+ *  whatever the field's TAF says today (forecast-wind.spec). KDLH, which
+ *  the route reaches hours on, then lands on 09, where the stubbed ILS is:
+ *  on the stack's own forecast (CI's run of PR #591, 320 at 11 gusting 18)
+ *  it landed on 27, and the approach menu opened on its runways' page,
+ *  "No approaches to Runway 27", where the whole list is not. */
+export async function easterly(page: Page, asked: string[] = []) {
+  await page.route(
+    (url) => /\/airport\/[^/]+\/forecast-wind$/.test(url.pathname),
+    (route) => {
+      const ident = new URL(route.request().url()).pathname.split("/").at(-2)!;
+      asked.push(ident);
+      return route.fulfill({
+        json: { ident, distance_nm: 0, dir_true_deg: 90, speed_kt: 14, gust_kt: null, valid_from: 0, valid_to: 4_000_000_000 },
+      });
+    },
+  );
+}
+
 // KDLH's ILS as the planner would send it (wingtip.procedures), stubbed: the
 // FAA's file is not read on CI's runner.
 export const LIST = {

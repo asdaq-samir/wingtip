@@ -118,7 +118,12 @@ test("the route's Procedures open its destination's card on its approaches, and 
       });
     },
   );
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  // Landing on 09, its ILS's runway, as the pilot picked it (auto "-": not
+  // for the wind), whatever the day's METAR: the approach menu below opens
+  // on 09's page, with the whole list at its foot. Picked for the wind, CI's
+  // and this copy's landed on 27 and 3, where the menu turns to its runways'
+  // page, "No approaches to Runway 3", which has no whole-list row.
+  await page.goto("/app/plan?dep=C81&dest=KDLH&pattern=KDLH%3A9&auto=-");
   await settle(page);
   await openPanel(page);
   // Nearest is the search's own page's (its Nearest section), not a button
@@ -147,7 +152,7 @@ test("the route's Procedures open its destination's card on its approaches, and 
               cycle: "261001",
               stale: false,
               procedures: [
-                { kind: "approach", id: "I09", name: "ILS OR LOC RWY 09", runway: "RW09", transitions: [], runway_transitions: [] },
+                { kind: "approach", id: "I09", name: "ILS OR LOC RWY 09", runway: "09", transitions: [], runway_transitions: [] },
               ],
             }
           : {

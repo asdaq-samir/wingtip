@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { showPage } from "./oneSearch";
-import { closeCard, frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs } from "./helpers";
+import { closeCard, frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs, slow } from "./helpers";
 
 /**
  * How the phone's sheet and its cards move when no finger has them (the
@@ -16,25 +16,46 @@ test.beforeEach(({ page }) => {
   test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
 });
 
-/** `read` sampled after each frame is drawn, for `ms`. */
-function frames<T>(page: Page, read: string, ms = 700): Promise<T[]> {
+/**
+ * `read` sampled after each frame is drawn, from now until `done` holds and
+ * every finite animation on the page has run out: what the steps after the
+ * call set going, however long they take to land. A fixed 700 ms window
+ * started as the reader did, and on CI's four cores, carrying the stack,
+ * the press, the click or the lift that followed it came after the window
+ * had shut, so nothing moved in it (PR #591's run: the sheet's top 476 at
+ * both ends, the card's close unseen, the foot bar still at half). Never
+ * past `cap`, so a sheet that never gets there fails on what it read.
+ */
+function frames<T>(page: Page, read: string, done: string, cap = slow(10_000)): Promise<T[]> {
   return page.evaluate(
-    ([body, ms]) =>
-      new Promise<T[]>((done) => {
+    ([body, until, cap]) =>
+      new Promise<T[]>((resolve) => {
         const at = new Function(`return (${body})`) as () => T;
+        const there = new Function(`return (${until})`) as () => boolean;
+        const moving = () =>
+          document.getAnimations().some((a) => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity);
         const out: T[] = [];
-        const end = performance.now() + Number(ms);
+        const end = performance.now() + Number(cap);
+        // Arrived, then a frame after it with nothing left moving: an ease
+        // starts in the frame after what set it, not in the same task.
+        let arrived = false;
         const step = () =>
           setTimeout(() => {
             out.push(at());
-            if (performance.now() < end) requestAnimationFrame(step);
-            else done(out);
+            const rest = arrived && !moving();
+            arrived = there();
+            if (rest || performance.now() > end) resolve(out);
+            else requestAnimationFrame(step);
           }, 0);
         requestAnimationFrame(step);
       }),
-    [read, String(ms)] as const,
+    [read, done, String(cap)] as const,
   );
 }
+
+/** The map's sheet at a size (its data-panel), and no card over it. */
+const PANEL_AT = (size: string) => `document.querySelector('[data-slot="map-panel"]')?.getAttribute("data-panel") === "${size}"`;
+const NO_CARD = `!document.querySelector("[data-sheet-card]")`;
 
 /** A drag down from the front sheet's grabber by the pointer, let go. */
 async function pullDown(page: Page, by: number) {
@@ -66,6 +87,7 @@ test.describe("by a pointer's drag", () => {
     const settle_ = frames<{ sheet: number; bottom: number; at: string | null }>(
       page,
       `(() => { const s = document.querySelector('[data-swipe-direction="down"]'); const b = document.querySelector('[data-testid="foot-bar"]'); return { sheet: s.getBoundingClientRect().top, bottom: b.getBoundingClientRect().bottom, at: b.getAttribute("data-at") }; })()`,
+      PANEL_AT("peek"),
     );
     await page.mouse.up();
     const seen = await settle_;
@@ -95,6 +117,7 @@ test.describe("by a pointer's drag", () => {
     const going = frames<number | null>(
       page,
       `(() => { const c = [...document.querySelectorAll("[data-sheet-card]")].at(-1); return c ? c.getBoundingClientRect().top : null; })()`,
+      NO_CARD,
     );
     const at = (await you.boundingBox())!.y;
     await page.mouse.up();
@@ -122,6 +145,7 @@ test("an airport's card closed by its ✕ goes with its face on it, fading, not 
   const closing = frames<{ opacity: number; text: number } | null>(
     page,
     `(() => { const c = [...document.querySelectorAll("[data-sheet-card]")].at(-1); return c ? { opacity: +getComputedStyle(c).opacity, text: c.innerText.trim().length } : null; })()`,
+    NO_CARD,
   );
   await closeCard(page, "place-close");
   const seen = (await closing).filter((f): f is { opacity: number; text: number } => f !== null);
@@ -139,7 +163,7 @@ test.describe("with Reduce Motion", () => {
     await page.goto("/app/plan");
     await settle(page);
     await grabberTo(page, "half");
-    const tops = frames<number>(page, `document.querySelector('[data-slot="map-panel"]').getBoundingClientRect().top`);
+    const tops = frames<number>(page, `document.querySelector('[data-slot="map-panel"]').getBoundingClientRect().top`, PANEL_AT("peek"));
     await grabberTo(page, "peek");
     const seen = await tops;
     const [first, last] = [seen[0]!, seen.at(-1)!];
