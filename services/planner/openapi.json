@@ -12811,9 +12811,15 @@
             "title": "Elton"
           },
           "forHire": {
-            "default": false,
-            "title": "Forhire",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forhire"
           },
           "hundredHourAtHours": {
             "anyOf": [
