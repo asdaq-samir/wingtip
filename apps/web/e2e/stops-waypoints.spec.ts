@@ -73,35 +73,41 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
   // the waypoints' marks -- the wheel over C81, a level at a time.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await expect.poll(markWith(page, "route-marks", "C81"), { timeout: slow(30000) }).not.toBeNull();
-  const departure = (await markWith(page, "route-marks", "C81")())!;
-  // C81 dragged to the middle of the map first: the route's fit leaves it
-  // near the screen's foot, and VPBNG, 4 nm south-west, was zoomed in to
-  // past it, under the bottom edge (2026-11-03).
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   const middle = { x: map.x + map.width / 2, y: map.y + map.height / 2 };
-  await page.mouse.move(departure.x, departure.y);
-  await page.mouse.down();
-  await page.mouse.move(middle.x, middle.y, { steps: 12 });
-  await page.mouse.up();
-  await mapStill(page);
   // A level at a time until it is drawn, from 10 as the GPS waypoints
   // are, and on the screen: further in, 4 nm off C81 is off the map.
   const inSight = async () =>
     (await waypointMarks(page)).filter(
       (w) => w.x > map.x + 20 && w.x < map.x + map.width - 20 && w.y > map.y + 20 && w.y < map.y + map.height - 20,
     );
-  // Round the pointer, put on C81 each time (the map coasts on after the
-  // drag): MapLibre zooms a wheel's step by its size, up to a level a turn,
-  // and steps of 60 left the map at 7, short of the waypoints' 10.
   const seen = async () => (await inSight()).some((w) => w.ident === "VPBNG");
-  for (let i = 0; i < 8 && !(await seen()); i++) {
-    const at = (await markWith(page, "route-marks", "C81")()) ?? middle;
-    await page.mouse.move(at.x, at.y);
-    await page.mouse.wheel(0, -1000);
+  // From C81 again until it holds: the route fitted anew as the plan's
+  // stream brings its points in takes the map back out to the route, and
+  // on CI's runner that came after the zoom in, leaving no waypoint in
+  // sight (PR #591's run).
+  await expect(async () => {
+    // C81 dragged to the middle of the map first: the route's fit leaves it
+    // near the screen's foot, and VPBNG, 4 nm south-west, was zoomed in to
+    // past it, under the bottom edge (2026-11-03).
+    const departure = (await markWith(page, "route-marks", "C81")()) ?? middle;
+    await page.mouse.move(departure.x, departure.y);
+    await page.mouse.down();
+    await page.mouse.move(middle.x, middle.y, { steps: 12 });
+    await page.mouse.up();
     await mapStill(page);
-  }
-  // The waypoint drawn, its magenta triangle and ident (WaypointsLayer).
-  await expect.poll(async () => (await inSight()).map((w) => w.ident), { timeout: slow(20000) }).toContain("VPBNG");
+    // Round the pointer, put on C81 each time (the map coasts on after the
+    // drag): MapLibre zooms a wheel's step by its size, up to a level a turn,
+    // and steps of 60 left the map at 7, short of the waypoints' 10.
+    for (let i = 0; i < 8 && !(await seen()); i++) {
+      const at = (await markWith(page, "route-marks", "C81")()) ?? middle;
+      await page.mouse.move(at.x, at.y);
+      await page.mouse.wheel(0, -1000);
+      await mapStill(page);
+    }
+    // The waypoint drawn, its magenta triangle and ident (WaypointsLayer).
+    await expect.poll(async () => (await inSight()).map((w) => w.ident), { timeout: slow(5000) }).toContain("VPBNG");
+  }).toPass({ timeout: slow(60_000) });
   // Once the map has stopped: a tap as the zoom eases in landed where the
   // mark had been.
   await steady(() => waypointMarks(page));

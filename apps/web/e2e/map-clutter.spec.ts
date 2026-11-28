@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { mapStill, settle } from "./helpers";
+import { mapStill, settle, slow } from "./helpers";
 import { drawnMarks } from "./marks";
 import { noCheckpoints, pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its tops of climb and descent
@@ -40,15 +40,24 @@ test("over the whole country the route's ends are named and its tops of climb an
   await noCheckpoints(page);
   await page.goto(ROUTE);
   await settle(page);
-  await zoomTo(page, 4, -98, 38);
-  // Each end named, each on its pill clear of the others (MapLibre leaves
-  // out a pill it cannot place; an end's is placed first).
-  await expect.poll(() => fieldIdents(page)).toEqual(expect.arrayContaining(["KUGN", "KLAS"]));
+  // The map put there again until it holds: the planner adds the C172's
+  // fuel stops to the route once its first plan is in (KFEP, KIML ...), and
+  // the route's new points fit the map to it again, a second or two on here
+  // and tens of seconds on CI's runner, where the fit came after the zoom
+  // in and took the map out past where the tops are drawn (PR #591's run).
+  const at = (level: number, lon: number, lat: number, drawn: () => Promise<unknown>) =>
+    expect(async () => {
+      await zoomTo(page, level, lon, lat);
+      await drawn();
+    }).toPass({ timeout: slow(60_000) });
+  // Closer in, a leg long enough to read: its TOC and TOD are drawn, the
+  // C172's round KAHQ, once the plan has them.
+  await at(7, -98.5, 41, async () => expect((await drawnMarks(page, "leg-points")).length).toBeGreaterThan(0));
+  // Out over the country: each end named, each on its pill clear of the
+  // others (MapLibre leaves out a pill it cannot place; an end's is placed
+  // first), and none of the tops.
+  await at(4, -98, 38, async () => expect(await fieldIdents(page)).toEqual(expect.arrayContaining(["KUGN", "KLAS"])));
   expect(await drawnMarks(page, "leg-points")).toEqual([]);
-  // Closer in, a leg long enough to read: its TOC and TOD come back, the
-  // C172's top of climb some 20 nm west of KAHQ on the leg to KLXV.
-  await zoomTo(page, 7, -98.5, 41);
-  await expect.poll(async () => (await drawnMarks(page, "leg-points")).length).toBeGreaterThan(0);
 });
 
 test("a route field's pill goes outside the course's turn, off the leg", async ({ page }) => {

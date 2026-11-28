@@ -1,6 +1,7 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { openTab, settle, sideDrawer, slow, openRoute } from "./helpers";
 import { pickAirplane } from "./startState";
+import { easterly } from "./procedureStubs";
 // An airplane, so the legs have their times and a field when it is reached
 // (the setup picks none, and with none there is no time to forecast for).
 test.beforeEach(({ page }) => pickAirplane(page));
@@ -8,22 +9,10 @@ test.beforeEach(({ page }) => pickAirplane(page));
 /**
  * A field the airplane reaches more than an hour from now has its runway
  * picked into the wind its TAF forecasts for then, at the owner's pick
- * (2026-10-20), and its info says so. The planner's forecast is stubbed:
- * an easterly at 14 kt, whatever the field reports now.
+ * (2026-10-20), and its info says so. The planner's forecast is stubbed
+ * (procedureStubs' easterly): an easterly at 14 kt, whatever the field
+ * reports now.
  */
-async function easterly(page: Page, asked: string[] = []) {
-  await page.route(
-    (url) => /\/airport\/[^/]+\/forecast-wind$/.test(url.pathname),
-    (route) => {
-      const ident = new URL(route.request().url()).pathname.split("/").at(-2)!;
-      asked.push(ident);
-      return route.fulfill({
-        json: { ident, distance_nm: 0, dir_true_deg: 90, speed_kt: 14, gust_kt: null, valid_from: 0, valid_to: 4_000_000_000 },
-      });
-    },
-  );
-}
-
 const depart = () => encodeURIComponent(new Date(Date.now() + 3 * 60 * 60_000).toISOString());
 
 test("a field reached hours from now picks its runway into the forecast wind, and says it is the forecast", async ({ page }) => {

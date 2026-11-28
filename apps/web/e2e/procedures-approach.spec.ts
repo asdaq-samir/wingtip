@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { cardClose, drawn, openTab, settle, settled, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { procedureRuns as runs } from "./marks";
 import { pickAirplane } from "./startState";
-import { circuitsOf, openRunways, LIST, DRAWN, ARRIVAL_DRAWN, unfoldProcedure } from "./procedureStubs";
+import { circuitsOf, easterly, openRunways, LIST, DRAWN, ARRIVAL_DRAWN, unfoldProcedure } from "./procedureStubs";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -21,6 +21,8 @@ test("a field's approach is picked on its own page with its transition, drawn on
       return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
     },
   );
+  // Landing on 09, the ILS's runway, whatever the day's wind: its menu opens on 09's page.
+  await easterly(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openTab(page, "Nav Log");
