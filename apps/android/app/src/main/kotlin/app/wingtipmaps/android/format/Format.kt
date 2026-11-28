@@ -158,9 +158,18 @@ object Format {
     /** A visibility in statute miles as said, quarters as fractions (the
      *  web's lib/atis visibilityWords): "10 sm", "2½ sm", "¾ sm"; a
      *  report's "more than" (P6SM, FAA JO 7900.5; the planner's
-     *  visibility_plus) "6+ sm", as the web's miles(sm, plus). None where
-     *  the engine does not answer, as reportedVisibility says. */
-    fun visibility(sm: Double, plus: Boolean): String? = visibility(sm)?.let { if (plus) it.removeSuffix(" sm") + "+ sm" else it }
+     *  visibility_plus) "6+ sm", as the web's miles(sm, plus); a report's
+     *  "less than" (M1/4SM, FMH-1 chapter 6; the planner's
+     *  visibility_minus) "less than ¼ sm", never the figure alone, which
+     *  says more than was seen. None where the engine does not answer, as
+     *  reportedVisibility says. */
+    fun visibility(sm: Double, plus: Boolean, minus: Boolean = false): String? = visibility(sm)?.let {
+        when {
+            minus -> "less than $it"
+            plus -> it.removeSuffix(" sm") + "+ sm"
+            else -> it
+        }
+    }
 
     fun visibility(sm: Double): String? {
         val (whole, fraction) = reportedVisibility(sm) ?: return null

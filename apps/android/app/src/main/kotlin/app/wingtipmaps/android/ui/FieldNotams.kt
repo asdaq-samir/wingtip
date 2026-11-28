@@ -60,12 +60,15 @@ object FieldNotams {
         if (isTfr(n) || !active(n) || roles.isEmpty()) null else Engine.notamAffects(n.raw, identsOf(ident), roles).getOrNull()?.affects?.firstOrNull()
 
     /** A TFR read by the engine (tfr_read): its kind as a heading, its
-     *  kind and rule, its levels and where it is from the field, its place. */
+     *  kind and rule, its levels -- a floor or ceiling that varies said so
+     *  (the planner's floor_varies and ceiling_varies), never one figure --
+     *  and where it is from the field, its place. */
     fun readTfr(n: RankedNotam): EngineContract.TfrReadAnswer? {
         val t = n.tfr
         return Engine.tfrRead(
             kind = t?.kind, rule = t?.rule, title = t?.title,
             floorFt = t?.floorFt, floorRef = t?.floorRef, ceilingFt = t?.ceilingFt, ceilingRef = t?.ceilingRef,
+            floorVaries = t?.floorVaries, ceilingVaries = t?.ceilingVaries,
             overField = t?.overField,
             field = t?.field?.let { EngineContract.TfrPoint(it.lat, it.lon) },
             edge = t?.edge?.let { EngineContract.TfrPoint(it.lat, it.lon) },
