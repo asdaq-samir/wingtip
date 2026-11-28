@@ -82,6 +82,12 @@ export const overlaysOf = new WeakMap<maplibregl.Map, OverlayTiles>();
 
 /** The maps whose style has loaded. */
 export const loaded = new WeakSet<maplibregl.Map>();
+/** The style's own load, not MapLibre's `load`, which waits for every tile
+ *  in view: with the chart in the first style that was the chart's tiles
+ *  too, which the planner draws on the way, and the map's layers -- every
+ *  tap and held point among them -- came only once they had (a right-click
+ *  on CI's stack opened no card in 30 s, airspace.spec). */
+export const STYLE_LOADED = "style.load";
 
 /** What the panel covers, as MapLibre's padding: its middle is the map's. */
 export function padOf({ top, bottom, left, right = 0 }: MapInsets): Required<PaddingOptions> {
@@ -200,7 +206,7 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets, ringsByField 
     say();
   });
   probeLayers(m, el);
-  m.once("load", () => loaded.add(m));
+  m.once(STYLE_LOADED, () => loaded.add(m));
   // Once at rest, the overlay tiles one ring outside the view fetched
   // (overlayTiles' prefetchRing), so a pan's first frame has them; again
   // at each rest after, for the tiles not fetched yet.
