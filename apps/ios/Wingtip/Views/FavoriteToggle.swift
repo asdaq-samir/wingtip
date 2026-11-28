@@ -9,7 +9,7 @@ struct FavoriteToggle: View {
 
     var body: some View {
         Toggle(isOn: Binding(get: { starred }, set: { _ in toggle() })) {
-            ActionFace(systemImage: starred ? "\(WingtipIcon.favorite).fill" : WingtipIcon.favorite, title: "Favorite",
+            ActionFace(systemImage: starred ? "\(CardAction.favorite.systemImage).fill" : CardAction.favorite.systemImage, title: CardAction.favorite.title,
                        symbolColour: starred ? Color(uiColor: WingtipColor.Brand.taxiwayYellow) : nil)
         }
         .toggleStyle(.button)

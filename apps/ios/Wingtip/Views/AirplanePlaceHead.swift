@@ -5,21 +5,13 @@ import SwiftUI
 /// the airport card's is (AirportPlaceHead): at full height the type's
 /// silhouette on a tile, then the N-number large and centred with the
 /// registry's make, model and year under it ("Piper PA-28-140, 1971"), and
-/// one row of four -- Fly This filled, Follow (tell me when it takes off or
-/// lands), Favorite and Share. Its photo is a picture tile under the facts
-/// (AirplanePhotoTile, the owner's C1). Follow and Favorite go by the ICAO address
-/// the registry gives, greyed where it gives none.
-struct AirplanePlaceHead: View {
+/// its row of four (AirplaneActions, the web's design of 2026-11-26), its
+/// Share in the card's head. Its photo is a picture tile under the facts
+/// (AirplanePhotoTile, the owner's C1).
+struct AirplanePlaceHead<Actions: View>: View {
     @Environment(\.lookAccent) private var accent
-    @Environment(Tracking.self) private var tracking
-    @Environment(\.undoManager) private var undoManager
     let model: AirplaneProfileModel
-    let lookup: AirplaneLookup
-    /// Whether Follow is offered (AirplaneProfileView.offersHistory): the
-    /// pilot's own always, another's while Other Airplanes is on.
-    let follow: Bool
-    let fly: () -> Void
-    @Environment(Plan.self) private var plan
+    @ViewBuilder let actions: Actions
     @Environment(\.cardExpanded) private var expanded
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .title) private var tile = 84.0
@@ -45,56 +37,5 @@ struct AirplanePlaceHead: View {
         .padding(.horizontal, WingtipSpace.lg)
         .padding(.vertical, WingtipSpace.md)
         .animation(.default, value: expanded)
-    }
-
-    /// The registry's ICAO address, for Follow, Favorite and its flights.
-    private var hex: String? { model.registration?.modeSHex?.lowercased() }
-
-    private var kept: KeptAirplane? { hex.map { KeptAirplane(hex: $0, name: model.tail, type: model.typeLine) } }
-
-    private var actions: some View {
-        let flying = plan.tail == model.tail
-        let starred = hex.map(tracking.isFavorite) ?? false
-        let following = hex.map { tracking.watching($0, .takeoff) || tracking.watching($0, .land) } ?? false
-        return HStack(spacing: WingtipSpace.sm) {
-            Button(action: fly) {
-                ActionFace(systemImage: WingtipIcon.airplane, title: flying ? "Flying This" : "Fly This")
-            }
-            .glassProminentButton()
-            .disabled(flying)
-            .accessibilityLabel(flying ? String(localized: "Flying This Airplane") : Wording.flyThisAirplane)
-            .accessibilityIdentifier("fly-this-airplane")
-            if follow {
-                Menu {
-                    if let hex {
-                        Toggle("Tell Me When It Takes Off", isOn: watch(hex, .takeoff))
-                        Toggle("Tell Me When It Lands", isOn: watch(hex, .land))
-                    }
-                } label: {
-                    ActionFace(systemImage: following ? "bell.fill" : "bell", title: "Follow")
-                }
-                .glassButton()
-                .disabled(hex == nil)
-                .accessibilityIdentifier("airplane-follow")
-            }
-            FavoriteToggle(starred: starred) { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } }
-                .disabled(kept == nil)
-                .accessibilityIdentifier("airplane-favorite")
-            ShareLink(item: Config.gateway.appending(path: "/app/plan").appending(queryItems: [URLQueryItem(name: "airplane", value: model.tail)]),
-                      subject: Text(model.tail)) {
-                ActionFace(systemImage: "square.and.arrow.up", title: "Share")
-            }
-            .glassButton()
-            .accessibilityLabel("Share \(model.tail)")
-            .accessibilityIdentifier("airplane-share")
-        }
-        .glassGroup(spacing: WingtipSpace.sm)
-        // Four across the phone, a glyph over a word, to the second
-        // accessibility size, where the words would no longer fit.
-        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-    }
-
-    private func watch(_ hex: String, _ kind: AirplaneWatch.Kind) -> Binding<Bool> {
-        Binding(get: { tracking.watching(hex, kind) }, set: { _ in tracking.toggleWatch(AirplaneWatch(hex: hex, name: model.tail, kind: kind)) })
     }
 }
