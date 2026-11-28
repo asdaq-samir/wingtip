@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, grabberTo, inSheet, settle, settled, sideDrawer, slow, mapStill } from "./helpers";
+import { closeCard, grabberTo, inSheet, settle, settled, sideDrawer, slow, mapStill, withFoot } from "./helpers";
 import { drawnMarks, markWith } from "./marks";
 import { installFrameRecorder } from "./drawnOnce";
 import { extrasOn } from "./extras";
+import { asPlanner } from "./plannerNotams";
 
 /**
  * The map's sheet with a card over it, from sheet-cards.spec (split at 400
@@ -26,7 +27,7 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
           top: 1,
           unchecked: [],
           notams: [
-            {
+            asPlanner({
               id: "11/101",
               kind: "notam",
               closed: false,
@@ -45,7 +46,7 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
               role: null,
               low_ft: null,
               high_ft: null,
-            },
+            }),
           ],
         },
       }),
@@ -57,7 +58,7 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
   const placeDrawer = sideDrawer(page)
     .locator("[data-sheet-card]")
     .filter({ has: page.getByTestId("place-card") });
-  await place.getByRole("tab", { name: "Info" }).click();
+  await withFoot(place).getByRole("tab", { name: "Info" }).click();
   await grabberTo(page, "full");
   const controls = page.locator("[data-map-controls]");
   const radio = page.getByTestId("mic-circle");

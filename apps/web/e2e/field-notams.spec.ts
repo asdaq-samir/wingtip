@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { inSheet, settle, sideDrawer } from "./helpers";
+import { inSheet, settle, sideDrawer, withFoot } from "./helpers";
+import { asPlanner } from "./plannerNotams";
 
 const card = (page: import("@playwright/test").Page) => sideDrawer(page).getByTestId("place-card");
 
@@ -27,7 +28,7 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
           // Duluth's zone, the planner's (wingtip.time_zone).
           time_zone: "America/Chicago",
           notams: [
-            {
+            asPlanner({
               id: "11/042",
               kind: "notam",
               closed: true,
@@ -46,7 +47,7 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
               role: null,
               low_ft: null,
               high_ft: null,
-            },
+            }),
           ],
         },
       }),
@@ -57,7 +58,7 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await expect(card(page).getByTestId("place-fact-distance")).toHaveText(/^From C81\d+ nm$/);
   // No card of alerts leads the card: the badge is by the runway.
   await expect(card(page).getByTestId("place-alert")).toHaveCount(0);
-  await card(page).getByRole("tab", { name: "Runways" }).click();
+  await withFoot(card(page)).getByRole("tab", { name: "Runways" }).click();
   const runway = card(page).getByTestId("runway-row").filter({ hasText: "Runway 09/27" });
   const badge = runway.getByTestId("notam-badge");
   await expect(badge).toHaveAttribute("data-kind", "runway");
@@ -72,7 +73,7 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await page.getByTestId("place-notam-card").getByTestId("sheet-card-close").click();
   await expect(opened).toHaveCount(0);
 
-  await card(page).getByRole("tab", { name: "Info" }).click();
+  await withFoot(card(page)).getByRole("tab", { name: "Info" }).click();
   // The runway the Runways tab says is Closed is crossed out on the
   // pictures' sketch, an X at each end (AIM 2-3-6e), and only it: the
   // FAA's diagram knows nothing of the NOTAM, so the sketch stands in for
@@ -117,7 +118,8 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await expect(full.locator("pre")).toHaveText(raw);
 });
 
-/** A NOTAM as the planner sends it, the field's, in the engine's order. */
+/** A NOTAM's ranking as the planner sends it, the field's, in the engine's
+ *  order; asPlanner puts the engine's reading of it beside it. */
 const ranked = (n: number, raw: string) => ({
   id: `11/${String(100 + n)}`,
   kind: "notam",
@@ -159,11 +161,11 @@ test("a field's NOTAMs show three, and their title opens every one in place and 
   ];
   await page.route(
     (url) => url.pathname === "/api/planner/airport/KDLH/notams",
-    (route) => route.fulfill({ json: { coverage_since: "2026-11-10T06:00:00Z", top: 3, unchecked: [], notams } }),
+    (route) => route.fulfill({ json: { coverage_since: "2026-11-10T06:00:00Z", top: 3, unchecked: [], notams: notams.map(asPlanner) } }),
   );
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
-  await card(page).getByRole("tab", { name: "Info" }).click();
+  await withFoot(card(page)).getByRole("tab", { name: "Info" }).click();
   const section = card(page).getByTestId("place-notams");
   await expect(section.getByTestId("place-notam")).toHaveCount(3);
   const rows = section.getByTestId("place-notam");
@@ -208,19 +210,23 @@ test("a taxiway closed between runways puts no badge on a runway", async ({ page
           top: 1,
           unchecked: [],
           notams: [
-            { ...ranked(1, "!DLH 11/150 DLH TWY A BTN RWY 09 AND TWY C CLSD 2611101200-2611202359"), closed: true, runways: ["09"] },
+            asPlanner({
+              ...ranked(1, "!DLH 11/150 DLH TWY A BTN RWY 09 AND TWY C CLSD 2611101200-2611202359"),
+              closed: true,
+              runways: ["09"],
+            }),
           ],
         },
       }),
   );
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
-  await card(page).getByRole("tab", { name: "Runways" }).click();
+  await withFoot(card(page)).getByRole("tab", { name: "Runways" }).click();
   await expect(card(page).getByTestId("runway-row").first()).toBeVisible();
   await expect(card(page).getByTestId("notam-badge")).toHaveCount(0);
   await expect(card(page).getByTestId("place-alert")).toHaveCount(0);
   // It is still in the Info tab's list.
-  await card(page).getByRole("tab", { name: "Info" }).click();
+  await withFoot(card(page)).getByRole("tab", { name: "Info" }).click();
   await expect(card(page).getByTestId("place-notams").getByTestId("place-notam-heading").first()).toHaveText(
     "Taxiway A closed between runway 09 and taxiway C",
   );
@@ -245,7 +251,7 @@ test("a TFR near the field is its kind, rule, levels and place, its instructions
           top: 1,
           unchecked: [],
           notams: [
-            {
+            asPlanner({
               ...ranked(1, text),
               id: "6/2478",
               kind: "tfr",
@@ -267,14 +273,14 @@ test("a TFR near the field is its kind, rule, levels and place, its instructions
                 field: null,
                 edge: null,
               },
-            },
+            }),
           ],
         },
       }),
   );
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
-  await card(page).getByRole("tab", { name: "Info" }).click();
+  await withFoot(card(page)).getByRole("tab", { name: "Info" }).click();
   const one = card(page).getByTestId("place-notams").getByTestId("place-notam");
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Security TFR, 14 CFR 99.7");
   await expect(one.getByTestId("place-notam-where")).toHaveText("3,500 to 18,000 ft MSL, over the field");
@@ -317,13 +323,13 @@ test("a NOTAM's card says what happened, its effect, the procedures it takes and
           top: 1,
           unchecked: [],
           time_zone: "America/Chicago",
-          notams: [{ ...ranked(1, raw), id: "FDC 6/3373", starts: "2026-05-27T18:43:00Z", ends: "2028-05-27T18:43:00Z" }],
+          notams: [asPlanner({ ...ranked(1, raw), id: "FDC 6/3373", starts: "2026-05-27T18:43:00Z", ends: "2028-05-27T18:43:00Z" })],
         },
       }),
   );
   await page.goto("/app/plan?dep=KDLH&place=KDLH");
   await settle(page);
-  await card(page).getByRole("tab", { name: "Info" }).click();
+  await withFoot(card(page)).getByRole("tab", { name: "Info" }).click();
   const one = card(page).getByTestId("place-notams").getByTestId("place-notam");
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 18/36 closed");
   await inSheet(page, one);
