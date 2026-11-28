@@ -10,7 +10,7 @@ extension Format {
     /// visibility rounded up is more than was seen, and no report writes
     /// 11/16. The engine is built in: a refusal is thrown (and logged by
     /// Engine.rule), never read as a figure of our own.
-    static func reportedVisibility(_ sm: Double) throws -> (whole: Int, fraction: String?) {
+    nonisolated static func reportedVisibility(_ sm: Double) throws -> (whole: Int, fraction: String?) {
         let reported = try Engine.visibilityReportable(sm: sm)
         let whole = Int((reported + 1e-9).rounded(.down))
         // Every reportable value under 3 is a whole number of sixteenths.

@@ -57,6 +57,9 @@ final class Emergency {
     /// engine's ranking order is kept.
     func visibility(_ ident: String) -> String? {
         let metar = answer?.fields.first { $0.ident == ident }?.metar
+        // TODO(services): the planner's EmergencyMetar sends no
+        // visibility_minus yet, so an "M1/4SM" here still reads "1/4 sm";
+        // pass `minus:` once it does (round 9's phone audit).
         return AirportWords.miles(metar?.visibilitySm, plus: metar?.visibilityPlus).map { "Visibility \($0)" }
     }
 

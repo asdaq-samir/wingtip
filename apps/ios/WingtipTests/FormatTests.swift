@@ -131,4 +131,14 @@ import Testing
         #expect(mile.whole == 1 && mile.fraction == "5/8")
         #expect(four.whole == 4 && four.fraction == nil)
     }
+
+    /// A report's "less than" (M1/4SM, FMH-1 chapter 6) said as such, in
+    /// the report's own fraction, never the figure alone (round 7's N13).
+    @Test func aLessThanVisibilityIsSaidSo() {
+        #expect(AirportWords.miles(0.25, plus: false, minus: true) == "less than 1/4 sm")
+        #expect(AirportWords.miles(1.5, plus: nil, minus: true) == "less than 1 1/2 sm")
+        #expect(AirportWords.miles(0.25, plus: false) == "0.25 sm")
+        #expect(AirportWords.miles(10, plus: true, minus: false) == "10+ sm")
+        #expect(AirportWords.miles(nil, plus: nil, minus: true) == nil)
+    }
 }
