@@ -38,8 +38,7 @@ data class EmergencyLine(val fromLat: Double, val fromLon: Double, val toLat: Do
  * (the web's EmergencyGl layers). At night all three dimmed with the chart
  * by their colour (MapDim.colour, the owner's "Dim by colour"), the casing
  * too: whole white it was the brightest thing on the screen in a night
- * emergency, against the pilot's dark adaptation (AIM 8-1-6; the round-7
- * phones audit's NA1). Empty while the assistant is shut.
+ * emergency, against the pilot's dark adaptation (AIM 8-1-6). Empty while the assistant is shut.
  */
 object EmergencyLayer {
     const val SOURCE = "emergency"

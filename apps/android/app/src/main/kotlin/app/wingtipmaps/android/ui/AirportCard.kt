@@ -173,7 +173,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, a
                 if (words.closed != null || words.use != null) item(key = "use") { FieldUseLines(words, Modifier.padding(horizontal = WingtipSpace.Lg)) }
                 facts?.let { f -> item(key = "facts") { FactsRow(f) } }
                 // The four actions in the card under its head, in sight at half
-                // as Maps' place sheet has them (the audit's AND-1): docked at
+                // as Maps' place sheet has them: docked at
                 // the foot of the full-height layout they sat below the window.
                 item(key = "actions") { ActionPills(place, facts, actions, asStop, onDone = onDone) }
                 // The field's own report in one line under the actions.

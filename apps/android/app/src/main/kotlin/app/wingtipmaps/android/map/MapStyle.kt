@@ -249,7 +249,7 @@ object MapStyle {
 
     /** design/map-style.json's layers as MapLibre Native takes them, parsed once: all on the archive's one source, where
      *  the web gives the airports and the VFR waypoints each their own over it. Two vector sources on one pmtiles address
-     *  fetched and parsed each tile twice (the round-5 map audit's R5-6); what lays out the airports' tiles again here
+     *  fetched and parsed each tile twice; what lays out the airports' tiles again here
      *  is a field's weather changing colour, at a rest, and a switch. */
     private val LINES: List<JsonObject> by lazy { OverlayStyle.LINES.map(::onOneSource) }
     private val MARKS: List<JsonObject> by lazy { OverlayStyle.MARKS.map(::onOneSource) }

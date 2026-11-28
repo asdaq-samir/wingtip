@@ -70,8 +70,7 @@ fun rememberAppearance(): State<Appearance?> = AppearancePreference.flow(LocalCo
  *  and the Map card's Dimmer and Contrast, for what draws below it: the
  *  map's paint and a plate's. The look is a State read where it is used
  *  (`look`), so a slider's step redraws those readers only, not every
- *  screen under the theme as a new Shade in the static local did (the
- *  round-4 phones audit, 2026-11-27); the Shade itself is new only as
+ *  screen under the theme as a new Shade in the static local did; the Shade itself is new only as
  *  the screen turns dark or light. */
 @Stable
 class Shade(val dark: Boolean, private val looked: State<ChartLook?> = mutableStateOf(null)) {

@@ -31,8 +31,7 @@ import java.util.Locale
  * runs to black with the chart's brightness, so nothing is brighter than
  * the chart under it (AIM 8-1-6), and the words take map.label.night-ink's
  * lighter ink on the tag's dark halo, left whole (MapLabels.NIGHT_HALO),
- * where they were the day's ink on a white halo at full light (the
- * round-7 phones audit's NA1).
+ * where they were the day's ink on a white halo at full light.
  */
 internal object AirmetLayer {
     private const val SOURCE = "flow-gairmets"

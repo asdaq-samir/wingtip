@@ -196,8 +196,8 @@ object OverlayPictures {
      *  hazard, is cased in the course's dark edge (route-edge) in place of
      *  the white, as the obstacles are ringed: its amber against a white
      *  casing was 1.61:1 at night at the default Dimmer, where against the
-     *  dark one it is 3.16:1 (WCAG 2.2 1.4.11, the adjacent colour; the
-     *  round-7 themes audit's N5), and the dark rim stands off the paper by
+     *  dark one it is 3.16:1 (WCAG 2.2 1.4.11, the adjacent colour),
+     *  and the dark rim stands off the paper by
      *  day and night. */
     private fun airplane(near: Boolean, hasTrack: Boolean, density: Float): Bitmap {
         val colour = ink(if (near) MapStyle.TRAFFIC_NEAR else MapStyle.TRAFFIC_FAR)

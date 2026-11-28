@@ -16,8 +16,8 @@ import java.time.ZoneOffset
  * (`data_cycle`, from the FAA's 28 and 56 Day Product Schedule), worked
  * out by the planner and sent with the map's ages (/api/map/ages
  * `data_cycles`), and judged again here on the phone's own day, since a
- * kept answer flown on past an edition's last day still read "in force"
- * (the offline audit of 2026-11-21). An old edition is still used (warn,
+ * kept answer flown on past an edition's last day still read "in force".
+ * An old edition is still used (warn,
  * never limit) and said once in the Brief's caution row: an expired chart
  * read as current is what 14 CFR 91.103 asks a pilot to rule out.
  */

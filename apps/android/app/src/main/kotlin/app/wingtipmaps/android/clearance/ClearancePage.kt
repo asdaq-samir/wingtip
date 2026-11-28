@@ -141,8 +141,7 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
             val head = listOfNotNull(if (planned.dep.isEmpty()) null else "${planned.dep} → ${planned.dest}", "IFR", tail).joinToString(" · ")
             Text(head, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (state.clearance != null && state.heard) {
-                // The card's actions under its head, in sight at half (the
-                // Android audit's AND-1): at the foot of the sheet's full
+                // The card's actions under its head, in sight at half: at the foot of the sheet's full
                 // height they sat below the window at half.
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                     if (radio != null) {

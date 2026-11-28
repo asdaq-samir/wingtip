@@ -7,8 +7,7 @@ import android.speech.SpeechRecognizer
  * What an on-device speech recognizer's error means for whoever is
  * listening, the radio (RadioListener) or a question asked by voice
  * (VoiceInput): heard again in silence where it only means nothing was
- * said, else said in words and, unless it passes, stopped (the offline
- * audit's gap 11: every error was listened through again, so a missing
+ * said, else said in words and, unless it passes, stopped (every error was listened through again, so a missing
  * language pack or a dead microphone looped with nothing on the screen).
  * The codes are SpeechRecognizer's ERROR_ constants.
  */

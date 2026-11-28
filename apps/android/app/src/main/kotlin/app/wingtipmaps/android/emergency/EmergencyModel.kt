@@ -101,8 +101,7 @@ class EmergencyModel(
         val sections = read.getOrDefault(emptyList())
         val section = rules.checklistSection(sections.map { it.title }) ?: if (sections.isNotEmpty()) 0 else null
         // The general guidance with no airplane, and also where the pilot's
-        // own checklist could not be read, which is said (the audit's
-        // AND-4): the one screen used in an emergency never goes blank.
+        // own checklist could not be read, which is said: the one screen used in an emergency never goes blank.
         val guidance = if (this.aircraft == null || read.isFailure) rules.guidance() else emptyList()
         val problem = if (read.isFailure) "Your checklist could not be read." else null
         _state.update { it.copy(airplaneName = airplaneName, guidance = guidance, sections = sections, section = section, ticked = emptySet(), checklistProblem = problem) }

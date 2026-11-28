@@ -42,7 +42,7 @@ import org.maplibre.android.style.sources.GeoJsonSource
 object HazardLayer {
     private const val TINT = "terrain-hazard"
     private const val OBSTACLES = "obstacles-hazard"
-    /** The obstacle ring's width, dp (the themes audit's option A). */
+    /** The obstacle ring's width, dp. */
     private const val OBSTACLE_RING = 1.5f
 
     /** Each level ringed and its ink. */
@@ -172,7 +172,7 @@ object HazardLayer {
         // the owner's "Dim by colour", 2026-11-27): darker with the chart, its contrast with it kept, never faded.
         // Ringed in the course's dark edge (route-edge), by colour too, day and night: a white ring is the paper's
         // own white by day and dims to the paper at night (1.00:1), where the dark ring holds 5.07:1 to the paper
-        // and the amber 3.17:1 within it at the default Dimmer, 10.55:1 by day (the round-6 themes audit's option A).
+        // and the amber 3.17:1 within it at the default Dimmer, 10.55:1 by day.
         for ((level, ink) in LEVELS) {
             val layer = CircleLayer("$OBSTACLES-$level", OBSTACLES).withProperties(
                 PropertyFactory.circleColor(MapDim.colour(ink.toColorInt())),

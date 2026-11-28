@@ -79,7 +79,7 @@ object OfflineLayers {
      *  now (`template`, with its terminal charts or not) over the chart and its terminal chart in the chart's own
      *  paint, the ones there before taken off, and nothing else of the style touched. A region finishing or going,
      *  or a kept cycle taking over, set the whole style anew before, which dropped every source the map draws and
-     *  fetched the chart, the overlays and the route again (the map speed audit, 2026-11-27). */
+     *  fetched the chart, the overlays and the route again. */
     fun redraw(context: Context, style: Style, template: TileTemplate, terminal: Boolean) {
         val chart = style.getLayerAs<RasterLayer>(CHART) ?: return
         val files = archives(OfflineStore.of(context), template.cycle, template.kind, template.scale, terminal).map(::url)
@@ -99,7 +99,8 @@ object OfflineLayers {
 
     /** The map's regions are drawn again (redraw) when a region finishes or goes (Setup → Downloads),
      *  and when a kept cycle takes over at 0901Z with the app open (asked
-     *  each minute; the data-cycles audit's 14): the tiles done in each
+     *  each minute):
+     *  the tiles done in each
      *  kept region and the kept cycles begun, read as the effect's key. */
     @Composable
     fun rememberDownloadsKey(context: Context): List<List<String>> {

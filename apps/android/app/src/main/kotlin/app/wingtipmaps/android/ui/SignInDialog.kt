@@ -12,8 +12,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 
 /**
- * A sign-in link asked before it is followed (the security audit's M1,
- * 2026-11-10), in the platform's stock alert (the card rule's questions):
+ * A sign-in link asked before it is followed, in the platform's stock alert (the card rule's questions):
  * the account it signs in to, and the one it would sign out of. Nothing
  * changes until Sign In; Cancel leaves the session as it was.
  */

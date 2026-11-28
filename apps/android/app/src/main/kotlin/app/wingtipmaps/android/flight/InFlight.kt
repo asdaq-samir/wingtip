@@ -204,7 +204,7 @@ class InFlight {
         /** The route's half of the engine's `in_flight`: the fields in
          *  order (the departure, the stops, the destination) are its
          *  waypoints. The fuel is the engine's from the last fuel stop
-         *  passed (the aviation audit's AV-4): the tanks filled to the
+         *  passed: the tanks filled to the
          *  plan's usable fuel at each stop a hop of the planner's totals
          *  begins at (`refuel_at`), less the airplane's start and taxi
          *  allowance (the totals' taxi_gal; none where its profile gives

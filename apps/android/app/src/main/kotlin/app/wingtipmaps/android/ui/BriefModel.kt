@@ -179,7 +179,7 @@ class BriefModel @Inject constructor() : ViewModel() {
          *  engine's gonogo_glance_lines, which takes the stops before the
          *  cautions, at most three, and words each as one sentence with
          *  what to do about it. The ranking and the words are the engine's
-         *  alone (simplicity audit 2026-11-23, M1's Android check); none
+         *  alone; none
          *  where the engine cannot answer, the verdict standing over them. */
         fun glanceActions(
             items: List<VerdictItem>,

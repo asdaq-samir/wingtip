@@ -106,7 +106,7 @@ fun ValueSettingRow(title: String, value: String, index: Int, count: Int) {
 /**
  * A setting of a few choices as a row of the group, Material's own: the
  * whole row the target, its name and the value at its end, a tap opening
- * the stock menu under it (the sheet audit's B-1 and B-2, 2026-11-10: a
+ * the stock menu under it (a
  * lone "Off" text button read only "Off, button"). TalkBack reads the
  * row's name and value as one button.
  */

@@ -86,9 +86,9 @@ fun InFlightTop(ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifi
         }
     }
     val flying = state.underway && state.fix != null && !done
-    // The screen kept on while flying, as EFBs keep it in flight (the
-    // in-flight audit, the owner's Q2, 2026-11-21: a phone that dimmed and
-    // locked took the map and the copilot's voice with it); let go on the
+    // The screen kept on while flying, as EFBs keep it in flight (the owner, 2026-11-21: a phone that dimmed and
+    // locked took the map and the copilot's voice with it);
+    // let go on the
     // ground and at Done Flying. The view's keepScreenOn is the window's
     // FLAG_KEEP_SCREEN_ON while it is attached.
     val view = LocalView.current
@@ -301,7 +301,7 @@ object InstrumentsWords {
 
     /** The destination's arrival and the fuel the plan leaves there; a
      *  plan that runs dry says by how much it is short rather than "0.0
-     *  gal left" (the audit's AND-7: warn, never hide, 14 CFR 91.151). */
+     *  gal left" (warn, never hide, 14 CFR 91.151). */
     fun arrival(dest: EngineContract.InFlightAnswerDestination, etaS: Double): String {
         val line = "${dest.name} at ${zulu(etaS)}, ${dest.distanceNm.roundToInt()} nm"
         val left = dest.fuelLeftGal ?: return line

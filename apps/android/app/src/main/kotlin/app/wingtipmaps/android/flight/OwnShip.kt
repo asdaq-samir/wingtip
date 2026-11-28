@@ -178,7 +178,7 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
     /** The engine's `underway` for the last fix, asked once and passed on
      *  to the trail, the recorder and the instruments (InFlight, through
      *  FlightSession), as the iPhone's OwnShip does: it was asked up to
-     *  three times a fix (the round-4 phones audit, 2026-11-27). */
+     *  three times a fix. */
     private var underwayAt: Pair<Fix, Result<Boolean>>? = null
 
     /** The answer asked for this fix, null for another. */

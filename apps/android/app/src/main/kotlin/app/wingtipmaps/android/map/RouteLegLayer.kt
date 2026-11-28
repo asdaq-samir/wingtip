@@ -27,7 +27,8 @@ object RouteLegLayer {
 
     /** The edge's weight, the web's routeEdgePaint (design/tokens.json's chart-look.route-edge-*): nearly whole at
      *  night, where the dark rim holds the course 4.67:1 against the dimmed paper at the default Dimmer (0.6 gave
-     *  2.80:1; the round-6 themes audit's R5-3); as solid in the Sunlight palette, which Android takes under more
+     *  2.80:1);
+     *  as solid in the Sunlight palette, which Android takes under more
      *  contrast (moreContrast, Theme's lifted), as the web's Sunlight look; a soft rim by day. */
     fun edgeOpacity(night: Boolean, sunlight: Boolean = false): Float = when {
         night -> WingtipChartLook.ROUTE_EDGE_NIGHT

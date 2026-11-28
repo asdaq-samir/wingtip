@@ -83,8 +83,7 @@ fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
     }
     val long = said.size > FieldNotams.FIRST
     item(key = "notams-title") { NotamsTitle(long, notams.all, said.size, notams.toggle, pad) }
-    // How old the list is, kept or fresh, as the route's NOTAMs say it (the
-    // offline audit's 3, 2026-11-21; AIM 5-1-3, 14 CFR 91.103).
+    // How old the list is, kept or fresh, as the route's NOTAMs say it (AIM 5-1-3, 14 CFR 91.103).
     notams.fetchedAtMs?.let { at -> item(key = "notams-age") { KeptAgeLine(KeptForAir.NOTAMS, at, pad) } }
     if (said.isEmpty()) {
         item(key = "notams-none") {

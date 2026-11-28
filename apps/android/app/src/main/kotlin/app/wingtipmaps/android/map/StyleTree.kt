@@ -16,7 +16,7 @@ import kotlinx.serialization.json.jsonObject
  * (OfflineLayers) and the Dimmer on its marks (MapDim), each a pass over
  * the one tree, written out once, off the main thread. Three parses and
  * writes of the whole style on the main thread held the map's first frame
- * and each template, zoom or overlay change (the phones audit's N7).
+ * and each template, zoom or overlay change.
  */
 internal object StyleTree {
     /** The style's layers as MapStyle wrote them (a relabel reads them) and the JSON set. */

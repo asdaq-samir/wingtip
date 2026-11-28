@@ -43,8 +43,7 @@ object Links {
      * `url` read, a sign-in link only as `https` on `host`, the app's own
      * (the verified App Link's): any app can send MainActivity a link, and
      * one carrying another account's token on another host, or on the
-     * app's own scheme, would sign the pilot in to it (the security
-     * audit's M1, 2026-11-10). Even then it is asked first (Session.open).
+     * app's own scheme, would sign the pilot in to it. Even then it is asked first (Session.open).
      */
     fun parse(url: String?, host: String = Config.host): Link? {
         if (url.isNullOrBlank()) return null
@@ -72,8 +71,7 @@ object Links {
     ): Link? {
         // A shared flight, and any route link with both ends: any page or
         // app can open one, so it is previewed as a shared flight is and
-        // replaces the pilot's plan only at Use This Plan (the deep
-        // security review of 2026-11-21, N3). A screen named beside a
+        // replaces the pilot's plan only at Use This Plan. A screen named beside a
         // route is not opened over the preview.
         if (screen == Screen.SHARED) {
             val token = query[LinkKey.SHARE.key]?.trim()?.takeIf { it.isNotEmpty() && it.length <= 32 }
@@ -90,8 +88,7 @@ object Links {
 
     // A part whose escapes are bad ("%", "%zz") is left out: URLDecoder
     // throws on one, and any page or app can hand MainActivity such a link,
-    // which closed the app, moving map and all, mid-flight (the deep
-    // security review of 2026-11-21). The iPhone's URLComponents never threw.
+    // which closed the app, moving map and all, mid-flight. The iPhone's URLComponents never threw.
     private fun query(raw: String?): Map<String, String> =
         raw.orEmpty().split("&").filter { it.isNotEmpty() }.mapNotNull { part ->
             val at = part.indexOf('=')

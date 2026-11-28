@@ -28,7 +28,7 @@ internal object OverlayState {
     /** Each reporting field's weather pip by its ident (AirportWeatherMarks'
      *  pips), which the airports' mark reads as its picture's middle: one
      *  object in the state, where a `match` over every field heard grew with
-     *  each answer and was set as a new expression (the round-5 map audit's N4). */
+     *  each answer and was set as a new expression. */
     fun weather(style: Style, pips: Map<String, String>) {
         style.setGlobalStateProperty(OverlayStyle.State.AIRPORT_WEATHER, weatherState(pips))
     }

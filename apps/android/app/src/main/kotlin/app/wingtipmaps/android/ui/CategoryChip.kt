@@ -13,7 +13,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 
 /**
  * The flight categories' colours, one set from the tokens for the map's
- * pips and every chip (the UI audit's #6): VFR green, MVFR blue, IFR red,
+ * pips and every chip: VFR green, MVFR blue, IFR red,
  * LIFR magenta. A chip with white words on it takes LIFR's deeper fill,
  * #7E3FB8 (6.4:1), where the map's #A371F7 would be 3.35:1; the others
  * are 4.5:1 and more with white as they are.
@@ -42,8 +42,7 @@ object FlightCategory {
 
     /** The ring round a category's dot, the chart's casing, as the map's
      *  pips are cased: IFR's red is 2.82:1 on the night's ground and
-     *  2.29:1 on its card, under the 3:1 a mark needs (WCAG 1.4.11; the
-     *  round-4 phones audit, 2026-11-27); the ring keeps its edge. */
+     *  2.29:1 on its card, under the 3:1 a mark needs (WCAG 1.4.11); the ring keeps its edge. */
     val RING: Color = WingtipColors.Chart.Casing
     val RING_WIDTH: Dp = WingtipSpace.Hairline
 }

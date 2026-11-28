@@ -58,7 +58,7 @@ private fun rememberCitedPieces(text: String): List<CitedPiece> {
 /**
  * Each cite in `text` as one of a row's accessibility actions, for a row
  * TalkBack reads as one description (clearAndSetSemantics), which hides
- * the links Cited draws inside it (the documents audit, item 104): the
+ * the links Cited draws inside it: the
  * row keeps its one reading, and the actions menu opens each rule at its
  * paragraph, as a tap on the link does.
  */

@@ -24,10 +24,11 @@ import java.util.logging.Logger
 
 /**
  * Everything the phone keeps of the pilot, forgotten at sign-out and when
- * the account is deleted (the store audit's P7: Android cleared only the
+ * the account is deleted (Android cleared only the
  * checklists and the kept plan, while the privacy policy says Delete
  * Account "clears the app's settings on the device you use" and the
- * inventory that the pilot's records are forgotten on sign-out). The
+ * inventory that the pilot's records are forgotten on sign-out).
+ * The
  * parts: the checklists, the plan kept for the next launch, the Room
  * records (kept airplanes, watches, planned routes), the path flown and
  * the flight recorded (own-trail.json, flight-recorded.json), the last
@@ -65,8 +66,7 @@ class PhoneWipe(private val parts: List<Pair<String, suspend () -> Unit>>) {
          * answer marked to be kept, the planner's asked at the pilot's
          * points among them (Nearest, the airspace there), which say where
          * they were. The iPhone empties its URLCache as it forgets the
-         * device; this wipe left the cache behind (the deep security review
-         * of 2026-11-21).
+         * device; this wipe left the cache behind.
          */
         fun answers(cache: Cache?): suspend () -> Unit = { cache?.evictAll() }
 

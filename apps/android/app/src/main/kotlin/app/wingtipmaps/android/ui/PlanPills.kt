@@ -60,8 +60,7 @@ fun PlanPills(plan: Plan, state: Plan.State, onAltitude: () -> Unit, modifier: M
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
     val altitudes by PlanAltitudes.state.collectAsStateWithLifecycle()
     // The first flight's pill says why the times and fuel are blank, as
-    // the web's N-number field does until its FPL tip is closed (the
-    // errors-and-onboarding audit, 2026-11-21); then "No Airplane".
+    // the web's N-number field does until its FPL tip is closed; then "No Airplane".
     val firstFlight = !remember(context) { FplTip.of(context) }.closed.collectAsStateWithLifecycle().value
     val airplane = tail ?: state.own?.type?.ifEmpty { null }?.uppercase() ?: state.aircraft.uppercase().ifEmpty { null }
     FlowRow(

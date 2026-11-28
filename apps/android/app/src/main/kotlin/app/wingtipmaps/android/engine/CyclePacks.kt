@@ -237,8 +237,7 @@ class CyclePacks(private val root: File) {
          *  either side, as its chart is kept five nm either side. The line
          *  is pairs of latitude and longitude, as /api/course gives it. A
          *  failure where the engine could not say (Engine.rule has logged
-         *  why), never an empty set read as "nothing to keep" (the audit's
-         *  AND-3 and AND-5). */
+         *  why), never an empty set read as "nothing to keep". */
         fun regions(line: List<List<Double>>): Result<Set<String>> = runCatching {
             val names = HashSet<String>()
             for ((lat, lon) in samples(line, everyNm = 2.0).getOrThrow()) {

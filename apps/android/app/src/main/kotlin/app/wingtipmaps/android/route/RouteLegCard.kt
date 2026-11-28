@@ -72,7 +72,7 @@ fun RouteLegCard(index: Int, plan: Plan, ownShipOn: Boolean, exit: CardExit, fli
     val state by plan.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // Own ship's fix read only as Direct To is tapped, not drawn: the card
-    // is not composed again at each fix (the round-4 phones audit).
+    // is not composed again at each fix.
     val fix = flight.ownShip.fix.collectAsStateWithLifecycle()
     // The point flying mode flies to, the engine's next waypoint on the
     // route, drawn again only as it changes, not at each fix.

@@ -1,8 +1,7 @@
 package app.wingtipmaps.android
 
 /**
- * A sign-in link waiting for the pilot's yes (the security audit's M1,
- * 2026-11-10): its token, the address this phone asked a link for (null
+ * A sign-in link waiting for the pilot's yes: its token, the address this phone asked a link for (null
  * where it asked none, so the link may be someone else's), and who is
  * signed in now (null for no one), whose session it would replace.
  *

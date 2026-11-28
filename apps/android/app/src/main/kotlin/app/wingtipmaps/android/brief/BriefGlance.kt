@@ -15,8 +15,8 @@ import app.wingtipmaps.android.engine.generated.routeHeadwind
 import app.wingtipmaps.android.engine.generated.sigmetHazard
 
 /**
- * The Brief as the web's opens it under the findings (the owner's pick of
- * the Brief audit's option 2, 2026-11-21; the web's buildGlance): the
+ * The Brief as the web's opens it under the findings (the owner's pick, 2026-11-21; the web's buildGlance):
+ * the
  * Adverse Conditions the flight meets on the route, a briefer's first
  * element (AIM 7-1-5(b)(1)), the En Route figures -- the lowest ceiling
  * any TAF near the route forecasts over the flight, its lowest

@@ -77,7 +77,7 @@ fun InkColors.words(finding: Finding, muted: Color): Color = when (finding) {
  *  shadow (the canvas's boards). In the Native look (LocalNative) it is
  *  Material's filled card as it comes, its own shape and colours, so the
  *  dark scheme's card is not the lowest container's pure black on the
- *  sheet (the sheet audit's L-3). */
+ *  sheet. */
 @Composable
 fun StripCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, content: @Composable () -> Unit) {
     if (LocalNative.current) {

@@ -111,7 +111,7 @@ object Gateway {
             // the protocol's own policy, so an answer marked no-store is
             // never kept.
             .cache(Cache(File(app.cacheDir, "answers"), 256L shl 20))
-            // A whole call's limit (the offline audit's gap 8): on the one
+            // A whole call's limit: on the one
             // bar of a weak link in the air a read fails in seconds into
             // what is kept, not OkHttp's no limit at all. A write gets
             // WRITE_TIMEOUT_S (`call`); a stream or a download `streaming`.

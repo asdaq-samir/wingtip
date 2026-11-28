@@ -291,7 +291,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 styled = true
                 writtenLayers = built.written.also { offlineIds = null }
                 // A switch that came while the style was built off the main thread went to the old style: put on the new
-                // one from what it was built with (the round-7 phones audit's NA2); the weather is the map's state, set below.
+                // one from what it was built with; the weather is the map's state, set below.
                 if (lastLayers != builtLayers) layers(lastLayers, builtLayers)
                 paint(night) // the Dimmer and Contrast over the style's own night paint
                 OverlayState.set(style, lastLayers, lastWeather) // the switches and the fields' weather, as the map's state
@@ -320,7 +320,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             map.getStyle { style ->
                 val paint = look.paint(night).also { MapDim.set(style, night, it.brightnessMax, it.contrast) } // the marks and words at the chart's light (MapDim)
                 // Night's inks and the edge's weight only as night or the light turns: a Dimmer step reaches the colours
-                // by MapDim's state alone (the round-7 phones audit's NA3).
+                // by MapDim's state alone.
                 if (relabel) {
                     relabel(style)
                     RouteLegLayer.paint(style, night, sunlit).also { tfrs.paint(style, night) }.also { app.wingtipmaps.android.map.flow.AirmetLayer.paint(style, night) }

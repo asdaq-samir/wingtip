@@ -51,7 +51,7 @@ internal object GlideLayer {
  * itself, as the web's AirportsGl draws its SELECTED source, under the
  * marks: a tap sets that point alone, where a new filter on the airports'
  * tiles' circles laid out every tile of the source again, its marks and
- * words placed anew, at each tap (the round-6 map audit's N3).
+ * words placed anew, at each tap.
  */
 internal object SelectedAirportLayer {
     private const val SOURCE = "airport-selected-point"

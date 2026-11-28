@@ -205,7 +205,7 @@ fun OneSearch(
         )
     }
     // The short placeholder is what fits one line; TalkBack reads the
-    // whole sentence for it (the sheet audit's S-1, 2026-11-10).
+    // whole sentence for it.
     val spokenHint = stringResource(R.string.search_hint_spoken)
     val placeholderSpoken = if (placeholder == stringResource(R.string.search_hint)) spokenHint else placeholder
     val open = searchBarState.currentValue == SearchBarValue.Expanded

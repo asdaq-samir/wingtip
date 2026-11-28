@@ -121,13 +121,13 @@ fun rememberChartLook(): State<ChartLook?> = ChartLookPreference.flow(LocalConte
  * The app's own light or dark told to the system (UiModeManager's
  * setApplicationNightMode, Android 12 and later), so the launch -- the
  * splash and the window's DayNight theme before Compose draws -- is in
- * the app's Dark or Light, not the phone's (the themes audit, 2026-11-27:
- * a pilot who set Dark launched into a white window). Set as Appearance is
+ * the app's Dark or Light, not the phone's (a pilot who set Dark launched into a white window).
+ * Set as Appearance is
  * picked and once at the start; the system keeps it across launches.
  * Before Android 12 there is no such call: the activity's own
  * configuration takes the pick as it is made (`override`, from
  * MainActivity.attachBaseContext), so its window's DayNight theme is the
- * app's from the first frame after the splash (the round-4 phones audit).
+ * app's from the first frame after the splash.
  */
 object NightMode {
     /** The activity's uiMode with the app's Light or Dark in its night

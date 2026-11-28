@@ -10,9 +10,9 @@ import java.io.IOException
 
 /**
  * The route and nav log last planned whole: what is put back when a
- * re-plan fails, so the page never shows a half-changed route (the
- * offline audit's gap 3: a Direct To or a divert with no connection showed
- * the new route over the old legs, and said nothing). Set when the nav
+ * re-plan fails, so the page never shows a half-changed route (a Direct To or a divert with no connection showed
+ * the new route over the old legs, and said nothing).
+ * Set when the nav
  * log is done and when the kept plan is restored at launch.
  */
 data class PlanShown(

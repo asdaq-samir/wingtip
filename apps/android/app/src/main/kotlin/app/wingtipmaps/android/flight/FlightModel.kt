@@ -91,8 +91,7 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
         /** The fuel from the planner's totals, as the engine works it for
          *  the three apps (`strip_fuel`): with stops, each flight's own
          *  figures (`hops`, the tanks filled at each) and the one being
-         *  flown (`hop`), as the web's figures.ts sends them (the aviation
-         *  audit's AV-3); a failure where the engine could not. The nav
+         *  flown (`hop`), as the web's figures.ts sends them; a failure where the engine could not. The nav
          *  log's totals ask whether any flight is short with it. */
         fun stripFuelOf(totals: NavLogTotals?, hop: Int = 0, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> = Engine.stripFuel(
             fuelRequiredGal = totals?.fuelRequiredGal,

@@ -34,9 +34,9 @@ data class Recorded(
 )
 
 /**
- * The recorded track, appended to without a copy (the round-4 phones
- * audit, 2026-11-27: each point copied the whole list, some 3,000 points
- * four hours in): each point a new view of the first `size` points of
+ * The recorded track, appended to without a copy (each point copied the whole list, some 3,000 points
+ * four hours in):
+ * each point a new view of the first `size` points of
  * one array of FlightRecorder.MOST, never grown, so a view handed to
  * another thread (the file's write, the planner's draft) holds points
  * written before it was made and is never touched again. A view behind

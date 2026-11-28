@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
  * (`dark`), as the reader's pages are (ReaderPage), and the page's light
  * is capped at the chart's own (`brightness`, the Map card's Dimmer): a
  * plate at night is never a white page on the dark map, which would undo
- * the pilot's dark adaptation (AIM 8-1-6; the themes audit, 2026-11-27).
+ * the pilot's dark adaptation (AIM 8-1-6).
  */
 data class PlateLook(
     val annotations: Boolean = true,

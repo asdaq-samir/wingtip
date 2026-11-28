@@ -75,7 +75,7 @@ fun NavLogCard(plan: Plan, exit: CardExit, onLeg: (Int) -> Unit, onAddStopAfter:
     CardPage(title = stringResource(R.string.nav_log), exit = exit, subtitle = route, actions = share) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             // No route: where its legs come from, as the web's empty Nav
-            // Log says it (the errors-and-onboarding audit, 2026-11-21).
+            // Log says it.
             if (!state.routed && state.legs.isEmpty()) {
                 item(key = "empty") {
                     Text(
@@ -167,7 +167,7 @@ internal fun RowScope.LegFigure(name: String, value: String) {
 @Composable
 private fun TotalsRows(totals: NavLogTotals, airplane: AirplaneNow) {
     // Short of fuel and its reserve on any flight of the route, the
-    // engine's strip_fuel as the strip asks it (the audit's AND-12), not
+    // engine's strip_fuel as the strip asks it, not
     // a comparison here; a failed rule warns too.
     val fuel = FlightModel.stripFuelOf(totals)
     val warn = fuel.map { it.short.isNotEmpty() }.getOrDefault(true)

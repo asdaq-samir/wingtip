@@ -170,7 +170,7 @@ fun WeatherLoopRows() {
     val loop = remember(context) { WeatherLoop.of(context) }
     val state by loop.state.collectAsStateWithLifecycle()
     // One group, the loop and its speed, as the map's switches below it
-    // are grouped (the sheet audit's B-1).
+    // are grouped.
     val count = if (state.kind != LoopKind.OFF) 2 else 1
     SettingsGroup {
         MenuSettingRow(stringResource(R.string.loop_kind), state.kind.label, LoopKind.entries.map { it.label to { loop.pick(it) } }, index = 0, count = count)

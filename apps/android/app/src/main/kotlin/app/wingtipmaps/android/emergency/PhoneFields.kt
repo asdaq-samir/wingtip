@@ -16,7 +16,7 @@ import app.wingtipmaps.android.engine.generated.fieldsNear
 /**
  * The fields round the airplane from the cycle packs kept on the phone,
  * for the emergency assistant and Nearest when the planner cannot be
- * reached (the offline audit's gap 2): the same fields the map draws with
+ * reached: the same fields the map draws with
  * no signal (InView's airportsInView), each with the engine's miles and
  * course to it (`distance_nm`, `bearing_deg`). The engine's best_fields
  * then ranks them on the phone as it ranks the planner's.

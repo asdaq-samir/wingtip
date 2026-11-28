@@ -18,9 +18,9 @@ import java.io.File
 import java.io.IOException
 
 /**
- * The weather loop's newest frame kept over the route for the air (the
- * offline audit's gap 6: the frame list was kept, its tiles were not, so
- * a kept loop was blank). Keep for the Air fetches the newest frame's
+ * The weather loop's newest frame kept over the route for the air (the frame list was kept, its tiles were not, so
+ * a kept loop was blank).
+ * Keep for the Air fetches the newest frame's
  * radar and satellite tiles over the route's box, whole zoom levels from
  * the widest in while they fit MAX_TILES, and stops at MAX_BYTES; the
  * app's HTTP client answers those tiles from here when the network fails
