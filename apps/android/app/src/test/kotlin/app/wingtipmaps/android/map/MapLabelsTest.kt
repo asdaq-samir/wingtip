@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.map
 
+import app.wingtipmaps.android.design.generated.WingtipMapLabel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -56,7 +57,7 @@ class MapLabelsTest {
             """{"id":"a","type":"symbol","paint":{"text-color":"#2465b8","text-halo-color":["case",["boolean",["feature-state","selected"],false],"transparent","#ffffff"]}}""",
         ).jsonObject
         val paint = MapLabels.layer(airports, 1f, night = true)["paint"]!!.jsonObject
-        assertEquals("""["case",["boolean",["feature-state","selected"],false],"transparent","rgba(20, 24, 31, 0.85)"]""", paint["text-halo-color"].toString())
+        assertEquals("""["case",["boolean",["feature-state","selected"],false],"transparent","rgba(20, 24, 31, 1.00)"]""", paint["text-halo-color"].toString())
         assertEquals("#82b4ff", paint["text-color"]!!.jsonPrimitive.content)
         // By day, as written.
         assertEquals(airports, MapLabels.layer(airports, 1f, night = false))

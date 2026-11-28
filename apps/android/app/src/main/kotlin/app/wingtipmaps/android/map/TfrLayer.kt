@@ -139,23 +139,25 @@ internal class TfrLayer {
          * with no times in force; a time that does not read no bound). Where
          * the engine cannot say, in force: the safe side, drawn solid.
          */
-        fun features(tfrs: List<Tfr>, nowMs: Long): String = buildJsonObject {
+        fun features(tfrs: List<Tfr>, nowMs: Long, ask: (Double, Double?, Double?) -> Result<String> = ::askWhen): String = buildJsonObject {
             put("type", "FeatureCollection")
             putJsonArray("features") {
                 for (tfr in tfrs) addJsonObject {
                     put("type", "Feature")
                     putJsonObject("properties") {
                         put("id", tfr.notamId)
-                        put("active", inForce(tfr, nowMs))
+                        put("active", inForce(tfr, nowMs, ask))
                     }
                     put("geometry", tfr.geometry)
                 }
             }
         }.toString()
 
-        private fun inForce(tfr: Tfr, nowMs: Long): Boolean {
+        private fun askWhen(nowUs: Double, fromUs: Double?, toUs: Double?) = Engine.gonogoTfrWhen(nowUs, fromUs, toUs)
+
+        private fun inForce(tfr: Tfr, nowMs: Long, ask: (Double, Double?, Double?) -> Result<String>): Boolean {
             fun us(iso: String?) = FieldNotams.instantOf(iso)?.toEpochMilli()?.times(1000.0)
-            return Engine.gonogoTfrWhen(nowMs * 1000.0, us(tfr.effective), us(tfr.expires)).getOrNull()?.let { it == "in-force" } ?: true
+            return ask(nowMs * 1000.0, us(tfr.effective), us(tfr.expires)).getOrNull()?.let { it == "in-force" } ?: true
         }
     }
 }

@@ -55,7 +55,8 @@ object NotamTimes {
         val ends = FieldNotams.instantOf(n.ends ?: read?.ends)
         val active = FieldNotams.active(n)
         val field = zoneOf(zone)
-        val year = withYear(listOfNotNull(starts, ends), now, field)
+        // The year counted over the times shown: an end said "Permanent" does not put a year on its start.
+        val year = withYear(listOfNotNull(starts, ends.takeUnless { untilCharts }), now, field)
         fun at(t: Instant) = whenOf(t, field, year)
         fun soon(at: Instant) = if (at.isAfter(now)) FieldNotams.span(at.toEpochMilli() - now.toEpochMilli()) else null
         return buildList {

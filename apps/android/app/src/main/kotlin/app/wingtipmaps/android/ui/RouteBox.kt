@@ -120,7 +120,7 @@ fun RouteBox(
                 val outcome = plan.typeRoute(text, procedures::listed)
                 said = if (outcome == TypedRoute.Outcome.Done) null else text.trim() to outcome
                 // Words unread, and procedures not yet checked, stay in the box to be read again.
-                (if (outcome is TypedRoute.Outcome.Unchecked) outcome.names.joinToString(" ") else text.trim().takeIf { outcome == TypedRoute.Outcome.Unread })?.let { field.setTextAndPlaceCursorAtEnd(it) }
+                outcome.again(text)?.let { field.setTextAndPlaceCursorAtEnd(it) }
             }
         }
     }
@@ -171,7 +171,7 @@ fun RouteBox(
 /** The typing's trouble in words: the web's and the iPhone's. */
 @Composable
 private fun saidWords(text: String, outcome: TypedRoute.Outcome): String = when (outcome) {
-    is TypedRoute.Outcome.Missed -> pluralStringResource(R.plurals.route_box_missed, outcome.names.size, outcome.names.joinToString(" and "), outcome.dep, outcome.dest)
+    is TypedRoute.Outcome.Missed -> pluralStringResource(R.plurals.route_box_missed, outcome.names.size, outcome.names.joinToString(" and "), outcome.dep, outcome.dest) + outcome.unchecked.takeIf { it.isNotEmpty() }?.let { " " + stringResource(R.string.route_box_unchecked, it.joinToString(" and "), outcome.dep, outcome.dest) }.orEmpty()
     is TypedRoute.Outcome.Unchecked -> stringResource(R.string.route_box_unchecked, outcome.names.joinToString(" and "), outcome.dep, outcome.dest)
     else -> stringResource(R.string.route_box_unread, text)
 }

@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.design.generated.WingtipColors
@@ -41,7 +42,7 @@ object OverlayPictures {
         }
         builder.withImage("nav|vor", vor(density))
         builder.withImage("nav|fix", star(density))
-        builder.withImage("nav|vfr", triangle(12f, 6f, 1f, 11.2f, 10.4f, 0.8f, ink(MapStyle.VFR_GREEN), Color.WHITE, 1.4f, density))
+        builder.withImage("nav|vfr", triangle(12f, 6f, 1f, 11.2f, 10.4f, 0.8f, ink(MapStyle.VFR_GREEN), WHITE, 1.4f, density))
         stretched(builder, MapStyle.NAV_TAG, tag(density), 4f, density)
         for (cls in listOf("B", "C", "D")) {
             stretched(builder, MapStyle.airspaceTab(cls), airspaceTab(ink(MapStyle.AIRSPACE_INK.getValue(cls).colour), density), 4f, density)
@@ -184,14 +185,20 @@ object OverlayPictures {
      *  at the owner's ask, 2026-10-28), the chevron in its 22-unit box. */
     private const val TRAFFIC_MARK = 16f
 
+    /** The pictures' white (a casing, a VOR's face) and the tag's dark, from the tokens. */
+    private val WHITE = WingtipColors.Chart.CASING_HEX.toColorInt()
+    private val TAG = WingtipColors.Chart.TAG_HEX.toColorInt()
+
     /** An airplane of the traffic (the web's trafficIcon): a chevron
      *  pointing up, which the layer turns to its track, in its colour with
      *  a white casing; a dot where it sends no track. The casing 2 dp on
      *  the screen however the box is scaled. A near airplane, a collision
-     *  hazard, is edged outside its casing in the course's dark edge
-     *  (route-edge) as the obstacles are: its amber on the white alone was
-     *  1.79:1 at night against the dimmed chart (the round-6 themes audit's
-     *  N5), where the dark rim stands off the paper by day and night. */
+     *  hazard, is cased in the course's dark edge (route-edge) in place of
+     *  the white, as the obstacles are ringed: its amber against a white
+     *  casing was 1.61:1 at night at the default Dimmer, where against the
+     *  dark one it is 3.16:1 (WCAG 2.2 1.4.11, the adjacent colour; the
+     *  round-7 themes audit's N5), and the dark rim stands off the paper by
+     *  day and night. */
     private fun airplane(near: Boolean, hasTrack: Boolean, density: Float): Bitmap {
         val colour = ink(if (near) MapStyle.TRAFFIC_NEAR else MapStyle.TRAFFIC_FAR)
         val scale = TRAFFIC_MARK / 22f
@@ -199,8 +206,7 @@ object OverlayPictures {
         return picture(TRAFFIC_MARK + 4f, density, origin = 2f) {
             scale(scale, scale)
             val casing = 2f / scale
-            // One dp of the dark edge beyond the white casing's outer half, inside the box's 2-dp margin.
-            val edge = stroke(WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt(), casing + 2f / scale).takeIf { near }
+            val edge = stroke(if (near) WingtipColors.Chart.ROUTE_EDGE_HEX.toColorInt() else WingtipColors.Chart.CASING_HEX.toColorInt(), casing)
             if (hasTrack) {
                 val chevron = Path().apply {
                     moveTo(11f, 2f)
@@ -209,21 +215,19 @@ object OverlayPictures {
                     lineTo(4f, 19f)
                     close()
                 }
-                edge?.let { drawPath(chevron, it) }
                 drawPath(chevron, fill(colour))
-                drawPath(chevron, stroke(Color.WHITE, casing))
+                drawPath(chevron, edge)
             } else {
-                edge?.let { drawCircle(11f, 11f, 5f, it) }
                 drawCircle(11f, 11f, 5f, fill(colour))
-                drawCircle(11f, 11f, 5f, stroke(Color.WHITE, casing))
+                drawCircle(11f, 11f, 5f, edge)
             }
         }
     }
 
     /** The dark tag under an airplane its height and callsign sit on (the
-     *  web's #1f2933 at 80 %), stretched to the text. */
+     *  tag's dark at 80 %, the web's near-black #1f2933), stretched to the text. */
     private fun trafficTag(density: Float): Bitmap = picture(12f, density) {
-        drawRoundRect(RectF(0f, 0f, 12f, 12f), 3f, 3f, fill(Color.argb(204, 0x1f, 0x29, 0x33)))
+        drawRoundRect(RectF(0f, 0f, 12f, 12f), 3f, 3f, fill(ColorUtils.setAlphaComponent(TAG, 204)))
     }
 
     /** The VOR's hexagon: white, edged in the chart's blue, a dot at its
@@ -238,7 +242,7 @@ object OverlayPictures {
             lineTo(11.5f, 1.94f)
             close()
         }
-        drawPath(hexagon, fill(Color.WHITE))
+        drawPath(hexagon, fill(WHITE))
         drawPath(hexagon, stroke(ink(MapStyle.BLUE), 2f))
         drawCircle(8f, 8f, 1.6f, fill(ink(MapStyle.BLUE)))
     }
@@ -268,7 +272,7 @@ object OverlayPictures {
      *  rounded box bordered in its class's ink. */
     private fun airspaceTab(edge: Int, density: Float): Bitmap = picture(12f, density) {
         val box = RectF(0.75f, 0.75f, 11.25f, 11.25f)
-        drawRoundRect(box, 3f, 3f, fill(Color.argb(235, 0x14, 0x18, 0x1f)))
+        drawRoundRect(box, 3f, 3f, fill(ColorUtils.setAlphaComponent(TAG, 235)))
         drawRoundRect(box, 3f, 3f, stroke(edge, 1.5f))
     }
 
@@ -287,7 +291,7 @@ object OverlayPictures {
             close()
         }
         drawPath(path, fill(ink(MapStyle.FIX_BLUE)))
-        drawPath(path, stroke(Color.WHITE, 1.2f))
+        drawPath(path, stroke(WHITE, 1.2f))
     }
 
     /** One tick of a special-use area's hatch (the web's SUA_PICTURES): a
