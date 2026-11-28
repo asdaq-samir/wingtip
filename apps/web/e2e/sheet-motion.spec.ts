@@ -142,18 +142,37 @@ test("an airport's card closed by its ✕ goes with its face on it, fading, not 
   const card = page.getByTestId("place-card");
   await expect(card.getByTestId("fly-here")).toBeEnabled();
   await settled(frontSheet(page));
-  const closing = frames<{ opacity: number; text: number } | null>(
-    page,
-    `(() => { const c = [...document.querySelectorAll("[data-sheet-card]")].at(-1); return c ? { opacity: +getComputedStyle(c).opacity, text: c.innerText.trim().length } : null; })()`,
-    NO_CARD,
-  );
+  // The fade read from the browser's own transition events on the card,
+  // with the words it has at each, as ipad-motion.spec reads an iPad's:
+  // sampled a frame at a time, a 0.25 s fade on CI's runner, carrying the
+  // stack, fell between two frames some 200 ms apart (PR #591's run of
+  // 73ead7fe2, and 3 of 3 with the browsers held to one CPU: opacity 1,
+  // then 1, then 0, the card there and faded each time).
+  await page.evaluate(() => {
+    const w = window as unknown as { fade: string[] };
+    w.fade = [];
+    const words = (el: HTMLElement) => (el.innerText.trim().length > 0 ? "words" : "blank");
+    document.addEventListener("transitionrun", (e) => {
+      const el = e.target as HTMLElement;
+      if (e.propertyName !== "opacity" || !el.matches("[data-sheet-card]")) return;
+      w.fade.push(`run:${getComputedStyle(el).transitionDuration}:${words(el)}`);
+      // Its end, from the transition itself: the Drawer takes the card out
+      // in the task it ends in, before a transitionend could be sent; a
+      // card cut before then cancels it, and its promise is refused.
+      const fade = el.getAnimations().find((a) => (a as CSSTransition).transitionProperty === "opacity");
+      fade?.finished.then(
+        () => w.fade.push(`end:${words(el)}`),
+        () => w.fade.push("cut"),
+      );
+    });
+  });
   await closeCard(page, "place-close");
-  const seen = (await closing).filter((f): f is { opacity: number; text: number } => f !== null);
-  expect(
-    seen.some((f) => f.opacity > 0.05 && f.opacity < 0.95 && f.text > 0),
-    "fading with its words on it",
-  ).toBe(true);
   await expect(card).toHaveCount(0);
+  // Faded on a page's time (cardMotion's AWAY, --motion-page) with its
+  // words on it as it began and as it ended, and run to its end, not cut.
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { fade: string[] }).fade), { message: "fading with its words on it" })
+    .toEqual(["run:0.25s:words", "end:words"]);
 });
 
 test.describe("with Reduce Motion", () => {
