@@ -84,7 +84,7 @@ fn class_e_below_and_at_10000_ft_msl_with_no_veil() {
 #[test]
 fn passengers_on_the_90th_day_after_the_third_landing_and_not_the_91st() {
     // Three landings on 10 August 2026: the 90th day after is 8 November.
-    let entries = json!([{ "flownOn": "2026-08-10", "totalHours": 1.0, "nightHours": 0, "crossCountryHours": 0, "dayLandings": 3, "nightLandings": 0 }]);
+    let entries = json!([{ "flownOn": "2026-08-10", "totalHours": 1.0, "nightHours": 0, "crossCountryHours": 0, "dayLandings": 3, "nightLandings": 0, "category": "Airplane", "class": "Single-engine land", "tailwheel": false }]);
     let day_passengers = |today: &str| {
         let plan = ask("proficiency_plan", json!({ "today": today, "entries": entries }));
         plan["due"].as_array().unwrap().iter().find(|d| d["key"] == "day_passengers").cloned().expect("passengers by day")
