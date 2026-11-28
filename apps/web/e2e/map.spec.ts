@@ -37,7 +37,7 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText("1h", { timeout: slow(30000) });
   // Its name as shown, "Aloft", and in full words to a screen reader
   // (TripFigures' dt: the shorthand hidden from it, the said words beside).
-  const aloft = sideDrawer(page).locator('[data-slot="section-summary"] dt').nth(1);
+  const aloft = sheetFoot(page).locator('[data-slot="section-summary"] dt').nth(1);
   await expect(aloft.locator("[aria-hidden]")).toHaveText("Aloft");
   await expect(aloft.locator(".sr-only")).toHaveText("Time aloft, one hour");
   // Its fuel required among the figures.

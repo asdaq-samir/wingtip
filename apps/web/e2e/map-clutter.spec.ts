@@ -51,5 +51,14 @@ test("a route field's pill goes outside the course's turn, off the leg", async (
   await zoomTo(page, 6, -96.6, 41.2);
   // Wahoo, where the course from Waukegan bends south-west: the pill
   // above the field, not east of it along the leg it came in on.
-  await expect.poll(async () => (await drawnMarks(page, "route-marks")).find((m) => m.text === "KAHQ")?.side).toBe("bottom");
+  // A field's mark carries `out`, the angle outside the turn (degrees
+  // clockwise from up), and its ident goes on the nearest of four sides
+  // (routeMarks' fieldSide, its one line here).
+  const side = (deg: number) => (["bottom", "left", "top", "right"] as const)[Math.round((((deg % 360) + 360) % 360) / 90) % 4];
+  await expect
+    .poll(async () => {
+      const out = (await drawnMarks(page, "route-marks")).find((m) => m.text === "KAHQ")?.out;
+      return out == null ? null : side(Number(out));
+    })
+    .toBe("bottom");
 });
