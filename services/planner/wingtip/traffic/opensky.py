@@ -41,11 +41,13 @@ TRACK_DAYS = 30
 #: planner both read and write, a day at a time: the next page of a card's
 #: flights, whose pairs of days fall otherwise, asks again for none.
 KEEP_S = 26 * 3600
-#: Pairs of days asked side by side for one card, at most: each answer
-#: took up to several seconds one after another (2026-11-27). Seven, so a
-#: card's fourteen days (flights.HISTORY_DAYS_PER_ASK) go in one round:
-#: two rounds of four were up to 16 s.
-WORKERS = 7
+#: Pairs of days asked side by side for one card, at most. Seven at once,
+#: a card's fourteen days (flights.HISTORY_DAYS_PER_ASK) in one round, were
+#: all answered 429 (the live planner's log, 2026-11-27: "Flight history
+#: can't be read now"), so two, the newest days first: after a refusal the
+#: pairs still waiting meet the gate's hold and are not sent, and those
+#: already answered are kept and listed.
+WORKERS = 2
 #: The newest of a card's OpenSky flights whose paths are asked ahead in
 #: the background once it lists them (`warm`), and how many at once: the
 #: first open of one waited on OpenSky's /tracks/all, 7 s (2026-11-27).
@@ -167,7 +169,7 @@ def flights(hex_id: str, days: list[dt.date], today: dt.date, ask: bool = True) 
     """An airplane's flights on these UTC days, from OpenSky, oldest first,
     and how many of the days could not be had: today's never (its batch
     runs at night), each day kept KEEP_S, those not kept asked two days to
-    a call, WORKERS calls side by side. Where `ask` is False only what is
+    a call, WORKERS calls side by side, the newest first. Where `ask` is False only what is
     kept is given (an airplane's base, bases.py, spends no credits)."""
     since = _wall() - KEEP_S
     found: list[dict] = []
@@ -184,6 +186,7 @@ def flights(hex_id: str, days: list[dt.date], today: dt.date, ask: bool = True) 
         missing = missing[len(pair) :]
         pairs.append(pair)
     unread = 0
+    pairs.reverse()
     if pairs and ask:
         with ThreadPoolExecutor(max_workers=min(WORKERS, len(pairs))) as pool:
             for pair, listed in zip(pairs, pool.map(lambda p: _ask_pair(hex_id, p), pairs)):

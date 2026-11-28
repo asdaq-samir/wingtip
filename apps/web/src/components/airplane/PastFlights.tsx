@@ -111,11 +111,15 @@ export default function PastFlights({
               key="unread"
               title={
                 <span className={cn("text-muted-foreground", TEXT.detail)}>
-                  {/* A week or more unread is adsb.lol's history closed to the
-                    app (behind a browser check since 19 Oct 2026), not a
-                    moment's refusal: said so, and that the flights listed
-                    are those watched here (wingtip.traffic's recorded tracks). */}
-                  {unread >= 7
+                  {/* A week or more unread with none of the flights from a
+                    source (OpenSky's carry its name) is adsb.lol's history
+                    closed to the app (behind a browser check since 19 Oct
+                    2026) and OpenSky not answering: said so, and that the
+                    flights listed are those watched here (wingtip.traffic's
+                    recorded tracks). Where OpenSky gave some, the days it
+                    held back are counted instead (a 429 to part of a card's
+                    days, 2026-11-27). */}
+                  {unread >= 7 && !flights.some((flight) => flight.source)
                     ? "Flight history can't be read now, so only flights followed in this app are listed."
                     : `${unread === 1 ? "One day" : `${unread} days`} could not be read just now, so their flights are missing; asking again.`}
                 </span>

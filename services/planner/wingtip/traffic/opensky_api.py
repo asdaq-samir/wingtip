@@ -32,6 +32,8 @@ RESERVE = 200
 #: account may have answered 429 with a wait of 292 years (N654FL's of
 #: 4 Nov, 2026-11-27), so the family is asked again the next day.
 REFUSED_MOST_S = 86400.0
+#: How long it is left alone after a 429 that names no wait, s.
+REFUSED_S = 60.0
 #: How long one of its answers may take, s: a track took longer than the
 #: 5 s the live feeds are given (N570GJ's, 2026-11-27).
 TIMEOUT_S = 20.0
@@ -115,7 +117,11 @@ def _get(path: str, params: dict, family: str, timeout: float = TIMEOUT_S):
         resp = outside.live_get(f"{API}{path}", params=params, headers={**HEADERS, "Authorization": f"Bearer {token}"}, timeout=timeout)
         gate.counted(_number(resp.headers.get("X-Rate-Limit-Remaining")), _today())
         if resp.status_code == 429:
-            gate.hold(_number(resp.headers.get("X-Rate-Limit-Retry-After-Seconds")) or 60.0, _clock())
+            # Held for the wait OpenSky names, and nothing asked again in it:
+            # seven of one card's flight lists sent at once were all refused
+            # (the live planner's log, 2026-11-27).
+            gate.hold(_refused_s(resp.headers), _clock())
+            raise _Unread(f"OpenSky refused its {family}: too many requests")
         if resp.status_code == 404:
             return None
         resp.raise_for_status()
@@ -123,3 +129,14 @@ def _get(path: str, params: dict, family: str, timeout: float = TIMEOUT_S):
     except (requests.RequestException, ValueError, KeyError) as err:
         log.info("OpenSky did not answer %s: %s", path, err)
         raise _Unread(str(err)) from err
+
+
+def _refused_s(headers) -> float:
+    """The wait a 429 names, s: OpenSky's own X-Rate-Limit-Retry-After-Seconds
+    (the REST page), else HTTP's Retry-After in seconds (RFC 9110 10.2.3),
+    else REFUSED_S."""
+    for name in ("X-Rate-Limit-Retry-After-Seconds", "Retry-After"):
+        wait = _number(headers.get(name))
+        if wait is not None and wait > 0:
+            return wait
+    return REFUSED_S
