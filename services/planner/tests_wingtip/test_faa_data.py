@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 
 from wingtip import faa_data
+from wingtip.engine import ask as engine
 
 
 # --- each NASR file on its own ---
@@ -293,7 +294,8 @@ def _route_airports_as_before(apt_csv_path, bbox, exclude_idents=()) -> pd.DataF
             "osm_id": df["ARPT_ID"],
             "osm_type": "faa_airport",
             "category": "airport",
-            "name": df["ARPT_NAME"].str.title() + " (" + df["ARPT_ID"] + ")",
+            # The engine's casing ("7th Heaven"), as the kept one names them.
+            "name": pd.Series(engine("title_case", texts=df["ARPT_NAME"].tolist()), index=df.index) + " (" + df["ARPT_ID"] + ")",
             "lat": df["lat"],
             "lon": df["lon"],
             "bbox_area_m2": 0.0,

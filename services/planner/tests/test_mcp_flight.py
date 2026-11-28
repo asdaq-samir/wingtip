@@ -12,7 +12,7 @@ from app.mcp import calls, flight_tools, records
 from app.settings import get_settings
 
 from .mcp_harness import call
-from .test_gonogo_api import stubbed  # noqa: F401 -- the route, plan and briefing of a quiet flight
+from .test_gonogo_api import briefing, stubbed  # noqa: F401 -- the route, plan and briefing of a quiet flight
 from .plan_world import _stubbed_world  # noqa: F401 -- the stubbed chart, altitude and air, autouse
 from .test_mcp_tools import AIRPLANE, answer
 
@@ -59,6 +59,10 @@ def test_an_airplane_the_pilot_does_not_have_is_named_with_theirs():
 
 
 def test_the_briefing_is_the_go_no_go_line_and_its_findings(stubbed):  # noqa: F811
+    # KDLH given C81's METAR: with none, the runways are judged on a
+    # standard day, a caution that is not this test's.
+    c81 = briefing()["metars"]["C81"]
+    stubbed["briefing"] = briefing(metars={"C81": c81, "KDLH": c81})
     brief = answer(call("flight_briefing", {"departure": "C81", "destination": "KDLH", "depart_at": "2026-10-06T14:00:00Z"}))
     # No load given, so weight and balance is not worked out (30894f7fc): the
     # line says what was not checked, never "nothing found".
