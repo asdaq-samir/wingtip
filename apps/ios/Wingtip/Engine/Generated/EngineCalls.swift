@@ -1290,6 +1290,11 @@ nonisolated extension Engine {
         try Self.rule("navaid_hours", EngineContract.NavaidHoursInput(hours: hours))
     }
 
+    /// The navaid kinds by NASR's NAV_BASE NAV_TYPE, one copy for every reader: `vor`, the navaids the sectional draws as a VOR (the VOR's hexagon, the VOR/DME's in its box and the VORTAC's; FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Radio Aids to Navigation), and `navaid`, every kind a route may fly over, in the order one is kept over another of the same ident (not the VOR test facilities, VOT, the fan markers or a marine beacon, which no route flies to).
+    static func navaidKinds() throws -> EngineContract.NavaidKindsAnswer {
+        try Self.rule("navaid_kinds", EngineContract.NavaidKindsInput())
+    }
+
     /// The leg from the destination on to the IFR alternate for 14 CFR 91.167(a)(2)'s fuel, at the last altitude in its air, or in still air (still_air) where none was read or the leg cannot be flown in it.
     static func navlogAlternateLeg(dest: EngineContract.NavlogAlternateLegInputDest, alternate: EngineContract.NavlogAlternateLegInputAlternate, altitudeFt: Double, profile: EngineContract.NavLogProfile? = nil, air: EngineContract.NavlogAlternateLegInputAir? = nil) throws -> EngineContract.NavlogAlternateLegAnswer {
         try Self.rule("navlog_alternate_leg", EngineContract.NavlogAlternateLegInput(dest: dest, alternate: alternate, altitudeFt: altitudeFt, profile: profile, air: air))

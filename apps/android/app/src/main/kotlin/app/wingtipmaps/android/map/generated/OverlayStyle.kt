@@ -61,4 +61,27 @@ object OverlayStyle {
         const val SHOW_MILITARY = "showMilitary"
         const val SHOW_PRIVATE = "showPrivate"
     }
+
+    /** The layers' named expressions, for the app's own queries over the same tiles, as JSON. */
+    object Expressions {
+        val VOR_KINDS: String = """["in",["get","kind"],["literal",["VORTAC","VOR/DME","VOR"]]]"""
+        val MILITARY_SHOWN: String = """["any",["boolean",["global-state","showMilitary"],false],["!=",["get","military"],"military"]]"""
+        val PRIVATE_SHOWN: String = """["any",["boolean",["global-state","showPrivate"],false],["!=",["get","use"],"private"]]"""
+        val NOT_ROUTE_AIRPORT: String = """["!",["in",["get","ident"],["coalesce",["global-state","routeAirports"],["literal",[]]]]]"""
+        val NOT_ROUTE_WAYPOINT: String = """["!",["in",["get","ident"],["coalesce",["global-state","routeWaypoints"],["literal",[]]]]]"""
+        val KEPT_FIELD: String = """["==",["get","size"],"largest"]"""
+        val CLASS_C_FIELD: String = """["==",["get","size"],"larger"]"""
+        val TOWERED: String = """["==",["get","towered"],true]"""
+        val AIRPORT_IDENT_INK: String = """["case",["==",["get","towered"],true],"#2465b8","#c0309f"]"""
+        val AIRPORT_WEATHER: String = """["string",["get",["to-string",["get","ident"]],["object",["global-state","airportWeather"],["literal",{}]]],""]"""
+        val TILE_AIRPORT_ICON: String = """["concat","apt|",["coalesce",["get","airspace"],""],"|",["string",["get",["to-string",["get","ident"]],["object",["global-state","airportWeather"],["literal",{}]]],""],"|",["case",["==",["get","military"],"military"],"military",["==",["get","use"],"private"],"private",["==",["get","type"],"heliport"],"heliport",""]]"""
+        val MARK_SIZE: String = """["match",["get","size"],"largest",1.5,"larger",1.2,"small",0.82,1]"""
+        val AIRPORT_ICON_SIZE: String = """["interpolate",["linear"],["zoom"],3,["*",0.7,["match",["get","size"],"largest",1.5,"larger",1.2,"small",0.82,1]],9,["*",1,["match",["get","size"],"largest",1.5,"larger",1.2,"small",0.82,1]],12,["*",1.25,["match",["get","size"],"largest",1.5,"larger",1.2,"small",0.82,1]]]"""
+        val NAMED_FAR: String = """["any",["==",["get","towered"],true],["==",["get","size"],"largest"]]"""
+        val AIRPORT_IDENT_FAR: String = """["step",["zoom"],["case",["any",["==",["get","towered"],true],["==",["get","size"],"largest"]],["get","ident"],""],7,["get","ident"]]"""
+        val AIRPORT_ICON_NAMED: String = """["step",["zoom"],["case",["any",["==",["get","towered"],true],["==",["get","size"],"largest"]],["concat","apt|",["coalesce",["get","airspace"],""],"|",["string",["get",["to-string",["get","ident"]],["object",["global-state","airportWeather"],["literal",{}]]],""],"|",["case",["==",["get","military"],"military"],"military",["==",["get","use"],"private"],"private",["==",["get","type"],"heliport"],"heliport",""]],""],7,["concat","apt|",["coalesce",["get","airspace"],""],"|",["string",["get",["to-string",["get","ident"]],["object",["global-state","airportWeather"],["literal",{}]]],""],"|",["case",["==",["get","military"],"military"],"military",["==",["get","use"],"private"],"private",["==",["get","type"],"heliport"],"heliport",""]]]"""
+        val SUA_RESTRICTED: String = """["in",["get","type"],["literal",["P","R","W","D"]]]"""
+        val BAND_WIDTH: String = """["interpolate",["linear"],["zoom"],6,3,8,6,10,10,12,16]"""
+        val BAND_OFFSET: String = """["interpolate",["linear"],["zoom"],6,3,8,4.5,10,6.5,12,9.5]"""
+    }
 }

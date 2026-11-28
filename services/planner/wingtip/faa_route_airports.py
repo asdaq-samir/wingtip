@@ -11,10 +11,12 @@ import pandas as pd
 from . import field_status, geo_boxes
 from .engine import ask as engine
 from .faa_apt_base import _read_apt_base_cached
+from .fix_rows import VOR_KINDS
 from .single_flight import once
 
 
-VOR_NAV_TYPES = {"VOR", "VOR/DME", "VORTAC"}
+#: The VORs by NAV_TYPE (the engine's navaid_kinds, through fix_rows).
+VOR_NAV_TYPES = frozenset(VOR_KINDS)
 
 
 # Facility types the sectional draws as a landable airport. A heliport is

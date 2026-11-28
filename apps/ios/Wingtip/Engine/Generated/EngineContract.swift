@@ -8624,6 +8624,16 @@ nonisolated enum EngineContract {
         var hours: String?
     }
 
+    nonisolated struct NavaidKindsAnswer: Codable, Equatable, Sendable {
+        /// The VORs, VORTAC first.
+        var vor: [String]
+        /// Every kind a route flies over, the likelier to fly to first.
+        var navaid: [String]
+    }
+
+    nonisolated struct NavaidKindsInput: Codable, Equatable, Sendable {
+    }
+
     /// A leg's air at one altitude, looked up at its midpoint: no wind is no winds-aloft station near, no temperature a standard day.
     nonisolated struct NavLogAirAt: Codable, Equatable, Sendable {
         var altitudeFt: Double

@@ -8955,6 +8955,24 @@ object EngineContract {
         val hours: String? = null,
     )
 
+    @Serializable
+    data class NavaidKindsAnswer(
+        /**
+         * The VORs, VORTAC first.
+         */
+        val vor: List<String>,
+        /**
+         * Every kind a route flies over, the likelier to fly to first.
+         */
+        val navaid: List<String>,
+    )
+
+    @Serializable
+    class NavaidKindsInput {
+        override fun equals(other: Any?): Boolean = other is NavaidKindsInput
+        override fun hashCode(): Int = 0
+    }
+
     /**
      * A leg's air at one altitude, looked up at its midpoint: no wind is no winds-aloft station near, no temperature a standard day.
      */

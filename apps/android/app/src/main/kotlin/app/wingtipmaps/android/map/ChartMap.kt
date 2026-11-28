@@ -573,7 +573,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
      *  place off the nearest (the web's tileVors). */
     private fun tileVors(style: Style): List<MapPick.Vor> {
         val source = style.getSourceAs<VectorSource>(MapStyle.OVERLAY_SOURCE) ?: return emptyList()
-        val filter = Expression.raw(MapStyle.e("match", MapStyle.e("get", "kind"), MapStyle.VOR_KINDS, true, false).toString())
+        val filter = Expression.raw(app.wingtipmaps.android.map.generated.OverlayStyle.Expressions.VOR_KINDS)
         val seen = LinkedHashMap<String, MapPick.Vor>()
         for (f in source.querySourceFeatures(arrayOf("navaids"), filter)) {
             val (lat, lon) = pointOf(f) ?: continue
