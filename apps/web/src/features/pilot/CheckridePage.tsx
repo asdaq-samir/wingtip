@@ -7,7 +7,6 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
 import { trainingQuery } from "../../lib/queryClientRecords";
 import { Button } from "../../components/ui/button";
-import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import { api } from "../../lib/api/client";
@@ -17,7 +16,8 @@ import { useAcsTable } from "../../lib/useAcsTable";
 import { TEXT } from "../../lib/text";
 import { FINDING_TONE } from "../../lib/findings";
 import { inForce, reviewRoute, reviewState, said } from "../../lib/endorsements";
-import { GoodTo, SignedRow } from "./Endorsements";
+import { SignedRow } from "./Endorsements";
+import PaperEndorsement, { type PaperSave } from "./PaperEndorsement";
 import { NameFieldRow } from "./NameFieldRow";
 import ConsoleClose from "../../components/ConsoleClose";
 import { dueWords, lessonStatus } from "../../lib/assignedLessons";
@@ -289,7 +289,7 @@ export default function CheckridePage() {
   const keep = (next: Training) => queryClient.setQueryData(["training"], next);
   const codes = useMutation({ mutationFn: api.training.setKnowledgeTest, onSuccess: keep });
   const endorse = useMutation({
-    mutationFn: ({ code, on }: { code: string; on: string | null }) => (on ? api.training.endorse(code, on) : api.training.withdraw(code)),
+    mutationFn: ({ code, on, makeModel }: PaperSave) => (on ? api.training.endorse(code, on, makeModel) : api.training.withdraw(code)),
     onSuccess: keep,
   });
   if (!training) return <QueryState query={asked} fetching="Fetching your record…" failed="Your record could not be fetched." />;
@@ -311,30 +311,7 @@ export default function CheckridePage() {
         {training.kinds.map((kind) => {
           const e = signed.get(kind.code);
           if (e) return <SignedRow key={kind.code} kind={kind} e={e} />;
-          const on = recorded.get(kind.code);
-          return (
-            <ListRow
-              key={kind.code}
-              id={`endorsement-day-${kind.code}`}
-              title={kind.label}
-              description={
-                <>
-                  <span className="block">{kind.rule}</span>
-                  <GoodTo until={on?.until} />
-                </>
-              }
-              data-testid="endorsement"
-            >
-              <DateField
-                id={`endorsement-day-${kind.code}`}
-                aria-label={`${kind.label}, the day endorsed`}
-                className="h-8 w-40"
-                value={on?.endorsedOn ?? ""}
-                data-testid={`endorsement-${kind.code}`}
-                onChange={(day) => endorse.mutate({ code: kind.code, on: day || null })}
-              />
-            </ListRow>
-          );
+          return <PaperEndorsement key={kind.code} kind={kind} on={recorded.get(kind.code)} onSave={(save) => endorse.mutate(save)} />;
         })}
       </ListGroup>
       {unverified.length > 0 && (
