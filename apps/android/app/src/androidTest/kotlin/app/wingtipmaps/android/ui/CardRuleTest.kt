@@ -232,7 +232,7 @@ class CardRuleTest {
         val airport = CARDS.first()
         open(airport, airport.ways.first())
         compose.waitUntil(TIMEOUT_MS) { detent() == "PartiallyExpanded" }
-        val flyHere = text(R.string.action_fly_here)
+        val flyHere = text(R.string.wording_fly_here)
         compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasText(flyHere, substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.onAllNodes(hasText(flyHere, substring = true))[0].assertIsDisplayed()
         compose.onAllNodes(hasText(text(R.string.section_charts), substring = true))[0].assertIsDisplayed()
