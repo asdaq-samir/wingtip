@@ -56,10 +56,9 @@ class MapDimTest {
     }
 
     @Test
-    fun theWordsLightIsTheEnginesAndTheNightInksTheTokens() {
-        // The engine's map_dim_words, its cases its own (engine/facade/tests/map_dim.rs).
-        val c = cases("words").first()
-        assertEquals(c.toString(), c.num("share"), MapDim.wordLight(c.getValue("night").jsonPrimitive.boolean, c.num("brightness"), c.num("contrast")), 0.0)
+    fun theNightInksAreTheTokens() {
+        // The words' light is the engine's map_dim_words, which the JVM
+        // cannot load: MapDimEngineTest holds it to the "words" cases.
         for ((day, night) in shared.getValue("nightInks").jsonObject.getValue("inks").jsonObject) assertEquals(day, night.jsonPrimitive.content, MapDim.nightWord(day))
     }
 

@@ -58,7 +58,8 @@ class MapLabelsTest {
         ).jsonObject
         val paint = MapLabels.layer(airports, 1f, night = true)["paint"]!!.jsonObject
         assertEquals("""["case",["boolean",["feature-state","selected"],false],"transparent","rgba(20, 24, 31, 1.00)"]""", paint["text-halo-color"].toString())
-        assertEquals("#82b4ff", paint["text-color"]!!.jsonPrimitive.content)
+        // The towered blue's night ink at the words' light (MapDim.atWordLight).
+        assertEquals("""["interpolate",["linear"],["number",["global-state","labelNight"],0],0,"black",1,"#82b4ff"]""", paint["text-color"].toString())
         // By day, as written.
         assertEquals(airports, MapLabels.layer(airports, 1f, night = false))
     }
