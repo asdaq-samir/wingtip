@@ -95,10 +95,11 @@ fn period(out: &mut String, today: &Ends, next: &Ends, margin_s: f64, rule: &str
 /// What each period is, as the rules read it (eCFR): the words a host says
 /// beside its times, so none keeps a copy.
 const NIGHT_RULE: &str = "14 CFR 1.1's night: end of evening civil twilight to beginning of morning civil twilight (91.151(a)(2)'s 45-minute VFR reserve, 91.205(c)'s equipment, night flight time)";
-/// 61.57(b)(1) as the eCFR gives it (2026-11-23): who may act as PIC
+/// 14 CFR 61.57(b)(1) word for word as the eCFR gives it (2026-11-27,
+/// https://www.ecfr.gov/current/title-14/section-61.57): who may act as PIC
 /// carrying persons in the period, and what the three takeoffs and landings
 /// must have been. The words say the rule; nothing here permits a flight.
-const PASSENGER_NIGHT_RULE: &str = "14 CFR 61.57(b)(1): no person may act as pilot in command of an aircraft carrying persons from 1 hour after sunset to 1 hour before sunrise unless, within the preceding 90 days, that person made at least three takeoffs and three landings to a full stop in that period, as sole manipulator of the flight controls, in an aircraft of the same category, class and type (if a class or type rating is required)";
+const PASSENGER_NIGHT_RULE: &str = "14 CFR 61.57(b)(1): \"Except as provided in paragraph (e) of this section, no person may act as pilot in command of an aircraft carrying persons during the period beginning 1 hour after sunset and ending 1 hour before sunrise, unless within the preceding 90 days that person has made at least three takeoffs and three landings to a full stop during the period beginning 1 hour after sunset and ending 1 hour before sunrise, and\u{2014} (i) That person acted as sole manipulator of the flight controls; and (ii) The required takeoffs and landings were performed in an aircraft of the same category, class, and type (if a class or type rating is required).\"";
 /// 91.209(a): sunset to sunrise, and in Alaska also whenever a prominent
 /// unlighted object cannot be seen from 3 statute miles or the sun is more
 /// than 6 degrees below the horizon, which can need the lights by day.
@@ -167,6 +168,12 @@ mod tests {
         let out = call("sun_times", &v).unwrap();
         for cite in ["14 CFR 1.1's night", "14 CFR 61.57(b)", "14 CFR 91.209(a)"] {
             assert!(out.contains(cite), "{cite}: {out}");
+        }
+        // 61.57(b)(1)'s own words, from the eCFR (2026-11-27).
+        for words in
+            ["aircraft carrying persons during the period", "same category, class, and type (if a class or type rating is required)"]
+        {
+            assert!(PASSENGER_NIGHT_RULE.contains(words), "{words}");
         }
     }
 }
