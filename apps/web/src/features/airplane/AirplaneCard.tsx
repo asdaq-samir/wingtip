@@ -200,6 +200,7 @@ export default function AirplaneCard({
             flown={m.pictures}
             title={head.title}
             photo={airplanePhotoSlide(m.tail, card.photo)}
+            photoPending={card.photoPending}
             trafficPhoto={m.tail ? null : m.hex}
           />
           <InfoPage m={m} poh={m.actions.flyable ? null : poh} />

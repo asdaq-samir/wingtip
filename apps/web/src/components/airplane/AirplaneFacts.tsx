@@ -23,7 +23,8 @@ import type { AircraftRegistration, AirplaneDetails } from "../../lib/api/types"
  *    "Up to 12,499 lb"), written short ("≤12,499 lb").
  *  Spread across the card with no sideways scroll, as the airport card's
  *  are (`fit`; the owner, 2026-11-27: "keep the strip non-scrollable like
- *  airport card"), a fact with no room wrapping to a second row.
+ *  airport card"), and in one row (`oneRow`), its make and model giving
+ *  way where larger text leaves the rest no room.
  *  - Operator: who flies it now, where adsb.lol's detail names one (an
  *    airline is often not the registered owner).
  *  - For traffic the FAA's registry does not hold, its ICAO address, the
@@ -67,9 +68,11 @@ export function AirplaneFacts({
   // No strip where there is nothing to say: its room is the pictures'.
   if (!record && !traffic && !maker && !made && (built == null || built === "")) return null;
   return (
-    <CardFacts testId={testId} fit>
+    <CardFacts testId={testId} fit oneRow>
       {(maker || made) && (
-        <CardFact label={made ? (maker ?? "Model") : "Make"} testId={`${testId}-make`}>
+        // The one to give way, so the strip is always one row (the owner,
+        // 2026-11-27: "Airbus Helicopters" over "EC 130 T2" sent Weight under it).
+        <CardFact label={made ? (maker ?? "Model") : "Make"} testId={`${testId}-make`} shrink>
           {made ?? maker}
         </CardFact>
       )}
