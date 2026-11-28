@@ -9,7 +9,7 @@ import { useLogbookFlights } from "./useLogbookFlights";
 
 vi.mock("../../../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../lib/api/client")>()),
-  api: { logbook: { list: vi.fn(), add: vi.fn(), update: vi.fn(), remove: vi.fn() } },
+  api: { logbook: { list: vi.fn(), add: vi.fn(), update: vi.fn(), remove: vi.fn() }, aircraft: { list: vi.fn(async () => []) } },
 }));
 const { api } = await import("../../../lib/api/client");
 // The toast's Undo, kept to press here.

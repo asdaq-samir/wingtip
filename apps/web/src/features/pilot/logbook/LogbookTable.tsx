@@ -161,6 +161,7 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
                           saving={vm.saving}
                           onSave={(entry) => vm.update(e.id, entry)}
                           onCancel={vm.stopChanging}
+                          airplanes={vm.airplanes}
                         />
                       </div>
                     </TableCell>
