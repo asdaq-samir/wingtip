@@ -89,7 +89,9 @@ struct PlanHistoryTests {
         first.endUndoGrouping()
         plan.windowUndo = second
         second.beginUndoGrouping()
-        step(history) { plan.dep = "KMSN"; plan.dest = "KOSH" }
+        // Planned, not only typed: the fields set the ends without a step
+        // (Plan.clear), so the second window's edit is the route planned.
+        step(history) { plan.dep = "KMSN"; plan.dest = "KOSH"; plan.plan() }
         second.endUndoGrouping()
         #expect(first.canUndo && second.canUndo)
         first.undo()

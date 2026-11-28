@@ -6,7 +6,9 @@ import Testing
 struct MarkDimTests {
     @Test func atNightTheMarksTakeTheChartsBrightness() {
         #expect(MarkDim.alpha(shade: 0.5, night: true) == 0.5)
-        #expect(MarkDim.alpha(shade: ChartLook.dimMax, night: true) == 1 - ChartLook.dimMax)
+        // Within 1e-9, as theSharedDims: 1 - dimMax is worked out apart
+        // from the alpha, and the two may differ in the last bit.
+        #expect(abs(MarkDim.alpha(shade: ChartLook.dimMax, night: true) - (1 - ChartLook.dimMax)) < 1e-9)
         #expect(MarkDim.alpha(shade: 0, night: true) == 1)
     }
 

@@ -37,8 +37,8 @@ import Testing
         // No zone known: UTC, said so, never "local" or a Z.
         #expect(FieldNotamWords.when(at, zone: nil, year: false) == "05/27 18:43 UTC")
         #expect(FieldNotamWords.when(at, zone: chicago, year: true, clock: false) == "05/27/26")
-        // A feed's time with no zone is UTC.
-        #expect(FieldNotamWords.date("2026-11-10T06:00:00") == at)
+        // A feed's time with no zone is UTC: the same instant as with its Z.
+        #expect(FieldNotamWords.date("2026-11-10T06:00:00") == FieldNotamWords.date("2026-11-10T06:00:00Z"))
     }
 
     @Test func oneInForceSaysSinceAndEndsWithHowLongIsLeft() throws {
