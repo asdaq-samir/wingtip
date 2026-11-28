@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, grabberTo, settle, slow } from "./helpers";
+import { closeCard, grabberTo, mapStill, settle, slow } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
@@ -105,6 +105,9 @@ test("a point held opens its card at its size: the bands and the point's name co
   await installFrameRecorder(page);
   await page.goto("/app/plan");
   await settle(page);
+  // Held once the map is at rest: held while it still flew to the pilot's
+  // place, the click met no card (PR #591's run, passed on its retry).
+  await mapStill(page);
   const box = (await page.locator(".maplibregl-map").first().boundingBox())!;
   // The lowest two bands' rows and the point's name from the first frame:
   // "Fetching the airspace here…" gave way to the bands with the point's

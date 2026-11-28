@@ -33,7 +33,7 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   // At the pill's size, as every card opens; its pages all the way up.
   await grabberTo(page, "full");
   await expect(card).toContainText("N14511");
-  await expect(card).toContainText("UAL2088 · Airbus A-321neo");
+  await expect(card).toContainText("UAL2088 · Airbus A321, 2024"); // the record's type in a few words, its year (airplane_short_type)
   // Two tabs, Info open (the owner, 2026-11-27); its flight now heads Flights.
   await expect(withFoot(card).getByTestId("airplane-tab-bar")).toBeVisible();
   await withFoot(card).getByTestId("airplane-tab-flights").click();
@@ -44,7 +44,7 @@ test("the one search finds an airplane the map hears by its callsign, and a tap 
   // Who flies it in the facts strip, its flight number's route its slide's
   // ends (the owner, 2026-11-27, the Now section gone); its make and model
   // in its record's sections.
-  await expect(card.getByTestId("airplane-facts-operator")).toHaveText("United Airlines Inc");
+  await expect(card.getByTestId("airplane-facts-operator")).toHaveText("OperatorUnited Airlines Inc"); // its grey name over it
   // Tracked, the map on it, as it is opened from the search.
   await expect(card.getByTestId("airplane-track")).toHaveAttribute("aria-pressed", "true");
   // Its FAA registration on Info, from the flight's detail before its N-number's own record.
@@ -105,6 +105,8 @@ test("an airplane not in the air opened by its link: its card says when it was l
     mode_s_hex: "a89c1e",
     manufacturer: "Piper",
     model: "PA-28-140",
+    make_short: "Piper",
+    model_short: "PA-28",
     year: 1971,
     engines: 1,
     seats: 4,
@@ -239,7 +241,8 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await expect(card.getByTestId("airplane-figures-open")).toBeDisabled(); // greyed in its place (the owner, 2026-11-27)
   // Its mark at its head, its ICAO address in the facts strip, the card having no record's sections.
   await expect(card).toContainText("C-FSES");
-  await expect(card.getByTestId("airplane-facts-address")).toContainText("A0B7D8");
+  // In capitals as drawn (the strip's uppercase), the address as heard.
+  await expect(card.getByTestId("airplane-facts-address")).toContainText("A0B7D8", { useInnerText: true });
   const photo = card.getByTestId("flight-photo");
   await expect(photo).toBeVisible({ timeout: slow(15_000) });
   await expect(card.getByTestId("flight-photo-credit")).toHaveText("© Jane Spotter · Planespotters");

@@ -194,44 +194,49 @@ function FlightSummary({
           <span className="text-muted-foreground">Not heard now</span>
         )}
       </div>
-      {/* Its ends' row always there, so nothing under it moves as its ends
-          come in or come back empty (traffic.spec's
-          card opening at its size):
-          held while they are asked for, "—" for
-          an end not known. */}
-      {from ? (
-        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3">
-          <End
-            ident={from.ident}
-            place={from.place}
-            at={departedAt ? clockTime(new Date(departedAt * 1000)) : null}
-            onOpen={from.ident !== "?" ? open(from.ident) : undefined}
-            testId={departedAt ? "flight-departed" : undefined}
-            // The field it left, while it flies.
-            openTestId={plane ? "flight-airport" : undefined}
-          />
-          {/* As far along as it has flown, the stock Progress; a plain line
-              where that cannot be said (no field it is bound for). */}
-          {progress != null ? (
-            <Progress value={Math.round(progress * 100)} aria-label="Of the way flown" className="h-1 bg-foreground/15" />
-          ) : (
-            <div className="h-1 rounded-full bg-foreground/15" />
-          )}
-          <End
-            right
-            ident={to?.ident ?? "Now"}
-            place={to?.place ?? null}
-            onOpen={to ? open(to.ident) : undefined}
-            testId={plane ? "flight-bound" : undefined}
-          />
-        </div>
-      ) : (
-        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3" aria-hidden={pending}>
-          {pending ? <EndPending /> : <End ident="—" />}
+      {/* Its ends with the bar between only where both are known: a bar
+          from "—" to "—" said nothing (the owner's iPhone, 2026-11-27,
+          N400FJ in the air with neither field heard). Held while they are
+          asked for, so nothing under them moves as they come in. */}
+      {pending && !from ? (
+        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3" aria-hidden>
+          <EndPending />
           <div className="h-1 rounded-full bg-foreground/15" />
-          {pending ? <EndPending right /> : <End right ident="—" />}
+          <EndPending right />
         </div>
-      )}
+      ) : from || to ? (
+        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3">
+          {from ? (
+            <End
+              ident={from.ident}
+              place={from.place}
+              at={departedAt ? clockTime(new Date(departedAt * 1000)) : null}
+              onOpen={from.ident !== "?" ? open(from.ident) : undefined}
+              testId={departedAt ? "flight-departed" : undefined}
+              // The field it left, while it flies.
+              openTestId={plane ? "flight-airport" : undefined}
+            />
+          ) : (
+            <span />
+          )}
+          {/* As far along as it has flown, the stock Progress, between two
+              ends known; with one, that end alone on its side. */}
+          {from && to ? (
+            progress != null ? (
+              <Progress value={Math.round(progress * 100)} aria-label="Of the way flown" className="h-1 bg-foreground/15" />
+            ) : (
+              <div className="h-1 rounded-full bg-foreground/15" />
+            )
+          ) : (
+            <span />
+          )}
+          {to ? (
+            <End right ident={to.ident} place={to.place} onOpen={open(to.ident)} testId={plane ? "flight-bound" : undefined} />
+          ) : (
+            <span />
+          )}
+        </div>
+      ) : null}
       {plane ? (
         <span className={cn("font-semibold text-foreground tabular-nums", TEXT.detail)} data-testid="flight-altitude">
           {reportedAltitude(plane.altitude_ft)} {climb}

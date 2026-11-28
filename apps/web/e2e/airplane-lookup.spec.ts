@@ -22,6 +22,8 @@ const PIPER = {
   mode_s_hex: "A89C1E",
   manufacturer: "Piper",
   model: "PA-28-140",
+  make_short: "Piper",
+  model_short: "PA-28",
   year: 1971,
   owner: "Jane Q Pilot",
   owner_type: "Individual",
@@ -258,8 +260,14 @@ test("an N-number in the air says so, with its height and speed, and Track opens
   };
   answer({ aircraft: [flying], checked: true, source: "ADS-B Exchange", license: "ADS-B Exchange terms" });
   await expect(row.getByTestId("search-airplane-live")).toHaveText("In the air 4,500 ft · 108 kt", { timeout: slow(10_000) });
-  // Its Track beside the row's option, not in it (ResultRow: no button inside an option).
-  await sideDrawer(page).locator("[data-result-row]").filter({ has: row }).getByTestId("search-airplane-track").click();
+  // Its Track beside the row's option, not in it (ResultRow: no button inside an option). The
+  // row's option matched inside the result's row, as `has` looks: `row`, from the side drawer,
+  // looked for a side drawer inside it and found none.
+  await sideDrawer(page)
+    .locator("[data-result-row]")
+    .filter({ has: page.getByTestId("search-airplane").filter({ hasText: "N654FL" }) })
+    .getByTestId("search-airplane-track")
+    .click();
   await expect(page).toHaveURL(/[?&]flight=a89c1e/);
   // One card for it (the owner's design, 2026-11-26): its N-number's, in the air Track first, no Fly
   // This, its flight now at the head of its Flights tab (the owner, 2026-11-27).

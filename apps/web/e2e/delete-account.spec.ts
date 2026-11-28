@@ -27,7 +27,7 @@ test("Delete Account asks, then deletes the account and everything in it, and si
     headers: { "X-XSRF-TOKEN": decodeURIComponent(xsrf) },
     data: { tailNumber: "N12345", typeDesignator: "C172", cruiseTasKt: 110, fuelBurnGph: 8 },
   });
-  expect(added.ok()).toBe(true);
+  expect(added.ok(), `the airplane saved: ${added.status()} ${await added.text()}`).toBe(true);
 
   const console = page.getByTestId("console-sheet");
   if (!(await console.isVisible())) {

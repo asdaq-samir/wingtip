@@ -20,6 +20,18 @@ const facts = (list: [title: string, value: Value, testId?: string][]) =>
     .filter(([, value]) => value !== null && value !== undefined && value !== "")
     .map(([title, value, testId]) => <Fact key={title} title={title} value={value} testId={testId} />);
 
+/** The section's title by the registry's Type Aircraft (TYPE-ACFT,
+ *  ardata.pdf): an airplane's "Airplane", the app's word; a rotorcraft's
+ *  "Helicopter" (TYPE-ACFT 6; a gyroplane its own, 9), the class 14 CFR
+ *  61.5(b)(2) gives it; a glider, balloon, airship or the rest "Aircraft"
+ *  (the owner's iPhone, 2026-11-27: N812HW, an EC 130, under "Airplane"). */
+function kindTitle(type: string | null | undefined): string {
+  if (!type || type.startsWith("Fixed wing")) return "Airplane";
+  if (type === "Rotorcraft") return "Helicopter";
+  if (type === "Gyroplane") return "Gyroplane";
+  return "Aircraft";
+}
+
 /**
  * The airplane card's Info (the owner's P1, 2026-11-14), each section its
  * first three rows and its title the rest, as the airport card's are
@@ -65,6 +77,7 @@ export default function AirplaneInfo({
       </div>
     );
   const ref = details?.model;
+  const type = ref?.aircraft_type ?? full.aircraft_type;
   const engine = details?.engine;
   const hp = engine?.horsepower ?? full.horsepower;
   const thrust = engine?.thrust_lb ?? full.thrust_lb;
@@ -89,12 +102,17 @@ export default function AirplaneInfo({
         ])}
       />
       <FirstFew
-        title="Airplane"
+        title={kindTitle(type)}
         testId="airplane-info-airplane"
         rows={facts([
           ["Model", [full.manufacturer, full.model].filter(Boolean).join(" "), "airplane-info-model"],
           ["Year", full.year],
-          ["Category", ref?.category ?? full.aircraft_type],
+          // What the registry says, by its own fields: its Type Aircraft ("Rotorcraft",
+          // "Fixed wing single engine"), and ACFTREF's AC-CAT, which the FAA calls its
+          // category and is where it alights: land, sea or amphibian -- shown as
+          // "Category" it read as 61.5's, where an EC 130's is rotorcraft, not land.
+          ["Type", type],
+          ["Land or Water", ref?.category],
           ["Builder Certification", ref?.builder_certification],
           ["Seats", ref?.seats ?? full.seats],
           ["Engines", ref?.engines ?? full.engines],

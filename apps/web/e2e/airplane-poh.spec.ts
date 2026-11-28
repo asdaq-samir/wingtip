@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, slow } from "./helpers";
+import { inSheet, settle, slow } from "./helpers";
 import { FAA } from "./faaRecord";
 import { tinyPdf } from "./tinyPdf";
 
@@ -11,7 +11,16 @@ import { tinyPdf } from "./tinyPdf";
  * menu unlinks it, the document kept. The registry is stubbed.
  */
 
-const PIPER = { ...FAA, n_number: "N654FL", mode_s_hex: "A89C1E", manufacturer: "Piper", model: "PA-28-140", year: 1971 };
+const PIPER = {
+  ...FAA,
+  n_number: "N654FL",
+  mode_s_hex: "A89C1E",
+  manufacturer: "Piper",
+  model: "PA-28-140",
+  make_short: "Piper",
+  model_short: "PA-28",
+  year: 1971,
+};
 
 async function stubbed(page: Page) {
   await page.route(
@@ -58,7 +67,10 @@ test("an airplane's POH is added from the device, opens in the reader, and is un
   await expect(row).toContainText("PA-28-140 POH");
   expect(uploads, "a pilot's own document is never sent").toEqual([]);
 
-  // It opens in the reader, its page drawn, and closes back to the card.
+  // It opens in the reader, its page drawn, and closes back to the card: the card pulled up to
+  // it first, as a finger would, since at half a card's body does not scroll (index.css, the one
+  // scrolling rule) and the row came under its edge (PR #591's run: "outside of the viewport").
+  await inSheet(page, row);
   await row.click();
   const reader = page.getByTestId("document-reader");
   await expect(reader.getByTestId("document-pdf").locator(".page canvas, .page .canvasWrapper")).not.toHaveCount(0);
