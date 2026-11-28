@@ -49,8 +49,6 @@ export function useAirplaneCard(tail: string, known: string | null = null) {
     details: details.data,
     detailsFailed: details.isError,
     photo: photo.isError ? null : photo.data,
-    /** Its photo still asked for: the pictures' place held meanwhile (FlightPictures). */
-    photoPending: !!tail && photo.isPending,
     hex,
     /** Under its name: "Piper PA-28, 1971", the registry's in a few words; null where it has none. */
     line,

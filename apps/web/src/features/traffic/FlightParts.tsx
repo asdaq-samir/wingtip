@@ -2,10 +2,7 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGeo } from "../../lib/geo";
 import { useOwnFixShown } from "../../lib/map/position/ownShip";
-import { cn } from "cn";
 import { CardPictures, type CardSlide } from "../../components/CardPictures";
-import { Skeleton } from "../../components/ui/skeleton";
-import { TEXT } from "../../lib/text";
 import { PhotoSlide } from "../../components/PictureSlides";
 import { FlightNow, LiveSketch } from "./FlightSummary";
 import { planePhotoQuery } from "./planePhoto";
@@ -75,16 +72,12 @@ export function FlightNowBox({
  * the pictures"): its photos -- the N-number's from the card (`photo`),
  * or for traffic the FAA's registry does not hold, its own by its address
  * (`trafficPhoto`) -- then where it has flown, sketched, where there is a
- * way flown to draw. Where it has neither, the row's place kept as the
- * airport card's is (PlacePictures): held while its photo is asked, then
- * "No photos" (the owner's iPhone, 2026-11-27, N812HW's Info with no
- * pictures at all).
+ * way flown to draw. Nothing where it has none.
  */
 export function FlightPictures({
   flown,
   title,
   photo,
-  photoPending = false,
   trafficPhoto,
 }: {
   /** What it draws of the flight, apart from the rest of it, so it is
@@ -100,14 +93,11 @@ export function FlightPictures({
   };
   title: string;
   photo: CardSlide | null;
-  /** Its N-number's photo still asked for. */
-  photoPending?: boolean;
   /** Traffic with no N-number: its photo by its ICAO address (Planespotters). */
   trafficPhoto: string | null;
 }) {
   const geo = useGeo();
-  const { data: picture, isPending } = useQuery({ ...planePhotoQuery(trafficPhoto ?? ""), enabled: !!trafficPhoto });
-  const asking = photoPending || (!!trafficPhoto && isPending);
+  const { data: picture } = useQuery({ ...planePhotoQuery(trafficPhoto ?? ""), enabled: !!trafficPhoto });
   const { name, trail } = flown;
   const slides: (CardSlide | null)[] = [
     photo,
@@ -152,23 +142,5 @@ export function FlightPictures({
         }
       : null,
   ];
-  // Neither a photo nor a way flown: one tile in their place, so the row
-  // never comes and goes under the facts.
-  const none: CardSlide | null = slides.some(Boolean)
-    ? null
-    : {
-        key: "none",
-        label: asking ? `${name}'s photos, coming` : `No photos of ${name}`,
-        picture: asking ? (
-          <Skeleton className="size-full rounded-none" />
-        ) : (
-          <div
-            className={cn("flex size-full items-center justify-center text-muted-foreground", TEXT.note)}
-            data-testid="airplane-no-photos"
-          >
-            No photos
-          </div>
-        ),
-      };
-  return <CardPictures slides={[...slides, none]} label={`${title}: its pictures`} testId="airplane-pictures" />;
+  return <CardPictures slides={slides} label={`${title}: its pictures`} testId="airplane-pictures" />;
 }

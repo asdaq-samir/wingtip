@@ -87,9 +87,8 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   }
   await page.evaluate(() => (document.documentElement.style.fontSize = ""));
 
-  // No photo and nothing flown to sketch: Info's pictures row says so, in its place, as the
-  // airport card's keeps its own (the owner's iPhone, 2026-11-27, N812HW's Info with no pictures).
-  await expect(card.getByTestId("airplane-pictures").getByTestId("airplane-no-photos")).toHaveText("No photos");
+  // No photo and nothing flown to sketch: Info has no pictures row (the owner, 2026-11-27).
+  await expect(card.getByTestId("airplane-pictures")).toHaveCount(0);
 
   // Scrolled down to a row far down its record, it is in sight: the card pulled up
   // first, as a pilot does, since at half a card's body does not scroll
@@ -104,11 +103,11 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   await expect(last).toBeInViewport();
 });
 
-test("a helicopter's card: its facts strip one row at the owner's larger text, its section a Helicopter's, its type the registry's, and No photos in its pictures' place", async ({
+test("a helicopter's card: its facts strip one row at the owner's larger text, its section a Helicopter's, its type the registry's, and no pictures row with nothing to show", async ({
   page,
 }) => {
   // N812HW as the owner's iPhone showed it (2026-11-27): "Airbus Helicopters" over "EC 130 T2" sent
-  // Weight to a second row, "Category: Land" under "Airplane", and no pictures row at all.
+  // Weight to a second row, and "Category: Land" under "Airplane".
   const ec130 = {
     ...FAA,
     n_number: "N812HW",
@@ -193,6 +192,6 @@ test("a helicopter's card: its facts strip one row at the owner's larger text, i
   await expect(info).toContainText("TypeRotorcraft");
   await expect(info).toContainText("Land or WaterLand");
   await expect(info).not.toContainText("Category");
-  // No photo of it and nothing flown to sketch: the pictures' place says so.
-  await expect(card.getByTestId("airplane-pictures").getByTestId("airplane-no-photos")).toHaveText("No photos");
+  // No photo of it and nothing flown to sketch: no pictures row (the owner, 2026-11-27).
+  await expect(card.getByTestId("airplane-pictures")).toHaveCount(0);
 });
