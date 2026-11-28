@@ -209,9 +209,12 @@ export default function FigureStrip({
                 {f.said && !button && <span className="sr-only">{f.said}</span>}
               </dt>
               <dd
+                // The size before the value's leading: tailwind-merge takes a
+                // font size after a line height as setting both, and dropped
+                // the strip's own leading (the pill's value 30 tall, not 25).
                 className={cn(
-                  type.value,
                   FIGURE_SIZE,
+                  type.value,
                   "truncate font-semibold tabular-nums",
                   button && "overflow-visible",
                   // A figure that is not a button said wrong in red, its
