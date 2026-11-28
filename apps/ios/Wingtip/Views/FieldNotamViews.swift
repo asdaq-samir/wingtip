@@ -41,7 +41,7 @@ struct NotamStateBadge: View {
     var body: some View {
         TimelineView(.everyMinute) { context in
             let active = notam.inForce != false
-            let starts = notam.starts.flatMap { try? Date($0, strategy: .iso8601) }
+            let starts = FieldNotamWords.date(notam.starts)
             let later = !active && (starts.map { $0 > context.date } ?? false)
             StatusBadge(active ? .active : later ? .later : .cold, words: active || later ? nil : "Inactive")
         }
