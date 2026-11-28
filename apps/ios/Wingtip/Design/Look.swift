@@ -134,14 +134,23 @@ private struct WindowTint: UIViewRepresentable {
         }
 
         func apply() {
-            window?.tintColor = tint
-            window?.overrideUserInterfaceStyle = style
-            // The look kept first, then put on the window as a trait that
-            // changes its colours' appearance (LookTrait), so every colour
-            // UIKit has resolved (WingtipInk) is resolved again at once in
-            // the new look, not at the next trait change.
+            // The look kept first, with or without a window, so the colours
+            // resolved before the root is in one are the look's.
             WingtipInk.keep(look: look)
-            if window?.traitOverrides[LookTrait.self] != look { window?.traitOverrides[LookTrait.self] = look }
+            guard let window else { return }
+            window.tintColor = tint
+            window.overrideUserInterfaceStyle = style
+            // Then put on the window as a trait that changes its colours'
+            // appearance (LookTrait), so every colour UIKit has resolved
+            // (WingtipInk) is resolved again at once in the new look, not
+            // at the next trait change. UIKit raises on reading an
+            // override that was never set ("Can't return value for trait
+            // ... that has no override"), the first launch's case, so it
+            // is asked whether one is set before it is read.
+            let overrides = window.traitOverrides
+            if !overrides.contains(LookTrait.self) || overrides[LookTrait.self] != look {
+                window.traitOverrides[LookTrait.self] = look
+            }
         }
     }
 }
