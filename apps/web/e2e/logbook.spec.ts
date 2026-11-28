@@ -19,6 +19,11 @@ test("the logbook says where the pilot stands, and a flight logged is posted as 
       body: JSON.stringify({
         dayPassengersUntil: inDays(40),
         nightPassengersUntil: null,
+        // The engine's words where only what the logbook doesn't say stands
+        // between the pilot and currency (14 CFR 61.57(b)(1)).
+        nightPassengersUnknown: "Can't tell: 1 flight in the last 90 days doesn't say the airplane's category and class (61.57(a)(1))",
+        passengerClass: "airplane/single-engine land",
+        passengerTailwheel: false,
         flightReviewOn: "2025-06-14",
         flightReviewUntil: "2027-06-30",
         medicalExpiresOn: null,
@@ -47,7 +52,9 @@ test("the logbook says where the pilot stands, and a flight logged is posted as 
   await library(console, "Logbook");
 
   await expect(console.getByTestId("currency-day")).toHaveText(/^To /);
-  await expect(console.getByTestId("currency-night")).toHaveText("Not current");
+  await expect(console.getByTestId("currency-night")).toHaveText("Can't tell");
+  await expect(console.getByText("1 flight in the last 90 days doesn't say the airplane's category and class (61.57(a)(1))")).toBeVisible();
+  await expect(console.getByTestId("currency-judged")).toHaveText("Judged for single-engine land, tricycle");
   await expect(console.getByTestId("currency-review")).toHaveText("To 30 Jun 2027");
 
   await console.getByTestId("logbook-add").click();
@@ -58,12 +65,26 @@ test("the logbook says where the pilot stands, and a flight logged is posted as 
   // the click waited on a button under the screen's foot to the timeout.
   await settled(frontSheet(page));
   await page.getByTestId("logbook-totalHours").fill("3.4");
+  // The airplane's class and gear, from their menus, and its full stops
+  // (61.57(a)(1)(ii)); the class says the category, Airplane.
+  await page.getByTestId("logbook-aircraftClass").click();
+  await page.getByRole("option", { name: "Single-engine land" }).click();
+  await page.getByTestId("logbook-tailwheel").click();
+  await page.getByRole("option", { name: "Tailwheel" }).click();
+  await page.getByTestId("logbook-fullStopLandings").fill("1");
   // Add Entry is a card opened half way on a phone (docs/design/rules.md,
   // the cards and detents), its Save under the edge: pulled up to it.
   await inSheet(page, page.getByTestId("logbook-save"));
   await page.getByTestId("logbook-save").click();
   await expect.poll(() => posted.length).toBe(1);
-  expect(posted[0]).toMatchObject({ totalHours: 3.4, dayLandings: 1 });
+  expect(posted[0]).toMatchObject({
+    totalHours: 3.4,
+    dayLandings: 1,
+    category: "Airplane",
+    aircraftClass: "Single-engine land",
+    tailwheel: true,
+    fullStopLandings: 1,
+  });
 });
 
 test("a logbook that could not be fetched says so in place, and Try again fetches it", { tag: "@smoke" }, async ({ page }) => {
