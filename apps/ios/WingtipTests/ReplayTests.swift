@@ -31,6 +31,24 @@ struct ReplayTests {
         #expect(Replay.position(Self.points, at: 1100)?.lon == -70.0)
     }
 
+    /// The planner's ready points (the engine's replay_track): nothing is
+    /// drawn inside a gap, the climb and a held height are carried, and a
+    /// height on the ground it does not send stays none, never 0 ft.
+    @Test func thePlannersReadyPointsArePlayedAsSent() throws {
+        let points = [
+            Replay.Point(t: 0, lat: 0, lon: 0, altFt: nil, gsKt: 10, ground: true),
+            Replay.Point(t: 60, lat: 0, lon: 1, altFt: 1500, vsFpm: 700, altHeld: true),
+            Replay.Point(t: 600, lat: 0, lon: 5, altFt: 4500, vsFpm: 0, gap: true),
+        ]
+        let rolling = try #require(Replay.position(points, at: 30))
+        #expect(rolling.altFt == nil && rolling.ground)
+        let climbing = try #require(Replay.position(points, at: 60))
+        #expect(climbing.vsFpm == 700 && climbing.altHeld && climbing.altFt == 1500)
+        // Inside the gap nothing; at its far report, the report.
+        #expect(Replay.position(points, at: 300) == nil)
+        #expect(Replay.position(points, at: 600)?.altFt == 4500)
+    }
+
     @Test func aHeightNotSentIsTheEarlierOnes() throws {
         let points = [Replay.Point(t: 0, lat: 0, lon: 0, altFt: 2000), Replay.Point(t: 10, lat: 0, lon: 1, altFt: nil),
                       Replay.Point(t: 20, lat: 0, lon: 2, altFt: 4000)]
