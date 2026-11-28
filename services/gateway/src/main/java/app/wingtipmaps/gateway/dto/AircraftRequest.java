@@ -15,7 +15,8 @@ import org.jspecify.annotations.Nullable;
  *  AircraftLimits asks before a save: this record states none of them.
  *
  *  <p>Its own handbook figures (OwnFigures) go with the rest; left out
- *  altogether, as a client from before them sends, they stay as they were. */
+ *  altogether, as a client from before them sends, they stay as they were;
+ *  so do its category, class and gear (`kind`). */
 public record AircraftRequest(
         String tailNumber,
         String typeDesignator,
@@ -36,4 +37,9 @@ public record AircraftRequest(
                         + "they were")
         @Valid
         @Nullable
-        OwnFigures figures) {}
+        OwnFigures figures,
+
+        @Schema(description = "Its category, class and gear, all at once; left out, they stay as they were")
+        @Valid
+        @Nullable
+        AirplaneKind kind) {}

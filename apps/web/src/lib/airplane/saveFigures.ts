@@ -71,6 +71,8 @@ export function recordWith(record: Aircraft, changes: FigureChanges, book: Aircr
     surveillance: record.surveillance,
     colour: record.colour,
     figures: ownFiguresWith(record.figures, changes),
+    // Its category, class and gear as they are (left out, the gateway keeps them).
+    kind: null,
   };
 }
 
@@ -104,6 +106,8 @@ export function newRecord(
     surveillance: null,
     colour: null,
     figures: ownFiguresWith(null, all),
+    // Not said until its owner says (14 CFR 61.57(a)(1)(ii)).
+    kind: null,
   };
 }
 

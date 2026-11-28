@@ -1,7 +1,7 @@
 import { startTransition, useActionState, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, describeError } from "../../../lib/api/client";
-import { logbookQuery } from "../../../lib/queryClientRecords";
+import { aircraftListQuery, logbookQuery } from "../../../lib/queryClientRecords";
 import type { LogbookEntry, LogbookEntryRequest } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
 import { toast } from "../../../lib/toast";
@@ -35,6 +35,9 @@ export function useLogbookFlights() {
   // where a failure read "No flights logged yet".
   const asked = useQuery(logbookQuery);
   const [entries, change] = useOptimisticList(asked.data);
+  // The pilot's own airplanes, whose profiles fill in an entry's
+  // category, class and gear (EntryForm).
+  const { data: airplanes } = useQuery(aircraftListQuery);
   const [adding, setAdding] = useState(false);
   // The flight whose row is its form now.
   const [changing, setChanging] = useState<number | null>(null);
@@ -94,6 +97,7 @@ export function useLogbookFlights() {
   return {
     asked,
     entries,
+    airplanes,
     adding,
     /** The plus's popover; closed, its refusal put away. */
     setAdding: (open: boolean) => {

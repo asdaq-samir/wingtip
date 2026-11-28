@@ -15,6 +15,14 @@ describe("the coach's plan", () => {
     expect(rated.ratings).toEqual(["private", "instrument"]);
     expect(rated.held).toEqual([]);
     expect(rated.flightReviewOn).toBe("2024-11-20");
+    // None picked: the newest flight's is judged (14 CFR 61.57(a)(1)(ii)).
+    expect(rated.flying).toBeNull();
+  });
+
+  it("asks for the airplane picked in FPL, in the engine's own words", () => {
+    const flying = { category: "Airplane", aircraftClass: "Single-engine land", tailwheel: true };
+    const ask = askOf([], undefined, undefined, "private", null, [], "2026-11-27", flying);
+    expect(ask.flying).toEqual({ category: "Airplane", class: "Single-engine land", tailwheel: true });
   });
 
   it("guesses a certificate until the pilot picks one", () => {

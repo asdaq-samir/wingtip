@@ -158,6 +158,21 @@ public class Aircraft {
     @Column(length = 40)
     private String colour;
 
+    /** Its category, class and gear (V59; 14 CFR 61.5(b)), which passenger
+     *  currency is judged by (61.57(a)(1)(ii)). Each null until its owner
+     *  says: the engine judges one not said to be a tricycle as a tailwheel. */
+    @Column(length = 20)
+    @Nullable
+    private String category;
+
+    @Column(name = "aircraft_class", length = 24)
+    @Nullable
+    private String aircraftClass;
+
+    @Column
+    @Nullable
+    private Boolean tailwheel;
+
     /** Its handbook figures as its pilot confirmed them from a photographed
      *  page (V36; the engine contract's HandbookFigures), kept as sent;
      *  null until then. Hibernate writes and reads the record as the jsonb
@@ -271,6 +286,14 @@ public class Aircraft {
         this.transponderCheckOn = transponderCheckOn;
         this.eltInspectedOn = eltInspectedOn;
         this.eltBatteryDueOn = eltBatteryDueOn;
+        return this;
+    }
+
+    /** Its category, class and gear, all at once; null for one not said. */
+    public Aircraft kind(@Nullable String category, @Nullable String aircraftClass, @Nullable Boolean tailwheel) {
+        this.category = category;
+        this.aircraftClass = aircraftClass;
+        this.tailwheel = tailwheel;
         return this;
     }
 

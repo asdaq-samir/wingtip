@@ -45,6 +45,19 @@ describe("a flight logged from the track", () => {
     expect(hood).toMatchObject({ approaches: 2, holding: true, tracking: true, totalHours: 4.1, flightId: 7 });
   });
 
+  it("is logged in the airplane's own category, class and gear, until another airplane is typed", () => {
+    const kind = { category: "Airplane", aircraftClass: "Single-engine land", tailwheel: false };
+    // None said: none logged, which counts toward no passenger currency
+    // (14 CFR 61.57(a)(1)(ii)).
+    expect(entryRequest(draft, {}, false, null)).toMatchObject({ category: null, aircraftClass: null, tailwheel: null });
+    expect(entryRequest(draft, {}, false, null, kind)).toMatchObject(kind);
+    expect(entryRequest(draft, { aircraft: "N9TW" }, false, null, kind)).toMatchObject({
+      category: null,
+      aircraftClass: null,
+      tailwheel: null,
+    });
+  });
+
   it("is debriefed against the saved flight between the same fields", () => {
     const flight = (id: number, from: string, to: string) =>
       ({ id, departureIdent: from, destinationIdent: to, stops: [] }) as unknown as FlightSummary;

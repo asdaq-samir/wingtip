@@ -87,6 +87,7 @@ class AircraftPerformanceControllerTest {
                         any(),
                         any(),
                         any(),
+                        any(),
                         any()))
                 .willReturn(new Aircraft(samplePilot(), "N12345", "C172", 110, 8.5, 65.0, 74.0, 11.0, 90.0, 7.5, 40.0));
 

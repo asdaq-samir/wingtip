@@ -34,6 +34,7 @@ function EntryRow({ e, vm }: { e: LogbookEntry; vm: LogbookFlightsModel }) {
           saving={vm.saving}
           onSave={(entry) => vm.update(e.id, entry)}
           onCancel={vm.stopChanging}
+          airplanes={vm.airplanes}
         />
       </div>
     );
@@ -114,6 +115,7 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
                   vm.add(entry);
                 }}
                 onDirtyChange={setTyped}
+                airplanes={vm.airplanes}
               />
             </ResponsivePopoverContent>
           </ResponsivePopover>

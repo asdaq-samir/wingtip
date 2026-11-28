@@ -25,7 +25,8 @@ class AircraftLimitsTest {
     private final AircraftLimits limits = new AircraftLimits(planner);
 
     private static AircraftRequest request(Double power) {
-        return new AircraftRequest("N1", "C172", 110, 8.5, power, null, null, null, null, null, null, null, null, null);
+        return new AircraftRequest(
+                "N1", "C172", 110, 8.5, power, null, null, null, null, null, null, null, null, null, null);
     }
 
     @Test
@@ -76,7 +77,8 @@ class AircraftLimitsTest {
                 null,
                 null,
                 null,
-                new OwnFigures(14000.0, 700.0, 1.4, 9.0, 1600.0, 62000.0));
+                new OwnFigures(14000.0, 700.0, 1.4, 9.0, 1600.0, 62000.0),
+                null);
         assertThat(AircraftLimits.form(r))
                 .containsEntry("serviceCeilingFt", 14000.0)
                 .containsEntry("climbRateFpm", 700.0)

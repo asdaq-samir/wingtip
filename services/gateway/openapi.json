@@ -148,6 +148,10 @@
             "$ref" : "#/components/schemas/InspectionsDto",
             "description" : "Its inspections and tests, as recorded, each with the last day it is good for"
           },
+          "kind" : {
+            "$ref" : "#/components/schemas/AirplaneKind",
+            "description" : "Its category, class and gear as its owner gave them; each null where not said"
+          },
           "openSquawks" : {
             "description" : "Its squawks not yet fixed, newest first",
             "items" : {
@@ -179,7 +183,7 @@
             "description" : "Its last VOR check for IFR (14 CFR 91.171): when, how, where, the bearing error, and the last day it is good for -- 30 days on, if the error was within the check's limit"
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "dueItems", "equipment", "figures", "fuelBurnGph", "handbook", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "dueItems", "equipment", "figures", "fuelBurnGph", "handbook", "id", "inspections", "kind", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
         "type" : "object"
       },
       "AircraftRequest" : {
@@ -226,6 +230,14 @@
             "format" : "double",
             "type" : "number"
           },
+          "kind" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/AirplaneKind"
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "Its category, class and gear, all at once; left out, they stay as they were"
+          },
           "surveillance" : {
             "type" : [ "string", "null" ]
           },
@@ -240,7 +252,30 @@
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "equipment", "figures", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "equipment", "figures", "fuelBurnGph", "kind", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
+        "type" : "object"
+      },
+      "AirplaneKind" : {
+        "description" : "Its category, class and gear (14 CFR 61.5(b), 61.57(a)(1)(ii)); each null where not said",
+        "properties" : {
+          "aircraftClass" : {
+            "description" : "14 CFR 61.5(b)(2) class, \"Single-engine land\"",
+            "maxLength" : 24,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
+          "category" : {
+            "description" : "14 CFR 61.5(b)(1) category, \"Airplane\"",
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
+          "tailwheel" : {
+            "description" : "A tailwheel airplane; null where not said, judged as one (61.57(a)(1)(ii))",
+            "type" : [ "boolean", "null" ]
+          }
+        },
+        "required" : [ "aircraftClass", "category", "tailwheel" ],
         "type" : "object"
       },
       "AppVersionsDto" : {

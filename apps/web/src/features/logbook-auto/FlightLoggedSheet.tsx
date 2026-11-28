@@ -90,7 +90,15 @@ function DraftRows({ log, draft }: { log: AutoLogbook; draft: LogbookDraft }) {
     <>
       <ListGroup title="Flight">
         <FigureRow title="Date" type="date" value={at("flownOn", e.flownOn)} onChange={text("flownOn")} description={why(r, "flownOn")} />
-        <FigureRow title="Airplane" type="text" value={at("aircraft", e.aircraft ?? "")} onChange={text("aircraft")} />
+        {/* Its category, class and gear, from the airplane's profile, said
+            (14 CFR 61.57(a)(1)(ii)). */}
+        <FigureRow
+          title="Airplane"
+          type="text"
+          value={at("aircraft", e.aircraft ?? "")}
+          onChange={text("aircraft")}
+          description={log.kindSaid}
+        />
         <FigureRow title="Route" type="text" value={at("route", e.route)} onChange={text("route")} description={why(r, "distanceNm")} />
       </ListGroup>
       <ListGroup title="Time">
