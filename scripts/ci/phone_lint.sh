@@ -90,7 +90,10 @@ android() {
   jar=$cache/detekt-cli-$v-all.jar
   if [ ! -f "$jar" ]; then
     mkdir -p "$cache" || return 1
-    if ! curl -fsSL -o "$jar.part" "https://repo1.maven.org/maven2/dev/detekt/detekt-cli/$v/detekt-cli-$v-all.jar"; then
+    # Maven Central answers a burst from GitHub's runners with 429 at times
+    # (PR #591's guards, 2026-11-28): tried again, five times five seconds
+    # apart, rather than the guard failing on a rate limit.
+    if ! curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 -o "$jar.part" "https://repo1.maven.org/maven2/dev/detekt/detekt-cli/$v/detekt-cli-$v-all.jar"; then
       echo "phone_lint: could not fetch detekt $v"
       return "$skip"
     fi

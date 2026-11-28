@@ -16,6 +16,13 @@ import {
 import { card, cardWeather, holdPlannerSearch } from "./placeCard";
 import { ownHomeBase, showPage } from "./oneSearch";
 
+// cardWeather's handler asks the planner for the card's real answer before it changes the weather; a card still asking as the test
+// ends found the page closed and failed the job with no red test (route.fetch: Test ended, KDLH, PR #591's shard 9): the handlers
+// taken off, their errors let go, as each test ends, as ifr.spec does.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 test("the airport search answers from the phone's own copy, asking the planner nothing as it is typed", async ({ page }) => {
   // The planner's index (wingtip.airports.search_index), two fields of it.
   await page.route(
