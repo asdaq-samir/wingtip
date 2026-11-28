@@ -10,10 +10,18 @@ struct UntilText: View {
     /// this month, 14 CFR 61.57(c)(1)): "From 1 Nov 2026" in orange, as the
     /// pilot is not current yet.
     var from: String? = nil
+    /// What the logbook does not say where it would make the pilot current
+    /// (the gateway's "Can't tell: ..." for passengers, 14 CFR
+    /// 61.57(a)(1)): "Can't tell" in orange, never "Not current" on facts
+    /// not known, nor current on a guess.
+    var unknown: String? = nil
 
     var body: some View {
         let current = Day.current(date)
-        if current, let from, from > Day.today() {
+        if !current, unknown != nil {
+            Label("Can't tell", systemImage: "questionmark.circle.fill")
+                .foregroundStyle(WingtipInk.caution)
+        } else if current, let from, from > Day.today() {
             Label("From \(Day.said(from))", systemImage: "exclamationmark.triangle.fill")
                 .monospacedDigit()
                 .foregroundStyle(WingtipInk.caution)

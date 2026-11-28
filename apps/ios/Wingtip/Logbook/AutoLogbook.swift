@@ -95,7 +95,11 @@ final class AutoLogbook {
     /// currency then asked again by `logbookChanged`.
     func log(logbookChanged: () -> Void) async {
         guard let draft else { return }
-        await log(Self.entryRequest(draft, edits: edits, byInstruments: byInstruments, flightId: linked), logbookChanged: logbookChanged)
+        // The airplane's category, class and gear where the logbook has
+        // said them for its N-number (61.57(a)(1)(ii)); else none.
+        let aircraft = edits.aircraft ?? draft.entry.aircraft
+        let kind = AirplaneKind.of(try? await Gateway.logbook(), tail: aircraft)
+        await log(Self.entryRequest(draft, edits: edits, byInstruments: byInstruments, flightId: linked, kind: kind), logbookChanged: logbookChanged)
     }
 
     /// The entry logged; its track sent to the saved flight, or, where that
@@ -163,11 +167,15 @@ final class AutoLogbook {
 
     /// The entry the gateway keeps: the draft's columns with the pilot's
     /// changes, and 61.57(c)'s approaches, holding and tracking only where
-    /// flown by instruments (the web's entryRequest).
-    nonisolated static func entryRequest(_ draft: Draft, edits: Edits, byInstruments: Bool, flightId: Int?) -> LogbookEntryRequest {
+    /// flown by instruments (the web's entryRequest). Its full stops are the
+    /// track's landings to a stop (61.57(b)'s at night) while the pilot has
+    /// not changed its landings, which then no longer match the track's;
+    /// its category, class and gear the airplane's (`kind`) where known.
+    nonisolated static func entryRequest(_ draft: Draft, edits: Edits, byInstruments: Bool, flightId: Int?,
+                                         kind: AirplaneKind? = nil) -> LogbookEntryRequest {
         let e = draft.entry
         let aircraft = edits.aircraft ?? e.aircraft
-        return LogbookEntryRequest(
+        var request = LogbookEntryRequest(
             flownOn: edits.flownOn ?? e.flownOn, aircraft: aircraft?.isEmpty == true ? nil : aircraft, aircraftType: e.aircraftType,
             route: edits.route ?? e.route, remarks: edits.remarks ?? e.remarks,
             totalHours: edits.totalHours ?? e.totalHours, nightHours: edits.nightHours ?? e.nightHours,
@@ -176,7 +184,11 @@ final class AutoLogbook {
             toweredLandings: e.toweredLandings, distanceNm: e.distanceNm, longestLegNm: e.longestLegNm,
             approaches: byInstruments ? draft.instrument.approaches : 0,
             holding: byInstruments && draft.instrument.holding, tracking: byInstruments && draft.instrument.tracking,
-            airHours: e.airHours, touchAndGoes: e.touchAndGoes, fromTrack: true, flightId: flightId)
+            airHours: e.airHours, touchAndGoes: e.touchAndGoes, fromTrack: true, flightId: flightId).flying(kind)
+        if edits.dayLandings == nil, edits.nightLandings == nil {
+            request.fullStopLandings = draft.landings.count { $0.kind == "full_stop" }
+        }
+        return request
     }
 
     /// The saved flight this one was most likely flown as: the newest

@@ -83,6 +83,16 @@ struct AutoLogbookTests {
         #expect(sent.approaches == 0 && !sent.holding)
         let flown = AutoLogbook.entryRequest(draft, edits: edits, byInstruments: true, flightId: nil)
         #expect(flown.approaches == draft.instrument.approaches && flown.holding == draft.instrument.holding && flown.flightId == nil)
+        // Its full stops the track's (61.57(b)), its airplane's kind where
+        // the logbook says it, none where not (61.57(a)(1)(ii)).
+        #expect(sent.fullStopLandings == draft.landings.count { $0.kind == "full_stop" })
+        #expect(sent.category == nil && sent.aircraftClass == nil && sent.tailwheel == nil)
+        let kind = AirplaneKind(category: "airplane", aircraftClass: "single-engine land", tailwheel: false)
+        let known = AutoLogbook.entryRequest(draft, edits: edits, byInstruments: false, flightId: nil, kind: kind)
+        #expect(known.category == "airplane" && known.aircraftClass == "single-engine land" && known.tailwheel == false)
+        // Landings changed by hand no longer match the track's: none.
+        edits.dayLandings = 3
+        #expect(AutoLogbook.entryRequest(draft, edits: edits, byInstruments: false, flightId: nil).fullStopLandings == nil)
     }
 
     /// No signal after landing: the entry is logged, the track's upload

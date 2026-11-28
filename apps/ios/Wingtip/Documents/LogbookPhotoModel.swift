@@ -50,7 +50,9 @@ final class LogbookPhotoModel {
     /// The gateway's entry for a row, as the engine gives it (every
     /// figure the page does not give nought); nil for a row with no date.
     /// A paper page's row is no saved flight's, so it carries no flight.
-    static func request(_ e: LogbookEntryDraft) -> LogbookEntryRequest? {
+    /// Its airplane's category, class and gear are the logbook's for the
+    /// N-number the row gives (`kinds`, AirplaneKind), else none.
+    static func request(_ e: LogbookEntryDraft, kinds: [LogbookEntry]? = nil) -> LogbookEntryRequest? {
         guard let day = e.flownOn else { return nil }
         return LogbookEntryRequest(
             flownOn: day, aircraft: e.aircraft, aircraftType: e.aircraftType, route: e.route, remarks: e.remarks,
@@ -59,18 +61,18 @@ final class LogbookPhotoModel {
             dayLandings: Int(e.dayLandings), nightLandings: Int(e.nightLandings), toweredLandings: Int(e.toweredLandings),
             distanceNm: e.distanceNm, longestLegNm: e.longestLegNm, approaches: Int(e.approaches),
             holding: e.holding, tracking: e.tracking, airHours: e.airHours,
-            touchAndGoes: Int(e.touchAndGoes), fromTrack: e.fromTrack)
+            touchAndGoes: Int(e.touchAndGoes), fromTrack: e.fromTrack).flying(AirplaneKind.of(kinds, tail: e.aircraft))
     }
 
     /// The confirmed rows logged one by one, through `add` (the gateway's
     /// POST /api/logbook); true when every one went in. The first that is
     /// refused stops the rest, and says which.
-    func logConfirmed(_ add: (LogbookEntryRequest) async throws -> Void) async -> Bool {
+    func logConfirmed(entries: [LogbookEntry]? = nil, _ add: (LogbookEntryRequest) async throws -> Void) async -> Bool {
         saving = true
         defer { saving = false }
         problem = nil
         for i in toLog {
-            guard let request = Self.request(rows[i].entry) else { continue }
+            guard let request = Self.request(rows[i].entry, kinds: entries) else { continue }
             do {
                 try await add(request)
                 logged.insert(i)
