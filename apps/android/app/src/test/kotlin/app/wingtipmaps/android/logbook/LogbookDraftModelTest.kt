@@ -88,7 +88,7 @@ class LogbookDraftModelTest {
             )
         }
         override suspend fun entries() = emptyList<LogbookEntryDto>()
-        override suspend fun currency() = CurrencyDto(
+        override suspend fun currency(toFly: AirplaneKind?) = CurrencyDto(
             approachesInWindow = 1, crossCountryHours = 1.4, flights = 1, holdingInWindow = false, landings = 1,
             nightHours = 0.0, totalHours = 1.4, trackingInWindow = true, dayPassengersUntil = "2027-02-07",
         )

@@ -62,6 +62,9 @@ object DraftEntry {
         }
     }
 
+    /** A landing to a full stop, the engine's LogbookLanding kind. */
+    private const val FULL_STOP = "full_stop"
+
     /** Hours to the tenth, as a logbook writes them. */
     fun tenths(hours: Double): String = String.format(Locale.US, "%.1f", hours)
 
@@ -70,9 +73,12 @@ object DraftEntry {
      * with the pilot's changes (a figure that does not read as one keeps
      * the draft's), and 61.57(c)'s approaches, holding and tracking only
      * where the pilot says it was flown by instruments -- no track shows
-     * that (14 CFR 61.51(g)(1)).
+     * that (14 CFR 61.51(g)(1)). Its full stops are the track's landings
+     * to a stop (61.57(b)'s at night); its category, class and gear the
+     * airplane's (`kind`) where the logbook has said them for its
+     * N-number, else none (61.57(a)(1)).
      */
-    fun request(draft: LogbookDraft, edits: Map<DraftField, String>, byInstruments: Boolean, flightId: Long? = null): LogbookEntryRequest {
+    fun request(draft: LogbookDraft, edits: Map<DraftField, String>, byInstruments: Boolean, flightId: Long? = null, kind: AirplaneKind? = null): LogbookEntryRequest {
         val e = draft.entry
         fun hours(f: DraftField, had: Double) = edits[f]?.let(Typed::number)?.takeIf { it >= 0 } ?: had
         fun count(f: DraftField, had: Int) = edits[f]?.trim()?.toIntOrNull()?.takeIf { it >= 0 } ?: had
@@ -98,6 +104,11 @@ object DraftEntry {
             touchAndGoes = e.touchAndGoes,
             fromTrack = true,
             flightId = flightId,
+            category = kind?.category,
+            aircraftClass = kind?.aircraftClass,
+            tailwheel = kind?.tailwheel,
+            // Landings edited by hand no longer match the track's: its full stops are then not known.
+            fullStopLandings = draft.landings.count { it.kind == FULL_STOP }.takeIf { DraftField.DAY_LANDINGS !in edits && DraftField.NIGHT_LANDINGS !in edits },
         )
     }
 

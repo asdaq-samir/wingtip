@@ -168,6 +168,15 @@ class LogbookDraftModel(
 
     fun byInstruments(yes: Boolean) = _state.update { it.copy(byInstruments = yes) }
 
+    /** The pilot's logbook, for an airplane's category, class and gear; none where it can't be read. */
+    private suspend fun entriesOrNone() = try {
+        source.entries().orEmpty()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        emptyList()
+    }
+
     /** Log: the entry kept by the gateway, linked to its saved flight; the
      *  flown track sent to that flight, or, where that fails, kept on the
      *  phone (TrackShelf) before the recorder lets its own copy go, and
@@ -182,7 +191,9 @@ class LogbookDraftModel(
         viewModelScope.launch {
             try {
                 val linked = s.linked
-                val entry = source.add(DraftEntry.request(draft, s.edits, s.byInstruments, linked))
+                // The airplane's category, class and gear where the logbook has said them for its N-number.
+                val kind = AirplaneKind.of(entriesOrNone(), (s.edits[DraftField.AIRPLANE] ?: draft.entry.aircraft)?.trim())
+                val entry = source.add(DraftEntry.request(draft, s.edits, s.byInstruments, linked, kind))
                 if (linked != null) {
                     val track = SavedTrack(
                         points = flight.recorded.value.points.map { SavedTrackPoint(t = it.t.toLong(), lat = it.lat, lon = it.lon, altFt = it.altFt) },
@@ -199,7 +210,7 @@ class LogbookDraftModel(
                 flight.forget()
                 LogbookChanged.changed()
                 val currency = try {
-                    source.currency()?.let(CurrencyWords::lines).orEmpty()
+                    source.currency(kind)?.let(CurrencyWords::lines).orEmpty()
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
