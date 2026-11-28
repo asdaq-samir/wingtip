@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .. import tracing
 from ..geo import distance_nm
 from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _number, _wall
-from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced
+from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, MIN_GAP_S, _paced
 from .globe import _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .recorded import _last_recorded, _record, followed
@@ -102,13 +102,14 @@ def _follow_due(hex_id: str) -> bool:
     return True
 
 
-def _lol_by_hex(hex_id: str) -> tuple[list[dict], bool]:
+def _lol_by_hex(hex_id: str, wait_most_s: float) -> tuple[list[dict], bool]:
     """(adsb.lol's API's airplanes by this address, as `_aircraft` gives
-    them, whether it heard the airplane at all, on the ground too). Only a
-    turn that is free now is taken: the background's asks leave the next one
-    to the map's regions and a pilot's search (C4). Raises TrafficUnavailable
-    where it turns the planner away or has no free turn."""
-    answer = _paced(FIND_URL.format(by="hex", value=hex_id), wait_most_s=0.0)
+    them, whether it heard the airplane at all, on the ground too). A turn
+    no further off than `wait_most_s` is taken: the followed airplanes take
+    only one free now, leaving the next to the map's regions and a pilot's
+    search (C4); an open card waits its share. Raises TrafficUnavailable
+    where it turns the planner away or has no turn in time."""
+    answer = _paced(FIND_URL.format(by="hex", value=hex_id), wait_most_s=wait_most_s)
     entries = answer.get("ac") if isinstance(answer, dict) else None
     if not isinstance(entries, list):
         return [], False
@@ -157,7 +158,7 @@ def follow_round() -> int:
                 if asks >= FOLLOW_ASKS_MAX:
                     raise TrafficUnavailable("the round's turns are spent")
                 asks += 1
-                planes = _lol_by_hex(hex_id)[0]
+                planes = _lol_by_hex(hex_id, wait_most_s=0.0)[0]
             except TrafficUnavailable:
                 with _LOCK:
                     _FOLLOW_ASKED.pop(hex_id, None)
@@ -200,12 +201,19 @@ def _watch(hex_id: str) -> None:
         return
     now = _clock()
     with _LOCK:
-        if now - _WATCH_ASKED.get(hex_id, -math.inf) < WATCH_GAP_S:
+        # A second short of the gap: the round itself runs every WATCH_GAP_S,
+        # so the scheduler's jitter would skip every other one.
+        if now - _WATCH_ASKED.get(hex_id, -math.inf) < WATCH_GAP_S - 1:
             return
         _WATCH_ASKED[hex_id] = now
     answered, heard = True, False
     try:
-        planes, heard = _lol_by_hex(hex_id)
+        # Up to two of adsb.lol's gaps: the open cards of a round (asked
+        # together) share its free turns between them and the map's
+        # regions, booked up to 10 s ahead, rather than all but the first
+        # finding none and, after LOL_MISSED_MAX rounds, spending ADS-B
+        # Exchange's month (10,000 calls) every round.
+        planes, heard = _lol_by_hex(hex_id, wait_most_s=2 * MIN_GAP_S)
     except TrafficUnavailable:
         planes, answered = [], False
     with _LOCK:

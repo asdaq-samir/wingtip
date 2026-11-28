@@ -81,17 +81,20 @@ class SharedGate:
 
     @property
     def until(self) -> float:
-        return _gate(self.name)[1] - self._wall_less_clock()
+        # Clamped as _take clamps it: a clock that stepped back leaves no hold longer than MAX_HOLD_S from now.
+        return min(_gate(self.name)[1], time.time() + MAX_HOLD_S) - self._wall_less_clock()
 
     def held(self, now: float) -> bool:
         """Whether a refusal's hold, either process's, still runs."""
         return now < self.until
 
     def hold(self, seconds: float, now: float) -> None:
-        """Not asked for `seconds` from now; a longer hold already set is kept."""
+        """Not asked for `seconds` from now; a longer hold already set is kept,
+        clamped to MAX_HOLD_S from now where the wall clock stepped back."""
         store._write(
-            f"INSERT INTO gates (name, until) VALUES (?, ?) {_LATER.format('until')}",
-            (self.name, now + min(seconds, MAX_HOLD_S) + self._wall_less_clock()),
+            "INSERT INTO gates (name, until) VALUES (?, ?) "
+            "ON CONFLICT (name) DO UPDATE SET until = max(min(coalesce(gates.until, excluded.until), ?), excluded.until)",
+            (self.name, now + min(seconds, MAX_HOLD_S) + self._wall_less_clock(), time.time() + MAX_HOLD_S),
         )
 
     def asked(self, now: float) -> None:

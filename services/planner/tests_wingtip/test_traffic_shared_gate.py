@@ -87,6 +87,12 @@ def test_a_wall_clock_that_stepped_back_does_not_silence_adsb_lol(shared):
     assert slot is not None and slot - shared.now <= shared_gate.MAX_AHEAD_S + adsb_lol.MIN_GAP_S + 1
     gate.hold(10**7, shared.now)
     assert gate.until - shared.now <= shared_gate.MAX_HOLD_S + 1
+    # A hold stored far ahead before the step is read, and kept by a new hold, as an hour from now at most.
+    store._write("UPDATE gates SET until = ? WHERE name = 'adsb.lol'", (wall + 86400,))
+    assert gate.until - shared.now <= shared_gate.MAX_HOLD_S + 1
+    gate.hold(5.0, shared.now)
+    (until,) = store._query("SELECT until FROM gates WHERE name = 'adsb.lol'")[0]
+    assert until - time.time() <= shared_gate.MAX_HOLD_S + 1
 
 
 class _Ok:
@@ -166,3 +172,37 @@ def test_the_open_cards_are_asked_for_together(clock, monkeypatch):
     for hex_id in ("a128b9", "a0b7d8"):
         watched._WATCHED[hex_id] = clock.now
     assert watched.watch_round() == 2 and sorted(asked) == ["a0b7d8", "a128b9"]
+
+
+def test_open_cards_in_one_round_share_adsb_lols_turns_rather_than_spend_ads_b_exchange(clock, monkeypatch):
+    """Each open card waits up to two of adsb.lol's gaps for its turn: the
+    second card of a round goes a gap after the first, where with no wait it
+    found none and, LOL_MISSED_MAX rounds on, asked ADS-B Exchange each round."""
+
+    class Heard(_Ok):
+        def __init__(self, url):
+            self.hex = url.rsplit("/", 1)[-1]
+
+        def json(self):
+            return {"ac": [{**CESSNA, "hex": self.hex}]}
+
+    monkeypatch.setattr(adsb_lol.outside, "live_get", lambda url, *a, **kw: Heard(url))
+    stand_in(monkeypatch, "_adsbx", lambda path, search=False: pytest.fail("asked ADS-B Exchange"))
+    start = clock.now
+    for hex_id in ("a128b9", "a0b7d8"):
+        watched._watch(hex_id)
+        assert watched._answered(hex_id)
+    assert clock.now == pytest.approx(start + adsb_lol.MIN_GAP_S)
+
+
+def test_a_card_is_asked_again_in_the_next_round_though_the_scheduler_ran_it_a_little_early(clock, monkeypatch):
+    waits = []
+    stand_in(monkeypatch, "_paced", lambda url, wait_most_s=None, **kw: waits.append(wait_most_s) or {"ac": []})
+    stand_in(monkeypatch, "_adsbx", lambda path, search=False: [])
+    watched._watch("a128b9")
+    clock.now += watched.WATCH_GAP_S - 0.5
+    watched._watch("a128b9")
+    assert waits == [2 * adsb_lol.MIN_GAP_S] * 2
+    clock.now += 0.4
+    watched._watch("a128b9")
+    assert len(waits) == 2
