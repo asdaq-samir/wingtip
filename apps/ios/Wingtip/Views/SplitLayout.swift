@@ -97,7 +97,8 @@ struct SplitLayout<Map: View>: View {
     /// The sidebar put away by a card opened in a narrow window, to come
     /// back when the card goes (fit).
     @State private var hidForCard = false
-    /// The split view built, once the window's columns have settled (fit).
+    /// The split view built, once the window's columns have settled (fit),
+    /// or a second after the first layout at the latest (body).
     @State private var settled = false
     /// The detail's width, the map's and the chart's beside it together.
     @State private var detailWidth: CGFloat = 0
@@ -106,6 +107,14 @@ struct SplitLayout<Map: View>: View {
     var body: some View {
         // Nothing but the window's ground until the columns settle (fit).
         Group { if settled { columnsView } else { Color.clear } }
+            // Built within a second whatever the columns do: where iPadOS
+            // keeps the empty inspector's column (an upright 11-inch, 834
+            // points against a 554-point split, no card up), fit never
+            // settles, and the window stayed blank.
+            .task {
+                try? await Task.sleep(for: .seconds(1))
+                settled = true
+            }
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { split = $0 }
             // The one search asked for (⌘F, a link, the microphone) with the
             // sidebar put away: the sidebar, where the search is, comes back.
