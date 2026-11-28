@@ -73,13 +73,14 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   // Landed at and left again, each with its own runway (the owner's
   // "arrival first with a runway and a separate departure with a runway").
   const arrive = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KMSN · Arrive" });
-  const leave = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KMSN · Depart" });
+  // A stop's line is one region, named for its landing; its takeoff a section of its own under it.
+  const leave = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KMSN takeoff", exact: true });
   await expect(arrive).toBeVisible();
   await expect(leave).toBeVisible();
   // Its takeoff runway a pill of its own on Takeoff's line, its runways in
   // its menu (RunwayPill, 2026-11-25).
   const takeoff = leave.getByTestId("runway-pill");
-  await expect(takeoff).toHaveAccessibleName(/^KMSN takeoff runway: /);
+  await expect(takeoff).toHaveAccessibleName(/^RWY\b.*, KMSN takeoff runway, /);
   // The runway into the wind may be picked for the pilot as the wind comes
   // in (ProceduresRoute's intoWind): another picked until the address
   // keeps it.
@@ -97,11 +98,11 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   // The figures to the next landing, KMSN, its time that flight's; a tap on To, the destination and the whole route's distance.
   await expect(sheetFoot(page).getByTestId("navlog-to")).toHaveText("KMSN", { timeout: slow(30000) });
   await expect(sheetFoot(page).getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
-  await expect(sideDrawer(page).getByTestId("to-toggle")).toHaveAccessibleName(/^Leg, /);
-  await sideDrawer(page).getByTestId("to-toggle").click();
+  await expect(sheetFoot(page).getByTestId("to-toggle")).toHaveAccessibleName(/^Leg, /);
+  await sheetFoot(page).getByTestId("to-toggle").click();
   await expect(sheetFoot(page).getByTestId("navlog-to")).toHaveText("KDLH");
-  await expect(sideDrawer(page).getByTestId("to-toggle")).toHaveAccessibleName(/^Dest, /);
-  await sideDrawer(page).getByTestId("to-toggle").click();
+  await expect(sheetFoot(page).getByTestId("to-toggle")).toHaveAccessibleName(/^Dest, /);
+  await sheetFoot(page).getByTestId("to-toggle").click();
 
   // At half (a phone's pill is one row), the figures: the distance among them.
   await grabberTo(page, "half");
@@ -172,7 +173,8 @@ test("the route's box reads its points in order with no arrows, a pill's tap its
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]dest=/);
   await expect(page).toHaveURL(/[?&]dep=KRYV(&|$)/);
-  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("data-placeholder", "Destination");
+  // No word in the field, the owner's (2026-11-23): a reader is told it takes the destination.
+  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAccessibleName("The destination");
   // And the last: no route, the empty route's card to start another, its
   // field folded behind the box's toggle at the Destination's end.
   await lines.getByRole("button", { name: "Departure KRYV" }).focus();
@@ -208,7 +210,7 @@ test("a cleared route's box takes the departure first, then asks for the destina
   await field.press("Enter");
   await expect(page).toHaveURL(/[?&]dep=KMSN(&|$)/);
   await expect(page).not.toHaveURL(/[?&]dest=/);
-  await expect(field).toHaveAttribute("data-placeholder", "Destination");
+  await expect(field).toHaveAccessibleName("The destination");
 });
 
 // Typed a key at a time, as a phone's keyboard sends it, the suggestions

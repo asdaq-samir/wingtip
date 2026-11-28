@@ -67,8 +67,10 @@ test("thin on the tab bar at half and all the way up, the figures alone at the p
   expect(s.y + s.height).toBeLessThanOrEqual(b.y + 1);
   // Opaque, nothing faded (the owner, 2026-11-23: "the strip fades the route buttons above it").
   expect(await bar(page).evaluate((el) => getComputedStyle(el, "::before").content)).toMatch(/none|normal/);
-  // One thin line (the owner, 2026-11-22: "make the figures strip very thin"), each name short and in sight.
-  expect(s.height, "thin at half").toBeLessThanOrEqual(32);
+  // One thin line (the owner, 2026-11-22: "make the figures strip very thin"), each name short and in sight:
+  // the figures' own line, the strip's eight over it its room from the route (9240c429a, the owner's).
+  const line = async () => (await strip(page).getByTestId("flight-line").boundingBox())?.height ?? 0;
+  expect(await line(), "thin at half").toBeLessThanOrEqual(32);
   for (const name of await strip(page).locator("dt").all()) await expect(name).toBeVisible();
   const names = (await strip(page).locator("dt").allInnerTexts()).join(" ");
   for (const short of ["Dist", "ETE"]) expect(names).toContain(short);
@@ -79,7 +81,7 @@ test("thin on the tab bar at half and all the way up, the figures alone at the p
   const pill = (await strip(page).boundingBox())!;
   expect(pill.y + pill.height).toBeGreaterThan(page.viewportSize()!.height - 60);
   await grabberTo(page, "full");
-  await expect.poll(height, { message: "thin all the way up" }).toBeLessThanOrEqual(32);
+  await expect.poll(line, { message: "thin all the way up" }).toBeLessThanOrEqual(32);
   await expect(tabs).toBeVisible();
 });
 
@@ -111,7 +113,7 @@ test("pulled slowly down to the pill, the bar stays still and its size holds unt
   await expect(page.getByTestId("fpl-actions")).toBeHidden();
 });
 
-test("stepped from the pill to half, the strip changes size only once the sheet is at rest, and the tab bar is the same one", async ({
+test("stepped from the pill to half, the strip changes size once, as the step is taken, never back, and the tab bar is the same one", async ({
   page,
 }) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
@@ -142,9 +144,13 @@ test("stepped from the pill to half, the strip changes size only once the sheet 
   const last = s.at(-1)!;
   const rested = s.findIndex((f) => Math.abs(f.top - last.top) < 0.5);
   expect(rested, "the sheet came to rest in the frames sampled").toBeGreaterThan(0);
-  // While the sheet moved, the pill's size; from soon after it rests, thin.
-  for (const f of s.slice(1, rested)) expect(f.h, "the pill's size while it moves").toBeGreaterThan(40);
-  expect(last.h).toBeLessThanOrEqual(32);
+  // The bar takes the size the sheet is going to as the step is taken
+  // (FootBar, b947f97b1): thin by the time the sheet rests, and never the
+  // pill's size again once thin.
+  const thin = s.findIndex((f) => f.h <= 40);
+  expect(thin).toBeGreaterThanOrEqual(0);
+  expect(thin).toBeLessThanOrEqual(rested);
+  for (const f of s.slice(thin)) expect(f.h, "one change, never back").toBeLessThanOrEqual(40);
   await expect(page.locator('[data-testid="fpl-actions"][data-probe]')).toHaveCount(1);
 });
 
@@ -165,7 +171,8 @@ test("with the box turned into the route's field, typed in, the figures stay thi
     await expect(strip(page).getByTestId("navlog-ete")).toBeVisible();
     await expect(async () => {
       const box = (await strip(page).boundingBox())!;
-      expect(box.height, `thin at ${size}`).toBeLessThanOrEqual(32);
+      const figures = (await strip(page).getByTestId("flight-line").boundingBox())!;
+      expect(figures.height, `thin at ${size}`).toBeLessThanOrEqual(32);
       const tabs = (await page.getByTestId("fpl-actions").boundingBox())!;
       expect(box.y + box.height, `on the tabs at ${size}`).toBeLessThanOrEqual(tabs.y + 1);
     }).toPass({ timeout: slow(10_000) });

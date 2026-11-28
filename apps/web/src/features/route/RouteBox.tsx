@@ -275,6 +275,8 @@ export default function RouteBox({
                       onPointerDown={onPress}
                       onClick={onFieldClick}
                       data-testid="route-type"
+                      // What the field asks for, read by the browser specs (stops, stops-box).
+                      data-placeholder={placeholder}
                       data-typed={typed.text}
                       className={cn(
                         "min-h-7 min-w-full font-sans font-semibold uppercase outline-none",

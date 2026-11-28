@@ -47,15 +47,16 @@ test("the route box's pills read left to right with no arrows, each the same gap
   await expect(slide.locator("[data-point]")).toHaveCount(3);
   // ForeFlight's route editor (the owner, 2026-11-23): no arrow between two
   // pills, the gap between each two the same, gap-2's 8; and each ident as
-  // close to its mark as the others are (C81 sat 14 points short once).
+  // far in from its pill's edge as the others are (C81 sat 14 points short
+  // once). The pill is its ident alone, no mark (b1ebeeb1b, "Keep it simple
+  // pills"): its text first, a caution's "!" after it.
   await expect(slide.getByTestId("route-arrow")).toHaveCount(0);
   const pills = await slide.evaluate((el) =>
     [...el.querySelectorAll<HTMLElement>("[data-point]")].map((pill) => {
       const box = pill.getBoundingClientRect();
-      const mark = pill.firstElementChild!.getBoundingClientRect();
       const range = document.createRange();
-      range.selectNodeContents(pill.lastChild!);
-      return { left: box.left, right: box.right, top: box.top, before: range.getBoundingClientRect().left - mark.right };
+      range.selectNodeContents(pill.firstChild!);
+      return { left: box.left, right: box.right, top: box.top, before: range.getBoundingClientRect().left - box.left };
     }),
   );
   const befores = pills.map((p) => p.before);

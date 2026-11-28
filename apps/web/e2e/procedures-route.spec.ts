@@ -166,6 +166,9 @@ test("a procedure picked has its fixes on the route's line before its field's, a
       return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
     },
   );
+  // auth.setup starts every test with the fields open (wingtip.fieldsOpen);
+  // here the field's line starts folded, as a pilot's does.
+  await page.addInitScript(() => localStorage.removeItem("wingtip.fieldsOpen"));
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   await openTab(page, "Nav Log");

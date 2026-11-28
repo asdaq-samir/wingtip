@@ -24,7 +24,8 @@ for (const size of ["half", "full"] as const)
     const before = (await title.boundingBox())!;
     const scroller = page
       .locator("[data-sheet-scroll]")
-      .filter({ has: page.locator("[data-foot-room]") })
+      // The scroller FPL's title is in: the foot's room is the phone's sheet's alone.
+      .filter({ has: page.getByTestId("fpl-head") })
       .first();
     // A finger's flick up, well past the end, with the wheel too.
     const box = (await scroller.boundingBox())!;
@@ -121,6 +122,7 @@ test.describe("at 375 points", () => {
     for (const b of rows) expect(Math.abs(mid(b) - mid(rows[0]!)), "one line").toBeLessThan(4);
     const card = (await page.getByTestId("route-summary").boundingBox())!;
     const t = rows[1]!;
-    expect(card.x + card.width - (t.x + t.width), "at the box's right").toBeLessThan(16);
+    // TimelineRows' TIMELINE_END, pr-4, at the owner's ask, and the card's 1 pt border.
+    expect(card.x + card.width - (t.x + t.width), "16 in, inside the card's border").toBeCloseTo(17, 0);
   });
 });
