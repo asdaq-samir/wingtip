@@ -278,7 +278,7 @@ class InspectionsAsk(BaseModel):
     falls due (`due`)."""
 
     tailNumber: str | None = None
-    forHire: bool = False
+    forHire: bool | None = None
     eltBatteryDueOn: date | None = None
     kept: list[KeptItem] = []
 

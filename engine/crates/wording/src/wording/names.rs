@@ -100,7 +100,17 @@ pub fn name_case(text: &str, kind: Kind) -> String {
             && !bare.is_empty()
             && bare.chars().all(char::is_alphabetic)
             && !WORDS.contains(&bare);
-        if KEPT.contains(&bare) || (kind == Kind::Facility && FACILITY.contains(&bare)) || w.chars().any(|c| c.is_ascii_digit()) || initials
+        // An acronym the registry spells in capitals ("TVPX AIRCRAFT
+        // SOLUTIONS INC"): three letters or more with no vowel, Y counted
+        // as one so "LYNN" and "WYNN" stay names, can be no word to case.
+        let acronym = bare.chars().count() >= 3
+            && bare.chars().all(|c| c.is_ascii_uppercase())
+            && !bare.chars().any(|c| matches!(c, 'A' | 'E' | 'I' | 'O' | 'U' | 'Y'));
+        if KEPT.contains(&bare)
+            || acronym
+            || (kind == Kind::Facility && FACILITY.contains(&bare))
+            || w.chars().any(|c| c.is_ascii_digit())
+            || initials
         {
             w.to_owned()
         } else {
@@ -197,6 +207,8 @@ mod tests {
         assert_eq!(name_case("JOE SMITH III", Kind::Person), "Joe Smith III");
         assert_eq!(name_case("IAE INTERNATIONAL AERO", Kind::Maker), "IAE International Aero");
         assert_eq!(name_case("JOE  BLOGGS", Kind::Person), "Joe Bloggs");
+        assert_eq!(name_case("TVPX AIRCRAFT SOLUTIONS INC TRUSTEE", Kind::Person), "TVPX Aircraft Solutions Inc Trustee");
+        assert_eq!(name_case("LYNN WYNN", Kind::Person), "Lynn Wynn");
         assert_eq!(name_case("DE HAVILLAND", Kind::Maker), "De Havilland");
         assert_eq!(name_case("DULUTH RCO", Kind::Facility), "Duluth RCO");
         assert_eq!(name_case("2627 HOLLYWOOD WAY", Kind::Street), "2627 Hollywood Way");
