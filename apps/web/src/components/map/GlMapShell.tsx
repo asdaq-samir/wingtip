@@ -14,7 +14,7 @@ import { useIsMobile } from "../../hooks/use-mobile";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { useTappedInSight } from "./cardRoom";
 import { useSheetSlide } from "./useSheetSlide";
-import { REVEAL_EVENT, STYLE_LOADED, loaded, makeMap, overlaysOf, padOf, picturesDrawn, picturesReady } from "./makeMap";
+import { REVEAL_EVENT, loaded, makeMap, overlaysOf, padOf, picturesDrawn, picturesReady } from "./makeMap";
 import type { Course } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { chartQuery, overlayTilesQuery } from "../../lib/queryClient";
@@ -147,13 +147,13 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       setMap(m);
     };
     if (loaded.has(m)) take();
-    else m.once(STYLE_LOADED, take);
+    else m.once("load", take);
     // A map taken up from the last tree is shown already.
     const shown = () => setRevealed(true);
     if ("revealed" in holder.dataset) shown();
     else holder.addEventListener(REVEAL_EVENT, shown, { once: true });
     return () => {
-      m.off(STYLE_LOADED, take);
+      m.off("load", take);
       holder.removeEventListener(REVEAL_EVENT, shown);
       setMap(null);
       // Kept a moment for the next tree to take up, then let go.
