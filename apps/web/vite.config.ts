@@ -23,6 +23,7 @@ import { licences } from "./vite-plugins/licences.ts";
 import { compressed } from "./vite-plugins/compression.ts";
 import { claudeView } from "./vite-plugins/claudeView.ts";
 import { firstFrame } from "./vite-plugins/firstFrame.ts";
+import { TEST_SETUP } from "./vite-plugins/testSetup.ts";
 
 // The page reader's files (features/airplane/lib/readPage), from node_modules into the
 // build's tesseract/ under their own names, where tesseract.js asks for
@@ -390,13 +391,7 @@ export default defineConfig({
   test: {
     environment: "node",
     exclude: ["**/node_modules/**", "e2e/**"],
-    setupFiles: [
-      "src/test/storage.ts",
-      "src/test/animations.ts",
-      "src/test/ranges.ts",
-      "src/lib/engine/vitestSetup.ts",
-      "src/test/guards.ts",
-    ],
+    setupFiles: TEST_SETUP,
     sequence: { shuffle: true },
     dangerouslyIgnoreUnhandledErrors: false,
   },
