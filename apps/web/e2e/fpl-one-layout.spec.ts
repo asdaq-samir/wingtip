@@ -172,12 +172,15 @@ test.describe("/app/plan", () => {
     await expect(toggle).toHaveAttribute("aria-pressed", "false");
     await expect(toggle).toBeFocused();
 
-    // A line opened leaves the sheet where it is: at half again, where
-    // More's menu took it all the way up for the route's field (openRoute).
+    // At half every line is folded, and a line opened there takes the
+    // sheet all the way up to show it whole (the owner, 2026-11-24,
+    // fe2473214; TimelineRoute's openLine), its runways and procedures out.
     await grabberTo(page, "half");
     await expect(drawer).toHaveAttribute("data-panel", "half");
-    await timeline.locator('[data-testid="timeline-line"][data-ident="KMSN"]').getByTestId("timeline-toggle").click();
-    await expect(drawer).toHaveAttribute("data-panel", "half");
+    const kmsn = timeline.locator('[data-testid="timeline-line"][data-ident="KMSN"]');
+    await kmsn.getByTestId("timeline-toggle").click();
+    await expect(drawer).toHaveAttribute("data-panel", "full");
+    await expect(kmsn).toHaveAttribute("data-open", "");
 
     // All the way up on a phone, the same timeline: no list of its own.
     if (test.info().project.name === "mobile") {

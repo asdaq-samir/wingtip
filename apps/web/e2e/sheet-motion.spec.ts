@@ -51,13 +51,17 @@ test.describe("by a pointer's drag", () => {
   test("let go toward the pill, FPL's foot bar stays still on the screen's foot and the sheet slides behind it", async ({ page }) => {
     // The figures and the tabs are one fixed bar beside the sheet (sheet/FootBar;
     // the sheet-motion audit of 2026-11-23, option B): nothing in it follows
-    // the sheet, and it changes size only once the sheet is at rest.
+    // the sheet, and it changes size once, as the finger lifts.
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await grabberTo(page, "half");
     await expect(page.locator("[data-foot-strip]").first()).toContainText(/\d/);
     const rest = await page.evaluate(() => document.querySelector('[data-testid="foot-bar"]')!.getBoundingClientRect().bottom);
-    await pullDown(page, 120);
+    // Past half way from half to the pill: the stock Drawer lets go to the
+    // nearest snap point when the pointer has stopped (as here, the frames'
+    // reader set up before the release), and a 120 px pull, less the 17 px
+    // before a swipe starts, came back to half.
+    await pullDown(page, 220);
     // The sheet's top, the bar's foot and height, and what size the bar shows.
     const settle_ = frames<{ sheet: number; bottom: number; at: string | null }>(
       page,
@@ -65,14 +69,15 @@ test.describe("by a pointer's drag", () => {
     );
     await page.mouse.up();
     const seen = await settle_;
-    const last = seen.at(-1)!;
     for (let i = 0; i < seen.length; i++) {
-      const now = seen[i]!;
       // Its foot never moves, every frame.
-      expect(Math.abs(now.bottom - rest), `frame ${i}: the bar still`).toBeLessThanOrEqual(1);
-      // Its size is half's until the sheet has come to rest at the pill.
-      if (Math.abs(now.sheet - last.sheet) > 0.5) expect(now.at, `frame ${i}: half's size while it moves`).toBe("half");
+      expect(Math.abs(seen[i]!.bottom - rest), `frame ${i}: the bar still`).toBeLessThanOrEqual(1);
     }
+    // Its size changes once, as the finger lifts, to the size the sheet is
+    // going to, and never back (FootBar, b947f97b1): half's, then the pill's.
+    const sizes = seen.map((f) => f.at).filter((at, i, all) => i === 0 || at !== all[i - 1]);
+    expect(sizes.at(-1), "the pill's size once let go").toBe("peek");
+    expect(sizes.length, "one change").toBeLessThanOrEqual(2);
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
     await expect(page.getByTestId("foot-bar")).toHaveAttribute("data-at", "peek");
   });

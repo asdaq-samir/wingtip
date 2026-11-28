@@ -36,19 +36,21 @@ test("the airport search answers from the phone's own copy, asking the planner n
   page.on("request", (request) => {
     if (request.url().includes("/airports/search")) asked.push(request.url());
   });
-  const index = () => page.waitForResponse((response) => response.url().includes("/api/planner/airports/index"));
-  // Downloaded once the page is idle; read once the pilot goes to type.
-  const downloaded = index();
+  let fetched = 0;
+  page.on("response", (response) => {
+    if (response.url().includes("/api/planner/airports/index")) fetched += 1;
+  });
   await page.goto("/app/plan");
   await settle(page);
-  await downloaded;
+  // Downloaded once the page is idle, then read ahead at the next idle
+  // (lib/airportIndex's warm and ahead), so the first focus finds it read
+  // rather than asking for it as the keyboard comes up.
+  await expect.poll(() => fetched, { timeout: slow(30_000) }).toBe(2);
   // Out, on the one search.
   await grabberTo(page, "full");
   await showTabs(page);
   const search = page.getByTestId("search-airports");
-  const read = index();
   await search.click();
-  await read;
   await search.pressSequentially("oshk");
   // Wittman by its town, the bigger field first, from the browser's own
   // copy (the waypoints and navaids beside them are the planner's).

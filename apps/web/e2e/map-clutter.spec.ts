@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mapStill, settle } from "./helpers";
 import { drawnMarks } from "./marks";
-import { pickAirplane } from "./startState";
+import { noCheckpoints, pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its tops of climb and descent
 
 /**
@@ -33,6 +33,11 @@ const fieldIdents = async (page: Page) =>
   (await drawnMarks(page, "route-marks")).filter((m) => m.kind === "field").map((m) => String(m.text));
 
 test("over the whole country the route's ends are named and its tops of climb and descent are not", async ({ page }) => {
+  // The checkpoints off, as a pilot has them (lib/preferences; the suite's
+  // session turns them on): each splits the legs at its own mark, which a
+  // top of climb or descent gives way to (LegPointsGl), as in the owner's
+  // screenshot they were not there.
+  await noCheckpoints(page);
   await page.goto(ROUTE);
   await settle(page);
   await zoomTo(page, 4, -98, 38);
@@ -40,8 +45,9 @@ test("over the whole country the route's ends are named and its tops of climb an
   // out a pill it cannot place; an end's is placed first).
   await expect.poll(() => fieldIdents(page)).toEqual(expect.arrayContaining(["KUGN", "KLAS"]));
   expect(await drawnMarks(page, "leg-points")).toEqual([]);
-  // Closer in, a leg long enough to read: its TOC and TOD come back.
-  await zoomTo(page, 7, -100, 41);
+  // Closer in, a leg long enough to read: its TOC and TOD come back, the
+  // C172's top of climb some 20 nm west of KAHQ on the leg to KLXV.
+  await zoomTo(page, 7, -98.5, 41);
   await expect.poll(async () => (await drawnMarks(page, "leg-points")).length).toBeGreaterThan(0);
 });
 
