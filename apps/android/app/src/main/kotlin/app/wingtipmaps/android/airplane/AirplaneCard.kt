@@ -38,8 +38,6 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.checklist.ChecklistKind
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.registeredProfile
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
@@ -105,9 +103,8 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
     val history = rememberHistoryOffered(tail) || own.record != null
     LaunchedEffect(tail, history) { if (tail != null) lookup.open(tail, flights = history) }
     val record = looked.record.takeIf { tail != null }
-    // The planner's book for its registered type (the engine's
-    // registered_profile, the web's profileOfRegistered), none assumed.
-    val stock = remember(record) { record?.let { Engine.registeredProfile(it.manufacturer, it.model, it.year?.toDouble()).getOrNull() } }
+    // The planner's book for its registered type (AirplaneLookup's), none assumed.
+    val stock = looked.stock.takeIf { tail != null }
     // A registered airplane not the pilot's is shown, and flown, on its type's book.
     val airplane = if (tail != null && own.record == null && stock != null && own.aircraft.isEmpty()) {
         remember(tail, stock, books) { AirplaneNow.of(stock, tail, null, AirplaneBook.of(books, stock)) }

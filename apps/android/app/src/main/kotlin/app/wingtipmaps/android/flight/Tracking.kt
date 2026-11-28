@@ -11,6 +11,7 @@ import app.wingtipmaps.android.api.flightStatus
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.airborneNow
 import app.wingtipmaps.android.engine.generated.alertFires
+import app.wingtipmaps.android.map.MapField
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.records.AirplaneWatch
 import app.wingtipmaps.android.records.Keeping
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -78,6 +80,17 @@ class Tracking(
 
     val watches: StateFlow<List<AirplaneWatch>> =
         dao.watches().stateIn(scope, SharingStarted.Eagerly, emptyList())
+
+    /** The airplane tracked as the map draws it: its hex, ringed, and its
+     *  place while Track keeps it in sight (an airplane card's Track), to a
+     *  hundredth of a degree so a report that hardly moved it moves no map. */
+    data class OnMap(val hex: String? = null, val sight: MapField? = null)
+
+    val onMap: StateFlow<OnMap> = combine(_hex, _latest, follow) { hex, plane, on ->
+        val sight = plane?.takeIf { on && hex != null && it.hex.equals(hex, ignoreCase = true) }
+            ?.let { MapField(it.hex, Math.round(it.lat * 100) / 100.0, Math.round(it.lon * 100) / 100.0) }
+        OnMap(hex, sight)
+    }.stateIn(scope, SharingStarted.Eagerly, OnMap())
 
     /** Whether each watched airplane was in the air, where known. */
     private val airborne = HashMap<String, Boolean>()

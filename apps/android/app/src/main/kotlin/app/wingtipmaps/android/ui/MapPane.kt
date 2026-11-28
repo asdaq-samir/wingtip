@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,8 +98,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val overlaysSettled by charts.overlaysSettled.collectAsStateWithLifecycle()
     val chartProblem by charts.problem.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
-    // The route's points, where its line is cut into legs, and the leg
-    // whose sheet is open (RouteLegModel), cased in green.
+    // The route's points, where its line is cut into legs, and the leg whose sheet is open (RouteLegModel), cased in green.
     val routePoints = remember(state.course) { RoutePoints.of(state.course) }
     val selectedLeg by hiltViewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
     // The field whose card is open, ringed on the map.
@@ -129,18 +127,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val flight: FlightModel = hiltViewModel()
     val traffic = flight.traffic
     val trafficOn by traffic.on.collectAsStateWithLifecycle()
-    val tracked by flight.tracked.collectAsStateWithLifecycle()
-    // The airplane tracked kept in sight while Track is on (the airplane
-    // card's Track): its place to a hundredth of a degree, so a report that
-    // has hardly moved it draws nothing again.
-    val trackedLatest = flight.tracking.latest.collectAsStateWithLifecycle()
-    val trackFollow = flight.tracking.follow.collectAsStateWithLifecycle()
-    val sight by remember {
-        derivedStateOf {
-            trackedLatest.value?.takeIf { trackFollow.value && it.hex.equals(flight.tracked.value, ignoreCase = true) }
-                ?.let { app.wingtipmaps.android.map.MapField(it.hex, Math.round(it.lat * 100) / 100.0, Math.round(it.lon * 100) / 100.0) }
-        }
-    }
+    val tracked by flight.tracking.onMap.collectAsStateWithLifecycle()
     // The airplanes to draw, read only in ChartMap's lambda, as the fix is:
     // read here, each answer (every 5 s, each second with a receiver) drew
     // the whole pane again, its field actions, bars and emergency line.
@@ -247,7 +234,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             terminal = terminal,
             weather = weather,
             traffic = { if (trafficOn) targets.value else emptyList() },
-            tracked = tracked,
+            tracked = tracked.hex,
+            sight = tracked.sight,
             // The dark screen, and the Map card's Dimmer and Contrast on the chart (ChartLook).
             night = LocalShade.current.dark,
             look = LocalShade.current.let { shade -> { shade.look } },
@@ -259,13 +247,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
             selectedField = openPlace?.let { app.wingtipmaps.android.map.MapField(it.ident, it.lat, it.lon) },
             plates = plates,
-            sight = sight,
             follow = ownShip.following,
-            // A drag lets go of own ship and of the airplane tracked, as Apple Maps does.
-            onDragged = {
-                ownShip.following = false
-                flight.tracking.follow.value = false
-            },
+            onDragged = { ownShip.following = false },
             onRevealed = { revealed = true },
             onPick = onPick,
             onView = onView,

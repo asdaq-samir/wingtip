@@ -26,10 +26,10 @@ import androidx.core.graphics.toColorInt
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.AirplaneActionRow
 import app.wingtipmaps.android.airplane.AirplaneRow
 import app.wingtipmaps.android.airplane.AirplaneRowState
-import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.name
 import app.wingtipmaps.android.design.generated.CardAction
 import app.wingtipmaps.android.design.generated.CardKind
