@@ -506,7 +506,8 @@
      "dayLandings": 1,
      "nightLandings": 0,
      "category": "Airplane",
-     "class": "Single-engine land"
+     "class": "Single-engine land",
+     "tailwheel": false
     },
     {
      "flownOn": "2026-09-20",
@@ -516,7 +517,8 @@
      "dayLandings": 2,
      "nightLandings": 0,
      "category": "Airplane",
-     "class": "Multiengine land"
+     "class": "Multiengine land",
+     "tailwheel": false
     },
     {
      "flownOn": "2026-08-15",
@@ -526,7 +528,8 @@
      "dayLandings": 2,
      "nightLandings": 0,
      "category": "Airplane",
-     "class": "Single-engine land"
+     "class": "Single-engine land",
+     "tailwheel": false
     }
    ],
    "expected": {

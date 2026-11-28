@@ -1,13 +1,17 @@
 //! Passenger currency, 14 CFR 61.57(a)(1) and (b)(1), checked against the
-//! eCFR text (as mirrored by Cornell LII, 2026-11-27): no person may act as
-//! pilot in command carrying passengers "unless that person has made at
-//! least three takeoffs and three landings within the preceding 90 days",
-//! (i) "as the sole manipulator of the flight controls" and (ii) "in an
-//! aircraft of the same category, class, and type (if a type rating is
-//! required), and, if the aircraft to be flown is an airplane with a
-//! tailwheel, the takeoffs and landings must have been made to a full stop
-//! in an airplane with a tailwheel". (b)(1) asks the same three to a full
-//! stop between 1 hour after sunset and 1 hour before sunrise.
+//! eCFR (2026-11-27). (a)(1): no person may act as a pilot in command "of
+//! an aircraft carrying persons ... unless that person has made at least
+//! three takeoffs and three landings within the preceding 90 days", (i)
+//! "acted as the sole manipulator of the flight controls" and (ii) "in an
+//! aircraft of the same category, class, and type (if a class or type
+//! rating is required), and, if the aircraft to be flown is an airplane
+//! with a tailwheel, the takeoffs and landings must have been made to a
+//! full stop in an airplane with a tailwheel". (b)(1) asks "three takeoffs
+//! and three landings to a full stop during the period beginning 1 hour
+//! after sunset and ending 1 hour before sunrise", (ii) "in an aircraft of
+//! the same category, class, and type (if a class or type rating is
+//! required)": the tailwheel clause is (a)(1)(ii)'s alone, so night is
+//! judged by category and class only.
 //!
 //! Judged for the airplane to be flown (`flying`) where the ask says it;
 //! else for the newest flight's category, class and tailwheel, with the
@@ -58,13 +62,15 @@ pub fn flying(name: &str, v: Option<&Value>) -> Result<Option<Judged>, String> {
 }
 
 /// The airplane judged: `flying`, else the newest flight's; None where
-/// neither says its category and class.
+/// neither says its category and class. The newest flight's gear is kept
+/// as it is logged: not said stays not said, judged as a tailwheel and
+/// "Can't tell", never taken for a tricycle.
 pub(crate) fn judged(entries: &[Entry], flying: Option<&Judged>) -> Option<Judged> {
     if let Some(f) = flying {
         return Some(f.clone());
     }
     let newest = entries.iter().max_by_key(|e| e.day)?;
-    newest.class.clone().map(|class| Judged { class, tailwheel: Some(newest.tailwheel == Some(true)) })
+    newest.class.clone().map(|class| Judged { class, tailwheel: newest.tailwheel })
 }
 
 /// Whether the airplane judged takes 61.57(a)(1)(ii)'s tailwheel rule:
@@ -145,11 +151,15 @@ pub fn passengers(entries: &[Entry], flying: Option<&Judged>, today: i64) -> Pas
     let j = judged(entries, flying);
     let day = |e: &Entry| e.landings();
     let night = |e: &Entry| e.night_landings;
-    let unknown = |landings: &dyn Fn(&Entry) -> f64, rule: &str| {
-        let sure = passengers_until_day(entries, &|e| surely(e, j.as_ref(), landings));
-        let hoped = passengers_until_day(entries, &|e| maybe(e, j.as_ref(), landings));
+    // 61.57(b)(1)(ii) asks only the same category, class and type, so the
+    // night's three need no tailwheel; (a)(1)(ii)'s tailwheel rule is the
+    // day's (the logbook keeps night landings as full stops).
+    let jn = j.as_ref().map(|j| Judged { class: j.class.clone(), tailwheel: Some(false) });
+    let unknown = |j: Option<&Judged>, landings: &dyn Fn(&Entry) -> f64, rule: &str| {
+        let sure = passengers_until_day(entries, &|e| surely(e, j, landings));
+        let hoped = passengers_until_day(entries, &|e| maybe(e, j, landings));
         let current = |u: Option<i64>| u.is_some_and(|u| u >= today);
-        (!current(sure) && current(hoped)).then(|| unsaid(entries, j.as_ref(), today, landings, rule))
+        (!current(sure) && current(hoped)).then(|| unsaid(entries, j, today, landings, rule))
     };
     let tailwheel = j.as_ref().filter(|j| !as_tailwheel(j)).and_then(|j| {
         let tw = Judged { class: j.class.clone(), tailwheel: Some(true) };
@@ -162,10 +172,10 @@ pub fn passengers(entries: &[Entry], flying: Option<&Judged>, today: i64) -> Pas
     });
     Passengers {
         day_until: passengers_until(entries, &|e| surely(e, j.as_ref(), &day)),
-        night_until: passengers_until(entries, &|e| surely(e, j.as_ref(), &night)),
+        night_until: passengers_until(entries, &|e| surely(e, jn.as_ref(), &night)),
         tailwheel_until: tailwheel,
-        day_unknown: unknown(&day, "61.57(a)(1)"),
-        night_unknown: unknown(&night, "61.57(b)(1)"),
+        day_unknown: unknown(j.as_ref(), &day, "61.57(a)(1)"),
+        night_unknown: unknown(jn.as_ref(), &night, "61.57(b)(1)"),
         judged: j,
     }
 }

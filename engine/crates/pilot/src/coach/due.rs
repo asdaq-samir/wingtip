@@ -138,6 +138,8 @@ pub fn due(
         (Some(c), false) => format!(" in {c}"),
         (None, _) => String::new(),
     };
+    // 61.57(b)(1)(ii) asks the same category, class and type, no tailwheel.
+    let night_what = class.as_ref().map(|c| format!(" in {c}")).unwrap_or_default();
     let (day_unknown, night_unknown) = (words("dayPassengersUnknown"), words("nightPassengersUnknown"));
     push("day_passengers", "Passengers by Day", "14 CFR 61.57(a)", at("dayPassengersUntil")?, None, day_unknown, &|s| match s {
         Status::Current | Status::DueSoon => format!("90 days from the third most recent landing{what} (61.57(a))"),
@@ -145,8 +147,8 @@ pub fn due(
     });
     push("night_passengers", "Passengers at Night", "14 CFR 61.57(b)", at("nightPassengersUntil")?, None, night_unknown, &|s| {
         match s {
-        Status::Current | Status::DueSoon => format!("90 days from the third most recent night full-stop landing{what} (61.57(b))"),
-        _ => format!("Three takeoffs and three landings to a full stop{what}, from 1 hour after sunset to 1 hour before sunrise, before carrying passengers then (61.57(b))"),
+        Status::Current | Status::DueSoon => format!("90 days from the third most recent night full-stop landing{night_what} (61.57(b))"),
+        _ => format!("Three takeoffs and three landings to a full stop{night_what}, from 1 hour after sunset to 1 hour before sunrise, before carrying passengers then (61.57(b))"),
     }
     });
     // 61.57(a)(1)(ii): a pilot judged in a tricycle whose logbook shows a

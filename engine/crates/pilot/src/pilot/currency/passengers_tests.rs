@@ -99,3 +99,35 @@ fn a_flight_not_saying_its_class_counts_toward_none() {
     ));
     assert_eq!(passengers(&e, None, on("2026-10-11")).day_unknown, None);
 }
+
+#[test]
+fn a_newest_flight_not_saying_its_gear_is_never_taken_for_a_tricycle() {
+    // 61.57(a)(1)(ii): a tailwheel's three must be "to a full stop in an
+    // airplane with a tailwheel". The newest flight says its class but not
+    // its gear, and its three were touch-and-goes: were it a tailwheel,
+    // none counts, so the pilot is not current, and "Can't tell" says why.
+    let e = entries_of(&format!(r#"[{{"flownOn":"2026-10-01","dayLandings":3,"fullStopLandings":0,{SEL}}}]"#));
+    let p = passengers(&e, None, on("2026-10-11"));
+    assert_eq!(p.judged.as_ref().and_then(|j| j.tailwheel), None);
+    assert_eq!(p.day_until, None);
+    assert!(p.day_unknown.as_deref().is_some_and(|u| u.starts_with("Can't tell")), "{:?}", p.day_unknown);
+    assert_eq!(row(&e, None, "2026-10-11", "day_passengers").0, Status::Unknown);
+}
+
+#[test]
+fn night_passengers_ask_no_tailwheel() {
+    // 61.57(b)(1)(ii): "the same category, class, and type (if a class or
+    // type rating is required)", no tailwheel clause. Three night full
+    // stops in a tricycle keep a pilot to fly a tailwheel SEL current at
+    // night, while by day (61.57(a)(1)(ii)) they count for nothing.
+    let e = entries_of(&format!(r#"[{{"flownOn":"2026-10-01","dayLandings":0,"nightLandings":3,{SEL},"tailwheel":false}}]"#));
+    let tw = Judged { class: "airplane/single-engine land".into(), tailwheel: Some(true) };
+    let p = passengers(&e, Some(&tw), on("2026-10-11"));
+    assert_eq!(p.night_until.as_deref(), Some("2026-12-30"));
+    assert_eq!(p.night_unknown, None);
+    assert_eq!(p.day_until, None);
+    assert_eq!(row(&e, Some(tw), "2026-10-11", "night_passengers").0, Status::Current);
+    // Another class's night landings still count for nothing.
+    let mel = Judged { class: "airplane/multiengine land".into(), tailwheel: Some(false) };
+    assert_eq!(passengers(&e, Some(&mel), on("2026-10-11")).night_until, None);
+}
