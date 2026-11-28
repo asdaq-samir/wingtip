@@ -1,6 +1,6 @@
-import type { ExpressionSpecification } from "maplibre-gl";
 import type { AirspaceClass } from "../../preferences";
-import { AIRPORT_MARK, TOWERED_BLUE, UNTOWERED_MAGENTA, airportMarkSvg } from "../marks/airportMark";
+import { OVERLAY_EXPRESSIONS, OVERLAY_STATE } from "../../generated/overlayLayers";
+import { AIRPORT_MARK, airportMarkSvg } from "../marks/airportMark";
 import { colourOf } from "../marks/flightCategory";
 import { svgPicture, type GlPicture } from "./useGlSymbols";
 
@@ -9,11 +9,10 @@ import { svgPicture, type GlPicture } from "./useGlSymbols";
  * one airport mark (airportMarkSvg, as Nearest's rows, the route and the
  * stops draw it), in every variant a field can wear -- the ring in its
  * surface airspace's chart code, its weather the disc in the middle, its
- * use the R, M or H disc -- and the layer's expressions choosing one by the
- * tile's fields and each field's METAR, and sizing it by the field (the
- * owner's pick, 2026-11-14, option I of
- * https://claude.ai/artifact/V1d9RDbmY1aczc4LfXed7a). Apart from
- * glOverlays, to keep each a size a reader takes in.
+ * use the R, M or H disc -- whose ids the layers' expressions choose by the
+ * tile's fields and each field's METAR (design/map-style.json's
+ * tileAirportIcon), sized by the field (the owner's pick, 2026-11-14,
+ * option I of https://claude.ai/artifact/V1d9RDbmY1aczc4LfXed7a).
  */
 
 type AirportUse = "military" | "private" | "heliport" | null;
@@ -27,7 +26,8 @@ const USES: AirportUse[] = [null, "private", "military", "heliport"];
 const WEATHERS = ["", ...["VFR", "MVFR", "IFR", "LIFR"].map((c) => colourOf(c))];
 
 /** Drawn this much denser than the screen, so the largest step
- *  (MARK_SIZE) is as sharp as the chart under it, not a stretched bitmap. */
+ *  (map-style.json's markSize) is as sharp as the chart under it, not a
+ *  stretched bitmap: the style's markScale for the web is its inverse. */
 const SHARP = 2;
 
 /** Room round the mark for its ticks' white casing, which reaches past its
@@ -56,65 +56,17 @@ export function airportPictures(): GlPicture[] {
   return out;
 }
 
-const TILE_USE: ExpressionSpecification = [
-  "case",
-  ["==", ["get", "military"], "military"],
-  "military",
-  ["==", ["get", "use"], "private"],
-  "private",
-  ["==", ["get", "type"], "heliport"],
-  "heliport",
-  "",
-];
-const TOWERED: ExpressionSpecification = ["==", ["get", "towered"], true];
-
 /** A field's ident in its symbol's colour, as the sectional sets a
  *  field's name (Chart User's Guide, Airports: towered blue, the rest
- *  magenta), by the feature's `towered`: the tiles' every field, and the
- *  marks the map draws itself (the Class B fields', a stop's) the same,
- *  so a field reads alike whichever layer draws it. */
-export const AIRPORT_IDENT_INK: ExpressionSpecification = ["case", TOWERED, TOWERED_BLUE, UNTOWERED_MAGENTA];
-/** The map's global state the airports' layer reads (MapLibre's
- *  `global-state` expression, set by glOverlays): each field's weather
- *  colour by ident, from the METARs once they are in. */
-export const AIRPORT_WEATHER = "airportWeather";
+ *  magenta), by the feature's `towered`: the tiles' every field
+ *  (design/map-style.json), and the marks the map draws itself (the Class B
+ *  fields', a stop's) the same, so a field reads alike whichever layer draws it. */
+export const AIRPORT_IDENT_INK = OVERLAY_EXPRESSIONS.airportIdentInk;
+/** The map's global state the airports' layers read, set by glOverlays:
+ *  each field's weather colour by ident, from the METARs once they are in. */
+export const AIRPORT_WEATHER = OVERLAY_STATE.airportWeather;
 
-/** This field's weather colour, "" for none: its ident looked up in the
- *  state's ident → colour object. */
-const WEATHER: ExpressionSpecification = [
-  "string",
-  ["get", ["to-string", ["get", "ident"]], ["object", ["global-state", AIRPORT_WEATHER], ["literal", {}]]],
-  "",
-];
-
-/** The airports' symbol from the tiles: its picture by its ring, weather
- *  and use, the weather read from the map's state, so a new METAR is one
- *  state change, not a new expression. The weather's disc with every one
- *  of Settings' Airport Weather but Off, which sets no colour
- *  (lib/map/marks/airportWeatherPrefs). */
-export const TILE_AIRPORT_ICON: ExpressionSpecification = [
-  "concat",
-  "apt|",
-  ["coalesce", ["get", "airspace"], ""],
-  "|",
-  WEATHER,
-  "|",
-  TILE_USE,
-];
-
-/** How much larger each of the engine's size steps is drawn
- *  (field_mark_rank's `size`, the tiles' `size`), as on the owner's canvas:
- *  a Class B's field 1.5 times an ordinary towered field, a Class C's 1.2,
- *  a small field 0.82; an older archive's, with none, 1. The low ends of
- *  the canvas's ranges: at 1.6 and 1.3 O'Hare's mark took Midway's place
- *  at zoom 8, 55 points apart. */
-const MARK_SIZE: ExpressionSpecification = ["match", ["get", "size"], "largest", 1.5, "larger", 1.2, "small", 0.82, 1];
-
-/** The mark's icon-size: smaller out at a state's width, a field's own
- *  size closer in, so the small fields don't crowd the chart and the size
- *  follows a pinch frame by frame (a zoom expression, not the page's
- *  state); at each zoom the field's own step, over the denser picture. */
-export function airportIconSize(farthest: number, close: number, closest: number): ExpressionSpecification {
-  const at = (k: number): ExpressionSpecification => ["*", k / SHARP, MARK_SIZE];
-  return ["interpolate", ["linear"], ["zoom"], farthest, at(0.7), close, at(1), closest, at(1.25)];
-}
+/** The airports' symbol from the tiles: its picture (airportPictures' ids)
+ *  by its ring, weather and use, the weather read from the map's state, so
+ *  a new METAR is one state change, not a new expression. */
+export const TILE_AIRPORT_ICON = OVERLAY_EXPRESSIONS.tileAirportIcon;

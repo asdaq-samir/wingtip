@@ -1,3 +1,4 @@
+import type { Map as MlMap } from "maplibre-gl";
 import { latOf, lonOf } from "../tileMath";
 
 type Point = { x: number; y: number };
@@ -76,4 +77,29 @@ export function edgeOfPieces(pieces: TilePiece[]): GeoJSON.MultiLineString {
     }
   }
   return { type: "MultiLineString", coordinates: lines };
+}
+
+/** The tiles' pieces of volume `number` in `source`'s `airspace` layer
+ *  loaded now, its edge as one feature (null where none is loaded) and the
+ *  key of the tiles it was stitched from; "drawn" where they are the tiles
+ *  of the edge drawn last (`last`), so a rest that finds the same pieces
+ *  neither stitches nor sends the edge again (the round-7 map audit's W3:
+ *  in flight the camera rests about once a second with a card open). */
+export function litEdge(
+  map: MlMap,
+  source: string,
+  number: string,
+  last: string | null,
+): { key: string; edge: GeoJSON.Feature | null } | "drawn" {
+  // MapLibre's own: each feature in its tile's units, and that tile.
+  type Raw = { _vectorTileFeature?: { loadGeometry(): TilePiece["rings"]; extent: number }; tile?: TilePiece["tile"] };
+  const found = map.querySourceFeatures(source, { sourceLayer: "airspace", filter: ["==", ["to-string", ["get", "number"]], number] });
+  const raws = (found as unknown as Raw[]).filter((f) => f._vectorTileFeature && f.tile);
+  const key = raws
+    .map((f) => `${f.tile!.z}/${f.tile!.x}/${f.tile!.y}`)
+    .sort()
+    .join();
+  if (key === last) return "drawn";
+  const pieces = raws.map((f) => ({ rings: f._vectorTileFeature!.loadGeometry(), extent: f._vectorTileFeature!.extent, tile: f.tile! }));
+  return { key, edge: pieces.length ? { type: "Feature", properties: { number }, geometry: edgeOfPieces(pieces) } : null };
 }

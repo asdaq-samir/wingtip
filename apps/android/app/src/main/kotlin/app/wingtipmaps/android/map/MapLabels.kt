@@ -82,12 +82,25 @@ object MapLabels {
             out = JsonObject(out + ("layout" to JsonObject(layout + ("text-size" to scaled(size, scale)))))
         }
         val paint = layer["paint"]?.jsonObject
-        val halo = paint?.get("text-halo-color")?.let { (it as? JsonPrimitive)?.content?.lowercase(Locale.US) }
-        if (night && paint != null && halo == WingtipColors.Chart.CASING_HEX) {
-            val inked = paint + ("text-halo-color" to JsonPrimitive(NIGHT_HALO)) + (paint["text-color"]?.let { "text-color" to nightInk(it) } ?: return out)
+        val halo = paint?.get("text-halo-color")
+        if (night && paint != null && halo != null && light(halo)) {
+            val inked = paint + ("text-halo-color" to darkened(halo)) + (paint["text-color"]?.let { "text-color" to nightInk(it) } ?: return out)
             out = JsonObject(out + ("paint" to JsonObject(inked)))
         }
         return out
+    }
+
+    private fun isCasing(value: JsonElement) = (value as? JsonPrimitive)?.takeIf { it.isString }?.content?.lowercase(Locale.US) == WingtipColors.Chart.CASING_HEX
+
+    /** Whether a halo is the light one, as a colour or anywhere in an expression (the airports' selected-or-not, the
+     *  navaids' by kind: design/map-style.json's). */
+    private fun light(halo: JsonElement): Boolean = isCasing(halo) || (halo is JsonArray && halo.any(::light))
+
+    /** The halo with its light colour turned to the night's dark, wherever it is in it. */
+    private fun darkened(halo: JsonElement): JsonElement = when {
+        isCasing(halo) -> JsonPrimitive(NIGHT_HALO)
+        halo is JsonArray -> JsonArray(halo.map(::darkened))
+        else -> halo
     }
 
     /**

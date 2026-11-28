@@ -58,8 +58,10 @@ internal class TfrLayer {
             } catch (e: Exception) {
                 null
             }
-            if (tfrs != null) {
-                json = withContext(Dispatchers.Default) { features(tfrs, AppClock.nowMs()) }
+            // The same answer again (most polls) sets nothing: Native would tile the source and lay its words out anew (W4).
+            val next = tfrs?.let { withContext(Dispatchers.Default) { features(it, AppClock.nowMs()) } }
+            if (next != null && next != json) {
+                json = next
                 redraw(::draw)
             }
             delay(if (tfrs == null) RETRY_MS else EVERY_MS)

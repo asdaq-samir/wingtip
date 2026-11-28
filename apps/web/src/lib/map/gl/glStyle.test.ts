@@ -3,7 +3,6 @@ import type { ChartInfo } from "../../api/types";
 import type { LineLayerSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import {
   absoluteTiles,
-  airspaceLayers,
   OVERLAY_SOURCE,
   chartPaint,
   chartRole,
@@ -12,13 +11,25 @@ import {
   DAY_CONTRAST,
   DAY_SATURATION,
   glZoom,
-  specialUseLayers,
 } from "./glStyle";
 import { legPiece, routeCasingPaint, routeFeature, routeLayers, selectedLegFilter } from "./glRoute";
 import { dimLayer, dimmedColour } from "./mapDim";
 import { CHART } from "../../tokens";
 import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryFrom } from "./closeZoom";
-import { ringOfPlacedField } from "./placedRings";
+import { OVERLAY_LINES } from "../../generated/overlayLayers";
+
+/** design/map-style.json's airspace layers, as the map takes them before the Dimmer. */
+const airspaceLayers = () => OVERLAY_LINES.filter((l) => l.id.startsWith("airspace-"));
+/** A Class C's or D's ring's opacity: only with its field drawn, by its feature state (placedRings), unless the map
+ *  draws every ring. */
+const ringOfPlacedField = (opacity: number) => [
+  "case",
+  ["!", ["boolean", ["global-state", "ringsByField"], false]],
+  opacity,
+  ["boolean", ["feature-state", "placed"], false],
+  opacity,
+  0,
+];
 
 const chart = {
   chart_cycle: "10-29-2026",
@@ -93,9 +104,9 @@ describe("chartStyle", () => {
   });
 });
 
-describe("airspaceLayers", () => {
+describe("the airspace layers (design/map-style.json)", () => {
   it("writes each shelf's tab in the engine's words the tiles carry, ceiling over floor", () => {
-    const label = airspaceLayers(["Inter"]).find((l) => l.id === "airspace-labels") as SymbolLayerSpecification;
+    const label = airspaceLayers().find((l) => l.id === "airspace-labels") as SymbolLayerSpecification;
     // "100" over "30", the sectional's (wingtip.airspace_tabs): the map
     // formats no figure of its own.
     expect(label.layout!["text-field"]).toEqual(["get", "tab"]);
@@ -103,7 +114,7 @@ describe("airspaceLayers", () => {
   });
 
   it("draws the tiles' rings each with its band along the inside, Class E left out", () => {
-    const layers = airspaceLayers(["Inter"]);
+    const layers = airspaceLayers();
     expect(layers.map((l) => l.id)).toEqual([
       "airspace-D-band",
       "airspace-D",
@@ -126,7 +137,7 @@ describe("airspaceLayers", () => {
   });
 
   it("draws the special-use areas' lines and hatched bands, restricted orange-brown and MOAs magenta", () => {
-    const [band, line] = specialUseLayers();
+    const [band, line] = OVERLAY_LINES.filter((l) => l.id === "sua-band" || l.id === "sua-line") as LineLayerSpecification[];
     expect(band!.paint!["line-pattern"]).toEqual([
       "case",
       ["in", ["get", "type"], ["literal", ["P", "R", "W", "D"]]],
@@ -138,7 +149,7 @@ describe("airspaceLayers", () => {
   });
 
   it("draws each class from its own zoom, the bands from 7 and the labels from 9", () => {
-    const layers = airspaceLayers(["Inter"]);
+    const layers = airspaceLayers();
     const from = Object.fromEntries(layers.map((l) => [l.id, l.minzoom]));
     expect(from).toMatchObject({
       "airspace-B": glZoom(5),
@@ -152,7 +163,7 @@ describe("airspaceLayers", () => {
   });
 
   it("draws a ring half its width out at a few states, its full width from 7", () => {
-    const line = airspaceLayers(["Inter"]).find((l) => l.id === "airspace-C") as LineLayerSpecification;
+    const line = airspaceLayers().find((l) => l.id === "airspace-C") as LineLayerSpecification;
     expect(line.paint!["line-width"]).toEqual(["interpolate", ["linear"], ["zoom"], glZoom(5), 2, glZoom(7), 4]);
   });
 });

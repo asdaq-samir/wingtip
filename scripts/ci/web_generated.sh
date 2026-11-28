@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ci.yml's test-web: the files generated and committed -- the phones' API
-# models and engine calls, the design tokens, the screens' links, the
+# models and engine calls, the design tokens, the map's overlay layers, the screens' links, the
 # shared words, each card's actions, the app icons -- each checked against what its generator makes, but on a pull
 # request only where the change touched the generator, its source or its
 # output. They took 1.5 of test-web's 3.8 minutes on every web change
@@ -38,6 +38,9 @@ check "The design tokens" "scripts/build/design-tokens.sh --check" -- \
   design/tokens.json 'scripts/build/design-tokens.sh' 'scripts/build/design_tokens*' \
   apps/web/src/styles/tokens.css apps/web/src/lib/tokens.ts apps/ios/Wingtip/Design/Generated "$A/design/generated" \
   services/jobs/charts/map_zoom.py
+check "The map's overlay layers" "scripts/build/map-style.sh --check" -- \
+  design/map-style.json design/tokens.json 'scripts/build/map-style.sh' 'scripts/build/map_style*.py' \
+  apps/web/src/lib/generated/overlayLayers.ts "$A/map/generated"
 check "The screens and their links" "scripts/build/screens.sh --check" -- \
   design/screens.json 'scripts/build/screens.*' docs/navigation.md \
   apps/web/src/lib/navigation/generated apps/ios/Wingtip/Navigation/Generated "$A/navigation/generated"

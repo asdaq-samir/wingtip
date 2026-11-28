@@ -2,7 +2,7 @@ import type { ExpressionSpecification } from "maplibre-gl";
 import { describe, expect, it } from "vitest";
 import { CHART, MAP_LABEL, type MapLabelKind } from "../../../tokens";
 import { luminanceOf } from "../../../rgb";
-import { airspaceLayers } from "../glStyle";
+import { OVERLAY_LINES } from "../../../generated/overlayLayers";
 import { suaTabLayout } from "../glSuaLabels";
 import { GL_FONT, GL_FONT_BOLD, LABEL_HALO, labelHalo, labelInk, labelScale, labelText, type LabelKind } from "./common";
 
@@ -36,7 +36,7 @@ describe("the map's words (map.label)", () => {
   });
 
   it("letter the Class tabs and the special-use tabs alike", () => {
-    const tab = airspaceLayers(GL_FONT_BOLD).find((l) => l.id === "airspace-labels")!;
+    const tab = OVERLAY_LINES.find((l) => l.id === "airspace-labels")!;
     const sua = suaTabLayout(GL_FONT_BOLD);
     const layout = (tab as { layout: Record<string, unknown> }).layout;
     for (const key of ["text-size", "text-line-height", "icon-text-fit-padding", "text-padding"] as const)
@@ -60,8 +60,10 @@ describe("the map's words (map.label)", () => {
       ["interpolate", ["linear"], LIGHT, 0, "black", 1, MAP_LABEL.nightInk[CHART.towered]],
       CHART.towered,
     ]);
-    // A colour with no night ink keeps its own (a VOR's white on its tag).
-    expect(night(CHART.casing)).toBe(CHART.casing);
+    // The chart's white (a VOR's on its tag, a runway's number, a tab's) the fixes' near white, levelled with the
+    // rest (R7-5); a colour with no night ink keeps its own.
+    expect(night(CHART.casing)).toBe(night(CHART.fixInk));
+    expect(night("#123456")).toBe("#123456");
     const get: ExpressionSpecification = ["get", "ink"];
     const match = ((labelInk(get) as unknown[])[2] as unknown[])[6] as unknown[];
     expect(match[0]).toBe("match");

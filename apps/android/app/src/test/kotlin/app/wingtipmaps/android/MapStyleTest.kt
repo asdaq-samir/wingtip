@@ -6,20 +6,19 @@ import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.generated.OverlayTilesLayer
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.SpecialUseLayers
+import app.wingtipmaps.android.map.generated.OverlayStyle
 import app.wingtipmaps.android.tiles.TileTemplate
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The map's first style as the web's MapLibre map has it (glStyle.ts,
- *  glOverlays.ts): the chart, then the cycle's overlay tiles. */
+/** The map's first style: the chart, then the cycle's overlay tiles in
+ *  design/map-style.json's layers (OverlayStyle), the web's the same. */
 class MapStyleTest {
     private val template = TileTemplate("2025-10-30", 3, null, "sec", scale = 2)
 
@@ -71,11 +70,11 @@ class MapStyleTest {
             source["url"]!!.jsonPrimitive.content,
         )
         assertEquals(MapStyle.GLYPHS, s["glyphs"]!!.jsonPrimitive.content)
-        // The airports on a source of their own over the same archive, so a weather answer or a tap lays out their tiles alone.
-        assertEquals(source, s["sources"]!!.jsonObject[MapStyle.AIRPORTS_SOURCE])
-        assertEquals(MapStyle.AIRPORTS_SOURCE, layer(s, "airports")["source"]!!.jsonPrimitive.content)
-        assertEquals(MapStyle.OVERLAY_SOURCE, layer(s, "airspace-C")["source"]!!.jsonPrimitive.content)
-        // Lines under the route's slot, marks over it, as the web's slots.
+        // One vector source on the archive, every overlay layer's: two on one address fetched each tile twice (R5-6).
+        assertEquals(listOf("chart-under", "chart", MapStyle.OVERLAY_SOURCE, MapStyle.TRAFFIC, MapStyle.TRAFFIC_TREND), s["sources"]!!.jsonObject.keys.toList())
+        val overlay = ids(s).filter { it != MapStyle.ROUTE_SLOT && it !in TRAFFIC && !it.startsWith("chart") }
+        for (id in overlay) assertEquals(id, MapStyle.OVERLAY_SOURCE, layer(s, id)["source"]!!.jsonPrimitive.content)
+        // design/map-style.json's layers, the web's: lines under the route's slot, marks over it, as the web's slots.
         assertEquals(
             listOf(
                 "chart-under", "chart",
@@ -84,19 +83,22 @@ class MapStyleTest {
                 "airspace-D-band", "airspace-D", "airspace-C-band", "airspace-C", "airspace-B-band", "airspace-B", "airspace-labels",
                 "sua-labels",
                 MapStyle.ROUTE_SLOT,
-                "navaids", "navaids-idents", "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents",
-                "airports",
+                "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents", "navaids", "navaids-idents",
+                "airports", "airports-towered", "airports-c", "airports-c-towered", "airports-kept", "airports-kept-towered",
             ) + TRAFFIC,
             ids(s),
         )
     }
 
     @Test
-    fun aLayerTheArchiveHasNotGotIsLeftOut() {
-        val s = style(tiles("airspace", "airports"))
-        assertFalse(ids(s).contains("runway-surface"))
-        assertFalse(ids(s).contains("navaids"))
-        assertTrue(ids(s).contains("airports"))
+    fun theGeneratedLayersAreWhollyResolvedForAndroid() {
+        // No word of design/map-style.json's vocabulary left, and the words in the one font the app's assets hold.
+        val all = (OverlayStyle.LINES + OverlayStyle.MARKS).joinToString()
+        assertFalse(all, all.contains("\$"))
+        assertFalse(all, all.contains("{color."))
+        val s = style(tiles("runways"))
+        val fonts = ids(s).mapNotNull { layer(s, it)["layout"]?.jsonObject?.get("text-font")?.toString() }.toSet()
+        assertEquals(setOf("""["${MapStyle.FONT}"]"""), fonts)
     }
 
     @Test
@@ -104,44 +106,28 @@ class MapStyleTest {
         val s = style(tiles("airspace", "airspace_labels"))
         val b = layer(s, "airspace-B")
         assertEquals("#2f8cff", b["paint"]!!.jsonObject["line-color"]!!.jsonPrimitive.content)
-        // The web's zooms (design/tokens.json's map.zoom), MapLibre's: B and
-        // C from the app's 5, half their width there, full by 7 with their
-        // band; D from 7; every tab from 9.
-        assertEquals("""["interpolate",["linear"],["zoom"],4.0,2.0,6.0,4.0]""", b["paint"]!!.jsonObject["line-width"].toString())
-        assertEquals("4.0", b["minzoom"]!!.jsonPrimitive.content)
-        assertEquals("4.0", layer(s, "airspace-C")["minzoom"]!!.jsonPrimitive.content)
-        assertEquals("6.0", layer(s, "airspace-C-band")["minzoom"]!!.jsonPrimitive.content)
+        // design/tokens.json's map.zoom, MapLibre's: B and C from the app's 5, half their width there, full by 7 with
+        // their band; D from 7; every tab from 9.
+        assertEquals("""["interpolate",["linear"],["zoom"],4,2,6,4]""", b["paint"]!!.jsonObject["line-width"].toString())
+        assertEquals("4", b["minzoom"]!!.jsonPrimitive.content)
+        assertEquals("4", layer(s, "airspace-C")["minzoom"]!!.jsonPrimitive.content)
+        assertEquals("6", layer(s, "airspace-C-band")["minzoom"]!!.jsonPrimitive.content)
         val d = layer(s, "airspace-D")
         assertTrue(d["paint"]!!.jsonObject.containsKey("line-dasharray"))
-        assertEquals("6.0", d["minzoom"]!!.jsonPrimitive.content)
-        assertEquals("8.0", layer(s, "airspace-labels")["minzoom"]!!.jsonPrimitive.content)
-        // The band inside each line: its own ink, faint, offset inwards.
-        val band = layer(s, "airspace-C-band")["paint"]!!.jsonObject
-        assertEquals("#e02ad8", band["line-color"]!!.jsonPrimitive.content)
-        assertEquals(MapStyle.BAND_OFFSET, band["line-offset"])
-        // One tab a shelf, from the label points, turned along its ring.
+        assertEquals("6", d["minzoom"]!!.jsonPrimitive.content)
+        assertEquals("8", layer(s, "airspace-labels")["minzoom"]!!.jsonPrimitive.content)
+        // The band inside each line: its own ink, faint, offset inwards; dimmed at night by its colour on the web.
+        val band = layer(s, "airspace-C-band")
+        assertEquals("#e02ad8", band["paint"]!!.jsonObject["line-color"]!!.jsonPrimitive.content)
+        assertEquals("""["interpolate",["linear"],["zoom"],6,3,8,4.5,10,6.5,12,9.5]""", band["paint"]!!.jsonObject["line-offset"].toString())
+        assertEquals("""{"wingtip:dim":"colour"}""", band["metadata"].toString())
+        // One tab a shelf in the engine's words the tiles carry, turned along its ring.
         val labels = layer(s, "airspace-labels")
         assertEquals("airspace_labels", labels["source-layer"]!!.jsonPrimitive.content)
         val layout = labels["layout"]!!.jsonObject
         assertEquals("""["concat","airspace|tab|",["get","class"]]""", layout["icon-image"].toString())
         assertEquals("""["get","angle"]""", layout["text-rotate"].toString())
-        assertFalse(layout.containsKey("symbol-placement"))
-        assertEquals(MapStyle.AIRSPACE_LABEL, layout["text-field"])
-        // An older archive without them: along every ring, as before.
-        val older = layer(style(tiles("airspace")), "airspace-labels")
-        assertEquals("line", older["layout"]!!.jsonObject["symbol-placement"]!!.jsonPrimitive.content)
-    }
-
-    @Test
-    fun theAirspaceLabelIsForeFlightsFloorToCeilingInFeet() {
-        // ["concat", ["get","class"], ": ", floor, "–", top]: "C: 2300–4900".
-        val label = MapStyle.AIRSPACE_LABEL
-        assertEquals("concat", label[0].jsonPrimitive.content)
-        val floor = label[3] as JsonArray
-        assertEquals("SFC", floor[2].jsonPrimitive.content)
-        assertEquals("–", label[4].jsonPrimitive.content)
-        val top = label[5] as JsonArray
-        assertEquals("""["case",["==",["get","ceiling_excluded"],true],"<",""]""", top[1].toString())
+        assertEquals("""["get","tab"]""", layout["text-field"].toString())
     }
 
     @Test
@@ -155,58 +141,52 @@ class MapStyleTest {
 
     @Test
     fun aSpecialUseAreasTabIsItsNameOverItsAltitudesTurnedAlongItsSide() {
-        // From the archive's tab points: the name, then the limits, turned.
-        val tab = layer(style(tiles("special_use", "special_use_labels")), SpecialUseLayers.LABELS)
+        // From the archive's tab points: the engine's words, turned.
+        val tab = layer(style(tiles("special_use", "special_use_labels")), "sua-labels")
         assertEquals("special_use_labels", tab["source-layer"]!!.jsonPrimitive.content)
-        assertEquals("8.0", tab["minzoom"]!!.jsonPrimitive.content)
+        assertEquals("8", tab["minzoom"]!!.jsonPrimitive.content)
         val layout = tab["layout"]!!.jsonObject
-        assertEquals(SpecialUseLayers.TAB_TEXT, layout["text-field"])
+        assertEquals("""["get","tab"]""", layout["text-field"].toString())
         assertEquals("""["get","angle"]""", layout["text-rotate"].toString())
         assertTrue(layout["icon-image"].toString().contains(SpecialUseLayers.TAB_RESTRICTED))
         assertEquals("both", layout["icon-text-fit"]!!.jsonPrimitive.content)
-        // "M-BRADY NOR*:" over "3600-17999": the engine's words, which the
-        // charts job writes into the tiles as `tab`; the name alone in an
-        // archive from before them.
-        assertEquals("""["coalesce",["get","tab"],["get","label"]]""", SpecialUseLayers.TAB_TEXT.toString())
-        // An older archive: the name alone along the boundary.
-        val older = layer(style(tiles("special_use")), SpecialUseLayers.LABELS)
-        assertEquals("special_use", older["source-layer"]!!.jsonPrimitive.content)
-        assertEquals("line", older["layout"]!!.jsonObject["symbol-placement"]!!.jsonPrimitive.content)
     }
 
     @Test
     fun theAirportsWearThePlannersMarkSizedByTheFieldAndLeaveOffMilitaryAndPrivateFields() {
-        val airports = layer(style(tiles("airports")), "airports")
-        assertEquals(
-            """["all",["!=",["get","military"],"military"],["!=",["get","use"],"private"]]""",
-            airports["filter"].toString(),
-        )
+        val s = style(tiles("airports"))
+        val airports = layer(s, "airports")
+        // The switches and the route's fields by the map's state (OverlayState), never a new filter.
+        val filter = airports["filter"].toString()
+        assertTrue(filter, filter.contains("""["global-state","showMilitary"]"""))
+        assertTrue(filter, filter.contains("""["global-state","showPrivate"]"""))
         assertEquals("apt|B||", MapStyle.airportMarkId("B", "", ""))
         assertEquals("apt||h#1a7f37|private", MapStyle.airportMarkId("", "h#1a7f37", "private"))
+        // The ring is the tiles' surface airspace, its weather the map's state by ident (N4: no match over every field).
+        val icon = layer(s, "airports-kept")["layout"]!!.jsonObject["icon-image"].toString()
+        assertTrue(icon, icon.contains("""["coalesce",["get","airspace"],""]"""))
+        assertTrue(icon, icon.contains("""["global-state","airportWeather"]"""))
         val layout = airports["layout"]!!.jsonObject
-        // The ring is the tiles' surface airspace, "" for an older archive.
-        assertEquals("""["coalesce",["get","airspace"],""]""", layout["icon-image"]!!.jsonArray[2].toString())
-        // Each zoom's size times the engine's size step (field_mark_rank).
+        // Each zoom's size times the engine's size step (field_mark_rank), at the Android pictures' own scale.
         val size = layout["icon-size"]!!.toString()
-        assertTrue(size, size.contains("""["match",["get","size"],"largest",1.5,"larger",1.2,"small",0.82,1]"""))
-        // As the web's: 2 px round each mark at every zoom, and out past the
-        // app's zoom 6 only a Class B field's ident.
+        assertTrue(size, size.contains("""["*",0.7,["match",["get","size"],"largest",1.5,"larger",1.2,"small",0.82,1]]"""))
         assertEquals("2", layout["icon-padding"]!!.jsonPrimitive.content)
-        assertEquals(
-            """["step",["zoom"],["case",["==",["get","size"],"largest"],["get","ident"],""],5.0,["get","ident"]]""",
-            layout["text-field"].toString(),
-        )
-        val colour = airports["paint"]!!.jsonObject["text-color"]!!.jsonArray
-        assertEquals(MapStyle.BLUE, colour[2].jsonPrimitive.content)
-        assertEquals(MapStyle.MAGENTA, colour[3].jsonPrimitive.content)
+        // A towered or Class B field named wherever drawn, every other field from the app's 8.
+        assertTrue(layout["text-field"].toString(), layout["text-field"].toString().startsWith("""["step",["zoom"],["case",["any","""))
+        // One ink a layer, the untowered fields' magenta and the towered fields' blue, the open card's field's ident
+        // hidden by its opacity (W1).
+        assertEquals(MapStyle.MAGENTA, airports["paint"]!!.jsonObject["text-color"]!!.jsonPrimitive.content)
+        assertEquals(MapStyle.BLUE, layer(s, "airports-towered")["paint"]!!.jsonObject["text-color"]!!.jsonPrimitive.content)
+        assertEquals("""["case",["boolean",["feature-state","selected"],false],0,1]""", airports["paint"]!!.jsonObject["text-opacity"].toString())
     }
 
     @Test
     fun aVorsIdentIsOnItsBlueTag() {
-        val idents = layer(style(tiles("navaids", "fixes")), "navaids-idents")["layout"]!!.jsonObject
-        assertEquals(MapStyle.NAV_TAG, idents["icon-image"]!!.jsonPrimitive.content)
-        val fixes = layer(style(tiles("navaids", "fixes")), "fixes-idents")["layout"]!!.jsonObject
-        assertNull(fixes["icon-image"])
+        val s = style(tiles("navaids", "fixes"))
+        val idents = layer(s, "navaids-idents")["layout"]!!.jsonObject
+        assertEquals("""["case",["==","vor","vor"],"${MapStyle.NAV_TAG}",""]""", idents["icon-image"].toString())
+        val fixes = layer(s, "fixes-idents")["layout"]!!.jsonObject
+        assertEquals("""["case",["==","fix","vor"],"${MapStyle.NAV_TAG}",""]""", fixes["icon-image"].toString())
     }
 
     @Test

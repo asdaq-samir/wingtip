@@ -11,6 +11,9 @@
  *  of the picture as drawn. */
 export interface Stretch {
   inset: number;
+  /** A one-colour shape drawn as a signed distance field, tinted by the
+   *  layer's icon-color (MapLibre's sdf), so it is dimmed by its colour. */
+  sdf?: boolean;
   x?: [number, number];
   y?: [number, number];
   content?: [number, number, number, number];
@@ -20,7 +23,13 @@ export interface Stretch {
 export interface DrawnImage {
   /** An SVG drawn (drawSvg), or a canvas's pixels (drawTag). */
   image: HTMLImageElement | ImageData;
-  options: { pixelRatio: number; stretchX?: [number, number][]; stretchY?: [number, number][]; content?: [number, number, number, number] };
+  options: {
+    pixelRatio: number;
+    sdf?: boolean;
+    stretchX?: [number, number][];
+    stretchY?: [number, number][];
+    content?: [number, number, number, number];
+  };
 }
 
 /** A stretch in the picture's pixels, at its density. */
@@ -54,7 +63,7 @@ export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | nu
     image.onload = () => {
       // A label's box (icon-text-fit) stretches between its corners.
       const fit = stretch && stretchOf(stretch, w, h, ratio);
-      resolve({ image, options: { pixelRatio: ratio, ...fit } });
+      resolve({ image, options: { pixelRatio: ratio, ...fit, ...(stretch?.sdf ? { sdf: true } : {}) } });
     };
     // A picture that cannot be drawn leaves its symbol bare, not the
     // layer waiting.

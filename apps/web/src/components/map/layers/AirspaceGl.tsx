@@ -10,7 +10,7 @@ import { volumeOfTile } from "../../../lib/map/gl/glTileFeatures";
 import { AIRSPACE_LINE_LAYERS } from "../../../lib/map/gl/glStyle";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { useLinkedTileFeature } from "../../../lib/map/gl/useLinkedTileFeature";
-import { edgeOfPieces, type TilePiece } from "../../../lib/map/gl/tileEdge";
+import { litEdge } from "../../../lib/map/gl/tileEdge";
 import { TAP } from "../../../lib/map/gl/layers/common";
 import { pickOnMap, useMapPickOwner, useMapRing } from "../../../lib/map/mapPick";
 import { CHART } from "../../../lib/tokens";
@@ -32,22 +32,6 @@ const PICKED: LineLayerSpecification = {
   paint: { "line-color": CHART.selected, "line-width": 5, "line-opacity": 0.9 },
 };
 
-/** The tiles' pieces of volume `number` loaded now, its edge as one
- *  feature, or null where none is loaded. */
-function litEdge(map: MlMap, number: string): GeoJSON.Feature | null {
-  const pieces: TilePiece[] = [];
-  for (const f of map.querySourceFeatures(OVERLAY_SOURCE, {
-    sourceLayer: "airspace",
-    filter: ["==", ["to-string", ["get", "number"]], number],
-  })) {
-    // MapLibre's own: the feature in its tile's units, and that tile.
-    const raw = f as unknown as { _vectorTileFeature?: { loadGeometry(): TilePiece["rings"]; extent: number }; tile?: TilePiece["tile"] };
-    if (!raw._vectorTileFeature || !raw.tile) continue;
-    pieces.push({ rings: raw._vectorTileFeature.loadGeometry(), extent: raw._vectorTileFeature.extent, tile: raw.tile });
-  }
-  return pieces.length ? { type: "Feature", properties: { number }, geometry: edgeOfPieces(pieces) } : null;
-}
-
 /** The lit volume's edge on its own source, from the tiles about the
  *  view: again after a move or an overlay tile come in, at the next rest;
  *  empty once none is lit. */
@@ -62,7 +46,13 @@ function useLitEdge(map: MlMap, lit: string | null) {
     };
     if (!number) return show(null);
     let again = false;
-    const look = () => show(map.getSource(OVERLAY_SOURCE) ? litEdge(map, number) : null);
+    let last: string | null = null;
+    const look = () => {
+      const found = map.getSource(OVERLAY_SOURCE) ? litEdge(map, OVERLAY_SOURCE, number, last) : { key: null, edge: null };
+      if (found === "drawn") return;
+      last = found.key;
+      show(found.edge);
+    };
     const moved = () => {
       again = true;
     };
@@ -91,7 +81,7 @@ function useLitEdge(map: MlMap, lit: string | null) {
  * translucent band along its inside and its altitudes in a dark tab on
  * its ring, one a shelf -- MapLibre's line layers and a symbol layer,
  * kept off each other by its collision; and the special-use areas'
- * lines and hatched bands (glStyle's specialUseLayers). A tap on a
+ * lines and hatched bands (design/map-style.json's). A tap on a
  * line opens the volume's card, by its address (`mark`), so a link opens
  * it too. The settings' Airspace turns them off (applyOverlayFilters).
  *

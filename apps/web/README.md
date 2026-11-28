@@ -352,7 +352,10 @@ sheet under it.
 inline styles are colours computed from data (a rating, a flight
 category, a score) and CSS custom properties. What the map draws in
 WebGL is styled in its layers' MapLibre paint properties
-(`lib/map/gl/glStyle.ts`, `glOverlays.ts`), not in CSS.
+(`lib/map/gl/glStyle.ts`, `glOverlays.ts`), not in CSS; the overlay
+tiles' layers are `design/map-style.json`'s, generated into
+`lib/generated/overlayLayers.ts` (and Android's `OverlayStyle`) by
+`scripts/build/map-style.sh`.
 
 ## Maps
 
@@ -387,7 +390,7 @@ PMTiles archive the planner builds once a cycle
 (`wingtip.vector_tiles`) and serves in byte ranges
 (`/api/overlay-tiles/{name}.pmtiles`), read by protomaps' `pmtiles`
 library (`lib/map/sources/overlayTiles.ts`). They are in the map's first style
-(`glOverlays.ts`), so they load per tile with the chart, with nothing
+(`glOverlays.ts`, its layers `design/map-style.json`'s), so they load per tile with the chart, with nothing
 asked of the planner for the view and no wait on the engine; what
 changes over them (the fields the settings hide, the route's own
 fields, each field's weather, from `/api/airports/in-view`'s reporting

@@ -1062,8 +1062,8 @@ At each airport the chart already shows, from the map's own
   full width with their band; the other public fields from 8, every field
   named from there, private ones from 10, heliports from 11, and the
   altitude tabs from 9; the VORs from 8, the VFR waypoints and the low
-  enroute chart's fixes from 10. The names are capped so on the web (glOverlays'
-  `AIRPORT_IDENT_FAR`, the tiles' `towered`): the cap thins only the
+  enroute chart's fixes from 10. The names are capped so on the web (design/map-style.json's
+  `airportIdentFar`, the tiles' `towered`): the cap thins only the
   untowered fields' names below 8, the long hard runways' some 2,400
   idents at 7 having been about a second of a phone's main thread a wheel
   notch out (the speed
@@ -1775,7 +1775,7 @@ word and figure drawn on the map, on all three apps, follows these rules:
 
 |       | Web                                                                                                                                                                                                                                                                                                                                                 | iPhone                                                                        | Android           |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------- |
-| Where | `lib/map/gl/layers/common` (`labelText`, `labelHalo`, `labelInk`, `labelScale`, `LABEL_HALO`), ChartGl's `LABEL_NIGHT` and `LABEL_SCALE`, MapLayers' Larger Map Labels, `glStyle`'s `airspaceLayers` and `TAB_BOX`, `glSuaLabels`, `glOverlays`' marks' order, `airportIcons`' `AIRPORT_IDENT_INK`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
+| Where | `lib/map/gl/layers/common` (`labelText`, `labelHalo`, `labelInk`, `labelScale`, `LABEL_HALO`), ChartGl's `LABEL_NIGHT` and `LABEL_SCALE`, MapLayers' Larger Map Labels, `design/map-style.json`'s layers, their `tabBox` and their order (`lib/generated/overlayLayers`), `glSuaLabels`, `airportIcons`' `AIRPORT_IDENT_INK`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
 | Tests | `layers/common.test`, `glStyle.test`, `glOverlays.test`, `procedureMarks.test`, `plateTags.test`, `weatherMap.test`; `airspace-lines.spec`, `plates-map.spec`, `weather-map.spec`, `route-line.spec`; the tiles' `tab` in `services/jobs/charts/tests/test_overlays.py`, `services/planner/tests_wingtip/test_airspace_tabs.py`                     | --                                                                            | --                |
 
 ## 14. What is picked on the map (the owner, 2026-11-18)

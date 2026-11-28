@@ -76,8 +76,10 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     of the Web Mercator maths, clamped at MapLibre's own limits;
   - `map/`: the map. `ChartMap` (the MapLibre view, its camera, the
     route, own ship and the path flown), `MapStyle` (the first style as
-    JSON: the chart and the overlay tiles' layers, the web's
-    `glStyle.ts` and `glOverlays.ts`), `OverlayPictures` (the symbols'
+    JSON: the chart and the overlay tiles' layers, `design/map-style.json`'s,
+    generated as `map/generated/OverlayStyle.kt` by
+    `scripts/build/map-style.sh`, the web's the same), `OverlayState` (the
+    switches and the fields' weather as the map's state), `OverlayPictures` (the symbols'
     pictures, drawn with Canvas), `MapLoading` (Material's loading
     indicator until the map is drawn), `Map3dLayer` (Terrain: the relief
     and the 3D view) and `map/flow` (Model Weather);
@@ -199,9 +201,12 @@ it is on the website. Its tiles go through the app's own OkHttp client,
 so a tile through the gateway carries the session's cookie and every
 tile is kept in the one cache.
 
-The web's map is MapLibre GL JS, so the phone's style follows it
-closely (`map/MapStyle.kt` beside `apps/web/src/lib/map/gl/glStyle.ts`
-and `glOverlays.ts`):
+The web's map is MapLibre GL JS, so the phone's style is the web's: the
+overlay tiles' layers are one source, `design/map-style.json`, generated
+into both apps (`scripts/build/map-style.sh`, checked in CI), and
+`map/MapStyle.kt` keeps only Android's own part -- the chart, the sources,
+the traffic -- with `OverlayState`, `MapLabels` and `MapDim` for what
+changes over it:
 
 - **The chart** is the base layer's tiles, the 512-pixel `@2x` tiles
   on any screen denser than 1x where the kind was drawn at them
@@ -218,7 +223,10 @@ and `glOverlays.ts`):
   byte ranges by MapLibre Native's own `pmtiles://` source (11.7 and
   later). They are in the first style with the chart, so they draw per
   tile with it and follow a pinch; nothing is asked of the planner or the
-  engine for the view. The archive's name is kept in the app's files
+  engine for the view. Every overlay layer is on the archive's one
+  vector source, where the web gives the airports and the VFR waypoints
+  their own: two sources on one `pmtiles://` address fetched and parsed
+  each tile twice. The archive's name is kept in the app's files
   (`Charts`), and the first style waits at most 1.5 s for it.
 - **The labels** are Inter at weight 700 as on the web, as signed
   distance field glyphs in the app's assets (`assets/glyphs/Inter-Bold`,
@@ -282,8 +290,9 @@ and `glOverlays.ts`):
   file): Airspace, VORs and Fixes, Terminal Area Charts, Private Fields,
   Military Fields and Traffic, the web's "On the Map" rows with the
   web's defaults, applied as the overlay layers' visibility and the
-  airports' filter (`MapStyle.visible`, `airportsFilter`, the web's
-  `applyOverlayFilters`).
+  map's state the airports' filter reads (`OverlayState.switches`, the
+  web's `applyOverlayFilters`); each field's weather pip is that state
+  too (`OverlayState.weather`).
 - **The terminal area chart** pinned over the sectional at every zoom it
   exists at (`Charts.terminal`, the web's `chart-terminal`).
 - **Taps and cards**: a tap picks, in the web's order, an airplane, a

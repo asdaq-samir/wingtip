@@ -87,9 +87,3 @@ export function airportMarkSvg(
     ` width="${AIRPORT_MARK}" height="${AIRPORT_MARK}" viewBox="${-half} ${-half} ${AIRPORT_MARK} ${AIRPORT_MARK}">${symbol}</svg>`
   );
 }
-
-/** The sectional's airport inks (FAA Aeronautical Chart User's Guide,
- *  VFR Terms and Symbols, Airports: "Airports having control towers are
- *  shown in blue, all others in magenta"). */
-export const TOWERED_BLUE = BLUE;
-export const UNTOWERED_MAGENTA = MAGENTA;

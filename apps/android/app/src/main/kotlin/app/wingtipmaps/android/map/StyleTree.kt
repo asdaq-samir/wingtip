@@ -30,10 +30,9 @@ internal object StyleTree {
         overlays: OverlayTiles?,
         night: Boolean,
         layers: MapLayers,
-        weather: Map<String, String>,
         scale: Float,
     ): Built = withContext(Dispatchers.Default) {
-        val root = MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, layers, weather)
+        val root = MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, layers)
         val styled = MapDim.style(OfflineLayers.styled(context, template, MapLabels.adjust(root, scale, night), layers.tac))
         Built(root["layers"]?.jsonArray?.map { it.jsonObject }.orEmpty(), styled.toString())
     }

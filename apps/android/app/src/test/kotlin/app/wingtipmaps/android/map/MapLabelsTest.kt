@@ -38,6 +38,19 @@ class MapLabelsTest {
         assertEquals("match", matched.jsonArray[0].jsonPrimitive.content)
     }
 
+    @Test
+    fun afterDarkAHaloInAnExpressionIsDarkenedWhereverItIsLight() {
+        // The airports' halo, transparent under the open card's field, and the navaids', by kind (design/map-style.json).
+        val airports = Json.parseToJsonElement(
+            """{"id":"a","type":"symbol","paint":{"text-color":"#2465b8","text-halo-color":["case",["boolean",["feature-state","selected"],false],"transparent","#ffffff"]}}""",
+        ).jsonObject
+        val paint = MapLabels.layer(airports, 1f, night = true)["paint"]!!.jsonObject
+        assertEquals("""["case",["boolean",["feature-state","selected"],false],"transparent","rgba(20, 24, 31, 0.85)"]""", paint["text-halo-color"].toString())
+        assertEquals("#82b4ff", paint["text-color"]!!.jsonPrimitive.content)
+        // By day, as written.
+        assertEquals(airports, MapLabels.layer(airports, 1f, night = false))
+    }
+
     /** The switch's scale is the font scale capped at 1.2, and the layers
      *  added after the style (the station model, AIRMET names, 3D tabs,
      *  plate tags) take the style's own. */
