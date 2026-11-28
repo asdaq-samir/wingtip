@@ -117,15 +117,9 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
         "visibility_sm": 2.0,
         "visibility_plus": False,
         "visibility_minus": False,
-        "wind_dir_true_deg": None,
-        "wind_variable_deg": None,
-        "wind_speed_kt": None,
-        "wind_gust_kt": None,
-        "altimeter_in_hg": None,
-        "temp_c": None,
-        "dewpoint_c": None,
-        "lat": None,
-        "lon": None,
+        # None of the rest is in this report, the wind's variable range among them.
+        **dict.fromkeys(("wind_dir_true_deg", "wind_variable_deg", "wind_speed_kt", "wind_gust_kt", "altimeter_in_hg")),
+        **dict.fromkeys(("temp_c", "dewpoint_c", "lat", "lon")),
     }
     assert result["C81"] is None
 
