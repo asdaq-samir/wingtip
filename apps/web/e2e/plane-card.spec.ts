@@ -76,8 +76,9 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   for (const rootPx of ["16px", "19.65px"]) {
     await page.evaluate((px) => (document.documentElement.style.fontSize = px), rootPx);
     const label = card.getByTestId("airplane-info").getByText("Owner", { exact: true });
-    const value = card.getByTestId("airplane-info-owner");
-    await expect(value).toHaveText("Roca Roja Y Caballo Gris De Idaho Llc");
+    // The row is the label and its value; the value is the name as the planner cased it, its LLC kept.
+    const value = card.getByTestId("airplane-info-owner").getByText("Roca Roja Y Caballo Gris De Idaho LLC", { exact: true });
+    await expect(value).toHaveText("Roca Roja Y Caballo Gris De Idaho LLC");
     const [a, b] = [await label.boundingBox(), await value.boundingBox()];
     const apart = a!.y + a!.height <= b!.y + 1 || a!.x + a!.width <= b!.x + 1;
     expect(apart, `label ${JSON.stringify(a)} and value ${JSON.stringify(b)} at ${rootPx}`).toBe(true);
@@ -91,6 +92,10 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   // first, as a pilot does, since at half a card's body does not scroll
   // (it opens at half, rules.md's "Detents" and "Grow, then scroll").
   // Its identifiers are Info's with its record (the owner, 2026-11-26): its ICAO address the Airplane group's.
+  // The Airplane group shows its first few rows; its title opens the rest.
+  const more = card.getByTestId("airplane-info-airplane-more");
+  await inSheet(page, more);
+  await more.click();
   const last = card.getByTestId("airplane-info").getByText("ICAO Address", { exact: true });
   await inSheet(page, last);
   await expect(last).toBeInViewport();

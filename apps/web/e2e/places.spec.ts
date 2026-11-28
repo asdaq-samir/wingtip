@@ -42,7 +42,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
   await expect(card(page).getByTestId("place-actions").locator(":scope > *")).toHaveText([/Fly Here|≈ \d/, /Call/, /Favorite/, /Address/]);
   await expect(card(page).getByTestId("place-add-stop")).toHaveCount(0);
-  const tabs = card(page).getByRole("tab");
+  const tabs = withFoot(card(page)).getByRole("tab");
   expect((await tabs.evaluateAll((t) => t.map((x) => x.ariaLabel))).join("|")).toMatch(/^Info\|Weather(, \w+)?\|Runways\|Charts(, \d+)?$/);
   await expect(withFoot(card(page)).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   const [actions, bar] = await Promise.all(
@@ -117,14 +117,15 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
-  // The pictures open on the runways, and the aerial that comes after them
-  // goes after them, never in front of the one in view (FL-23).
+  // The aerial's tile is held first while the photos are asked, the
+  // runways after it, and the aerial fills its own tile when it comes: the
+  // runways never move from the place they were drawn in.
   const pages = card(page).getByTestId("place-pictures").locator('[data-slot="carousel-item"]');
-  await expect(pages.nth(0).getByTestId("place-runway-sketch")).toBeVisible({ timeout: slow(15000) });
+  await expect(pages.nth(1).getByTestId("place-runway-sketch")).toBeVisible({ timeout: slow(15000) });
   aerial();
   await expect(pages).toHaveCount(2, { timeout: slow(15000) });
-  await expect(pages.nth(0).getByTestId("place-runway-sketch")).toBeVisible();
-  await expect(pages.nth(1).getByTestId("place-aerial")).toHaveCount(1);
+  await expect(pages.nth(1).getByTestId("place-runway-sketch")).toBeVisible();
+  await expect(pages.nth(0).getByTestId("place-aerial")).toHaveCount(1);
 
   // The weather's card at the top of the Weather tab.
   await withFoot(card(page)).getByTestId("place-tab-weather").click();

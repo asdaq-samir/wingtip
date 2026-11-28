@@ -246,7 +246,7 @@ test("the airport card's tabs, the bar pinned, open each at its top and keep the
   const pinnedY = (await bar.boundingBox())!.y;
   const head = card.getByTestId("card-head-pinned");
   const underBar = async (testId: string) => {
-    const panel = (await card.getByRole("tabpanel").boundingBox())!;
+    const panel = (await card.locator("[role=tabpanel]:not([inert])").boundingBox())!;
     const b = (await bar.boundingBox())!;
     expect(Math.abs(b.y - pinnedY), `the bar stays pinned on ${testId}`).toBeLessThanOrEqual(2);
     // At its top under the card's pinned head: the tabs float at the

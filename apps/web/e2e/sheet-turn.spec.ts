@@ -31,7 +31,8 @@ async function frames(page: Page, move: () => Promise<void>): Promise<Frame[]> {
       const foot = Math.min(box.bottom, window.innerHeight);
       const panel = { top: box.top, height: foot - box.top };
       const at = (selector: string) => {
-        const r = document.querySelector(`[data-slot=map-panel] ${selector}`)?.getBoundingClientRect();
+        // On a phone the figures are in the foot bar drawn beside the sheet's popup.
+        const r = document.querySelector(`[data-slot=map-panel] ${selector}, [data-foot-bar] ${selector}`)?.getBoundingClientRect();
         return r && r.height > 0 ? { top: r.top - panel.top, bottom: r.bottom - panel.top } : null;
       };
       w.__frames.push({ height: panel.height, bar: at("[role=search]"), figures: at("[data-testid=flight-line]") });

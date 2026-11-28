@@ -40,7 +40,7 @@ test("an airport's card has four tabs right under its actions, in sight at half,
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   await expect(card(page).getByTestId("fly-here")).toBeEnabled({ timeout: slow(15000) });
   await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
-  const tabs = card(page).getByRole("tab");
+  const tabs = withFoot(card(page)).getByRole("tab");
   expect((await tabs.evaluateAll((t) => t.map((x) => x.ariaLabel))).join("|")).toMatch(/^Info\|Weather(, \w+)?\|Runways\|Charts(, \d+)?$/);
   await expect(withFoot(card(page)).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   // No weather summary over the bar: the weather is its tab's.
