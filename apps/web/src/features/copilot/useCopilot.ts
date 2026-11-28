@@ -67,7 +67,51 @@ export function useCopilot(): { message: CopilotMessage | null; dismiss: () => v
   const startedAt = useRef<number | null>(null);
   const said = useRef(new Set<string>());
   const dismissed = useRef(new Set<string>());
+  // What the next look reads, the latest of each: the look is not set
+  // going again as each changes. useAhead's answer is a new object at
+  // each render, and the copilot renders at each new place asked from,
+  // several times a second in a dry run at 50 times; the look's timers,
+  // cleared and set again at each, never came round on a slow CPU, and
+  // the copilot said nothing for a whole flight (copilot.spec on CI's
+  // runner, three runs of PR #591, and 3 of 3 on one CPU).
+  const latest = useRef({ mode, flight, around, ahead, minimums, currency });
+  const pending = useRef<number | null>(null);
 
+  const look = useRef(() => {
+    const { mode, flight, around, ahead, minimums, currency } = latest.current;
+    const fix = useOwnShip.getState().fix;
+    if (fix && startedAt.current == null) startedAt.current = fix.at;
+    const input = copilotInput({
+      fix,
+      flight,
+      around,
+      ahead: ahead?.alerts ?? [],
+      minimums,
+      nightCurrent: fix ? nightCurrent(currency, fix.at / 1000) : null,
+      startedAtMs: startedAt.current,
+      firstSeen: firstSeen.current,
+    });
+    const answer = input ? watch(input) : null;
+    const first = answer?.messages.find((m) => !dismissed.current.has(m.id)) ?? null;
+    setMessage((prev) => (prev?.id === first?.id && prev?.title === first?.title ? prev : first));
+    // Said once a message, and only the copilot's own: the alerts
+    // banner speaks what is ahead.
+    if (first && !first.elsewhere && !said.current.has(first.id)) {
+      said.current.add(first.id);
+      if (mode === "spoken") {
+        if (first.level === "warning") copilotVoice().interrupt(first.say);
+        else copilotVoice().say(first.say);
+      } else {
+        // Told to a screen reader instead, once, in the words a voice
+        // reads (lib/announce): the banner arriving whole is not.
+        announce(first.say, first.level === "warning" ? "assertive" : "polite");
+      }
+    }
+  });
+
+  // Every few seconds while flying, on one timer for the flight: the look
+  // sets the message from the timer, as an outside store's change sets
+  // state.
   useEffect(() => {
     if (!on) {
       // The next flight starts afresh: its first categories, its fuel.
@@ -77,45 +121,24 @@ export function useCopilot(): { message: CopilotMessage | null; dismiss: () => v
       dismissed.current.clear();
       return;
     }
-    if (around) firstSeen.current = rememberCategories(firstSeen.current, around);
-    const look = () => {
-      const fix = useOwnShip.getState().fix;
-      if (fix && startedAt.current == null) startedAt.current = fix.at;
-      const input = copilotInput({
-        fix,
-        flight,
-        around,
-        ahead: ahead?.alerts ?? [],
-        minimums,
-        nightCurrent: fix ? nightCurrent(currency, fix.at / 1000) : null,
-        startedAtMs: startedAt.current,
-        firstSeen: firstSeen.current,
-      });
-      const answer = input ? watch(input) : null;
-      const first = answer?.messages.find((m) => !dismissed.current.has(m.id)) ?? null;
-      setMessage((prev) => (prev?.id === first?.id && prev?.title === first?.title ? prev : first));
-      // Said once a message, and only the copilot's own: the alerts
-      // banner speaks what is ahead.
-      if (first && !first.elsewhere && !said.current.has(first.id)) {
-        said.current.add(first.id);
-        if (mode === "spoken") {
-          if (first.level === "warning") copilotVoice().interrupt(first.say);
-          else copilotVoice().say(first.say);
-        } else {
-          // Told to a screen reader instead, once, in the words a voice
-          // reads (lib/announce): the banner arriving whole is not.
-          announce(first.say, first.level === "warning" ? "assertive" : "polite");
-        }
-      }
-    };
-    // At once, then every few seconds: the look sets the message from the
-    // timer, as an outside store's change sets state.
-    const atOnce = window.setTimeout(look, 0);
-    const timer = window.setInterval(look, LOOK_MS);
+    const timer = window.setInterval(() => look.current(), LOOK_MS);
     return () => {
-      window.clearTimeout(atOnce);
       window.clearInterval(timer);
+      if (pending.current != null) window.clearTimeout(pending.current);
+      pending.current = null;
     };
+  }, [on]);
+
+  // And at once when what it reads changes: one look waiting at a time,
+  // reading what is latest when it comes, never put off by the next change.
+  useEffect(() => {
+    latest.current = { mode, flight, around, ahead, minimums, currency };
+    if (!on) return;
+    if (around) firstSeen.current = rememberCategories(firstSeen.current, around);
+    pending.current ??= window.setTimeout(() => {
+      pending.current = null;
+      look.current();
+    }, 0);
   }, [on, mode, flight, around, ahead, minimums, currency]);
 
   const shown = on ? message : null;
