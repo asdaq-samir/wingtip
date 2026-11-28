@@ -3,6 +3,7 @@ package app.wingtipmaps.android.aircraft
 import app.wingtipmaps.android.MainRule
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.gateway.AircraftDto
+import app.wingtipmaps.android.api.generated.gateway.AirplaneKind
 import app.wingtipmaps.android.api.generated.gateway.AircraftRequest
 import app.wingtipmaps.android.api.generated.gateway.InspectionsDto
 import app.wingtipmaps.android.api.generated.gateway.OwnFigures
@@ -27,7 +28,7 @@ class AircraftModelTest {
         id = id, tailNumber = tail, typeDesignator = request?.typeDesignator ?: "PA28", cruiseTasKt = request?.cruiseTasKt ?: 120.0,
         fuelBurnGph = request?.fuelBurnGph ?: 9.0, cruisePowerPct = request?.cruisePowerPct, equipment = request?.equipment,
         descentIasKt = request?.descentIasKt, descentFuelBurnGph = request?.descentFuelBurnGph,
-        createdAt = "2026-11-09T00:00:00Z", dueItems = emptyList(), inspections = InspectionsDto(forHire = false), openSquawks = emptyList(),
+        createdAt = "2026-11-09T00:00:00Z", kind = AirplaneKind(), dueItems = emptyList(), inspections = InspectionsDto(forHire = false), openSquawks = emptyList(),
         figures = OwnFigures(),
     )
 
