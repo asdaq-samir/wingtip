@@ -5,6 +5,7 @@ import CloseButton from "./CloseButton";
 import MapBanner, { BannerButton } from "./MapBanner";
 import { airborneNow, alertKey, dismissFired as dismiss, fired, useFiredAlerts, type Watched } from "../lib/aircraftAlerts";
 import type { FlightStatus } from "../lib/api/types";
+import { planeLink } from "../lib/flightLink";
 import { useOwnShip } from "../lib/map/position/ownShip";
 import { useTracking } from "../lib/map/position/tracking";
 import { usePreferences } from "../lib/preferences";
@@ -90,7 +91,7 @@ export default function AircraftAlerts() {
               // Its card, where the planner is open; from another page, the planner on it.
               const pick = useTracking.getState().pick;
               if (pick) pick(alert.hex);
-              else window.location.assign(`/app/plan?flight=${alert.hex}`);
+              else window.location.assign(planeLink({ hex: alert.hex, name: alert.title }).url);
               dismiss(alert.id);
             }}
           >
