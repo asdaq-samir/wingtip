@@ -124,12 +124,13 @@ public class PlannerClient {
                 .flightReviewOn(flightReviewOn)
                 .medicalExpiresOn(medicalExpiresOn)
                 .ipcOn(ipcOn)
-                .flying(flying == null
-                        ? null
-                        : new PlannerFlying()
-                                .category(flying.category())
-                                .propertyClass(flying.aircraftClass())
-                                .tailwheel(flying.tailwheel()));
+                .flying(
+                        flying == null
+                                ? null
+                                : new PlannerFlying()
+                                        .category(flying.category())
+                                        .propertyClass(flying.aircraftClass())
+                                        .tailwheel(flying.tailwheel()));
         return rule(
                 "the currency",
                 () -> planner.currency(ask),

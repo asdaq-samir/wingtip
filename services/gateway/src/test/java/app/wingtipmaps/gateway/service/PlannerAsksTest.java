@@ -17,7 +17,8 @@ class PlannerAsksTest {
     private final Pilot pilot = new Pilot("pilot@example.com", "A. Pilot", "sub-1");
 
     private LogbookEntry entry(int day, int night) {
-        return new LogbookEntry(pilot).set(LocalDate.parse("2026-11-01"), "N1", "C170", null, 1, 0, 0, day, night, null);
+        return new LogbookEntry(pilot)
+                .set(LocalDate.parse("2026-11-01"), "N1", "C170", null, 1, 0, 0, day, night, null);
     }
 
     @Test

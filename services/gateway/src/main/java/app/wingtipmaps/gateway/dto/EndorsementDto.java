@@ -7,4 +7,7 @@ import org.jspecify.annotations.Nullable;
  *  day, the day it runs out where it does, and the make and model it names
  *  where the pilot recorded one. */
 public record EndorsementDto(
-        String code, LocalDate endorsedOn, @Nullable LocalDate until, @Nullable String makeModel) {}
+        String code,
+        LocalDate endorsedOn,
+        @Nullable LocalDate until,
+        @Nullable String makeModel) {}

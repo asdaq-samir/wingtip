@@ -55,18 +55,22 @@ public record CurrencyDto(
         boolean trackingInWindow,
 
         @Schema(
-                description = "The category and class passenger currency was judged in, \"airplane/single-engine land\": "
-                        + "the airplane to be flown's, else the newest flight's (14 CFR 61.57(a)(1)); null where neither says")
+                description =
+                        "The category and class passenger currency was judged in, \"airplane/single-engine land\": "
+                                + "the airplane to be flown's, else the newest flight's (14 CFR 61.57(a)(1)); null where neither says")
         @Nullable
         String passengerClass,
 
-        @Schema(description = "Whether the airplane judged has a tailwheel; null where not said, judged as one (61.57(a)(1)(ii))")
+        @Schema(
+                description =
+                        "Whether the airplane judged has a tailwheel; null where not said, judged as one (61.57(a)(1)(ii))")
         @Nullable
         Boolean passengerTailwheel,
 
         @Schema(
-                description = "A tailwheel's own passenger currency, for a pilot judged in a tricycle who has flown a tailwheel "
-                        + "in the class (61.57(a)(1)(ii))")
+                description =
+                        "A tailwheel's own passenger currency, for a pilot judged in a tricycle who has flown a tailwheel "
+                                + "in the class (61.57(a)(1)(ii))")
         @Nullable
         LocalDate tailwheelPassengersUntil,
 

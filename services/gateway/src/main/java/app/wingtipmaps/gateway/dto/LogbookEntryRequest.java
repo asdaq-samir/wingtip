@@ -82,16 +82,19 @@ public record LogbookEntryRequest(
         @Nullable Long flightId,
 
         @Schema(description = "14 CFR 61.5 category, \"Airplane\"; none where not said (61.57(a)(1))")
-        @Size(max = 20, message = "category must be at most 20 characters") @Nullable
+        @Size(max = 20, message = "category must be at most 20 characters")
+        @Nullable
         String category,
 
         @Schema(description = "14 CFR 61.5 class, \"Single-engine land\"; none where not said (61.57(a)(1))")
-        @Size(max = 24, message = "aircraftClass must be at most 24 characters") @Nullable
+        @Size(max = 24, message = "aircraftClass must be at most 24 characters")
+        @Nullable
         String aircraftClass,
 
         @Schema(description = "A tailwheel airplane (61.57(a)(1)(ii)); none where not said") @Nullable
         Boolean tailwheel,
 
         @Schema(description = "Landings to a full stop, day and night; none where not said (61.57(a)(1)(ii))")
-        @PositiveOrZero(message = "fullStopLandings must be zero or more") @Nullable
+        @PositiveOrZero(message = "fullStopLandings must be zero or more")
+        @Nullable
         Integer fullStopLandings) {}

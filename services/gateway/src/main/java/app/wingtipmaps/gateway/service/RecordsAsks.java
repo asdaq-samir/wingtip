@@ -72,7 +72,9 @@ final class RecordsAsks {
                         key,
                         () -> signed.stream()
                                 .map(e -> PlannerAsks.held(
-                                        e.getCode(), e.getSignedOn(), e.getFields().get("mm")))
+                                        e.getCode(),
+                                        e.getSignedOn(),
+                                        e.getFields().get("mm")))
                                 .toList(),
                         null,
                         null);
