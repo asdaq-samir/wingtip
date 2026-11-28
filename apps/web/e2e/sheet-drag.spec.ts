@@ -31,6 +31,34 @@ async function fingerDrag(page: Page, at: { x: number; y: number }, dy: number, 
   await cdp.detach();
 }
 
+/** Once `scroller` has stopped: no scroll for 300 ms, a few seconds at
+ *  most. A finger put down while the last drag's fling still ran is sent
+ *  passive -- Chromium's, every event of it cancelable false -- and the
+ *  stock Drawer can claim no drag it cannot cancel, so the list took it
+ *  and the sheet stayed full (sheet-drag on CI's runner, PR #591; 3 of 5
+ *  on a copy of CI's stack at four CPUs, each red drag's events all
+ *  cancelable false, each green one's all true). */
+async function scrollStill(scroller: Locator) {
+  await scroller.evaluate(
+    (el) =>
+      new Promise<void>((done) => {
+        let timer = window.setTimeout(finish, 300);
+        const moved = () => {
+          window.clearTimeout(timer);
+          timer = window.setTimeout(finish, 300);
+        };
+        const cap = window.setTimeout(finish, 5000);
+        el.addEventListener("scroll", moved);
+        function finish() {
+          window.clearTimeout(timer);
+          window.clearTimeout(cap);
+          el.removeEventListener("scroll", moved);
+          done();
+        }
+      }),
+  );
+}
+
 /** The grabber's middle, where a finger takes the sheet. */
 async function onGrabber(page: Page) {
   await settled(sideDrawer(page));
@@ -89,10 +117,13 @@ test("the panel follows a finger from its grabber out to the top, and down from 
   await fingerDrag(page, await middle(), 120);
   await expect(brief).toHaveAttribute("data-panel", "full");
 
-  // At its start, a drag down takes the sheet down, half way.
+  // At its start, a drag down takes the sheet down, half way: once the
+  // drag before has stopped scrolling it.
+  await scrollStill(tab);
   await tab.evaluate((el) => {
     el.scrollTop = 0;
   });
+  await scrollStill(tab);
   await fingerDrag(page, await middle(), 400);
   await expect(brief).toHaveAttribute("data-panel", "half");
 
